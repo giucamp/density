@@ -663,6 +663,8 @@ namespace density
 
 } // namespace density
 
+#undef DENSITY_DENSE_LIST_DEBUG
+
 #include "detail\dense_list_typed.h"
 #include "detail\dense_list_void.h"
 

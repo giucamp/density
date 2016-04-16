@@ -13,7 +13,7 @@
 namespace density
 {
 	/*
-		Element Type Synopsis
+		Runtime Type Synopsis
 
 		class RuntimeType
 		{
@@ -238,9 +238,11 @@ namespace density
 
 	} // namespace detail
 
-
-	template <typename ELEMENT, ElementTypeCaps COPY_MOVE = detail::GetAutoCopyMoveCap<ELEMENT>::value, SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
-		class RuntimeType;
+	// RuntimeType class declaration
+	template <typename ELEMENT,
+		ElementTypeCaps COPY_MOVE = detail::GetAutoCopyMoveCap<ELEMENT>::value,
+		SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
+			class RuntimeType;
 	
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
 		class RuntimeType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
@@ -304,6 +306,9 @@ namespace density
 
 				case Operation::move:
 					detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+					break;
+
+				case Operation::destroy:
 					break;
 			}
 		}

@@ -1,17 +1,19 @@
 
+#include <random>
 
 namespace density
 {
-	void dense_fixed_queue_test();
-	void dense_list_benchmark();
-	void dense_list_test();
+	void fixed_queue_test();
+	void list_benchmark();
+	void list_test();
 }
 
 int main()
 {
 	using namespace density;
-	dense_fixed_queue_test();
-	dense_list_test();
-	dense_list_benchmark();
+
+	fixed_queue_test();
+	list_test();
+	list_benchmark();
 	return 0;
 }

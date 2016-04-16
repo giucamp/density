@@ -21,32 +21,6 @@ namespace density
 		using ListImpl = detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
 		using IteratorImpl = typename ListImpl::IteratorBaseImpl;
 
-		struct CopyConstruct
-		{
-			const ELEMENT * const m_source;
-
-			CopyConstruct(const ELEMENT * i_source)
-				: m_source(i_source) { }
-
-			void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type)
-			{
-				return i_builder.add_by_copy(i_element_type, m_source);
-			}
-		};
-
-		struct MoveConstruct
-		{
-			ELEMENT * const m_source;
-
-			MoveConstruct(ELEMENT * i_source)
-				: m_source(i_source) { }
-
-			void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type) DENSITY_NOEXCEPT
-			{
-				return i_builder.add_by_move(i_element_type, m_source);
-			}
-		};
-
 	public:
 
 		using allocator_type = ALLOCATOR;
@@ -366,6 +340,33 @@ namespace density
 		bool operator == (const DenseList & i_source) const { return equal_to(i_source); }
 		bool operator != (const DenseList & i_source) const { return !equal_to(i_source); }
 
+	private:
+
+		struct CopyConstruct
+		{
+			const ELEMENT * const m_source;
+
+			CopyConstruct(const ELEMENT * i_source)
+				: m_source(i_source) { }
+
+			void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
+			{
+				return i_builder.add_by_copy(i_element_type, m_source);
+			}
+		};
+
+		struct MoveConstruct
+		{
+			ELEMENT * const m_source;
+
+			MoveConstruct(ELEMENT * i_source)
+				: m_source(i_source) { }
+
+			void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
+			{
+				return i_builder.add_by_move(i_element_type, m_source);
+			}
+		};
 
 	private:
 		detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;

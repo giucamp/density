@@ -91,7 +91,7 @@ namespace density
 		}
 	}
 
-	void dense_list_benchmark()
+	void list_benchmark()
 	{
 		using namespace std;
 		using namespace std::chrono;

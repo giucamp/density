@@ -475,7 +475,7 @@ namespace density
 
 			void test_void_dense_list()
 			{
-				auto void_list = DenseList<void>::make(1,2,3);
+				auto void_list = DenseList<void>::template make(1,2,3);
 				int sum = 0;
 				for (auto it = void_list.begin(); it != void_list.end(); it++)
 				{
@@ -486,7 +486,7 @@ namespace density
 		}
 	}
 
-	void dense_list_test()
+	void list_test()
 	{
 		detail::DenseListTest::test_void_dense_list();
 
