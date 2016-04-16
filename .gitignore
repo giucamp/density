@@ -1,28 +1,20 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
+#Ignore files build by Visual Studio
 *.exe
-*.out
-*.app
+*.dll
+*.obj
+*.pdb
+*.user
+*.log
+*.suo
+*.tlog
+*.idb
+*.sdf
+*.ilk
+*.lib
+*.opensd
+*.opensdf
+*.opendb
+*.suo
+*.suo
+*.iobj
+*.ipdb

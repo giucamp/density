@@ -1,42 +1,44 @@
 
-//          Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <memory>
+#include <memory> // std::allocator
+#include <utility> // std::forward
+#include <type_traits> // std::is_constructible, ...
 #include "element_type.h"
 
-namespace reflective
+namespace density
 {
 	namespace details
 	{
-		template < typename ALLOCATOR, typename ELEMENT_TYPE >
-			class DenseFixedQueueBase : private ALLOCATOR
+		template < typename ALLOCATOR, typename RUNTIME_TYPE >
+			class DenseFixedQueueImpl : private ALLOCATOR
 		{
 		public:
 
-			struct IteratorBase
+			struct IteratorBaseImpl
 			{
-				IteratorBase() REFLECTIVE_NOEXCEPT {}
+				IteratorBaseImpl() REFLECTIVE_NOEXCEPT {}
 
-				IteratorBase(ELEMENT_TYPE * i_type) REFLECTIVE_NOEXCEPT // used to construct end
+				IteratorBaseImpl(RUNTIME_TYPE * i_type) REFLECTIVE_NOEXCEPT // used to construct end
 					: m_curr_type(i_type) { }
 
-				IteratorBase(const DenseFixedQueueBase * i_queue, ELEMENT_TYPE * i_type, void * i_element ) REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl(const DenseFixedQueueImpl * i_queue, RUNTIME_TYPE * i_type, void * i_element) REFLECTIVE_NOEXCEPT
 					: m_curr_type(i_type), m_curr_element(i_element), m_queue(i_queue) { }
 
 				void move_next() REFLECTIVE_NOEXCEPT
-				{					
+				{
 					// advance m_curr_type
-					m_curr_type = static_cast<ELEMENT_TYPE*>(address_add(m_curr_element, m_curr_type->size()));
+					m_curr_type = static_cast<RUNTIME_TYPE*>(address_add(m_curr_element, m_curr_type->size()));
 					if (m_curr_type != m_queue->m_tail)
 					{
-						m_curr_type = static_cast<ELEMENT_TYPE*>(address_upper_align(m_curr_type, alignof(ELEMENT_TYPE)));
+						m_curr_type = static_cast<RUNTIME_TYPE*>(address_upper_align(m_curr_type, alignof(RUNTIME_TYPE)));
 						if (m_curr_type + 1 > m_queue->m_buffer_end)
 						{
-							m_curr_type = static_cast<ELEMENT_TYPE*>(address_upper_align(m_queue->m_buffer_start, alignof(ELEMENT_TYPE)));
+							m_curr_type = static_cast<RUNTIME_TYPE*>(address_upper_align(m_queue->m_buffer_start, alignof(RUNTIME_TYPE)));
 						}
 
 						// advance m_curr_element
@@ -50,34 +52,43 @@ namespace reflective
 					}
 				}
 
-				bool operator == (const IteratorBase & i_source) REFLECTIVE_NOEXCEPT
+				bool operator == (const IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
 				{
 					return i_source.m_curr_type == i_source.m_curr_type;
 				}
 
-				ELEMENT_TYPE * m_curr_type;
+				RUNTIME_TYPE * m_curr_type;
 				void * m_curr_element;
-				const DenseFixedQueueBase * m_queue;
+				const DenseFixedQueueImpl * m_queue;
 			};
 
-			DenseFixedQueueBase(size_t i_buffer_byte_capacity)
+			DenseFixedQueueImpl(size_t i_buffer_byte_capacity)
 			{
-				typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(
-					*static_cast<ALLOCATOR*>(this));
-
-				m_buffer_start = char_alloc.allocate(i_buffer_byte_capacity);
-				m_buffer_end = address_add(m_buffer_start, i_buffer_byte_capacity);
-				m_tail = m_head = static_cast<ELEMENT_TYPE *>(m_buffer_start);
+				impl_init(i_buffer_byte_capacity);
 			}
 
-			DenseFixedQueueBase(DenseFixedQueueBase && i_source) REFLECTIVE_NOEXCEPT
+			DenseFixedQueueImpl(DenseFixedQueueImpl && i_source) REFLECTIVE_NOEXCEPT
 				: m_head(i_source.m_head), m_tail(i_source.m_tail), m_buffer_start(i_source.m_buffer_start), m_buffer_end(i_source.m_buffer_end)
 			{
 				i_source.m_tail = i_source.m_head = nullptr;
 				i_source.m_buffer_end = i_source.m_buffer_start = nullptr;
 			}
 
-			DenseFixedQueueBase & operator = (DenseFixedQueueBase && i_source) REFLECTIVE_NOEXCEPT
+			DenseFixedQueueImpl(const DenseFixedQueueImpl & i_source)
+				: ALLOCATOR(i_source)
+			{
+				impl_assign(i_source);
+			}
+
+			DenseFixedQueueImpl & operator = (const DenseFixedQueueImpl & i_source)
+			{
+				impl_destroy();
+				*static_cast<ALLOCATOR*>(this) = i_source;
+				impl_assign(i_source);
+				return *this;
+			}
+
+			DenseFixedQueueImpl & operator = (DenseFixedQueueImpl && i_source) REFLECTIVE_NOEXCEPT
 			{
 				impl_clear();
 
@@ -92,15 +103,47 @@ namespace reflective
 				return *this;
 			}
 
-			~DenseFixedQueueBase() REFLECTIVE_NOEXCEPT
+			~DenseFixedQueueImpl() REFLECTIVE_NOEXCEPT
+			{
+				impl_destroy();
+			}
+
+			void impl_init(size_t i_buffer_byte_capacity)
+			{
+				typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(
+					*static_cast<ALLOCATOR*>(this));
+
+				m_buffer_start = char_alloc.allocate(i_buffer_byte_capacity);
+				m_buffer_end = address_add(m_buffer_start, i_buffer_byte_capacity);
+				m_tail = m_head = static_cast<RUNTIME_TYPE *>(m_buffer_start);
+			}
+
+			void impl_destroy()
 			{
 				impl_clear();
 
 				typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(
 					*static_cast<ALLOCATOR*>(this));
-				
+
 				char_alloc.deallocate(static_cast<char*>(m_buffer_start),
-					address_diff(m_buffer_end, m_buffer_start) );
+					address_diff(m_buffer_end, m_buffer_start));
+			}
+
+			void impl_assign(const DenseFixedQueueImpl & i_source)
+			{
+				impl_init(i_source.impl_mem_capacity());
+
+				/* now the queue is empty, and m_tail = m_head = m_buffer_start. Anyway
+					we offset m_tail and m_head like tjhey are in the source, so in order to make
+					an exact copy, in which the free space is the same */
+				m_tail = m_head = static_cast<RUNTIME_TYPE*>(address_add(m_buffer_start,
+					address_diff(i_source.m_head, i_source.m_buffer_start) ) );
+
+				for (auto source_it = i_source.impl_begin();
+					source_it.m_curr_type != static_cast<RUNTIME_TYPE*>(i_source.m_tail); source_it.move_next())
+				{
+					impl_push(*source_it.m_curr_type, CopyConstruct(source_it.m_curr_element));
+				}
 			}
 
 			bool impl_empty() const REFLECTIVE_NOEXCEPT
@@ -108,19 +151,19 @@ namespace reflective
 				return m_head == m_tail;
 			}
 
-			IteratorBase impl_begin() const REFLECTIVE_NOEXCEPT
+			IteratorBaseImpl impl_begin() const REFLECTIVE_NOEXCEPT
 			{
 				if (m_head == m_tail)
 				{
-					return IteratorBase(static_cast<ELEMENT_TYPE*>(m_tail));
+					return IteratorBaseImpl(static_cast<RUNTIME_TYPE*>(m_tail));
 				}
 				else
 				{
-					auto type_ptr = static_cast<ELEMENT_TYPE*>(address_upper_align(m_head, alignof(ELEMENT_TYPE)));
+					auto type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_head, alignof(RUNTIME_TYPE)));
 					auto type_end = static_cast<void*>(type_ptr + 1);
 					if (type_end > m_buffer_end)
 					{
-						type_ptr = static_cast<ELEMENT_TYPE*>(address_upper_align(m_buffer_start, alignof(ELEMENT_TYPE)));
+						type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_buffer_start, alignof(RUNTIME_TYPE)));
 						type_end = static_cast<void*>(type_ptr + 1);
 					}
 
@@ -135,13 +178,13 @@ namespace reflective
 						element_ptr = linear_alloc(&element_end, element_size, element_alignment);
 					}
 
-					return IteratorBase(this, type_ptr, element_ptr);
+					return IteratorBaseImpl(this, type_ptr, element_ptr);
 				}
 			}
 
-			IteratorBase impl_end() const REFLECTIVE_NOEXCEPT
+			IteratorBaseImpl impl_end() const REFLECTIVE_NOEXCEPT
 			{
-				return IteratorBase(static_cast<ELEMENT_TYPE*>(m_tail));
+				return IteratorBaseImpl(static_cast<RUNTIME_TYPE*>(m_tail));
 			}
 			
 			struct CopyConstruct
@@ -151,7 +194,7 @@ namespace reflective
 				CopyConstruct(const void * i_source)
 					: m_source(i_source) { }
 
-				void operator () (void * i_dest, const ELEMENT_TYPE & i_element_type)
+				void operator () (void * i_dest, const RUNTIME_TYPE & i_element_type)
 				{
 					i_element_type.copy_construct(i_dest, m_source);
 				}
@@ -164,7 +207,7 @@ namespace reflective
 				MoveConstruct(void * i_source)
 					: m_source(i_source) { }
 
-				void operator () (void * i_dest, const ELEMENT_TYPE & i_element_type) REFLECTIVE_NOEXCEPT
+				void operator () (void * i_dest, const RUNTIME_TYPE & i_element_type) REFLECTIVE_NOEXCEPT
 				{
 					i_element_type.move_construct(i_dest, m_source);
 				}
@@ -197,10 +240,10 @@ namespace reflective
 			}
 
 			template <typename CONSTRUCTOR>
-				bool impl_push(const ELEMENT_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+				bool impl_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
 			{
 				auto tail = static_cast<void*>(m_tail);
-				const auto type_block = single_push(&tail, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE) );
+				const auto type_block = single_push(&tail, sizeof(RUNTIME_TYPE), alignof(RUNTIME_TYPE) );
 				const auto element_block = single_push(&tail, i_source_type.size(), i_source_type.alignment());
 				if (element_block == nullptr || type_block == nullptr)
 				{
@@ -209,8 +252,8 @@ namespace reflective
 
 				// commit the push
 				i_constructor(element_block, i_source_type);
-				new(type_block) ELEMENT_TYPE(i_source_type);				
-				m_tail = static_cast<ELEMENT_TYPE*>(tail);
+				new(type_block) RUNTIME_TYPE(i_source_type);				
+				m_tail = static_cast<RUNTIME_TYPE*>(tail);
 
 				assert(tail == address_add(element_block, i_source_type.size()));
 
@@ -219,15 +262,15 @@ namespace reflective
 
 			template <typename OPERATION>
 				void impl_consume(OPERATION && i_operation)
-					REFLECTIVE_NOEXCEPT_V(REFLECTIVE_NOEXCEPT_V(i_operation(std::declval<ELEMENT_TYPE>(), std::declval<void*>())))
+					REFLECTIVE_NOEXCEPT_V(REFLECTIVE_NOEXCEPT_V(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
 			{
 				assert(m_head != m_tail); // the queue must not be empty
 		
-				auto type_ptr = static_cast<ELEMENT_TYPE*>(address_upper_align(m_head, alignof(ELEMENT_TYPE)));
+				auto type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_head, alignof(RUNTIME_TYPE)));
 				auto type_end = static_cast<void*>(type_ptr + 1);
 				if (type_end > m_buffer_end)
 				{
-					type_ptr = static_cast<ELEMENT_TYPE*>(address_upper_align(m_buffer_start, alignof(ELEMENT_TYPE)));
+					type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_buffer_start, alignof(RUNTIME_TYPE)));
 					type_end = static_cast<void*>(type_ptr + 1);
 				}
 
@@ -244,7 +287,9 @@ namespace reflective
 
 				// commit
 				i_operation(*type_ptr, element_ptr);
-				m_head = static_cast<ELEMENT_TYPE*>(element_end);
+				type_ptr->destroy(element_ptr);
+				type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+				m_head = static_cast<RUNTIME_TYPE*>(element_end);
 			}
 
 			size_t impl_mem_capacity() const REFLECTIVE_NOEXCEPT
@@ -268,7 +313,7 @@ namespace reflective
 			
 			void impl_clear() REFLECTIVE_NOEXCEPT
 			{
-				IteratorBase it = impl_begin();
+				IteratorBaseImpl it = impl_begin();
 				while (it.m_curr_type != m_tail)
 				{
 					auto const type = it.m_curr_type;
@@ -276,26 +321,26 @@ namespace reflective
 					it.move_next();
 
 					type->destroy(element);
-					type->ELEMENT_TYPE::~ELEMENT_TYPE();
+					type->RUNTIME_TYPE::~RUNTIME_TYPE();
 				}
-				m_head = static_cast<ELEMENT_TYPE*>(m_tail);
+				m_head = static_cast<RUNTIME_TYPE*>(m_tail);
 			}
 
 		private:
-			ELEMENT_TYPE * m_head; // poinnts to the first ELEMENT_TYPE
+			RUNTIME_TYPE * m_head; // poinnts to the first RUNTIME_TYPE
 			void * m_tail; // points to the end of the last element - if = m_tail the queue is empty
 			void * m_buffer_start;
 			void * m_buffer_end;
-		}; // class DenseFixedQueueBase
+		}; // class DenseFixedQueueImpl
 
 	} // namespace details
 
-	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename ELEMENT_TYPE = ElementType<ELEMENT> >
+	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
 		class DenseFixedQueue final
 	{		
 	public:
 
-		using ElementType = ELEMENT_TYPE;
+		using RuntimeType = RUNTIME_TYPE;
 		using allocator_type = ALLOCATOR;
 		using value_type = ELEMENT;
 		using reference = ELEMENT &;
@@ -322,7 +367,7 @@ namespace reflective
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			iterator(const typename details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE>::IteratorBase & i_source) REFLECTIVE_NOEXCEPT
+			iterator(const typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
 				: m_impl(i_source) {  }
 
 			value_type & operator * () const REFLECTIVE_NOEXCEPT { return *static_cast<value_type *>(m_impl.m_curr_element); }
@@ -362,10 +407,10 @@ namespace reflective
 				return m_impl.m_curr_type != i_other.curr_type();
 			}
 
-			const ELEMENT_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
 
 		private:
-			typename details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE>::IteratorBase m_impl;
+			typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 
 		}; // class iterator
 
@@ -381,7 +426,7 @@ namespace reflective
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			const_iterator(const typename details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE>::IteratorBase & i_source) REFLECTIVE_NOEXCEPT
+			const_iterator(const typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
 				: m_impl(i_source) {  }
 
 			const_iterator(const iterator & i_source) REFLECTIVE_NOEXCEPT
@@ -424,10 +469,10 @@ namespace reflective
 				return m_impl.m_curr_type != i_other.curr_type();
 			}
 
-			const ELEMENT_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
 
 		private:
-			typename details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE>::IteratorBase m_impl;
+			typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 		}; // class const_iterator
 
 		iterator begin() REFLECTIVE_NOEXCEPT { return iterator(m_impl.impl_begin()); }
@@ -445,26 +490,49 @@ namespace reflective
 
 		template <typename ELEMENT_COMPLETE_TYPE>
 			bool try_push(const ELEMENT_COMPLETE_TYPE & i_source)
-				// REFLECTIVE_NOEXCEPT_V()
+				REFLECTIVE_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
-			return m_impl.impl_push(ElementType::template make<ELEMENT_COMPLETE_TYPE>(), 
-					typename details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE>::CopyConstruct(&i_source));
+			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(), 
+					typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
+		}
+
+		template <typename ELEMENT_COMPLETE_TYPE, typename ... PARAMETERS>
+			bool try_emplace(PARAMETERS && ... i_parameters)
+				REFLECTIVE_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
+		{
+			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+				[&i_parameters...](void * i_dest, const RuntimeType & ) {
+					new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_parameters)...);
+			});
+		}
+
+		bool try_copy_push(const RUNTIME_TYPE & i_type, const ELEMENT * i_source )
+		{
+			return m_impl.impl_push(i_type, 
+				typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(i_source) );
+		}
+
+		bool try_move_push(const RUNTIME_TYPE & i_type, ELEMENT * i_source) REFLECTIVE_NOEXCEPT
+		{
+			return m_impl.impl_push(i_type,
+				typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::MoveConstruct(i_source));
 		}
 
 		template <typename OPERATION>
 			void consume(OPERATION && i_operation)
+				REFLECTIVE_NOEXCEPT_V(REFLECTIVE_NOEXCEPT_V((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
 		{
-			m_impl.impl_consume([&i_operation](const ELEMENT_TYPE & i_type, void * i_element) {
+			m_impl.impl_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
 				i_operation(i_type, *static_cast<ELEMENT*>(i_element));
 			});
 		}
 
-		void pop()
+		void pop() REFLECTIVE_NOEXCEPT
 		{
-			m_impl.impl_consume_front([](const ELEMENT_TYPE &, void *) {});
+			m_impl.impl_consume([](const RUNTIME_TYPE &, void *) {});
 		}
 
-		const ELEMENT & front()
+		const ELEMENT & front() REFLECTIVE_NOEXCEPT
 		{
 			assert(!empty());
 			const auto it = m_impl.impl_begin();
@@ -481,8 +549,13 @@ namespace reflective
 			return m_impl.impl_mem_size();
 		}
 
+		size_t mem_free() const REFLECTIVE_NOEXCEPT
+		{
+			return m_impl.impl_mem_capacity() - m_impl.impl_mem_size();
+		}
+
 	private:
-		details::DenseFixedQueueBase<ALLOCATOR, ELEMENT_TYPE> m_impl;
+		details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
 
 	}; // class DenseFixedQueue
 }

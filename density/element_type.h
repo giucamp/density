@@ -1,5 +1,5 @@
 
-//          Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -10,20 +10,20 @@
 #include <limits>
 #include "density_common.h"
 
-namespace reflective
+namespace density
 {
 	/*
 		Element Type Synopsis
 
-		class ElementType
+		class RuntimeType
 		{
 			public:
 
-				template <typename COMPLETE_TYPE> static ElementType make() noexcept;
+				template <typename COMPLETE_TYPE> static RuntimeType make() noexcept;
 
-				ElementType(const ElementType &) noexcept;
-				ElementType(ElementType &&) noexcept;
-				~ElementType() noexcept;
+				RuntimeType(const RuntimeType &) noexcept;
+				RuntimeType(RuntimeType &&) noexcept;
+				~RuntimeType() noexcept;
 
 				size_t size() const noexcept;
 				size_t alignment() const noexcept;
@@ -240,10 +240,10 @@ namespace reflective
 
 
 	template <typename ELEMENT, ElementTypeCaps COPY_MOVE = details::GetAutoCopyMoveCap<ELEMENT>::value, SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
-		class ElementType;
+		class RuntimeType;
 	
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class ElementType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+		class RuntimeType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -251,25 +251,25 @@ namespace reflective
 		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
 		static const ElementTypeCaps s_caps = ElementTypeCaps::copy_and_move;
 
-		ElementType() = delete;
-		ElementType & operator = (const ElementType &) = delete;
-		ElementType & operator = (ElementType &&) = delete;
+		RuntimeType() = delete;
+		RuntimeType & operator = (const RuntimeType &) = delete;
+		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		ElementType(const ElementType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 				: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static ElementType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() REFLECTIVE_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return ElementType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
+			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
 		void copy_construct(void * i_destination, const void * i_source_element) const
@@ -290,7 +290,7 @@ namespace reflective
  
 		using FunctionPtr = void(*)(Operation i_operation, void * i_first, void * i_second );
 
-		ElementType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
 			: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
@@ -313,7 +313,7 @@ namespace reflective
 	};
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class ElementType<ELEMENT, ElementTypeCaps::copy_only, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+		class RuntimeType<ELEMENT, ElementTypeCaps::copy_only, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -321,25 +321,25 @@ namespace reflective
 		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
 		static const ElementTypeCaps s_caps = ElementTypeCaps::copy_only;
 
-		ElementType() = delete;
-		ElementType & operator = (const ElementType &) = delete;
-		ElementType & operator = (ElementType &&) = delete;
+		RuntimeType() = delete;
+		RuntimeType & operator = (const RuntimeType &) = delete;
+		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		ElementType(const ElementType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 				: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static ElementType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() REFLECTIVE_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return ElementType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
+			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
 		void copy_construct(void * i_destination, const void * i_source_element) const
@@ -354,7 +354,7 @@ namespace reflective
  
 		using FunctionPtr = void(*)(void * i_first, void * i_second );
 
-		ElementType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
 			: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
@@ -368,7 +368,7 @@ namespace reflective
 	};
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class ElementType<ELEMENT, ElementTypeCaps::nothrow_move_construtible, SIZE_ALIGNMENT_MODE> 
+		class RuntimeType<ELEMENT, ElementTypeCaps::nothrow_move_construtible, SIZE_ALIGNMENT_MODE> 
 			: public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
@@ -377,25 +377,25 @@ namespace reflective
 		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
 		static const ElementTypeCaps s_caps = ElementTypeCaps::nothrow_move_construtible;
 
-		ElementType() = delete;
-		ElementType & operator = (const ElementType &) = delete;
-		ElementType & operator = (ElementType &&) = delete;
+		RuntimeType() = delete;
+		RuntimeType & operator = (const RuntimeType &) = delete;
+		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		ElementType(const ElementType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 				: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static ElementType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() REFLECTIVE_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return ElementType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
+			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
 		void move_construct(void * i_destination, void * i_source_element) const REFLECTIVE_NOEXCEPT
@@ -408,7 +408,7 @@ namespace reflective
 
 		using FunctionPtr = void(*)(void * i_first, void * i_second );
 
-		ElementType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
 			: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
@@ -422,7 +422,7 @@ namespace reflective
 	};
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class ElementType<ELEMENT, ElementTypeCaps::none, SIZE_ALIGNMENT_MODE>
+		class RuntimeType<ELEMENT, ElementTypeCaps::none, SIZE_ALIGNMENT_MODE>
 			: public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
@@ -431,29 +431,29 @@ namespace reflective
 		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
 		static const ElementTypeCaps s_caps = ElementTypeCaps::none;
 
-		ElementType() = delete;
-		ElementType & operator = (const ElementType &) = delete;
-		ElementType & operator = (ElementType &&) = delete;
+		RuntimeType() = delete;
+		RuntimeType & operator = (const RuntimeType &) = delete;
+		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		ElementType(const ElementType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 				: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)) { }
 		#else
-			ElementType(ElementType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static ElementType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() REFLECTIVE_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return ElementType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value );
+			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value );
 		}
 
 	private:
 
-		ElementType(size_t i_size, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+		RuntimeType(size_t i_size, size_t i_alignment ) REFLECTIVE_NOEXCEPT
 			: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
 	};
 }

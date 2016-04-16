@@ -1,18 +1,31 @@
 
-//          Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "..\uint_test_manager.h"
+#include <string.h>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 
-namespace reflective
+namespace density
 {
 	class UnitTestingManager::Impl
 	{
+		template <typename PREEDICATE>
+			static void for_each_token(const char * i_path, PREEDICATE && i_predicate)
+		{
+			const char * remaining_path = i_path;
+			while(*remaining_path != 0)
+			{
+				const size_t token_length = strcspn(remaining_path, "/\\");
+				i_predicate(remaining_path, token_length);
+				remaining_path += token_length;
+			}
+		}
+		
 		class CorrectnessTest
 		{
 		public:
@@ -36,8 +49,8 @@ namespace reflective
 		{
 		public:
 
-			PerformanceTest(PerformanceTestFunction i_function, StringView i_version_label)
-				: m_function(i_function), m_version_label(i_version_label.data(), i_version_label.size())
+			PerformanceTest(PerformanceTestFunction i_function, const char * i_version_label)
+				: m_function(i_function), m_version_label(i_version_label, i_version_label)
 			{
 			}
 
@@ -78,7 +91,7 @@ namespace reflective
 				return &m_children.back();
 			}
 
-			Node * find_child(StringView i_name)
+			Node * find_child(const char * i_name)
 			{
 				auto entry_it = std::find_if(m_children.begin(), m_children.end(), [i_name](const Node & i_entry) { return i_name == i_entry.name().c_str(); });
 				if (entry_it != m_children.end())
@@ -130,30 +143,30 @@ namespace reflective
 
 		}
 
-		Node * find_entry(StringView i_path)
+		Node * find_entry(const char * i_path)
 		{
 			Node * node = &m_root;
-			i_path.for_each_token('/', [&node](StringView i_token) {
+			for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
 				if (node != nullptr)
 				{
-					node = node->find_child(i_token);
+					node = node->find_child(std::string(i_token, i_token_length).c_str());
 				}
 			});
 
 			return node;
 		}
 
-		Node & find_or_add_entry(StringView i_path)
+		Node & find_or_add_entry(const char * i_path)
 		{
 			Node * node = &m_root;
-			i_path.for_each_token('/', [&node](StringView i_token) {
+			for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
 				Node * child = node->find_child(i_token);
 
 				if (child == nullptr)
 				{
-					node = node->add_child(std::string(i_token.data(), i_token.size()));
+					node = node->add_child(std::string(i_token, i_token_length));
 				}
 				else
 				{
@@ -164,17 +177,17 @@ namespace reflective
 			return *node;
 		}
 
-		void add_correctness_test(StringView i_path, CorrectnessTestFunction i_function)
+		void add_correctness_test(const char * i_path, CorrectnessTestFunction i_function)
 		{
 			find_or_add_entry(i_path).add_correctess_test(CorrectnessTestFunction(i_function));
 		}
 
-		void add_performance_test(StringView i_path, PerformanceTestFunction i_function, StringView i_version_label)
+		void add_performance_test(const char * i_path, PerformanceTestFunction i_function, const char * i_version_label)
 		{
 			find_or_add_entry(i_path).add_performance_test(PerformanceTest(i_function, i_version_label));
 		}
 
-		void run(StringView i_path)
+		void run(const char * i_path)
 		{
 			CorrectnessTestContext correctnessContext;
 			auto node = find_entry(i_path);
@@ -196,17 +209,17 @@ namespace reflective
 	{
 	}
 
-	void UnitTestingManager::add_correctness_test(StringView i_path, CorrectnessTestFunction i_function)
+	void UnitTestingManager::add_correctness_test(const char * i_path, CorrectnessTestFunction i_function)
 	{
 		m_impl->add_correctness_test(i_path, i_function);
 	}
 
-	void UnitTestingManager::add_performance_test(StringView i_path, PerformanceTestFunction i_function, StringView i_version_label)
+	void UnitTestingManager::add_performance_test(const char * i_path, PerformanceTestFunction i_function, const char * i_version_label)
 	{
 		m_impl->add_performance_test(i_path, i_function, i_version_label);
 	}
 
-	void UnitTestingManager::run(StringView i_path)
+	void UnitTestingManager::run(const char * i_path)
 	{
 		m_impl->run(i_path);
 	}

@@ -1,5 +1,5 @@
 
-//          Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,7 @@
 	#define REFLECTIVE_DENSE_LIST_DEBUG		1
 #endif
 
-namespace reflective
+namespace density
 {
 	namespace details
 	{
@@ -25,8 +25,8 @@ namespace reflective
 			return i_first > i_second ? i_first : i_second;
 		}
 
-		template < typename ALLOCATOR, typename ELEMENT_TYPE >
-			class DenseListBase : private ALLOCATOR
+		template < typename ALLOCATOR, typename RUNTIME_TYPE >
+			class DenseListImpl : private ALLOCATOR
 		{
 		public:
 
@@ -54,18 +54,17 @@ namespace reflective
 				m_types = nullptr;
 			}
 
-		protected:
-
-			DenseListBase() REFLECTIVE_NOEXCEPT
+		
+			DenseListImpl() REFLECTIVE_NOEXCEPT
 				: m_types(nullptr)
-			{ }
+					{ }
 
-			DenseListBase(DenseListBase && i_source) REFLECTIVE_NOEXCEPT
+			DenseListImpl(DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
 			{
 				move_impl(std::move(i_source));
 			}
 
-			DenseListBase & operator = (DenseListBase && i_source) REFLECTIVE_NOEXCEPT
+			DenseListImpl & operator = (DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
 			{
 				assert(this != &i_source); // self assignment not supported
 				destroy_impl();
@@ -73,12 +72,12 @@ namespace reflective
 				return *this;
 			}
 
-			DenseListBase(const DenseListBase & i_source)
+			DenseListImpl(const DenseListImpl & i_source)
 			{
 				copy_impl(i_source);
 			}
 
-			DenseListBase & operator = (const DenseListBase & i_source)
+			DenseListImpl & operator = (const DenseListImpl & i_source)
 			{
 				assert(this != &i_source); // self assignment not supported
 				destroy_impl();
@@ -86,17 +85,17 @@ namespace reflective
 				return *this;
 			}
 
-			~DenseListBase() REFLECTIVE_NOEXCEPT
+			~DenseListImpl() REFLECTIVE_NOEXCEPT
 			{
 				destroy_impl();
 			}
 
-			struct IteratorBase
+			struct IteratorBaseImpl
 			{
-				IteratorBase() REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl() REFLECTIVE_NOEXCEPT
 					: m_unaligned_curr_element(nullptr), m_curr_type(nullptr) { }
 
-				IteratorBase(void * i_curr_element, const ELEMENT_TYPE * i_curr_type) REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl(void * i_curr_element, const RUNTIME_TYPE * i_curr_type) REFLECTIVE_NOEXCEPT
 					: m_unaligned_curr_element(i_curr_element), m_curr_type(i_curr_type)
 				{
 				}
@@ -115,12 +114,12 @@ namespace reflective
 					return address_upper_align(m_unaligned_curr_element, curr_element_alignment);
 				}
 
-				bool operator == (const IteratorBase & i_other) const REFLECTIVE_NOEXCEPT
+				bool operator == (const IteratorBaseImpl & i_other) const REFLECTIVE_NOEXCEPT
 				{
 					return m_curr_type == i_other.m_curr_type;
 				}
 
-				bool operator != (const IteratorBase & i_other) const REFLECTIVE_NOEXCEPT
+				bool operator != (const IteratorBaseImpl & i_other) const REFLECTIVE_NOEXCEPT
 				{
 					return m_curr_type != i_other.m_curr_type;
 				}
@@ -131,12 +130,12 @@ namespace reflective
 				}
 
 				void * m_unaligned_curr_element;
-				const ELEMENT_TYPE * m_curr_type;
+				const RUNTIME_TYPE * m_curr_type;
 
-			}; // class IteratorBase
+			}; // class IteratorBaseImpl
 
-			IteratorBase begin() const REFLECTIVE_NOEXCEPT { return IteratorBase(get_elements(), m_types); }
-			IteratorBase end() const REFLECTIVE_NOEXCEPT { return IteratorBase(nullptr, m_types + size()); }
+			IteratorBaseImpl begin() const REFLECTIVE_NOEXCEPT { return IteratorBaseImpl(get_elements(), m_types); }
+			IteratorBaseImpl end() const REFLECTIVE_NOEXCEPT { return IteratorBaseImpl(nullptr, m_types + size()); }
 
 			void * get_elements() const // this function gives a non-const element from a const container, but this avoids duplicating the function
 			{
@@ -175,7 +174,7 @@ namespace reflective
 					void * const memory_block = aligned_alloc(i_allocator, i_buffer_size + sizeof(Header), i_buffer_alignment, sizeof(Header));
 					Header * header = static_cast<Header*>(memory_block);
 					header->m_count = i_count;
-					m_end_of_types = m_element_infos = reinterpret_cast<ELEMENT_TYPE*>(header + 1);
+					m_end_of_types = m_element_infos = reinterpret_cast<RUNTIME_TYPE*>(header + 1);
 					m_end_of_elements = m_elements = m_element_infos + i_count;
 
 #if REFLECTIVE_DENSE_LIST_DEBUG
@@ -185,9 +184,9 @@ namespace reflective
 
 				/* Adds a (type-info, element) pair to the list. The new element is copy-constructed.
 				Note: ELEMENT is not the comlete type of the element, as the
-				list allows polymorphic types. The use of the ELEMENT_TYPE avoid slicing or partial constructions. */
-				void * add_by_copy(const ELEMENT_TYPE & i_element_info, const void * i_source)
-					// REFLECTIVE_NOEXCEPT_V(std::declval<ELEMENT_TYPE>().copy_construct(nullptr, std::declval<ELEMENT>() ))
+				list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
+				void * add_by_copy(const RUNTIME_TYPE & i_element_info, const void * i_source)
+					// REFLECTIVE_NOEXCEPT_V(std::declval<RUNTIME_TYPE>().copy_construct(nullptr, std::declval<ELEMENT>() ))
 				{
 					// copy-construct the element first (this may throw)
 					void * new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
@@ -202,15 +201,15 @@ namespace reflective
 #if REFLECTIVE_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) ELEMENT_TYPE(i_element_info));
-					new(m_end_of_types++) ELEMENT_TYPE(i_element_info);
+					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
+					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
 					return new_element;
 				}
 
 				/* Adds a (element-info, element) pair to the list. The new element is move-constructed.
 				Note: ELEMENT is not the complete type of the element, as the
-				list allows polymorphic types. The use of the ELEMENT_TYPE avoid slicing or partial constructions. */
-				void * add_by_move(const ELEMENT_TYPE & i_element_info, void * i_source)
+				list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
+				void * add_by_move(const RUNTIME_TYPE & i_element_info, void * i_source)
 				{
 					// move-construct the element first (this may throw)
 					void * new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
@@ -225,26 +224,26 @@ namespace reflective
 #if REFLECTIVE_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) ELEMENT_TYPE(i_element_info));
-					new(m_end_of_types++) ELEMENT_TYPE(i_element_info);
+					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
+					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
 					return new_element;
 				}
 
-				void add_only_element_info(const ELEMENT_TYPE & i_element_info) REFLECTIVE_NOEXCEPT
+				void add_only_element_info(const RUNTIME_TYPE & i_element_info) REFLECTIVE_NOEXCEPT
 				{
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) ELEMENT_TYPE(i_element_info));
+					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
 #if REFLECTIVE_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
-					new(m_end_of_types++) ELEMENT_TYPE(i_element_info);
+					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
 				}
 
-				ELEMENT_TYPE * end_of_types()
+				RUNTIME_TYPE * end_of_types()
 				{
 					return m_end_of_types;
 				}
 
-				ELEMENT_TYPE * commit()
+				RUNTIME_TYPE * commit()
 				{
 					return m_element_infos;
 				}
@@ -254,12 +253,12 @@ namespace reflective
 					if (m_element_infos != nullptr)
 					{
 						void * element = m_elements;
-						for (ELEMENT_TYPE * element_info = m_element_infos; element_info < m_end_of_types; element_info++)
+						for (RUNTIME_TYPE * element_info = m_element_infos; element_info < m_end_of_types; element_info++)
 						{
 							element = address_upper_align(element, element_info->alignment());
 							element_info->destroy(element);
 							element = address_add(element, element_info->size());
-							element_info->~ELEMENT_TYPE();
+							element_info->~RUNTIME_TYPE();
 						}
 						aligned_free(i_allocator, reinterpret_cast<Header*>(m_element_infos) - 1, i_buffer_size, i_buffer_alignment);
 					}
@@ -272,9 +271,9 @@ namespace reflective
 				}
 #endif
 
-				ELEMENT_TYPE * m_element_infos;
+				RUNTIME_TYPE * m_element_infos;
 				void * m_elements;
-				ELEMENT_TYPE * m_end_of_types;
+				RUNTIME_TYPE * m_end_of_types;
 				void * m_end_of_elements;
 #if REFLECTIVE_DENSE_LIST_DEBUG
 				void * m_dbg_end_of_buffer;
@@ -285,15 +284,15 @@ namespace reflective
 			{
 				if (m_types != nullptr)
 				{
-					size_t dense_alignment = std::alignment_of<ELEMENT_TYPE>::value;
+					size_t dense_alignment = std::alignment_of<RUNTIME_TYPE>::value;
 					const auto end_it = end();
-					const size_t dense_size = get_size_not_empty() * sizeof(ELEMENT_TYPE);
+					const size_t dense_size = get_size_not_empty() * sizeof(RUNTIME_TYPE);
 					for (auto it = begin(); it != end_it; ++it)
 					{
 						auto curr_type = it.m_curr_type;
 						dense_alignment = details::size_max(dense_alignment, curr_type->alignment());
 						curr_type->destroy(it.curr_element());
-						curr_type->ELEMENT_TYPE::~ELEMENT_TYPE();
+						curr_type->RUNTIME_TYPE::~RUNTIME_TYPE();
 					}
 
 					Header * const header = reinterpret_cast<Header*>(m_types) - 1;
@@ -301,7 +300,7 @@ namespace reflective
 				}
 			}
 
-			void copy_impl(const DenseListBase & i_source)
+			void copy_impl(const DenseListImpl & i_source)
 			{
 				if (i_source.m_types != nullptr)
 				{
@@ -332,19 +331,19 @@ namespace reflective
 				}
 			}
 
-			void move_impl(DenseListBase && i_source) REFLECTIVE_NOEXCEPT
+			void move_impl(DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
 			{
 				m_types = i_source.m_types;
 				i_source.m_types = nullptr;
 			}
 
 			template <typename... TYPES>
-			static void make_impl(DenseListBase & o_dest_list, TYPES &&... i_args)
+			static void make_impl(DenseListImpl & o_dest_list, TYPES &&... i_args)
 			{
 				assert(o_dest_list.m_types == nullptr); // precondition
 
-				size_t const buffer_size = RecursiveSize<RecursiveHelper<TYPES...>::s_element_count * sizeof(ELEMENT_TYPE), TYPES...>::s_buffer_size;
-				size_t const buffer_alignment = details::size_max(RecursiveHelper<TYPES...>::s_element_alignment, std::alignment_of<ELEMENT_TYPE>::value);
+				size_t const buffer_size = RecursiveSize<RecursiveHelper<TYPES...>::s_element_count * sizeof(RUNTIME_TYPE), TYPES...>::s_buffer_size;
+				size_t const buffer_alignment = details::size_max(RecursiveHelper<TYPES...>::s_element_alignment, std::alignment_of<RUNTIME_TYPE>::value);
 				size_t const element_count = RecursiveHelper<TYPES...>::s_element_count;
 
 				bool is_empty = element_count == 0;
@@ -376,8 +375,8 @@ namespace reflective
 
 			void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const REFLECTIVE_NOEXCEPT
 			{
-				size_t buffer_size = size() * sizeof(ELEMENT_TYPE);
-				size_t buffer_alignment = std::alignment_of<ELEMENT_TYPE>::value;
+				size_t buffer_size = size() * sizeof(RUNTIME_TYPE);
+				size_t buffer_alignment = std::alignment_of<RUNTIME_TYPE>::value;
 				auto const end_it = end();
 				for (auto it = begin(); it != end_it; ++it)
 				{
@@ -395,12 +394,12 @@ namespace reflective
 			}
 
 			void compute_buffer_size_and_alignment_for_insert(size_t * o_buffer_size, size_t * o_buffer_alignment,
-				const ELEMENT_TYPE * i_insert_at, size_t i_new_element_count, const ELEMENT_TYPE & i_new_type) const REFLECTIVE_NOEXCEPT
+				const RUNTIME_TYPE * i_insert_at, size_t i_new_element_count, const RUNTIME_TYPE & i_new_type) const REFLECTIVE_NOEXCEPT
 			{
 				assert(i_new_type.size() > 0 && is_power_of_2(i_new_type.alignment())); // the size must be non-zero, the alignment must be a non-zero power of 2
 
-				size_t buffer_size = (size() + i_new_element_count) * sizeof(ELEMENT_TYPE);
-				size_t buffer_alignment = details::size_max(std::alignment_of<ELEMENT_TYPE>::value, i_new_type.alignment());
+				size_t buffer_size = (size() + i_new_element_count) * sizeof(RUNTIME_TYPE);
+				size_t buffer_alignment = details::size_max(std::alignment_of<RUNTIME_TYPE>::value, i_new_type.alignment());
 				auto const end_it = end();
 				for (auto it = begin(); ; ++it)
 				{
@@ -429,19 +428,19 @@ namespace reflective
 			}
 
 			template <typename CONSTRUCTOR>
-			IteratorBase insert_impl(const ELEMENT_TYPE * i_position,
-				const ELEMENT_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+			IteratorBaseImpl insert_impl(const RUNTIME_TYPE * i_position,
+				const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
 			{
 				return insert_n_impl(i_position, 1, i_source_type, std::forward<CONSTRUCTOR>(i_constructor));
 			}
 
 			template <typename CONSTRUCTOR>
-			IteratorBase insert_n_impl(const ELEMENT_TYPE * i_position, size_t i_count_to_insert,
-				const ELEMENT_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+			IteratorBaseImpl insert_n_impl(const RUNTIME_TYPE * i_position, size_t i_count_to_insert,
+				const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
 			{
 				assert(i_count_to_insert > 0);
 
-				const ELEMENT_TYPE * return_element_info = nullptr;
+				const RUNTIME_TYPE * return_element_info = nullptr;
 				void * return_element = nullptr;
 
 				size_t buffer_size = 0, buffer_alignment = 0;
@@ -488,10 +487,10 @@ namespace reflective
 					throw;
 				}
 
-				return IteratorBase(return_element, return_element_info);
+				return IteratorBaseImpl(return_element, return_element_info);
 			}
 
-			IteratorBase erase_impl(const ELEMENT_TYPE * i_from, const ELEMENT_TYPE * i_to)
+			IteratorBaseImpl erase_impl(const RUNTIME_TYPE * i_from, const RUNTIME_TYPE * i_to)
 			{
 				// test preconditions
 				const auto prev_size = get_size_not_empty();
@@ -514,7 +513,7 @@ namespace reflective
 					size_t buffer_size = 0, buffer_alignment = 0;
 					compute_buffer_size_and_alignment_for_erase(&buffer_size, &buffer_alignment, i_from, i_to);
 
-					const ELEMENT_TYPE * return_element_info = nullptr;
+					const RUNTIME_TYPE * return_element_info = nullptr;
 					void * return_element = nullptr;
 
 					ListBuilder builder;
@@ -572,18 +571,18 @@ namespace reflective
 						builder.rollback(*static_cast<ALLOCATOR*>(this), buffer_size, buffer_alignment);
 						throw;
 					}
-					return IteratorBase(return_element, return_element_info);
+					return IteratorBaseImpl(return_element, return_element_info);
 				}
 			}
 
 			void compute_buffer_size_and_alignment_for_erase(size_t * o_buffer_size, size_t * o_buffer_alignment,
-				const ELEMENT_TYPE * i_remove_from, const ELEMENT_TYPE * i_remove_to) const REFLECTIVE_NOEXCEPT
+				const RUNTIME_TYPE * i_remove_from, const RUNTIME_TYPE * i_remove_to) const REFLECTIVE_NOEXCEPT
 			{
 				assert(i_remove_to >= i_remove_from);
 				const size_t size_to_remove = i_remove_to - i_remove_from;
 				assert(size() >= size_to_remove);
-				size_t buffer_size = (size() - size_to_remove) * sizeof(ELEMENT_TYPE);
-				size_t buffer_alignment = std::alignment_of<ELEMENT_TYPE>::value;
+				size_t buffer_size = (size() - size_to_remove) * sizeof(RUNTIME_TYPE);
+				size_t buffer_alignment = std::alignment_of<RUNTIME_TYPE>::value;
 
 				bool in_range = false;
 				auto const end_it = end();
@@ -651,20 +650,20 @@ namespace reflective
 					i_builder.dbg_check_range(new_element, i_builder.m_end_of_elements);
 #endif
 
-					i_builder.add_only_element_info(ELEMENT_TYPE::template make<FIRST_TYPE>());
+					i_builder.add_only_element_info(RUNTIME_TYPE::template make<FIRST_TYPE>());
 
 					RecursiveHelper<OTHER_TYPES...>::construct(i_builder, std::forward<OTHER_TYPES>(i_other_arguments)...);
 				}
 			};
 
-			ELEMENT_TYPE * m_types;
+			RUNTIME_TYPE * m_types;
 		};
 
 	} // namespace details
 
 
 
-} // namespace reflective
+} // namespace density
 
 #include "dense_list_typed.h"
 #include "dense_list_void.h"

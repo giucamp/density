@@ -1,5 +1,5 @@
 
-//          Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -9,7 +9,9 @@
 #include <functional>
 #include <memory>
 
-namespace reflective
+#define DENSITY_TEST_ASSERT(i_bool_expr)		if(!(i_bool_expr)) {__debugbreak();}
+
+namespace density
 {
 	namespace details
 	{
@@ -116,6 +118,21 @@ namespace reflective
 		~NoLeakScope();
 		NoLeakScope(const NoLeakScope &) = delete;
 		NoLeakScope & operator = (const NoLeakScope &) = delete;
+	};
+
+	class TestString : public std::basic_string<char, std::char_traits<char>, TestAllocator<char> >
+	{
+	public:
+		TestString() = default;
+		TestString(const char * i_str) : std::basic_string<char, std::char_traits<char>, TestAllocator<char> >(i_str) {}
+
+		TestString(const TestString&) = default;
+		TestString & operator = (const TestString&) = default;
+
+		TestString(TestString&&) noexcept = default;
+		TestString & operator = (TestString&&) noexcept = default;
+
+		virtual ~TestString() {}
 	};
 	
 	/** Runs an exception safeness test, calling the provided function many times.
@@ -295,4 +312,4 @@ namespace reflective
 		}
 	};
 
-} // namespace reflective
+} // namespace density

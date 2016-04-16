@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\density\correctness_test_context.h" />
+    <ClInclude Include="..\density\dense_fixed_queue.h" />
+    <ClInclude Include="..\density\dense_list.h" />
+    <ClInclude Include="..\density\dense_list_typed.h" />
+    <ClInclude Include="..\density\dense_list_void.h" />
+    <ClInclude Include="..\density\density_common.h" />
+    <ClInclude Include="..\density\element_type.h" />
+    <ClInclude Include="..\density\testing_utils.h" />
+    <ClInclude Include="..\density\uint_test_manager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="detail">
+      <UniqueIdentifier>{69cd13f2-5223-44de-89a9-b1c409fc7d9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{2b9f7620-4805-4856-a214-ab37d5ce0b53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="samples">
+      <UniqueIdentifier>{83e1f83e-b771-41db-b257-9bde74af65e6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\density\detail\testing_utils.cpp">
+      <Filter>detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\detail\unit_test_manager.cpp">
+      <Filter>detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\dense_list_test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\dense_fixed_queue_test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\dense_list_benchmark.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\samples\main.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
