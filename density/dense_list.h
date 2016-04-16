@@ -6,21 +6,21 @@
 
 #pragma once
 #include <memory>
-#include "element_type.h"
-//#include <algorithm> // std::max<size_t> would be needed, but details::size_max is defined to avoid this dependency
+#include "runtime_type.h"
+//#include <algorithm> // avoid including <algorithm> just to use std::max<size_t>, size_max is defined instead
 
 #ifdef NDEBUG
-	#define REFLECTIVE_DENSE_LIST_DEBUG		0
+	#define DENSITY_DENSE_LIST_DEBUG		0
 #else
-	#define REFLECTIVE_DENSE_LIST_DEBUG		1
+	#define DENSITY_DENSE_LIST_DEBUG		1
 #endif
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
-		// size_max: avoid incuding <algorithm> just to use std::max<size_t>
-		REFLECTIVE_CONSTEXPR inline size_t size_max(size_t i_first, size_t i_second) REFLECTIVE_NOEXCEPT
+		// size_max: avoid including <algorithm> just to use std::max<size_t>
+		DENSITY_CONSTEXPR inline size_t size_max(size_t i_first, size_t i_second) DENSITY_NOEXCEPT
 		{
 			return i_first > i_second ? i_first : i_second;
 		}
@@ -30,7 +30,7 @@ namespace density
 		{
 		public:
 
-			size_t size() const REFLECTIVE_NOEXCEPT
+			size_t size() const DENSITY_NOEXCEPT
 			{
 				if (m_types != nullptr)
 				{
@@ -43,28 +43,28 @@ namespace density
 				}
 			}
 
-			bool empty() const REFLECTIVE_NOEXCEPT
+			bool empty() const DENSITY_NOEXCEPT
 			{
 				return m_types == nullptr;
 			}
 
-			void clear() REFLECTIVE_NOEXCEPT
+			void clear() DENSITY_NOEXCEPT
 			{
 				destroy_impl();
 				m_types = nullptr;
 			}
 
 		
-			DenseListImpl() REFLECTIVE_NOEXCEPT
+			DenseListImpl() DENSITY_NOEXCEPT
 				: m_types(nullptr)
 					{ }
 
-			DenseListImpl(DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
+			DenseListImpl(DenseListImpl && i_source) DENSITY_NOEXCEPT
 			{
 				move_impl(std::move(i_source));
 			}
 
-			DenseListImpl & operator = (DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
+			DenseListImpl & operator = (DenseListImpl && i_source) DENSITY_NOEXCEPT
 			{
 				assert(this != &i_source); // self assignment not supported
 				destroy_impl();
@@ -85,22 +85,22 @@ namespace density
 				return *this;
 			}
 
-			~DenseListImpl() REFLECTIVE_NOEXCEPT
+			~DenseListImpl() DENSITY_NOEXCEPT
 			{
 				destroy_impl();
 			}
 
 			struct IteratorBaseImpl
 			{
-				IteratorBaseImpl() REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl() DENSITY_NOEXCEPT
 					: m_unaligned_curr_element(nullptr), m_curr_type(nullptr) { }
 
-				IteratorBaseImpl(void * i_curr_element, const RUNTIME_TYPE * i_curr_type) REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl(void * i_curr_element, const RUNTIME_TYPE * i_curr_type) DENSITY_NOEXCEPT
 					: m_unaligned_curr_element(i_curr_element), m_curr_type(i_curr_type)
 				{
 				}
 
-				void move_next() REFLECTIVE_NOEXCEPT
+				void move_next() DENSITY_NOEXCEPT
 				{
 					auto const prev_element_ptr = curr_element();
 					auto const curr_element_size = m_curr_type->size();
@@ -108,23 +108,23 @@ namespace density
 					m_unaligned_curr_element = address_add(prev_element_ptr, curr_element_size);
 				}
 
-				void * curr_element() const REFLECTIVE_NOEXCEPT
+				void * curr_element() const DENSITY_NOEXCEPT
 				{
 					auto const curr_element_alignment = m_curr_type->alignment();
 					return address_upper_align(m_unaligned_curr_element, curr_element_alignment);
 				}
 
-				bool operator == (const IteratorBaseImpl & i_other) const REFLECTIVE_NOEXCEPT
+				bool operator == (const IteratorBaseImpl & i_other) const DENSITY_NOEXCEPT
 				{
 					return m_curr_type == i_other.m_curr_type;
 				}
 
-				bool operator != (const IteratorBaseImpl & i_other) const REFLECTIVE_NOEXCEPT
+				bool operator != (const IteratorBaseImpl & i_other) const DENSITY_NOEXCEPT
 				{
 					return m_curr_type != i_other.m_curr_type;
 				}
 
-				void operator ++ () REFLECTIVE_NOEXCEPT
+				void operator ++ () DENSITY_NOEXCEPT
 				{
 					move_next();
 				}
@@ -134,15 +134,15 @@ namespace density
 
 			}; // class IteratorBaseImpl
 
-			IteratorBaseImpl begin() const REFLECTIVE_NOEXCEPT { return IteratorBaseImpl(get_elements(), m_types); }
-			IteratorBaseImpl end() const REFLECTIVE_NOEXCEPT { return IteratorBaseImpl(nullptr, m_types + size()); }
+			IteratorBaseImpl begin() const DENSITY_NOEXCEPT { return IteratorBaseImpl(get_elements(), m_types); }
+			IteratorBaseImpl end() const DENSITY_NOEXCEPT { return IteratorBaseImpl(nullptr, m_types + size()); }
 
 			void * get_elements() const // this function gives a non-const element from a const container, but this avoids duplicating the function
 			{
 				return m_types + size();
 			}
 
-			size_t get_size_not_empty() const REFLECTIVE_NOEXCEPT
+			size_t get_size_not_empty() const DENSITY_NOEXCEPT
 			{
 				if (m_types != nullptr)
 				{
@@ -161,7 +161,7 @@ namespace density
 
 			struct ListBuilder
 			{
-				ListBuilder() REFLECTIVE_NOEXCEPT
+				ListBuilder() DENSITY_NOEXCEPT
 					: m_element_infos(nullptr)
 				{
 				}
@@ -177,7 +177,7 @@ namespace density
 					m_end_of_types = m_element_infos = reinterpret_cast<RUNTIME_TYPE*>(header + 1);
 					m_end_of_elements = m_elements = m_element_infos + i_count;
 
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					m_dbg_end_of_buffer = address_add(m_element_infos, i_buffer_size);
 #endif
 				}
@@ -186,11 +186,11 @@ namespace density
 				Note: ELEMENT is not the comlete type of the element, as the
 				list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
 				void * add_by_copy(const RUNTIME_TYPE & i_element_info, const void * i_source)
-					// REFLECTIVE_NOEXCEPT_V(std::declval<RUNTIME_TYPE>().copy_construct(nullptr, std::declval<ELEMENT>() ))
+					// DENSITY_NOEXCEPT_V(std::declval<RUNTIME_TYPE>().copy_construct(nullptr, std::declval<ELEMENT>() ))
 				{
 					// copy-construct the element first (this may throw)
 					void * new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(new_element, address_add(new_element, i_element_info.size()));
 #endif
 					i_element_info.copy_construct(new_element, i_source);
@@ -198,10 +198,10 @@ namespace density
 					m_end_of_elements = address_add(new_element, i_element_info.size());
 
 					// construct the typeinfo - if this would throw, the element just constructed would not be destroyed. A static_assert guarantees the noexcept-ness.
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
+					DENSITY_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
 					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
 					return new_element;
 				}
@@ -213,7 +213,7 @@ namespace density
 				{
 					// move-construct the element first (this may throw)
 					void * new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(new_element, address_add(new_element, i_element_info.size()));
 #endif
 					i_element_info.move_construct(new_element, i_source);
@@ -221,18 +221,18 @@ namespace density
 					m_end_of_elements = address_add(new_element, i_element_info.size());
 
 					// construct the typeinfo - if this would throw, the element just constructed would not be destroyed. A static_assert guarantees the noexcept-ness.
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
+					DENSITY_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
 					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
 					return new_element;
 				}
 
-				void add_only_element_info(const RUNTIME_TYPE & i_element_info) REFLECTIVE_NOEXCEPT
+				void add_only_element_info(const RUNTIME_TYPE & i_element_info) DENSITY_NOEXCEPT
 				{
-					REFLECTIVE_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
-#if REFLECTIVE_DENSE_LIST_DEBUG
+					DENSITY_ASSERT_NOEXCEPT(new(m_end_of_types++) RUNTIME_TYPE(i_element_info));
+#if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(m_end_of_types, m_end_of_types + 1);
 #endif
 					new(m_end_of_types++) RUNTIME_TYPE(i_element_info);
@@ -248,7 +248,7 @@ namespace density
 					return m_element_infos;
 				}
 
-				void rollback(ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) REFLECTIVE_NOEXCEPT
+				void rollback(ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) DENSITY_NOEXCEPT
 				{
 					if (m_element_infos != nullptr)
 					{
@@ -264,8 +264,8 @@ namespace density
 					}
 				}
 
-#if REFLECTIVE_DENSE_LIST_DEBUG
-				void dbg_check_range(const void * i_start, const void * i_end) REFLECTIVE_NOEXCEPT
+#if DENSITY_DENSE_LIST_DEBUG
+				void dbg_check_range(const void * i_start, const void * i_end) DENSITY_NOEXCEPT
 				{
 					assert(i_start >= m_element_infos && i_end <= m_dbg_end_of_buffer);
 				}
@@ -275,12 +275,12 @@ namespace density
 				void * m_elements;
 				RUNTIME_TYPE * m_end_of_types;
 				void * m_end_of_elements;
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 				void * m_dbg_end_of_buffer;
 #endif
 			};
 
-			void destroy_impl() REFLECTIVE_NOEXCEPT
+			void destroy_impl() DENSITY_NOEXCEPT
 			{
 				if (m_types != nullptr)
 				{
@@ -290,7 +290,7 @@ namespace density
 					for (auto it = begin(); it != end_it; ++it)
 					{
 						auto curr_type = it.m_curr_type;
-						dense_alignment = details::size_max(dense_alignment, curr_type->alignment());
+						dense_alignment = detail::size_max(dense_alignment, curr_type->alignment());
 						curr_type->destroy(it.curr_element());
 						curr_type->RUNTIME_TYPE::~RUNTIME_TYPE();
 					}
@@ -331,7 +331,7 @@ namespace density
 				}
 			}
 
-			void move_impl(DenseListImpl && i_source) REFLECTIVE_NOEXCEPT
+			void move_impl(DenseListImpl && i_source) DENSITY_NOEXCEPT
 			{
 				m_types = i_source.m_types;
 				i_source.m_types = nullptr;
@@ -343,7 +343,7 @@ namespace density
 				assert(o_dest_list.m_types == nullptr); // precondition
 
 				size_t const buffer_size = RecursiveSize<RecursiveHelper<TYPES...>::s_element_count * sizeof(RUNTIME_TYPE), TYPES...>::s_buffer_size;
-				size_t const buffer_alignment = details::size_max(RecursiveHelper<TYPES...>::s_element_alignment, std::alignment_of<RUNTIME_TYPE>::value);
+				size_t const buffer_alignment = detail::size_max(RecursiveHelper<TYPES...>::s_element_alignment, std::alignment_of<RUNTIME_TYPE>::value);
 				size_t const element_count = RecursiveHelper<TYPES...>::s_element_count;
 
 				bool is_empty = element_count == 0;
@@ -373,7 +373,7 @@ namespace density
 #endif
 			}
 
-			void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const REFLECTIVE_NOEXCEPT
+			void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const DENSITY_NOEXCEPT
 			{
 				size_t buffer_size = size() * sizeof(RUNTIME_TYPE);
 				size_t buffer_alignment = std::alignment_of<RUNTIME_TYPE>::value;
@@ -386,7 +386,7 @@ namespace density
 					buffer_size = (buffer_size + (curr_alignment - 1)) & ~(curr_alignment - 1);
 					buffer_size += curr_size;
 
-					buffer_alignment = details::size_max(buffer_alignment, curr_alignment);
+					buffer_alignment = detail::size_max(buffer_alignment, curr_alignment);
 				}
 
 				*o_buffer_size = buffer_size;
@@ -394,12 +394,12 @@ namespace density
 			}
 
 			void compute_buffer_size_and_alignment_for_insert(size_t * o_buffer_size, size_t * o_buffer_alignment,
-				const RUNTIME_TYPE * i_insert_at, size_t i_new_element_count, const RUNTIME_TYPE & i_new_type) const REFLECTIVE_NOEXCEPT
+				const RUNTIME_TYPE * i_insert_at, size_t i_new_element_count, const RUNTIME_TYPE & i_new_type) const DENSITY_NOEXCEPT
 			{
 				assert(i_new_type.size() > 0 && is_power_of_2(i_new_type.alignment())); // the size must be non-zero, the alignment must be a non-zero power of 2
 
 				size_t buffer_size = (size() + i_new_element_count) * sizeof(RUNTIME_TYPE);
-				size_t buffer_alignment = details::size_max(std::alignment_of<RUNTIME_TYPE>::value, i_new_type.alignment());
+				size_t buffer_alignment = detail::size_max(std::alignment_of<RUNTIME_TYPE>::value, i_new_type.alignment());
 				auto const end_it = end();
 				for (auto it = begin(); ; ++it)
 				{
@@ -420,7 +420,7 @@ namespace density
 					assert(curr_size > 0 && is_power_of_2(curr_alignment)); // the size must be non-zero, the alignment must be a non-zero power of 2
 					buffer_size = (buffer_size + (curr_alignment - 1)) & ~(curr_alignment - 1);
 					buffer_size += curr_size;
-					buffer_alignment = details::size_max(buffer_alignment, curr_alignment);
+					buffer_alignment = detail::size_max(buffer_alignment, curr_alignment);
 				}
 
 				*o_buffer_size = buffer_size;
@@ -576,7 +576,7 @@ namespace density
 			}
 
 			void compute_buffer_size_and_alignment_for_erase(size_t * o_buffer_size, size_t * o_buffer_alignment,
-				const RUNTIME_TYPE * i_remove_from, const RUNTIME_TYPE * i_remove_to) const REFLECTIVE_NOEXCEPT
+				const RUNTIME_TYPE * i_remove_from, const RUNTIME_TYPE * i_remove_to) const DENSITY_NOEXCEPT
 			{
 				assert(i_remove_to >= i_remove_from);
 				const size_t size_to_remove = i_remove_to - i_remove_from;
@@ -604,7 +604,7 @@ namespace density
 						assert(curr_size > 0 && is_power_of_2(curr_alignment)); // the size must be non-zero, the alignment must be a non-zero power of 2
 						buffer_size = (buffer_size + (curr_alignment - 1)) & ~(curr_alignment - 1);
 						buffer_size += curr_size;
-						buffer_alignment = details::size_max(buffer_alignment, curr_alignment);
+						buffer_alignment = detail::size_max(buffer_alignment, curr_alignment);
 					}
 				}
 
@@ -641,12 +641,12 @@ namespace density
 					std::alignment_of<FIRST_TYPE>::value : RecursiveHelper<OTHER_TYPES...>::s_element_alignment;
 
 				inline static void construct(ListBuilder & i_builder, FIRST_TYPE && i_source, OTHER_TYPES && ... i_other_arguments)
-					// REFLECTIVE_NOEXCEPT_V( new (nullptr) FIRST_TYPE(std::forward<FIRST_TYPE>(std::declval<FIRST_TYPE>())) )
+					// DENSITY_NOEXCEPT_V( new (nullptr) FIRST_TYPE(std::forward<FIRST_TYPE>(std::declval<FIRST_TYPE>())) )
 				{
 					void * new_element = address_upper_align(i_builder.m_end_of_elements, std::alignment_of<FIRST_TYPE>::value);
 					new (new_element) FIRST_TYPE(std::forward<FIRST_TYPE>(i_source));
 					i_builder.m_end_of_elements = address_add(new_element, sizeof(FIRST_TYPE));
-#if REFLECTIVE_DENSE_LIST_DEBUG
+#if DENSITY_DENSE_LIST_DEBUG
 					i_builder.dbg_check_range(new_element, i_builder.m_end_of_elements);
 #endif
 
@@ -659,12 +659,10 @@ namespace density
 			RUNTIME_TYPE * m_types;
 		};
 
-	} // namespace details
-
-
+	} // namespace detail
 
 } // namespace density
 
-#include "dense_list_typed.h"
-#include "dense_list_void.h"
+#include "detail\dense_list_typed.h"
+#include "detail\dense_list_void.h"
 

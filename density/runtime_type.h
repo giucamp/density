@@ -60,7 +60,7 @@ namespace density
 		copy_and_move = nothrow_move_construtible | copy_only,
 	};
 
-	namespace details
+	namespace detail
 	{
 		// This class is used by the default type-infos to store the size and the alignment according to the secified SizeAlignmentMode
 		template <SizeAlignmentMode MODE>
@@ -73,19 +73,19 @@ namespace density
 			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
 			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
 
-			ElementType_SizeAlign(const ElementType_SizeAlign &) REFLECTIVE_NOEXCEPT = default;
+			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
 			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 					: m_size(i_source.m_size), m_alignment(i_source.m_alignment) { }			
 			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT = default;
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
 			#endif
 
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 				: m_size(i_size), m_alignment(i_alignment) {}
 			
-			size_t size() const REFLECTIVE_NOEXCEPT { return m_size; }
-			size_t alignment() const REFLECTIVE_NOEXCEPT { return m_alignment; }
+			size_t size() const DENSITY_NOEXCEPT { return m_size; }
+			size_t alignment() const DENSITY_NOEXCEPT { return m_alignment; }
 						
 		private:
 			const size_t m_size, m_alignment;
@@ -99,22 +99,22 @@ namespace density
 			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
 			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
 
-			ElementType_SizeAlign(const ElementType_SizeAlign &) REFLECTIVE_NOEXCEPT = default;
+			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
 			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 					: m_size(i_source.m_size), m_alignment(i_source.m_alignment) { }			
 			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT = default;
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
 			#endif
 			
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 				: m_size(i_size), m_alignment(i_alignment)
 			{
 				// check the correcteness of the narrowing conversion - a failure on this gives undefined behaviour
 				assert(m_size == i_size && m_alignment == i_alignment);
 			}
-			size_t size() const REFLECTIVE_NOEXCEPT { return m_size; }
-			size_t alignment() const REFLECTIVE_NOEXCEPT { return m_alignment; }
+			size_t size() const DENSITY_NOEXCEPT { return m_size; }
+			size_t alignment() const DENSITY_NOEXCEPT { return m_alignment; }
 
 		private:
 			//static_assert(std::numeric_limits<size_t>::radix == 2, "size_t is expected to be a binary number");
@@ -129,15 +129,15 @@ namespace density
 			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
 			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
 
-			ElementType_SizeAlign(const ElementType_SizeAlign &) REFLECTIVE_NOEXCEPT = default;
+			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
 			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
 					: m_size(i_source.m_size) { }			
 			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) REFLECTIVE_NOEXCEPT = default;
+				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
 			#endif
 
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 				: m_size(i_size)
 			{
 				// check the correcteness of the alignment - a failure on this gives undefined behaviour
@@ -145,8 +145,8 @@ namespace density
 				(void)i_alignment;
 			}
 
-			size_t size() const REFLECTIVE_NOEXCEPT { return m_size; }
-			size_t alignment() const REFLECTIVE_NOEXCEPT { return std::alignment_of<void*>::value; }
+			size_t size() const DENSITY_NOEXCEPT { return m_size; }
+			size_t alignment() const DENSITY_NOEXCEPT { return std::alignment_of<void*>::value; }
 
 		private:
 			const size_t m_size;
@@ -162,10 +162,10 @@ namespace density
 		public:
 			static_assert(std::is_nothrow_destructible<ELEMENT>::value, "the destructor must be nothrow");
 
-			ElementType_Destr(size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			ElementType_Destr(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 				: ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
 
-			void destroy(void * i_element) const REFLECTIVE_NOEXCEPT
+			void destroy(void * i_element) const DENSITY_NOEXCEPT
 			{
 				assert(i_element != nullptr);
 				static_cast<ELEMENT*>(i_element)->~ELEMENT();
@@ -178,10 +178,10 @@ namespace density
 		public:
 			static_assert(std::is_same<ELEMENT, void>::value || std::is_nothrow_destructible<ELEMENT>::value, "the destructor must be nothrow");
 
-			ElementType_Destr(size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			ElementType_Destr(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 				: ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
 
-			void destroy(void * i_element) const REFLECTIVE_NOEXCEPT
+			void destroy(void * i_element) const DENSITY_NOEXCEPT
 			{
 				assert(i_element != nullptr);
 				static_cast<ELEMENT*>(i_element)->~ELEMENT();
@@ -236,14 +236,14 @@ namespace density
 		template <typename TYPE > struct GetAutoCopyMoveCap<TYPE, true, true>
 			{ static const ElementTypeCaps value = ElementTypeCaps::copy_and_move; };
 
-	} // namespace details
+	} // namespace detail
 
 
-	template <typename ELEMENT, ElementTypeCaps COPY_MOVE = details::GetAutoCopyMoveCap<ELEMENT>::value, SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
+	template <typename ELEMENT, ElementTypeCaps COPY_MOVE = detail::GetAutoCopyMoveCap<ELEMENT>::value, SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
 		class RuntimeType;
 	
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+		class RuntimeType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -255,18 +255,18 @@ namespace density
 		RuntimeType & operator = (const RuntimeType &) = delete;
 		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static RuntimeType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() DENSITY_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
@@ -278,7 +278,7 @@ namespace density
 			(*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
 		}
 
-		void move_construct(void * i_destination, void * i_source_element) const REFLECTIVE_NOEXCEPT
+		void move_construct(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			(*m_function)(Operation::move, i_destination, i_source_element);
@@ -290,8 +290,8 @@ namespace density
  
 		using FunctionPtr = void(*)(Operation i_operation, void * i_first, void * i_second );
 
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
-			: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
+			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
 			static void function_impl(Operation i_operation, void * i_first, void * i_second)
@@ -299,11 +299,11 @@ namespace density
 			switch (i_operation )
 			{
 				case Operation::copy:
-					details::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+					detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
 					break;
 
 				case Operation::move:
-					details::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+					detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
 					break;
 			}
 		}
@@ -313,7 +313,7 @@ namespace density
 	};
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::copy_only, SIZE_ALIGNMENT_MODE> : public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+		class RuntimeType<ELEMENT, ElementTypeCaps::copy_only, SIZE_ALIGNMENT_MODE> : public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -325,18 +325,18 @@ namespace density
 		RuntimeType & operator = (const RuntimeType &) = delete;
 		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static RuntimeType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() DENSITY_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
@@ -354,13 +354,13 @@ namespace density
  
 		using FunctionPtr = void(*)(void * i_first, void * i_second );
 
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
-			: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
+			: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
 			static void function_impl(void * i_first, void * i_second)
 		{
-			details::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+			detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
 		}
 
 	private:
@@ -369,7 +369,7 @@ namespace density
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
 		class RuntimeType<ELEMENT, ElementTypeCaps::nothrow_move_construtible, SIZE_ALIGNMENT_MODE> 
-			: public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+			: public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -381,24 +381,24 @@ namespace density
 		RuntimeType & operator = (const RuntimeType &) = delete;
 		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
 					{ }			
 		#else
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static RuntimeType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() DENSITY_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
-		void move_construct(void * i_destination, void * i_source_element) const REFLECTIVE_NOEXCEPT
+		void move_construct(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			(*m_function)(i_destination, i_source_element);
@@ -408,13 +408,13 @@ namespace density
 
 		using FunctionPtr = void(*)(void * i_first, void * i_second );
 
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) REFLECTIVE_NOEXCEPT
-			: details::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
+		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
+			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
 			static void function_impl(void * i_first, void * i_second)
 		{
-			details::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+			detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
 		}
 
 	private:
@@ -423,7 +423,7 @@ namespace density
 
 	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
 		class RuntimeType<ELEMENT, ElementTypeCaps::none, SIZE_ALIGNMENT_MODE>
-			: public details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+			: public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
 	{
 	public:
 
@@ -435,17 +435,17 @@ namespace density
 		RuntimeType & operator = (const RuntimeType &) = delete;
 		RuntimeType & operator = (RuntimeType &&) = delete;
 
-		RuntimeType(const RuntimeType &) REFLECTIVE_NOEXCEPT = default;
+		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)) { }
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
+				: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)) { }
 		#else
-			RuntimeType(RuntimeType && i_source) REFLECTIVE_NOEXCEPT = default;
+			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
 		#endif
 					
 		template <typename COMPLETE_TYPE>
-			static RuntimeType make() REFLECTIVE_NOEXCEPT
+			static RuntimeType make() DENSITY_NOEXCEPT
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value );
@@ -453,7 +453,7 @@ namespace density
 
 	private:
 
-		RuntimeType(size_t i_size, size_t i_alignment ) REFLECTIVE_NOEXCEPT
-			: details::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
+		RuntimeType(size_t i_size, size_t i_alignment ) DENSITY_NOEXCEPT
+			: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
 	};
 }

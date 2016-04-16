@@ -12,7 +12,7 @@
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
 		template <typename ... UINT_TO_TYPE >
 			class DenseFixedQueueTest
@@ -177,30 +177,30 @@ namespace density
 			void dense_fixed_queue_test(UINT_TO_TYPE && ... i_uint_to_type)
 		{
 			NoLeakScope no_leak_scope;
-			details::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1024 * 16 + 1, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
-			details::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1024 * 16, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
-			details::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(16, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
-			details::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
-			details::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(0, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
+			detail::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1024 * 16 + 1, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
+			detail::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1024 * 16, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
+			detail::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(16, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
+			detail::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(1, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
+			detail::DenseFixedQueueTest<UINT_TO_TYPE...>::basic_test(0, std::forward<UINT_TO_TYPE>(i_uint_to_type)...);
 		}
 
-	} // namespace details
+	} // namespace detail
 
 	void dense_fixed_queue_test()
 	{
-		details::dense_fixed_queue_test(
+		detail::dense_fixed_queue_test(
 			[](unsigned i_input)->unsigned { return i_input; } );
 
-		details::dense_fixed_queue_test(
+		detail::dense_fixed_queue_test(
 			[](unsigned i_input) { return static_cast<char>(i_input & 0xFF); } );
 
-		details::dense_fixed_queue_test(
+		detail::dense_fixed_queue_test(
 			[](unsigned i_input) { return static_cast<double>(i_input); } );
 
-		details::dense_fixed_queue_test(
+		detail::dense_fixed_queue_test(
 			[](unsigned i_input) { return std::complex<double>(i_input); } );
 
-		details::dense_fixed_queue_test(
+		detail::dense_fixed_queue_test(
 			[](unsigned i_input) {
 
 			switch (i_input % 6)

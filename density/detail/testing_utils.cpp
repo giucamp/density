@@ -10,7 +10,7 @@
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
 		#if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
 			_declspec(thread) TestAllocatorBase::ThreadData * TestAllocatorBase::st_thread_data;
@@ -79,16 +79,16 @@ namespace density
 			operator delete (i_block);
 		}
 	
-	} // namespace details
+	} // namespace detail
 	
 	NoLeakScope::NoLeakScope()
 	{
-		details::TestAllocatorBase::push_level();
+		detail::TestAllocatorBase::push_level();
 	}
 
 	NoLeakScope::~NoLeakScope()
 	{
-		details::TestAllocatorBase::pop_level();
+		detail::TestAllocatorBase::pop_level();
 	}
 
 	namespace
@@ -127,7 +127,7 @@ namespace density
 	std::random_device g_random_device;
 	std::mt19937 g_rand(g_random_device());
 
-	namespace details
+	namespace detail
 	{
 		AllocatingTester::AllocatingTester()
 			: m_rand_value(std::allocate_shared<int>(TestAllocator<int>(), std::uniform_int_distribution<int>(100000)(g_rand)))

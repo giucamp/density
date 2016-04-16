@@ -11,7 +11,7 @@
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
 		namespace DenseListTest
 		{
@@ -108,7 +108,7 @@ namespace density
 				auto list_2 = list_1;
 				static_assert( std::is_copy_constructible<TestDenseListString::value_type>::value, "");
 				//static_assert( (TestDenseListString::RuntimeType::s_caps & ElementTypeCaps::copy_only) == TestDenseListString::RuntimeType::s_caps, "");
-				static_assert( (details::GetAutoCopyMoveCap<TestDenseListString::value_type>::value & ElementTypeCaps::copy_only) == ElementTypeCaps::copy_only, "");
+				static_assert( (detail::GetAutoCopyMoveCap<TestDenseListString::value_type>::value & ElementTypeCaps::copy_only) == ElementTypeCaps::copy_only, "");
 				list_2 = list_1;
 				DENSITY_TEST_ASSERT(list == list_2);
 
@@ -254,8 +254,8 @@ namespace density
 			{
 				public:
 					Moveable(int){}
-					Moveable(Moveable &&) REFLECTIVE_NOEXCEPT {}
-					Moveable & operator = (Moveable &&) REFLECTIVE_NOEXCEPT { return *this; }
+					Moveable(Moveable &&) DENSITY_NOEXCEPT {}
+					Moveable & operator = (Moveable &&) DENSITY_NOEXCEPT { return *this; }
 					Moveable(const Moveable &) = delete;
 					Moveable & operator = (const Moveable &) = delete;
 			};
@@ -488,14 +488,14 @@ namespace density
 
 	void dense_list_test()
 	{
-		details::DenseListTest::test_void_dense_list();
+		detail::DenseListTest::test_void_dense_list();
 
-		details::DenseListTest::test1();
-		details::DenseListTest::test2();
-		details::DenseListTest::test3();
-		details::DenseListTest::test4();
+		detail::DenseListTest::test1();
+		detail::DenseListTest::test2();
+		detail::DenseListTest::test3();
+		detail::DenseListTest::test4();
 
-		run_exception_stress_test(&details::DenseListTest::test_with_exceptions);
+		run_exception_stress_test(&detail::DenseListTest::test_with_exceptions);
 	}
 
 }

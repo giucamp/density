@@ -17,7 +17,7 @@ namespace density
 		class DenseList<void, ALLOCATOR, RUNTIME_TYPE> final
 	{
 	private:
-		using ListImpl = details::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
+		using ListImpl = detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
 		using IteratorImpl = typename ListImpl::IteratorBaseImpl;
 
 	public:
@@ -64,12 +64,12 @@ namespace density
 			return std::move(new_list);
 		}
 
-		size_t size() const REFLECTIVE_NOEXCEPT
+		size_t size() const DENSITY_NOEXCEPT
 		{
 			return m_impl.size();
 		}
 
-		bool empty() const REFLECTIVE_NOEXCEPT
+		bool empty() const DENSITY_NOEXCEPT
 		{
 			return m_impl.empty();
 		}
@@ -87,46 +87,46 @@ namespace density
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			iterator(const IteratorImpl & i_source) REFLECTIVE_NOEXCEPT
+			iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source) {  }
 			
-			value_type * curr_element() const REFLECTIVE_NOEXCEPT
+			value_type * curr_element() const DENSITY_NOEXCEPT
 				{ return static_cast<value_type *>(m_impl.curr_element()); }
 
-			iterator & operator ++ () REFLECTIVE_NOEXCEPT
+			iterator & operator ++ () DENSITY_NOEXCEPT
 			{
 				m_impl.move_next();
 				return *this;
 			}
 
-			iterator operator++ (int) REFLECTIVE_NOEXCEPT
+			iterator operator++ (int) DENSITY_NOEXCEPT
 			{
 				iterator copy(*this);
 				m_impl.move_next();
 				return copy;
 			}
 
-			bool operator == (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.m_impl.m_curr_type;
 			}
 
-			bool operator != (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.m_impl.m_curr_type;
 			}
 
-			bool operator == (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.m_impl.m_curr_type;
 			}
 
-			bool operator != (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.m_impl.m_curr_type;
 			}
 			
-			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
 		private:
 			friend class const_iterator;
@@ -143,63 +143,63 @@ namespace density
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			const_iterator(const IteratorImpl & i_source) REFLECTIVE_NOEXCEPT
+			const_iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
 				: IteratorImpl(i_source) {  }
 
-			const_iterator(const iterator & i_source) REFLECTIVE_NOEXCEPT
+			const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
 				: IteratorImpl(i_source) {  }
 									
-			value_type * curr_element() const REFLECTIVE_NOEXCEPT
+			value_type * curr_element() const DENSITY_NOEXCEPT
 				{ return static_cast<value_type *>(m_impl.curr_element()); }
 
-			const_iterator & operator ++ () REFLECTIVE_NOEXCEPT
+			const_iterator & operator ++ () DENSITY_NOEXCEPT
 			{
 				m_impl.move_next();
 				return *this;
 			}
 
-			const_iterator operator++ (int) REFLECTIVE_NOEXCEPT
+			const_iterator operator++ (int) DENSITY_NOEXCEPT
 			{
 				iterator copy(*this);
 				m_impl.move_next();
 				return copy;
 			}
 
-			bool operator == (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_curr_type == i_other.m_impl.m_curr_type;
 			}
 
-			bool operator != (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_curr_type != i_other.m_impl.m_curr_type;
 			}
 
-			bool operator == (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.m_impl.m_curr_type;
 			}
 
-			bool operator != (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.m_impl.m_curr_type;
 			}
 
-			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 		
 		private:
 			friend class DenseList;
 			IteratorImpl m_impl;
 		}; // class const_iterator
 
-		iterator begin() REFLECTIVE_NOEXCEPT { return iterator(m_impl.begin()); }
-		iterator end() REFLECTIVE_NOEXCEPT { return iterator(m_impl.end()); }
+		iterator begin() DENSITY_NOEXCEPT { return iterator(m_impl.begin()); }
+		iterator end() DENSITY_NOEXCEPT { return iterator(m_impl.end()); }
 
-		const_iterator begin() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.begin()); }
-		const_iterator end() const REFLECTIVE_NOEXCEPT{ return const_iterator(m_impl.end()); }
+		const_iterator begin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
+		const_iterator end() const DENSITY_NOEXCEPT{ return const_iterator(m_impl.end()); }
 
-		const_iterator cbegin() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.begin()); }
-		const_iterator cend() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.end()); }
+		const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
+		const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
 
 		struct CopyConstruct
 		{
@@ -221,7 +221,7 @@ namespace density
 			MoveConstruct(void * i_source)
 				: m_source(i_source) { }
 
-			void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type) REFLECTIVE_NOEXCEPT
+			void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type) DENSITY_NOEXCEPT
 			{
 				return i_builder.add_by_move(i_element_type, m_source);
 			}
@@ -325,7 +325,7 @@ namespace density
 			}
 		}
 
-		void swap(DenseList & i_other) REFLECTIVE_NOEXCEPT
+		void swap(DenseList & i_other) DENSITY_NOEXCEPT
 		{
 			std::swap(m_impl.m_types, i_other.m_types);
 		}
@@ -357,7 +357,7 @@ namespace density
 		bool operator != (const DenseList & i_source) const { return !equal_to(i_source); }
 
 	private:
-		details::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
+		detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
 	}; // class DenseList<void>;
 	
 } // namespace density

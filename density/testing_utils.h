@@ -13,7 +13,7 @@
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
 		class TestAllocatorBase
 		{
@@ -48,10 +48,10 @@ namespace density
 			#endif
 		};
 
-	} // namespace details
+	} // namespace detail
 
 	template <class TYPE>
-		class TestAllocator : private details::TestAllocatorBase
+		class TestAllocator : private detail::TestAllocatorBase
 	{
 	public:
 		typedef TYPE value_type;
@@ -62,12 +62,12 @@ namespace density
 
 		TYPE * allocate(std::size_t i_count)
 		{
-			return static_cast<TYPE *>(details::TestAllocatorBase::alloc(i_count * sizeof(TYPE)) );
+			return static_cast<TYPE *>(detail::TestAllocatorBase::alloc(i_count * sizeof(TYPE)) );
 		}
 
 		void deallocate(TYPE * i_block, std::size_t /*i_count*/)
 		{
-			details::TestAllocatorBase::free(i_block);
+			detail::TestAllocatorBase::free(i_block);
 		}
 
 		template <typename OTHER_TYPE>
@@ -146,7 +146,7 @@ namespace density
 
 	void exception_check_point();
 
-	namespace details
+	namespace detail
 	{
 		class AllocatingTester
 		{
@@ -168,13 +168,13 @@ namespace density
 			std::shared_ptr<int> m_rand_value;
 		};
 
-	} // namespace details
+	} // namespace detail
 
-	class Copy_MoveExcept final : public details::AllocatingTester
+	class Copy_MoveExcept final : public detail::AllocatingTester
 	{
 	public:
 
-		using UnderlyingClass = details::AllocatingTester;
+		using UnderlyingClass = detail::AllocatingTester;
 
 		Copy_MoveExcept() { exception_check_point(); }
 		Copy_MoveExcept(const UnderlyingClass & i_source) : UnderlyingClass(i_source) {}
@@ -214,11 +214,11 @@ namespace density
 			{ return UnderlyingClass::operator != (i_other); }
 	};
 
-	class NoCopy_MoveExcept final : public details::AllocatingTester
+	class NoCopy_MoveExcept final : public detail::AllocatingTester
 	{
 	public:
 
-		using UnderlyingClass = details::AllocatingTester;
+		using UnderlyingClass = detail::AllocatingTester;
 
 		NoCopy_MoveExcept() { exception_check_point(); }
 		NoCopy_MoveExcept(const UnderlyingClass & i_source) : UnderlyingClass(i_source) {}
@@ -246,11 +246,11 @@ namespace density
 			{ return UnderlyingClass::operator != (i_other); }
 	};
 
-	class Copy_MoveNoExcept final : public details::AllocatingTester
+	class Copy_MoveNoExcept final : public detail::AllocatingTester
 	{
 	public:
 
-		using UnderlyingClass = details::AllocatingTester;
+		using UnderlyingClass = detail::AllocatingTester;
 
 		Copy_MoveNoExcept() { exception_check_point(); }
 		Copy_MoveNoExcept(const UnderlyingClass & i_source) : UnderlyingClass(i_source) {}
@@ -284,11 +284,11 @@ namespace density
 		}
 	};
 
-	class NoCopy_MoveNoExcept final : public details::AllocatingTester
+	class NoCopy_MoveNoExcept final : public detail::AllocatingTester
 	{
 	public:
 
-		using UnderlyingClass = details::AllocatingTester;
+		using UnderlyingClass = detail::AllocatingTester;
 
 		NoCopy_MoveNoExcept() { exception_check_point(); }
 		NoCopy_MoveNoExcept(const UnderlyingClass & i_source) : UnderlyingClass(i_source) {}

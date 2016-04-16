@@ -8,11 +8,11 @@
 #include <memory> // std::allocator
 #include <utility> // std::forward
 #include <type_traits> // std::is_constructible, ...
-#include "element_type.h"
+#include "runtime_type.h"
 
 namespace density
 {
-	namespace details
+	namespace detail
 	{
 		template < typename ALLOCATOR, typename RUNTIME_TYPE >
 			class DenseFixedQueueImpl : private ALLOCATOR
@@ -21,15 +21,15 @@ namespace density
 
 			struct IteratorBaseImpl
 			{
-				IteratorBaseImpl() REFLECTIVE_NOEXCEPT {}
+				IteratorBaseImpl() DENSITY_NOEXCEPT {}
 
-				IteratorBaseImpl(RUNTIME_TYPE * i_type) REFLECTIVE_NOEXCEPT // used to construct end
+				IteratorBaseImpl(RUNTIME_TYPE * i_type) DENSITY_NOEXCEPT // used to construct end
 					: m_curr_type(i_type) { }
 
-				IteratorBaseImpl(const DenseFixedQueueImpl * i_queue, RUNTIME_TYPE * i_type, void * i_element) REFLECTIVE_NOEXCEPT
+				IteratorBaseImpl(const DenseFixedQueueImpl * i_queue, RUNTIME_TYPE * i_type, void * i_element) DENSITY_NOEXCEPT
 					: m_curr_type(i_type), m_curr_element(i_element), m_queue(i_queue) { }
 
-				void move_next() REFLECTIVE_NOEXCEPT
+				void move_next() DENSITY_NOEXCEPT
 				{
 					// advance m_curr_type
 					m_curr_type = static_cast<RUNTIME_TYPE*>(address_add(m_curr_element, m_curr_type->size()));
@@ -52,7 +52,7 @@ namespace density
 					}
 				}
 
-				bool operator == (const IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
+				bool operator == (const IteratorBaseImpl & i_source) DENSITY_NOEXCEPT
 				{
 					return i_source.m_curr_type == i_source.m_curr_type;
 				}
@@ -67,7 +67,7 @@ namespace density
 				impl_init(i_buffer_byte_capacity);
 			}
 
-			DenseFixedQueueImpl(DenseFixedQueueImpl && i_source) REFLECTIVE_NOEXCEPT
+			DenseFixedQueueImpl(DenseFixedQueueImpl && i_source) DENSITY_NOEXCEPT
 				: m_head(i_source.m_head), m_tail(i_source.m_tail), m_buffer_start(i_source.m_buffer_start), m_buffer_end(i_source.m_buffer_end)
 			{
 				i_source.m_tail = i_source.m_head = nullptr;
@@ -88,7 +88,7 @@ namespace density
 				return *this;
 			}
 
-			DenseFixedQueueImpl & operator = (DenseFixedQueueImpl && i_source) REFLECTIVE_NOEXCEPT
+			DenseFixedQueueImpl & operator = (DenseFixedQueueImpl && i_source) DENSITY_NOEXCEPT
 			{
 				impl_clear();
 
@@ -103,7 +103,7 @@ namespace density
 				return *this;
 			}
 
-			~DenseFixedQueueImpl() REFLECTIVE_NOEXCEPT
+			~DenseFixedQueueImpl() DENSITY_NOEXCEPT
 			{
 				impl_destroy();
 			}
@@ -146,12 +146,12 @@ namespace density
 				}
 			}
 
-			bool impl_empty() const REFLECTIVE_NOEXCEPT
+			bool impl_empty() const DENSITY_NOEXCEPT
 			{
 				return m_head == m_tail;
 			}
 
-			IteratorBaseImpl impl_begin() const REFLECTIVE_NOEXCEPT
+			IteratorBaseImpl impl_begin() const DENSITY_NOEXCEPT
 			{
 				if (m_head == m_tail)
 				{
@@ -182,7 +182,7 @@ namespace density
 				}
 			}
 
-			IteratorBaseImpl impl_end() const REFLECTIVE_NOEXCEPT
+			IteratorBaseImpl impl_end() const DENSITY_NOEXCEPT
 			{
 				return IteratorBaseImpl(static_cast<RUNTIME_TYPE*>(m_tail));
 			}
@@ -207,14 +207,14 @@ namespace density
 				MoveConstruct(void * i_source)
 					: m_source(i_source) { }
 
-				void operator () (void * i_dest, const RUNTIME_TYPE & i_element_type) REFLECTIVE_NOEXCEPT
+				void operator () (void * i_dest, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
 				{
 					i_element_type.move_construct(i_dest, m_source);
 				}
 			};
 
 			/* Inserts an object on the queue. The return value is the address of the new object */
-			void * single_push(void * * io_tail, size_t i_size, size_t i_alignment) REFLECTIVE_NOEXCEPT
+			void * single_push(void * * io_tail, size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 			{
 				auto const prev_tail = *io_tail;
 				auto start_of_block = linear_alloc(io_tail, i_size, i_alignment);
@@ -262,7 +262,7 @@ namespace density
 
 			template <typename OPERATION>
 				void impl_consume(OPERATION && i_operation)
-					REFLECTIVE_NOEXCEPT_V(REFLECTIVE_NOEXCEPT_V(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
+					DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
 			{
 				assert(m_head != m_tail); // the queue must not be empty
 		
@@ -292,12 +292,12 @@ namespace density
 				m_head = static_cast<RUNTIME_TYPE*>(element_end);
 			}
 
-			size_t impl_mem_capacity() const REFLECTIVE_NOEXCEPT
+			size_t impl_mem_capacity() const DENSITY_NOEXCEPT
 			{
 				return address_diff(m_buffer_end, m_buffer_start);
 			}
 
-			size_t impl_mem_size() const REFLECTIVE_NOEXCEPT
+			size_t impl_mem_size() const DENSITY_NOEXCEPT
 			{
 				if (m_head <= m_tail)
 				{
@@ -311,7 +311,7 @@ namespace density
 
 		private:
 			
-			void impl_clear() REFLECTIVE_NOEXCEPT
+			void impl_clear() DENSITY_NOEXCEPT
 			{
 				IteratorBaseImpl it = impl_begin();
 				while (it.m_curr_type != m_tail)
@@ -333,7 +333,7 @@ namespace density
 			void * m_buffer_end;
 		}; // class DenseFixedQueueImpl
 
-	} // namespace details
+	} // namespace detail
 
 	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
 		class DenseFixedQueue final
@@ -367,50 +367,50 @@ namespace density
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			iterator(const typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
+			iterator(const typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source) {  }
 
-			value_type & operator * () const REFLECTIVE_NOEXCEPT { return *static_cast<value_type *>(m_impl.m_curr_element); }
-			value_type * operator -> () const REFLECTIVE_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
-			value_type * curr_element() const REFLECTIVE_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type & operator * () const DENSITY_NOEXCEPT { return *static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type * operator -> () const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type * curr_element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
 
-			iterator & operator ++ () REFLECTIVE_NOEXCEPT
+			iterator & operator ++ () DENSITY_NOEXCEPT
 			{
 				m_impl.move_next();
 				return *this;
 			}
 
-			iterator operator++ (int) REFLECTIVE_NOEXCEPT
+			iterator operator++ (int) DENSITY_NOEXCEPT
 			{
 				const iterator copy(*this);
 				m_impl.move_next();
 				return copy;
 			}
 
-			bool operator == (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.curr_type();
 			}
 
-			bool operator != (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.curr_type();
 			}
 
-			bool operator == (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.curr_type();
 			}
 
-			bool operator != (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.curr_type();
 			}
 
-			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
 		private:
-			typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
+			typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 
 		}; // class iterator
 
@@ -426,79 +426,79 @@ namespace density
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
-			const_iterator(const typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) REFLECTIVE_NOEXCEPT
+			const_iterator(const typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source) {  }
 
-			const_iterator(const iterator & i_source) REFLECTIVE_NOEXCEPT
+			const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source.m_impl) {  }
 
-			value_type & operator * () const REFLECTIVE_NOEXCEPT { return *static_cast<value_type *>(m_impl.m_curr_element); }
-			value_type * operator -> () const REFLECTIVE_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
-			value_type * curr_element() const REFLECTIVE_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type & operator * () const DENSITY_NOEXCEPT { return *static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type * operator -> () const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
+			value_type * curr_element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.m_curr_element); }
 
-			const_iterator & operator ++ () REFLECTIVE_NOEXCEPT
+			const_iterator & operator ++ () DENSITY_NOEXCEPT
 			{
 				m_impl.move_next();
 				return *this;
 			}
 
-			const_iterator operator++ (int) REFLECTIVE_NOEXCEPT
+			const_iterator operator++ (int) DENSITY_NOEXCEPT
 			{
 				const iterator copy(*this);
 				m_impl.move_next();
 				return copy;
 			}
 
-			bool operator == (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_curr_type == i_other.curr_type();
 			}
 
-			bool operator != (const iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_curr_type != i_other.curr_type();
 			}
 
-			bool operator == (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type == i_other.curr_type();
 			}
 
-			bool operator != (const const_iterator & i_other) const REFLECTIVE_NOEXCEPT
+			bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
 				return m_impl.m_curr_type != i_other.curr_type();
 			}
 
-			const RUNTIME_TYPE * curr_type() const REFLECTIVE_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
 		private:
-			typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
+			typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 		}; // class const_iterator
 
-		iterator begin() REFLECTIVE_NOEXCEPT { return iterator(m_impl.impl_begin()); }
-		iterator end() REFLECTIVE_NOEXCEPT { return iterator(m_impl.impl_end()); }
+		iterator begin() DENSITY_NOEXCEPT { return iterator(m_impl.impl_begin()); }
+		iterator end() DENSITY_NOEXCEPT { return iterator(m_impl.impl_end()); }
 
-		const_iterator begin() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.impl_begin()); }
-		const_iterator end() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.impl_end()); }
+		const_iterator begin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.impl_begin()); }
+		const_iterator end() const DENSITY_NOEXCEPT { return const_iterator(m_impl.impl_end()); }
 
-		const_iterator cbegin() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.impl_begin()); }
-		const_iterator cend() const REFLECTIVE_NOEXCEPT { return const_iterator(m_impl.impl_end()); }
+		const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.impl_begin()); }
+		const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.impl_end()); }
 
-		bool empty() const REFLECTIVE_NOEXCEPT { return m_impl.impl_empty(); }
+		bool empty() const DENSITY_NOEXCEPT { return m_impl.impl_empty(); }
 
-		void clear() REFLECTIVE_NOEXCEPT { m_impl.impl_clear(); }
+		void clear() DENSITY_NOEXCEPT { m_impl.impl_clear(); }
 
 		template <typename ELEMENT_COMPLETE_TYPE>
 			bool try_push(const ELEMENT_COMPLETE_TYPE & i_source)
-				REFLECTIVE_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
+				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
 			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(), 
-					typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
+					typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
 		}
 
 		template <typename ELEMENT_COMPLETE_TYPE, typename ... PARAMETERS>
 			bool try_emplace(PARAMETERS && ... i_parameters)
-				REFLECTIVE_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
+				DENSITY_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
 		{
 			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
 				[&i_parameters...](void * i_dest, const RuntimeType & ) {
@@ -509,53 +509,53 @@ namespace density
 		bool try_copy_push(const RUNTIME_TYPE & i_type, const ELEMENT * i_source )
 		{
 			return m_impl.impl_push(i_type, 
-				typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(i_source) );
+				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(i_source) );
 		}
 
-		bool try_move_push(const RUNTIME_TYPE & i_type, ELEMENT * i_source) REFLECTIVE_NOEXCEPT
+		bool try_move_push(const RUNTIME_TYPE & i_type, ELEMENT * i_source) DENSITY_NOEXCEPT
 		{
 			return m_impl.impl_push(i_type,
-				typename details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::MoveConstruct(i_source));
+				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::MoveConstruct(i_source));
 		}
 
 		template <typename OPERATION>
 			void consume(OPERATION && i_operation)
-				REFLECTIVE_NOEXCEPT_V(REFLECTIVE_NOEXCEPT_V((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
+				DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
 		{
 			m_impl.impl_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
 				i_operation(i_type, *static_cast<ELEMENT*>(i_element));
 			});
 		}
 
-		void pop() REFLECTIVE_NOEXCEPT
+		void pop() DENSITY_NOEXCEPT
 		{
 			m_impl.impl_consume([](const RUNTIME_TYPE &, void *) {});
 		}
 
-		const ELEMENT & front() REFLECTIVE_NOEXCEPT
+		const ELEMENT & front() DENSITY_NOEXCEPT
 		{
 			assert(!empty());
 			const auto it = m_impl.impl_begin();
 			return *static_cast<value_type *>(it.m_curr_element);
 		}
 
-		size_t mem_capacity() const REFLECTIVE_NOEXCEPT
+		size_t mem_capacity() const DENSITY_NOEXCEPT
 		{
 			return m_impl.impl_mem_capacity();
 		}
 
-		size_t mem_size() const REFLECTIVE_NOEXCEPT
+		size_t mem_size() const DENSITY_NOEXCEPT
 		{
 			return m_impl.impl_mem_size();
 		}
 
-		size_t mem_free() const REFLECTIVE_NOEXCEPT
+		size_t mem_free() const DENSITY_NOEXCEPT
 		{
 			return m_impl.impl_mem_capacity() - m_impl.impl_mem_size();
 		}
 
 	private:
-		details::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
+		detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
 
 	}; // class DenseFixedQueue
 }

@@ -71,21 +71,21 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -98,7 +98,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -113,10 +113,10 @@
     <ClInclude Include="..\density\correctness_test_context.h" />
     <ClInclude Include="..\density\dense_fixed_queue.h" />
     <ClInclude Include="..\density\dense_list.h" />
-    <ClInclude Include="..\density\dense_list_typed.h" />
-    <ClInclude Include="..\density\dense_list_void.h" />
     <ClInclude Include="..\density\density_common.h" />
-    <ClInclude Include="..\density\element_type.h" />
+    <ClInclude Include="..\density\detail\dense_list_typed.h" />
+    <ClInclude Include="..\density\detail\dense_list_void.h" />
+    <ClInclude Include="..\density\runtime_type.h" />
     <ClInclude Include="..\density\testing_utils.h" />
     <ClInclude Include="..\density\uint_test_manager.h" />
   </ItemGroup>

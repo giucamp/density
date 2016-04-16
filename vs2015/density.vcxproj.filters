@@ -2,14 +2,18 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="..\density\correctness_test_context.h" />
-    <ClInclude Include="..\density\dense_fixed_queue.h" />
-    <ClInclude Include="..\density\dense_list.h" />
-    <ClInclude Include="..\density\dense_list_typed.h" />
-    <ClInclude Include="..\density\dense_list_void.h" />
     <ClInclude Include="..\density\density_common.h" />
-    <ClInclude Include="..\density\element_type.h" />
     <ClInclude Include="..\density\testing_utils.h" />
     <ClInclude Include="..\density\uint_test_manager.h" />
+    <ClInclude Include="..\density\dense_list.h" />
+    <ClInclude Include="..\density\detail\dense_list_typed.h">
+      <Filter>detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\density\detail\dense_list_void.h">
+      <Filter>detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\density\dense_fixed_queue.h" />
+    <ClInclude Include="..\density\runtime_type.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="detail">

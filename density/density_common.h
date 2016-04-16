@@ -8,15 +8,15 @@
 #include <assert.h>
 
 #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-	#define REFLECTIVE_CONSTEXPR
-	#define REFLECTIVE_NOEXCEPT
-	#define REFLECTIVE_NOEXCEPT_V(value)
-	#define REFLECTIVE_ASSERT_NOEXCEPT(expr)
+	#define DENSITY_CONSTEXPR
+	#define DENSITY_NOEXCEPT
+	#define DENSITY_NOEXCEPT_V(value)
+	#define DENSITY_ASSERT_NOEXCEPT(expr)
 #else
-	#define REFLECTIVE_CONSTEXPR					constexpr
-	#define REFLECTIVE_NOEXCEPT						noexcept
-	#define REFLECTIVE_NOEXCEPT_V(value)			noexcept(value)
-	#define REFLECTIVE_ASSERT_NOEXCEPT(expr)		static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
+	#define DENSITY_CONSTEXPR					constexpr
+	#define DENSITY_NOEXCEPT						noexcept
+	#define DENSITY_NOEXCEPT_V(value)			noexcept(value)
+	#define DENSITY_ASSERT_NOEXCEPT(expr)		static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
 #endif
 
 namespace density
@@ -25,7 +25,7 @@ namespace density
 
 	/** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
 		@param i_number must be > 0, otherwise the behavior is undefined */
-	inline bool is_power_of_2(size_t i_number) REFLECTIVE_NOEXCEPT
+	inline bool is_power_of_2(size_t i_number) DENSITY_NOEXCEPT
 	{
 		assert(i_number > 0);
 		return (i_number & (i_number - 1)) == 0;
@@ -34,7 +34,7 @@ namespace density
 	/** Returns true whether the given address has the specified alignment
 		@param i_address address to be checked
 		@i_alignment must be > 0 and a power of 2 */
-	inline bool is_address_aligned(const void * i_address, size_t i_alignment) REFLECTIVE_NOEXCEPT
+	inline bool is_address_aligned(const void * i_address, size_t i_alignment) DENSITY_NOEXCEPT
 	{
 		assert(i_alignment > 0 && is_power_of_2(i_alignment));
 		return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
@@ -44,12 +44,12 @@ namespace density
 		@param i_address source address
 		@param i_offset number to add to the address
 		@return i_address plus i_offset */
-	inline void * address_add( void * i_address, size_t i_offset ) REFLECTIVE_NOEXCEPT
+	inline void * address_add( void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 		return reinterpret_cast< void * >( uint_pointer + i_offset );
 	}
-	inline const void * address_add( const void * i_address, size_t i_offset ) REFLECTIVE_NOEXCEPT
+	inline const void * address_add( const void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 		return reinterpret_cast< void * >( uint_pointer + i_offset );
@@ -59,13 +59,13 @@ namespace density
 		@param i_address source address
 		@param i_offset number to subtract from the address
 		@return i_address minus i_offset */
-	inline void * address_sub( void * i_address, size_t i_offset ) REFLECTIVE_NOEXCEPT
+	inline void * address_sub( void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 		assert( uint_pointer >= i_offset );
 		return reinterpret_cast< void * >( uint_pointer - i_offset );
 	}
-	inline const void * address_sub( const void * i_address, size_t i_offset ) REFLECTIVE_NOEXCEPT
+	inline const void * address_sub( const void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 		assert( uint_pointer >= i_offset );
@@ -76,7 +76,7 @@ namespace density
 		@param i_end_address first address
 		@param i_start_address second address
 		@return i_end_address minus i_start_address	*/
-	inline uintptr_t address_diff( const void * i_end_address, const void * i_start_address ) REFLECTIVE_NOEXCEPT
+	inline uintptr_t address_diff( const void * i_end_address, const void * i_start_address ) DENSITY_NOEXCEPT
 	{
 		assert( i_end_address >= i_start_address );
 
@@ -90,7 +90,7 @@ namespace density
 		@param i_address address to be aligned
 		@param i_alignment alignment required from the pointer. It must be an integer power of 2.
 		@return the aligned address */
-	inline void * address_lower_align( void * i_address, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+	inline void * address_lower_align( void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
 		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
@@ -100,7 +100,7 @@ namespace density
 
 		return reinterpret_cast< void * >( uint_pointer & ~mask );
 	}
-	inline const void * address_lower_align( const void * i_address, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+	inline const void * address_lower_align( const void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
 		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
@@ -116,7 +116,7 @@ namespace density
 		@param i_alignment alignment required from the pointer. It must be an integer power of 2
 		@param i_alignment_offset alignment offset
 		@return the result address */
-	inline void * address_lower_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) REFLECTIVE_NOEXCEPT
+	inline void * address_lower_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
 	{
 		void * address = address_add( i_address, i_alignment_offset );
 
@@ -126,7 +126,7 @@ namespace density
 		
 		return address;
 	}
-	inline const void * address_lower_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) REFLECTIVE_NOEXCEPT
+	inline const void * address_lower_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
 	{
 		const void * address = address_add( i_address, i_alignment_offset );
 
@@ -141,7 +141,7 @@ namespace density
 		@param i_address address to be aligned
 		@param i_alignment alignment required from the pointer. It must be an integer power of 2.
 		@return the aligned address */
-	inline void * address_upper_align( void * i_address, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+	inline void * address_upper_align( void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
 		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
@@ -151,7 +151,7 @@ namespace density
 
 		return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
 	}
-	inline const void * address_upper_align( const void * i_address, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+	inline const void * address_upper_align( const void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
 		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
@@ -167,7 +167,7 @@ namespace density
 		@param i_alignment alignment required from the pointer. It must be an integer power of 2
 		@param i_alignment_offset alignment offset
 		@return the result address */
-	inline void * address_upper_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) REFLECTIVE_NOEXCEPT
+	inline void * address_upper_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
 	{
 		void * address = address_add( i_address, i_alignment_offset );
 
@@ -177,7 +177,7 @@ namespace density
 		
 		return address;
 	}
-	inline const void * address_upper_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) REFLECTIVE_NOEXCEPT
+	inline const void * address_upper_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
 	{
 		const void * address = address_add( i_address, i_alignment_offset );
 
@@ -189,7 +189,7 @@ namespace density
 	}
 
 	/** Returns	wheter two memory ranges overlap */
-	inline bool address_overlap( const void * i_first, size_t i_first_size, const void * i_second, size_t i_second_size ) REFLECTIVE_NOEXCEPT
+	inline bool address_overlap( const void * i_first, size_t i_first_size, const void * i_second, size_t i_second_size ) DENSITY_NOEXCEPT
 	{
 		if( i_first < i_second )
 			return address_add( i_first, i_first_size ) > i_second;
@@ -206,7 +206,7 @@ namespace density
 			- the difference (in bytes) between i_objects_end and i_objects_start is a multiple of the size of TYPE
 			- both i_objects_start and i_objects_end respects the alignment for TYPE. */
 	template <typename TYPE>
-		inline bool is_valid_range(const TYPE * i_objects_start, const TYPE * i_objects_end) REFLECTIVE_NOEXCEPT
+		inline bool is_valid_range(const TYPE * i_objects_start, const TYPE * i_objects_end) DENSITY_NOEXCEPT
 	{
 		if (i_objects_start > i_objects_end)
 		{
@@ -228,7 +228,7 @@ namespace density
 		return true;
 	}
 
-	namespace details
+	namespace detail
 	{
 		struct AlignmentHeader
 		{
@@ -255,14 +255,14 @@ namespace density
 		}
 		else
 		{
-			size_t const extra_size = (i_alignment >= sizeof(details::AlignmentHeader) ? i_alignment : sizeof(details::AlignmentHeader));
+			size_t const extra_size = (i_alignment >= sizeof(detail::AlignmentHeader) ? i_alignment : sizeof(detail::AlignmentHeader));
 			size_t const actual_size = i_size + extra_size;
 
 			typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(i_allocator);
 			void * const complete_block = char_alloc.allocate(actual_size);
 
 			void * const user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-			details::AlignmentHeader & header = *(static_cast<details::AlignmentHeader*>(user_block) - 1);
+			detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
 			header.m_block = complete_block;
 
 			// done
@@ -277,7 +277,7 @@ namespace density
 			@param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
 			@param i_alignment_offset offset of the alignment of the block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined. */
 	template <typename ALLOCATOR>
-		void aligned_free(ALLOCATOR & i_allocator, void * i_block, size_t i_size, size_t i_alignment ) REFLECTIVE_NOEXCEPT
+		void aligned_free(ALLOCATOR & i_allocator, void * i_block, size_t i_size, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
 		if (i_alignment <= std::alignment_of<void*>::value)
 		{
@@ -287,10 +287,10 @@ namespace density
 		else if (i_block != nullptr)
 		{
 			{
-				size_t const extra_size = (i_alignment >= sizeof(details::AlignmentHeader) ? i_alignment : sizeof(details::AlignmentHeader));
+				size_t const extra_size = (i_alignment >= sizeof(detail::AlignmentHeader) ? i_alignment : sizeof(detail::AlignmentHeader));
 				size_t const actual_size = i_size + extra_size;
 
-				details::AlignmentHeader * header = static_cast<details::AlignmentHeader*>(i_block) - 1;
+				detail::AlignmentHeader * header = static_cast<detail::AlignmentHeader*>(i_block) - 1;
 
 				typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(i_allocator);
 				char_alloc.deallocate(static_cast<char*>(header->m_block), actual_size);
