@@ -83,6 +83,7 @@ namespace density
 			DenseFixedQueueImpl & operator = (const DenseFixedQueueImpl & i_source)
 			{
 				impl_destroy();
+				m_buffer_start = nullptr; // if impl_assign throws, the destructor must not get dirt data
 				*static_cast<ALLOCATOR*>(this) = i_source;
 				impl_assign(i_source);
 				return *this;
@@ -90,7 +91,7 @@ namespace density
 
 			DenseFixedQueueImpl & operator = (DenseFixedQueueImpl && i_source) DENSITY_NOEXCEPT
 			{
-				impl_clear();
+				impl_destroy();
 
 				m_head = i_source.m_head;
 				m_tail = i_source.m_tail;
@@ -134,7 +135,7 @@ namespace density
 				impl_init(i_source.impl_mem_capacity());
 
 				/* now the queue is empty, and m_tail = m_head = m_buffer_start. Anyway
-					we offset m_tail and m_head like tjhey are in the source, so in order to make
+					we offset m_tail and m_head like they are in the source, so in order to make
 					an exact copy, in which the free space is the same */
 				m_tail = m_head = static_cast<RUNTIME_TYPE*>(address_add(m_buffer_start,
 					address_diff(i_source.m_head, i_source.m_buffer_start) ) );
@@ -337,7 +338,7 @@ namespace density
 
 	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
 		class DenseFixedQueue final
-	{		
+	{
 	public:
 
 		using RuntimeType = RUNTIME_TYPE;
@@ -489,20 +490,18 @@ namespace density
 		void clear() DENSITY_NOEXCEPT { m_impl.impl_clear(); }
 
 		template <typename ELEMENT_COMPLETE_TYPE>
-			bool try_push(const ELEMENT_COMPLETE_TYPE & i_source)
-				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
+			bool try_push(ELEMENT_COMPLETE_TYPE && i_source)				
 		{
-			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(), 
-					typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
+			return try_push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source), typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type() );
 		}
 
-		template <typename ELEMENT_COMPLETE_TYPE, typename ... PARAMETERS>
-			bool try_emplace(PARAMETERS && ... i_parameters)
+		template <typename ELEMENT_COMPLETE_TYPE, typename... PARAMETERS>
+			bool try_emplace(PARAMETERS && ... i_arguments)
 				DENSITY_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
 		{
 			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
-				[&i_parameters...](void * i_dest, const RuntimeType & ) {
-					new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_parameters)...);
+				[&i_arguments...](void * i_dest, const RuntimeType & ) {
+					new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_arguments)...);
 			});
 		}
 
@@ -552,6 +551,31 @@ namespace density
 		size_t mem_free() const DENSITY_NOEXCEPT
 		{
 			return m_impl.impl_mem_capacity() - m_impl.impl_mem_size();
+		}
+
+	private:
+
+		template <typename TYPE> struct RemoveRefsAndConst
+		{
+			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
+		};
+
+		// overload used if i_source is an rvalue
+		template <typename ELEMENT_COMPLETE_TYPE>
+			bool try_push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
+				DENSITY_NOEXCEPT_V((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
+		{
+			return m_impl.impl_push(RuntimeType::template make<typename RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::MoveConstruct(&i_source));
+		}
+
+		// overload used if i_source is an lvalue
+		template <typename ELEMENT_COMPLETE_TYPE>
+			bool try_push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
+				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
+		{
+			return m_impl.impl_push(RuntimeType::template make<typename RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
 		}
 
 	private:

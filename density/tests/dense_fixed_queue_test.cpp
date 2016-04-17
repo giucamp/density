@@ -86,14 +86,26 @@ namespace density
 				m_dense_queue = copy;
 				DENSITY_TEST_ASSERT(copy.mem_free() == m_dense_queue.mem_free());
 
+				// check the size with the iterators
 				const auto size_1 = std::distance(m_dense_queue.cbegin(), m_dense_queue.cend());
 				const auto size_2 = std::distance(copy.cbegin(), copy.cend());
 				DENSITY_TEST_ASSERT(size_1 == size_2);
+
+				// move construct m_dense_queue to tmp
+				auto tmp( std::move(m_dense_queue) );
+				DENSITY_TEST_ASSERT(m_dense_queue.empty());
+				m_dense_queue.try_push(BASE_TYPE());
+				m_dense_queue.try_push(BASE_TYPE());
+				const auto size_3 = std::distance(tmp.cbegin(), tmp.cend());
+				DENSITY_TEST_ASSERT(size_1 == size_3);
+
+				// move assign tmp to m_dense_queue
+				m_dense_queue = std::move(tmp);
 			}
 
+			/* call consume until the m_dense_queue is empty. */
 			void builtin_test_case_consume_until_empty(std::mt19937 & /*i_random*/)
-			{
-				/* call consume until the m_dense_queue is empty. */
+			{				
 				volatile unsigned i = 0; // <-- may help debug
 				while (!m_dense_queue.empty())
 				{
@@ -107,11 +119,11 @@ namespace density
 				DENSITY_TEST_ASSERT(m_dense_queue.mem_free() == m_dense_queue.mem_capacity());
 			}
 
+			/* call consume n times, or until the m_dense_queue is empty. */
 			void builtin_test_case_consume_n_times(std::mt19937 & i_random)
-			{
-				/* call consume n times, or until the m_dense_queue is empty. */
+			{				
 				const unsigned times = std::uniform_int_distribution<unsigned>(0, 100)(i_random);
-				volatile unsigned i = 0; // <--may help debug
+				volatile unsigned i = 0;
 				while ( i < times && !m_dense_queue.empty())
 				{
 					m_dense_queue.consume([this](const typename DenseFixedQueue<BASE_TYPE>::RuntimeType &, BASE_TYPE i_val) {
@@ -153,8 +165,8 @@ namespace density
 					}
 				}
 				
-				/* check that the free space is not enough not insert new elements. We must take
-				account of alignment padding and buffer wrapping padding */
+				/* check that the free space is not enough to insert new elements. We must take
+					account of alignment padding and buffer wrapping padding */
 				const auto free = test.m_dense_queue.mem_free();
 				const auto max_element_requirement = sizeof(TYPE) + alignof(TYPE) +
 					sizeof(typename FixedQueueTest<TYPE>::Queue::RuntimeType) + alignof(typename FixedQueueTest<TYPE>::Queue::RuntimeType);
@@ -181,7 +193,7 @@ namespace density
 				}
 			});
 
-			unsigned step_count = std::uniform_int_distribution<unsigned>(0, 10000)(i_random);
+			unsigned step_count = std::uniform_int_distribution<unsigned>(0, 1000)(i_random);
 			for (unsigned step_index = 0; step_index < step_count; step_index++)
 			{
 				test.step(i_random);
@@ -204,11 +216,46 @@ namespace density
 				[](std::mt19937 & i_random) { return std::uniform_real_distribution<double>()(i_random); }
 			);
 		}
+
+		void fixed_queue_basic_tests()
+		{
+			DenseFixedQueue< DenseFixedQueue<int> > queue_of_queues(1024 * 64);
+			DenseFixedQueue<int> queue(1024);
+			queue.try_push(10);
+			queue.try_push(20);
+			queue.try_push(30);
+
+			// this must use the lvalue overoad, so queue must be preserved
+			const auto prev_size = queue.mem_size();
+			queue_of_queues.try_push(queue);
+			DENSITY_TEST_ASSERT(queue.mem_size() == prev_size);
+
+			// this must use the rvalue overoad, so queue must be empty after the call
+			queue_of_queues.try_push(std::move(queue));
+			DENSITY_TEST_ASSERT(queue.mem_size() == 0);
+			DENSITY_TEST_ASSERT(queue.empty());
+
+			// try with a non-copyable type (std::unique_ptr)
+			DenseFixedQueue<std::unique_ptr<int>> queue_of_uncopyable(1024);
+			queue_of_uncopyable.try_push(std::make_unique<int>(10));
+			queue_of_uncopyable.try_emplace<std::unique_ptr<int>>(std::make_unique<int>(10));
+			DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
+			queue_of_uncopyable.pop();
+			DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
+			queue_of_uncopyable.pop();
+			DENSITY_TEST_ASSERT(queue_of_uncopyable.empty());
+
+			// this must fail to compile
+			//auto copy = queue_of_uncopyable;
+			//copy = queue_of_uncopyable;
+		}
 	
 	} // namespace detail
 
 	void fixed_queue_test()
 	{
+		detail::fixed_queue_basic_tests();
+
 		run_exception_stress_test([] {
 			std::mt19937 random;
 			detail::fixed_queue_test_impl(random);

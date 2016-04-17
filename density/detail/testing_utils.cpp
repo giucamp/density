@@ -67,16 +67,19 @@ namespace density
 
 		void TestAllocatorBase::free(void * i_block)
 		{
-			auto & thread_data = GetThreadData();
-			if (thread_data.m_levels.size() > 0)
+			if (i_block != nullptr)
 			{
-				auto & allocations = thread_data.m_levels.back().m_allocations;
-				auto it = allocations.find(i_block);
-				assert(it != allocations.end());
-				allocations.erase(it);
-			}
+				auto & thread_data = GetThreadData();
+				if (thread_data.m_levels.size() > 0)
+				{
+					auto & allocations = thread_data.m_levels.back().m_allocations;
+					auto it = allocations.find(i_block);
+					assert(it != allocations.end());
+					allocations.erase(it);
+				}
 
-			operator delete (i_block);
+				operator delete (i_block);
+			}
 		}
 	
 	} // namespace detail

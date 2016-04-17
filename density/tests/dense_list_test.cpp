@@ -475,13 +475,13 @@ namespace density
 
 			void test_void_dense_list()
 			{
-				auto void_list = DenseList<void>::template make(1,2,3);
+				/*auto void_list = DenseList<void>::template make(1,2,3);
 				int sum = 0;
 				for (auto it = void_list.begin(); it != void_list.end(); it++)
 				{
 					sum += *(int*)it.curr_element();
 				}
-				(void)sum;
+				(void)sum;*/
 			}
 		}
 	}
