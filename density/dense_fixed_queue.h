@@ -57,6 +57,11 @@ namespace density
 					return i_source.m_curr_type == i_source.m_curr_type;
 				}
 
+				bool is_end() const DENSITY_NOEXCEPT
+				{
+					return m_curr_type == m_queue->m_tail;
+				}
+
 				RUNTIME_TYPE * m_curr_type;
 				void * m_curr_element;
 				const DenseFixedQueueImpl * m_queue;
@@ -135,7 +140,7 @@ namespace density
 				impl_init(i_source.impl_mem_capacity());
 
 				/* now the queue is empty, and m_tail = m_head = m_buffer_start. Anyway
-					we offset m_tail and m_head like they are in the source, so in order to make
+					we offset m_tail and m_head like they are in the source, in order to make
 					an exact copy, in which the free space is the same */
 				m_tail = m_head = static_cast<RUNTIME_TYPE*>(address_add(m_buffer_start,
 					address_diff(i_source.m_head, i_source.m_buffer_start) ) );
@@ -368,6 +373,8 @@ namespace density
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
+			iterator() DENSITY_NOEXCEPT {}
+
 			iterator(const typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source) {  }
 
@@ -410,6 +417,11 @@ namespace density
 
 			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
+			bool is_end() const DENSITY_NOEXCEPT
+			{
+				return m_impl.is_end();
+			}
+
 		private:
 			typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 
@@ -426,6 +438,8 @@ namespace density
 			using const_reference = const ELEMENT &;
 			using pointer = typename std::allocator_traits<allocator_type>::pointer;
 			using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
+
+			const_iterator() DENSITY_NOEXCEPT {}
 
 			const_iterator(const typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl & i_source) DENSITY_NOEXCEPT
 				: m_impl(i_source) {  }
@@ -472,6 +486,11 @@ namespace density
 
 			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
+			bool is_end() const DENSITY_NOEXCEPT
+			{
+				return m_impl.is_end();
+			}
+
 		private:
 			typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::IteratorBaseImpl m_impl;
 		}; // class const_iterator
@@ -500,7 +519,7 @@ namespace density
 				DENSITY_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
 		{
 			return m_impl.impl_push(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
-				[&i_arguments...](void * i_dest, const RuntimeType & ) {
+				[&i_arguments...]( void * i_dest, const RuntimeType & ) {
 					new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_arguments)...);
 			});
 		}
@@ -555,17 +574,12 @@ namespace density
 
 	private:
 
-		template <typename TYPE> struct RemoveRefsAndConst
-		{
-			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
-		};
-
 		// overload used if i_source is an rvalue
 		template <typename ELEMENT_COMPLETE_TYPE>
 			bool try_push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
 				DENSITY_NOEXCEPT_V((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
-			return m_impl.impl_push(RuntimeType::template make<typename RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+			return m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
 				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::MoveConstruct(&i_source));
 		}
 
@@ -574,7 +588,7 @@ namespace density
 			bool try_push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
 				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
-			return m_impl.impl_push(RuntimeType::template make<typename RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+			return m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
 				typename detail::DenseFixedQueueImpl<ALLOCATOR, RUNTIME_TYPE>::CopyConstruct(&i_source));
 		}
 

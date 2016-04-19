@@ -207,6 +207,7 @@
     <ClInclude Include="..\density\correctness_test_context.h" />
     <ClInclude Include="..\density\dense_fixed_queue.h" />
     <ClInclude Include="..\density\dense_list.h" />
+    <ClInclude Include="..\density\dense_queue.h" />
     <ClInclude Include="..\density\density_common.h" />
     <ClInclude Include="..\density\detail\dense_list_typed.h" />
     <ClInclude Include="..\density\detail\dense_list_void.h" />
@@ -220,6 +221,7 @@
     <ClCompile Include="..\density\tests\dense_fixed_queue_test.cpp" />
     <ClCompile Include="..\density\tests\dense_list_benchmark.cpp" />
     <ClCompile Include="..\density\tests\dense_list_test.cpp" />
+    <ClCompile Include="..\density\tests\dense_queue_test.cpp" />
     <ClCompile Include="..\samples\main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

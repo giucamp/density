@@ -14,6 +14,7 @@
     </ClInclude>
     <ClInclude Include="..\density\dense_fixed_queue.h" />
     <ClInclude Include="..\density\runtime_type.h" />
+    <ClInclude Include="..\density\dense_queue.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="detail">
@@ -44,6 +45,9 @@
     </ClCompile>
     <ClCompile Include="..\samples\main.cpp">
       <Filter>samples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\dense_queue_test.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

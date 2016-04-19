@@ -19,6 +19,12 @@
 	#define DENSITY_ASSERT_NOEXCEPT(expr)		static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
 #endif
 
+#ifdef _MSC_VER
+	#define DENSITY_NO_INLINE						__declspec(noinline)
+#else
+	#define DENSITY_NO_INLINE
+#endif
+
 namespace density
 {
 				// address functions
@@ -340,5 +346,13 @@ namespace density
 		static const bool value = std::is_base_of<BASE_CLASS, FIRST_TYPE>::value &&
 			AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
 	};
+
+	namespace detail
+	{
+		template <typename TYPE> struct RemoveRefsAndConst
+		{
+			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
+		};
+	}
 
 } // namespace density
