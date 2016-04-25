@@ -29,7 +29,7 @@ namespace density
 				size_t alignment() const noexcept;
 
 				void copy_construct(void * i_dest_element, const void * i_source_element) const
-				void move_construct(void * i_dest_element, void * i_source_element) const noexcept
+				void move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept
 								
 				void destroy(void * i_element) const noexcept;
 		};
@@ -280,10 +280,16 @@ namespace density
 			(*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
 		}
 
-		void move_construct(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
+		void move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			(*m_function)(Operation::move, i_destination, i_source_element);
+		}
+
+		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
+		{
+			// temp
+			return static_cast<ELEMENT *>(i_complete_type_ptr);
 		}
 
 	private:
@@ -353,6 +359,12 @@ namespace density
 			(*m_function)(i_destination, const_cast<void*>(i_source_element));
 		}
 
+		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
+		{
+			// temp
+			return static_cast<ELEMENT *>(i_complete_type_ptr);
+		}
+
 	private:
 
 		enum class Operation { copy, move, destroy };
@@ -403,10 +415,16 @@ namespace density
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
-		void move_construct(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
+		void move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			(*m_function)(i_destination, i_source_element);
+		}
+
+		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
+		{
+			// temp
+			return static_cast<ELEMENT *>(i_complete_type_ptr);
 		}
 
 	private:
@@ -454,6 +472,12 @@ namespace density
 		{
 			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value );
+		}
+
+		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
+		{
+			// temp
+			return static_cast<ELEMENT *>(i_complete_type_ptr);
 		}
 
 	private:

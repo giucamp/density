@@ -7,7 +7,6 @@
 #pragma once
 #include <memory>
 #include "runtime_type.h"
-//#include <algorithm> // avoid including <algorithm> just to use std::max<size_t>, size_max is defined instead
 
 #ifdef NDEBUG
 	#define DENSITY_DENSE_LIST_DEBUG		0
@@ -19,12 +18,6 @@ namespace density
 {
 	namespace detail
 	{
-		// size_max: avoid including <algorithm> just to use std::max<size_t>
-		DENSITY_CONSTEXPR inline size_t size_max(size_t i_first, size_t i_second) DENSITY_NOEXCEPT
-		{
-			return i_first > i_second ? i_first : i_second;
-		}
-
 		template < typename ALLOCATOR, typename RUNTIME_TYPE >
 			class DenseListImpl : private ALLOCATOR
 		{
@@ -216,7 +209,7 @@ namespace density
 #if DENSITY_DENSE_LIST_DEBUG
 					dbg_check_range(new_element, address_add(new_element, i_element_info.size()));
 #endif
-					i_element_info.move_construct(new_element, i_source);
+					i_element_info.move_construct_nothrow(new_element, i_source);
 					// from now on, for the whole function, we cant except
 					m_end_of_elements = address_add(new_element, i_element_info.size());
 

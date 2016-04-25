@@ -6,6 +6,8 @@
 
 #pragma once
 #include <assert.h>
+#include <type_traits>
+#include <ostream>
 
 #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
 	#define DENSITY_CONSTEXPR
@@ -27,6 +29,20 @@
 
 namespace density
 {
+	namespace detail
+	{
+		template <typename TYPE> struct RemoveRefsAndConst
+		{
+			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
+		};
+
+		// size_max: avoid including <algorithm> just to use std::max<size_t>
+		DENSITY_CONSTEXPR inline size_t size_max(size_t i_first, size_t i_second) DENSITY_NOEXCEPT
+		{
+			return i_first > i_second ? i_first : i_second;
+		}
+	}
+
 				// address functions
 
 	/** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
@@ -278,10 +294,9 @@ namespace density
 
 	/** Frees an address allocated with aligned_alloc. This function just deallocates (no destructors are called). It never throws.
 			@param i_allocator allocator to use. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
-			@param i_block block to free (returned by aligned_alloc). If it's not a vlid block the behaviour is undefined.
+			@param i_block block to free (returned by aligned_alloc). If it's not a valid block the behaviour is undefined.
 			@param i_size size of the block to free, in bytes. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
-			@param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
-			@param i_alignment_offset offset of the alignment of the block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined. */
+			@param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined. */
 	template <typename ALLOCATOR>
 		void aligned_free(ALLOCATOR & i_allocator, void * i_block, size_t i_size, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
@@ -293,7 +308,7 @@ namespace density
 		else if (i_block != nullptr)
 		{
 			{
-				size_t const extra_size = (i_alignment >= sizeof(detail::AlignmentHeader) ? i_alignment : sizeof(detail::AlignmentHeader));
+				size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
 				size_t const actual_size = i_size + extra_size;
 
 				detail::AlignmentHeader * header = static_cast<detail::AlignmentHeader*>(i_block) - 1;
@@ -303,6 +318,46 @@ namespace density
 			}
 		}
 	}
+
+
+	class AllocatorUtils
+	{
+	public:
+
+		template <typename CHAR_ALLOCATOR>
+			static void * aligned_allocate(CHAR_ALLOCATOR & i_char_allocator, size_t i_size, size_t i_alignment, size_t i_alignment_offset )
+		{
+			static_assert(std::is_same<typename CHAR_ALLOCATOR::value_type, char>::value, "The valuetype of the allocator must be char");
+
+			assert(is_power_of_2(i_alignment));
+
+			size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+			size_t const actual_size = i_size + extra_size;
+
+			void * const complete_block = i_char_allocator.allocate(actual_size);
+
+			void * const user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
+			detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+			header.m_block = complete_block;
+
+			return user_block;
+		}
+
+		template <typename CHAR_ALLOCATOR>
+			static void aligned_deallocate(CHAR_ALLOCATOR & i_char_allocator, void * i_block, size_t i_size ) DENSITY_NOEXCEPT
+		{
+			static_assert(std::is_same<typename CHAR_ALLOCATOR::value_type, char>::value, "The valuetype of the allocator must be char");
+
+			if (i_block != nullptr)
+			{
+				detail::AlignmentHeader * header = static_cast<detail::AlignmentHeader*>(i_block) - 1;
+
+				const size_t complete_size = address_diff(address_add(i_block, i_size), header->m_block);
+
+				i_char_allocator.deallocate(static_cast<char*>(header->m_block), complete_size);
+			}
+		}
+	};
 
 	/** Finds the aligned placement for a block with the specified size and alignment, such that it is
 			>= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
@@ -347,12 +402,130 @@ namespace density
 			AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
 	};
 
-	namespace detail
+
+
+	template <typename UINT>
+		class MemSize
 	{
-		template <typename TYPE> struct RemoveRefsAndConst
+	public:
+
+		MemSize() DENSITY_NOEXCEPT : m_value(0) { }
+
+		explicit MemSize(UINT i_value) DENSITY_NOEXCEPT : m_value(i_value) { }
+
+		bool operator == (const MemSize & i_source) const			{ return m_value == i_source.m_value; }
+		bool operator != (const MemSize & i_source) const			{ return m_value != i_source.m_value; }
+		bool operator > (const MemSize & i_source) const			{ return m_value > i_source.m_value; }
+		bool operator >= (const MemSize & i_source) const			{ return m_value >= i_source.m_value; }
+		bool operator < (const MemSize & i_source) const			{ return m_value < i_source.m_value; }
+		bool operator <= (const MemSize & i_source) const			{ return m_value <= i_source.m_value; }
+		
+		MemSize operator + (const MemSize & i_source) const			{ return MemSize(m_value + i_source.m_value); }
+		MemSize operator - (const MemSize & i_source) const			{ return MemSize(m_value - i_source.m_value); }
+		MemSize operator * (UINT i_source) const					{ return MemSize(m_value * i_source); }
+		MemSize operator / (UINT i_source) const					{ return MemSize(m_value / i_source); }
+
+		MemSize operator += (const MemSize & i_source)				{ m_value += i_source.m_value; return *this; }
+		MemSize operator -= (const MemSize & i_source)				{ m_value -= i_source.m_value; return *this; }
+		MemSize operator *= (UINT i_source)							{ m_value *= i_source; return *this; }
+		MemSize operator /= (UINT i_source)							{ m_value /= i_source; return *this; }
+
+		UINT value() const											{ return m_value; }
+	
+	private:
+		UINT m_value;
+	};
+
+	template <typename UINT>
+		std::ostream & operator << (std::ostream & i_dest, const MemSize<UINT> & i_source)
+	{
+		const char * suffixes[] = { " KiB", " MiB", " GiB", " TiB" };
+		const char * suffixes_p[] = { " KiB(+", " MiB(+", " GiB(+", " TiB(+" };
+		const char * suffixes_n[] = { " KiB(-", " MiB(-", " GiB(-", " TiB(-" };
+		const double mults[] = { 1024., 1024.*1024., 1024.*1024.*1024., 1024.*1024.*1024.*1024. };
+
+		unsigned prefix_index = 0;
+		UINT value = i_source.value();
+		while ((value >> 9) != 0 && prefix_index < 3)
 		{
-			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
-		};
+			value >>= 10;
+			prefix_index++;
+		}
+
+		if (prefix_index == 0)
+		{
+			i_dest << value << "B";
+		}
+		else
+		{
+			prefix_index--;
+			double d_val = round(i_source.value() / mults[prefix_index] * 100.) / 100.;
+			const UINT as_uint = static_cast<UINT>( d_val * mults[prefix_index] );
+			if (as_uint == i_source.value())
+			{
+				i_dest << d_val << suffixes[prefix_index];
+			}
+			else if (as_uint < i_source.value())
+			{
+				i_dest << d_val << suffixes_p[prefix_index] << i_source.value() - as_uint << ')';
+			}
+			else
+			{
+				i_dest << d_val << suffixes_n[prefix_index] << as_uint - i_source.value() << ')';
+			}
+		}
+		return i_dest;
 	}
+
+	class MemStats
+	{
+	public:
+
+		/** Total memory size requested to the allocator. This is similar to the capacity of an std::vector (except that it is expressed
+			in bytes rather than in element count). */
+		const MemSize<size_t> & reserved_capacity() const	{ return m_reserved_capacity; }
+
+		/** Total memory size used to store the elements and the required overhead (like the space for types types) and padding (usualy to respect
+			the alignment). The used size is always less than or equal to the reserved_capacity, and it is similar to the size of a vector
+			(except that it is expressed in bytes rather than in element count). Adding new elements to the container makes the used size
+			increase. If the new used size would exceed the reserved capacity, a reallocation will occur. */
+		const MemSize<size_t> & used_size() const			{ return m_used_size; }
+		
+		/** Total space used for overhead (headers, footers, types). This size is a part of the used size. */
+		const MemSize<size_t> & overhead() const			{ return m_overhead; }
+		
+		/** Total space wasted to respect the alignment of elements and overhead data. */
+		const MemSize<size_t> & padding() const				{ return m_padding; }
+
+		MemStats(const MemSize<size_t> & i_reserved_capacity,
+			const MemSize<size_t> & i_used_size,
+			const MemSize<size_t> & i_overhead,
+			const MemSize<size_t> & i_padding)
+			: m_reserved_capacity(i_reserved_capacity), m_used_size(i_used_size), m_overhead(i_overhead), m_padding(i_padding)
+		{
+		}
+
+		MemStats & operator += (const MemStats & i_source)
+		{
+			m_reserved_capacity += i_source.m_reserved_capacity;
+			m_used_size += i_source.m_used_size;
+			m_overhead += i_source.m_overhead;
+			m_padding += i_source.m_padding;
+			return *this;
+		}
+
+		MemStats & operator + (const MemStats & i_source) const
+		{
+			MemStats result = *this;
+			result += i_source;
+			return result;
+		}
+
+	private:
+		MemSize<size_t> m_reserved_capacity;
+		MemSize<size_t> m_used_size;
+		MemSize<size_t> m_overhead;
+		MemSize<size_t> m_padding;
+	};
 
 } // namespace density
