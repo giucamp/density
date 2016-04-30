@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -28,8 +28,11 @@ namespace density
 				size_t size() const noexcept;
 				size_t alignment() const noexcept;
 
-				void copy_construct(void * i_dest_element, const void * i_source_element) const
-				void move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept
+				// optional
+				void * copy_construct(void * i_dest_element, const void * i_source_element) const;
+
+				// optional
+				void * move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept;
 								
 				void destroy(void * i_element) const noexcept;
 		};
@@ -192,16 +195,16 @@ namespace density
 		template <typename COMPLETE_TYPE, bool CAN = std::is_copy_constructible<COMPLETE_TYPE>::value> struct CopyConstructImpl;
 		template <typename COMPLETE_TYPE> struct CopyConstructImpl<COMPLETE_TYPE, true>
 		{
-			static void invoke(void * i_first, void * i_second)
+			static void * invoke(void * i_first, void * i_second) DENSITY_NOEXCEPT
 			{
-				new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
+				return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
 			}
 		};
 		template <typename COMPLETE_TYPE> struct CopyConstructImpl<COMPLETE_TYPE, false>
 		{
-			static void invoke(void *, void *)
+			static void * invoke(void *, void *)
 			{
-				throw std::exception("copy-construction not supported");
+				return throw std::exception("copy-construction not supported");
 			}
 		};
 
@@ -209,14 +212,14 @@ namespace density
 		template <typename COMPLETE_TYPE, bool CAN = std::is_nothrow_move_constructible<COMPLETE_TYPE>::value > struct MoveConstructImpl;
 		template <typename COMPLETE_TYPE> struct MoveConstructImpl<COMPLETE_TYPE, true>
 		{
-			static void invoke(void * i_first, void * i_second)
+			static void * invoke(void * i_first, void * i_second) DENSITY_NOEXCEPT
 			{
-				new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
+				return new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
 			}
 		};
 		template <typename COMPLETE_TYPE> struct MoveConstructImpl<COMPLETE_TYPE, false>
 		{
-			static void invoke(void *, void *)
+			static void * invoke(void *, void *)
 			{
 				throw std::exception("move-construction not supported");
 			}
@@ -274,16 +277,16 @@ namespace density
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
-		void copy_construct(void * i_destination, const void * i_source_element) const
+		void * copy_construct(void * i_destination, const void * i_source_element) const
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			(*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
+			return (*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
 		}
 
-		void move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
+		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			(*m_function)(Operation::move, i_destination, i_source_element);
+			return (*m_function)(Operation::move, i_destination, i_source_element);
 		}
 
 		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
@@ -292,31 +295,38 @@ namespace density
 			return static_cast<ELEMENT *>(i_complete_type_ptr);
 		}
 
+		template <typename TYPE, typename... PARAMS>
+			TYPE * construct(PARAMS &&... i_params)
+		{
+			return new TYPE(std::forward<PARAMS>(i_params)...);
+		}
+
 	private:
 
 		enum class Operation { copy, move, destroy };
  
-		using FunctionPtr = void(*)(Operation i_operation, void * i_first, void * i_second );
+		using FunctionPtr = void * (*)(Operation i_operation, void * i_first, void * i_second );
 
 		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
 			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
-			static void function_impl(Operation i_operation, void * i_first, void * i_second)
+			static void * function_impl(Operation i_operation, void * i_first, void * i_second)
 		{
 			switch (i_operation )
 			{
 				case Operation::copy:
-					detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+					return static_cast<ELEMENT*>( detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
 					break;
 
 				case Operation::move:
-					detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+					return static_cast<ELEMENT*>(detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
 					break;
 
 				case Operation::destroy:
 					break;
 			}
+			return nullptr;
 		}
 
 	private:
@@ -353,31 +363,25 @@ namespace density
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
-		void copy_construct(void * i_destination, const void * i_source_element) const
+		void * copy_construct(void * i_destination, const void * i_source_element) const
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			(*m_function)(i_destination, const_cast<void*>(i_source_element));
-		}
-
-		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
-		{
-			// temp
-			return static_cast<ELEMENT *>(i_complete_type_ptr);
+			return (*m_function)(i_destination, const_cast<void*>(i_source_element));
 		}
 
 	private:
 
 		enum class Operation { copy, move, destroy };
  
-		using FunctionPtr = void(*)(void * i_first, void * i_second );
+		using FunctionPtr = void * (*)(void * i_first, void * i_second );
 
 		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
 			: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
-			static void function_impl(void * i_first, void * i_second)
+			static void * function_impl(void * i_first, void * i_second)
 		{
-			detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+			rerturn static_cast<ELEMENT*>( detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
 		}
 
 	private:
@@ -415,29 +419,23 @@ namespace density
 			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
 		}
 
-		void move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
+		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
 			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			(*m_function)(i_destination, i_source_element);
-		}
-
-		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
-		{
-			// temp
-			return static_cast<ELEMENT *>(i_complete_type_ptr);
+			return (*m_function)(i_destination, i_source_element);
 		}
 
 	private:
 
-		using FunctionPtr = void(*)(void * i_first, void * i_second );
+		using FunctionPtr = void * (*)(void * i_first, void * i_second );
 
 		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
 			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
 
 		template <typename COMPLETE_TYPE>
-			static void function_impl(void * i_first, void * i_second)
+			static void * function_impl(void * i_first, void * i_second)
 		{
-			detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second);
+			return static_cast<ELEMENT*>( detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
 		}
 
 	private:
@@ -478,6 +476,12 @@ namespace density
 		{
 			// temp
 			return static_cast<ELEMENT *>(i_complete_type_ptr);
+		}
+
+		template <typename TYPE, typename... PARAMS>
+			TYPE * construct(PARAMS &&... i_params)
+		{
+			return new TYPE(std::forward<PARAMS>(i_params)...);
 		}
 
 	private:

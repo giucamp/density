@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -12,100 +12,87 @@ namespace density
 {
 	namespace detail
 	{
-		template < typename RUNTIME_TYPE, size_t DEFAULT_ELEMENT_ALIGNMENT, bool RUNTIME_TYPE_HAS_ALIGNMENT = true >
-			struct AlignmentForElement;
-		template < typename RUNTIME_TYPE, size_t DEFAULT_ELEMENT_ALIGNMENT>
-			struct AlignmentForElement<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT, true>
+		/** This internal class template implements an heterogeneous fifo sequence that allocates the elements on an externally-owned 
+		   memory buffer. QueueImpl is moveable but not copyable.
+		   A null-QueueImpl is a QueueImpl with no associated memory buffer. A default constructed QueueImpl is a null-QueueImpl. The
+		   source of a move-costructor or move-assignment becomes a null-QueueImpl. The only way for null-QueueImpl to become a non-
+		   null-QueueImpl is being the destination of a move-assigment with a non-null source.A null-QueueImpl is always empty, and a
+		   try_push on it results in undefined behaviour.
+		   Implementation: the layout of the buffer is composed by a linear-alocated sequence of Control-element pairs. This squence
+		   wraps to the boundaries of the memory buffer. Control is a private struct that contains:
+		      - the RUNTIME_TYPE associated to the element. If RUNTIME_TYPE is an empty struct, no storage is wasted (Control exploits
+			    the empty base optimization).
+			  - a pointer to the element. This pointer does not point to the end of the Control, as:
+					* the storage of element is properly aligned
+					* the pointer may point to a subobject of the element, in case of typed containers (that if the public container has
+					  a non-void type). Note: the address of a subobject (the base class "part") is not equal to the address of the
+					  complete type (that is, a static-casting a pointer is not a no-operation).
+		            * this pointer may wrap to the beginning of the buffer, when there is not enough space in the buffer after the Control.
+			  - a pointer to the Control of the next element. This pointer is corretcly aligned, but its content is undefined if this
+			    element is the last one. Usualy this points to the end of the element, upper-aligned according to the alignment requirement
+				of Control. This pointer may wrap to the beginning of the memory buffer. */
+		template <typename RUNTIME_TYPE>
+			class QueueImpl final
 		{
-			static size_t value(const RUNTIME_TYPE & i_type) DENSITY_NOEXCEPT
-			{
-				return i_type.alignment();
-			}
-		};
-
-		/* This internal class template implements an heterogeneous fifo sequence that allocates the elements on an externally-owned 
-		   memory buffer. QueueImpl is moveable but not copyable. After a move construction or assignment, the source QueueImpl 
-		   loses the reference to the memory buffer, and it is left defaut constructed. */
-		template < typename RUNTIME_TYPE, size_t DEFAULT_ELEMENT_ALIGNMENT > class QueueImpl
-		{
-		private:
-
-			static size_t alignment_for(const RUNTIME_TYPE & i_type) DENSITY_NOEXCEPT
-			{
-				return AlignmentForElement<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>::value(i_type);
-			}
+			struct Control;
 
 		public:
 
-			/** Iterator like class. Create on with QueueImpl::begin, move t the next with IteratorImpl::move_next. The
-				end of the iteration cab be tested comparing to QueueImpl::end, or using IteratorImpl::is_end. */
 			struct IteratorImpl
 			{
 				/** Construct a IteratorImpl with undefined content. */
 				IteratorImpl() DENSITY_NOEXCEPT {}
 
-				/** Constructor used by QueueImpl::begin. Internal only. */
-				IteratorImpl(const QueueImpl * i_queue, RUNTIME_TYPE * i_type, void * i_element) DENSITY_NOEXCEPT
-					: m_curr_type(i_type), m_curr_element(i_element), m_queue(i_queue) { }
+				IteratorImpl(Control * i_curr_control) DENSITY_NOEXCEPT
+					: m_curr_control(i_curr_control) { }
 
-				/** Constructor used by QueueImpl::end. Internal only. */
-				IteratorImpl(const QueueImpl * i_queue, RUNTIME_TYPE * i_type) DENSITY_NOEXCEPT
-					: m_curr_type(i_type), m_queue(i_queue) { }
-
-				/** Moves to the next element. Precondition: !is_end() */
-				void move_next() DENSITY_NOEXCEPT
+				void operator ++ () DENSITY_NOEXCEPT
 				{
-					assert(!is_end());
-
-					// advance m_curr_type
-					m_curr_type = static_cast<RUNTIME_TYPE*>(address_add(m_curr_element, m_curr_type->size()));
-					if (m_curr_type != m_queue->m_tail)
-					{
-						m_curr_type = static_cast<RUNTIME_TYPE*>(address_upper_align(m_curr_type, alignof(RUNTIME_TYPE)));
-						if (m_curr_type + 1 > m_queue->m_buffer_end)
-						{
-							m_curr_type = static_cast<RUNTIME_TYPE*>(address_upper_align(m_queue->m_buffer_start, alignof(RUNTIME_TYPE)));
-						}
-
-						// advance m_curr_element
-						const auto element_alignment = alignment_for(*m_curr_type);
-						m_curr_element = address_upper_align(m_curr_type + 1, element_alignment);
-						auto end_of_element = address_add(m_curr_element, m_curr_type->size());
-						if (end_of_element > m_queue->m_buffer_end)
-						{
-							m_curr_element = address_upper_align(m_queue->m_buffer_start, element_alignment);
-							end_of_element = address_add(m_curr_element, m_curr_type->size());
-						}
-					}
+					m_curr_control = m_curr_control->m_next;
 				}
 
-				bool operator == (const IteratorImpl & i_source) DENSITY_NOEXCEPT
+				bool operator == (const IteratorImpl & i_source) const DENSITY_NOEXCEPT
 				{
-					return i_source.m_curr_type == i_source.m_curr_type;
+					return i_source.m_curr_control == i_source.m_curr_control;
 				}
 
-				bool is_end() const DENSITY_NOEXCEPT
+				bool operator != (const IteratorImpl & i_source) const DENSITY_NOEXCEPT
 				{
-					return m_curr_type == m_queue->m_tail;
+					return i_source.m_curr_control != i_source.m_curr_control;
 				}
 
-				RUNTIME_TYPE * m_curr_type;
-				void * m_curr_element;
-				const QueueImpl * m_queue;
+				void * element() const DENSITY_NOEXCEPT
+				{
+					return m_curr_control->m_element;
+				}
+
+				const RUNTIME_TYPE * type() const DENSITY_NOEXCEPT
+				{
+					return m_curr_control;
+				}
+
+			private:
+				Control * m_curr_control;
 			};
 
+			/** Construct a null-QueueImpl. */
 			QueueImpl() DENSITY_NOEXCEPT
 				: m_head(nullptr), m_tail(nullptr), m_element_max_alignment(alignof(RUNTIME_TYPE)),
 				  m_buffer_start(nullptr), m_buffer_end(nullptr)
 			{
 			}
 
+			/** Construct a QueueImpl provinding a memory buffer. 
+				Precondition: i_buffer_address can't be null,
+				*/
 			QueueImpl(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
 			{
+				assert(i_buffer_address != nullptr);
 				m_buffer_start = i_buffer_address;
 				m_buffer_end = address_add(m_buffer_start, i_buffer_byte_capacity);
-				m_tail = m_head = static_cast<RUNTIME_TYPE *>(m_buffer_start);
-				m_element_max_alignment = alignof(RUNTIME_TYPE);
+				m_head = static_cast<Control*>( address_upper_align(m_buffer_start, alignof(Control)) );
+				m_tail = m_head;
+				m_element_max_alignment = alignof(Control);
 			}
 
 			QueueImpl(QueueImpl && i_source) DENSITY_NOEXCEPT
@@ -114,7 +101,7 @@ namespace density
 			{
 				i_source.m_tail = i_source.m_head = nullptr;
 				i_source.m_buffer_end = i_source.m_buffer_start = nullptr;
-				i_source.m_element_max_alignment = alignof(RUNTIME_TYPE);
+				i_source.m_element_max_alignment = alignof(Control);
 			}
 
 			QueueImpl & operator = (QueueImpl && i_source) DENSITY_NOEXCEPT
@@ -133,7 +120,6 @@ namespace density
 			}
 
 			QueueImpl(const QueueImpl & i_source) = delete;
-
 			QueueImpl & operator = (const QueueImpl & i_source) = delete;
 						
 			/* Moves the elements from i_source to this queue. After the call, i_source will be empty.
@@ -142,21 +128,22 @@ namespace density
 			void move_elements_from(QueueImpl & i_source) DENSITY_NOEXCEPT
 			{
 				IteratorImpl it = i_source.begin();
-				while( !it.is_end() )
+				const IteratorImpl end_it = i_source.end();
+				while( it != end_it )
 				{
-					auto const type = it.m_curr_type;
-					auto const source_element = it.m_curr_element;
-					it.move_next();
+					auto const type = it.type();
+					auto const source_element = it.element();
+					++it;
 
-					bool result = push(*type,
-						typename detail::QueueImpl<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>::MoveConstruct(source_element));
+					bool result = try_push(*type,
+						typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(source_element));
 					assert(result);
 
 					type->destroy(source_element);
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
 				}
 				// set the source as empty
-				i_source.m_head = static_cast<RUNTIME_TYPE*>(i_source.m_tail);
+				i_source.m_tail = i_source.m_head = static_cast<Control*>(address_upper_align(i_source.m_buffer_start, alignof(Control)));
 			}
 
 			/* Copies the elements from i_source to this queue. This queue must have enough space to 
@@ -164,14 +151,15 @@ namespace density
 			void copy_elements_from(const QueueImpl & i_source) DENSITY_NOEXCEPT
 			{
 				IteratorImpl it = i_source.begin();
-				while( !it.is_end() )
+				const IteratorImpl end_it = i_source.end();
+				while (it != end_it)
 				{
-					auto const type = it.m_curr_type;
-					auto const source_element = it.m_curr_element;
-					it.move_next();
+					auto const type = it.type();
+					auto const source_element = it.element();
+					++it;
 
-					bool result = push(*type,
-						typename detail::QueueImpl<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>::CopyConstruct(source_element));
+					bool result = try_push(*type,
+						typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
 					assert(result);
 				}
 			}
@@ -184,38 +172,12 @@ namespace density
 
 			IteratorImpl begin() const DENSITY_NOEXCEPT
 			{
-				if (m_head == m_tail)
-				{
-					return end();
-				}
-				else
-				{
-					auto type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_head, alignof(RUNTIME_TYPE)));
-					auto type_end = static_cast<void*>(type_ptr + 1);
-					if (type_end > m_buffer_end)
-					{
-						type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_buffer_start, alignof(RUNTIME_TYPE)));
-						type_end = static_cast<void*>(type_ptr + 1);
-					}
-
-					auto const element_size = type_ptr->size();
-					const auto element_alignment = alignment_for(*type_ptr);
-
-					auto element_end = type_end;
-					auto element_ptr = linear_alloc(&element_end, element_size, element_alignment);
-					if (element_end > m_buffer_end)
-					{
-						element_end = m_buffer_start;
-						element_ptr = linear_alloc(&element_end, element_size, element_alignment);
-					}
-
-					return IteratorImpl(this, type_ptr, element_ptr);
-				}
+				return IteratorImpl(m_head);			
 			}
 
 			IteratorImpl end() const DENSITY_NOEXCEPT
 			{
-				return IteratorImpl(this, static_cast<RUNTIME_TYPE*>(m_tail));
+				return IteratorImpl(m_tail);
 			}
 			
 			struct CopyConstruct
@@ -225,9 +187,9 @@ namespace density
 				CopyConstruct(const void * i_source) DENSITY_NOEXCEPT
 					: m_source(i_source) { }
 
-				void operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
+				void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
 				{
-					i_element_type.copy_construct(i_dest, m_source);
+					return i_element_type.copy_construct(i_dest, m_source);
 				}
 			};
 
@@ -238,38 +200,44 @@ namespace density
 				MoveConstruct(void * i_source) DENSITY_NOEXCEPT
 					: m_source(i_source) { }
 
-				void operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) DENSITY_NOEXCEPT
+				void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) DENSITY_NOEXCEPT
 				{
-					i_element_type.move_construct_nothrow(i_dest, m_source);
+					return i_element_type.move_construct_nothrow(i_dest, m_source);
 				}
 			};
 
-			/** Tries to insert a new element in the queue.
+			/** Tries to insert a new element in the queue. If this is a null-QueueImpl, the behaviour is undefined.
 				@param i_source_type type of the element to insert
 				@param i_constructor function object that is used to construct the new element. The expected signature 
 					of the function is:
-						void (const RUNTIME_TYPE & i_source_type, void * i_new_element_place)
+						void * (const RUNTIME_TYPE & i_source_type, void * i_new_element_place)
 				@return true if the element was successfully inserted, false otherwise */
 			template <typename CONSTRUCTOR>
-				bool push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+				bool try_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
 					DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V(i_constructor(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
 			{
-				const auto element_aligment = alignment_for(i_source_type);
+				// test preconditions
+				assert(m_buffer_start != nullptr);
 
-				auto tail = static_cast<void*>(m_tail);
-				const auto type_block = single_push(&tail, sizeof(RUNTIME_TYPE), alignof(RUNTIME_TYPE) );
-				const auto element_block = single_push(&tail, i_source_type.size(), element_aligment);
-				if (element_block == nullptr || type_block == nullptr)
+				// test internal preconditions
+				assert(m_buffer_start != nullptr);
+
+				const auto element_aligment = i_source_type.alignment();
+
+				Control * curr_control = m_tail;
+				void * new_tail = curr_control + 1;
+				void * curr_element = single_push(&new_tail, i_source_type.size(), element_aligment);
+				void * next_control = single_push(&new_tail, sizeof(Control), alignof(Control) );
+				if (curr_element == nullptr || next_control == nullptr)
 				{
 					return false;
 				}
 
-				// commit the push
+				new(curr_control) Control(std::move(i_source_type), static_cast<Control*>(next_control));
+				curr_control->m_element = i_constructor(i_source_type, curr_element);
+				
+				m_tail = static_cast<Control *>(next_control);
 				m_element_max_alignment = size_max(m_element_max_alignment, element_aligment);
-				i_constructor(i_source_type, element_block);
-				new(type_block) RUNTIME_TYPE(i_source_type);				
-				m_tail = static_cast<RUNTIME_TYPE*>(tail);
-				assert(tail == address_add(element_block, i_source_type.size()));
 				return true;
 			}
 
@@ -281,32 +249,15 @@ namespace density
 				void consume(OPERATION && i_operation)
 					DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
 			{
-				assert(m_head != m_tail); // the queue must not be empty		
-				
-				auto type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_head, alignof(RUNTIME_TYPE)));
-				auto type_end = static_cast<void*>(type_ptr + 1);
-				if (type_end > m_buffer_end)
-				{
-					type_ptr = static_cast<RUNTIME_TYPE*>(address_upper_align(m_buffer_start, alignof(RUNTIME_TYPE)));
-					type_end = static_cast<void*>(type_ptr + 1);
-				}
+				assert(!empty()); // the queue must not be empty
 
-				auto const element_size = type_ptr->size();
-				auto const element_alignment = alignment_for(*type_ptr);
-
-				auto element_end = type_end;
-				auto element_ptr = linear_alloc(&element_end, element_size, element_alignment);
-				if (element_end > m_buffer_end)
-				{
-					element_end = m_buffer_start;
-					element_ptr = linear_alloc(&element_end, element_size, element_alignment);
-				}
-
-				// commit
-				i_operation(*type_ptr, element_ptr);
-				type_ptr->destroy(element_ptr);
-				type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-				m_head = static_cast<RUNTIME_TYPE*>(element_end);
+				Control * first_control = m_head;
+				const RUNTIME_TYPE & type = *first_control;
+				void * const element_ptr = first_control->m_element;
+				i_operation(type, element_ptr);
+				m_head = first_control->m_next;
+				type.destroy(element_ptr);
+				type.RUNTIME_TYPE::~RUNTIME_TYPE();
 			}
 
 			/** Returns a pointer to the beginning of the memory buffer. Note: this is not like a data() method, as
@@ -336,28 +287,42 @@ namespace density
 				associated to the queue, but it is empty. */
 			void delete_all() DENSITY_NOEXCEPT
 			{
-				for (IteratorImpl it = begin(); !it.is_end();)
+				IteratorImpl const it_end = end();
+				for (IteratorImpl it = begin(); it != it_end; )
 				{
-					auto const type = it.m_curr_type;
-					auto const element = it.m_curr_element;
-					it.move_next();
+					auto const type = it.type();
+					auto const element = it.element();
+					++it;
 
 					type->destroy(element);
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
 				}
-				m_head = static_cast<RUNTIME_TYPE*>(m_tail);
+				// restart from m_buffer_start, with an empty queue
+				m_tail = m_head = static_cast<Control*>(address_upper_align(m_buffer_start, alignof(Control)));
 			}
 
 			size_t element_max_alignment() const DENSITY_NOEXCEPT { return m_element_max_alignment; }
 
 		private:
 
+			struct Control : RUNTIME_TYPE
+			{
+				void * m_element;
+				Control * m_next;
+
+				Control(const RUNTIME_TYPE & i_type, Control * i_next)
+					: RUNTIME_TYPE(i_type), m_element(nullptr), m_next(i_next) {}
+			};
+
 			/* Allocates an object on the queue. The return value is the address of the new object.
-			   This function is used to push the RUNTIME_TYPE and the element. If the required size with the
-			   required alignment does not fit in the queue the return value is nullptr. */
+			   This function is used to push the Control and the element. If the required size with the
+			   required alignment does not fit in the queue the return value is nullptr. 
+			   Precoditions: *io_tail can't be null, or the behaviour is undefined.
+			   */
 			void * single_push(void * * io_tail, size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
 			{
 				auto const prev_tail = *io_tail;
+				assert(prev_tail != nullptr);
 				auto start_of_block = linear_alloc(io_tail, i_size, i_alignment);
 				if (*io_tail > m_buffer_end)
 				{
@@ -381,9 +346,9 @@ namespace density
 			}
 
 		private: // data members
-			RUNTIME_TYPE * m_head; /**< points to the first RUNTIME_TYPE. If m_tail==m_head the queue is empty, otherwise this member points
+			Control * m_head; /**< points to the first RUNTIME_TYPE. If m_tail==m_head the queue is empty, otherwise this member points
 										to a valid type. */
-			void * m_tail; /**< points to the end of the last element. When pushing, m_tail is first aligned, and then a RUNTIME_TYPE is 
+			Control * m_tail; /**< points to the end of the last element. When pushing, m_tail is first aligned, and then a RUNTIME_TYPE is
 								constructed on it. After the push m_tail points to the end of the last element. */
 			size_t m_element_max_alignment; /**< The maximum between alignof(RUNTIME_TYPE) and the maximum alignment of the alignment of the
 											elements in the container. This field has a specific getter (element_max_alignment), and it

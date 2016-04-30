@@ -1,4 +1,9 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #include "..\density_common.h"
 #include <random>
 #include <deque>
@@ -26,9 +31,10 @@ namespace density
 				add_test_case("consume_n_times", std::bind(&ContainerTest::builtin_test_case_consume_n_times, this, _1));
 			}
 
-			void add_test_case(const char * i_name, std::function< void(std::mt19937 & i_random) > && i_function)
+			void add_test_case(const char * i_name, std::function< void(std::mt19937 & i_random) > && i_function,
+				double i_probability = 1. )
 			{
-				m_test_cases.push_back({ i_name, std::move(i_function) });
+				m_test_cases.push_back({i_name, std::move(i_function), i_probability});
 			}
 
 			void step(std::mt19937 & i_random)
@@ -140,6 +146,7 @@ namespace density
 			{
 				std::string m_name;
 				TestCaseFunction m_function;
+				double m_probability;
 			};
 			std::vector<TestCase> m_test_cases;
 		}; // class template ContainerTest

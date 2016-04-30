@@ -21,6 +21,12 @@
     <ClInclude Include="..\density\tests\container_test.h">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\density\detail\dense_queue_void.h">
+      <Filter>detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\density\detail\dense_queue_typed.h">
+      <Filter>detail</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="detail">
@@ -53,6 +59,12 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\density\tests\dense_queue_test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\samples\type_experiment.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\pointer_arithmetic_test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>

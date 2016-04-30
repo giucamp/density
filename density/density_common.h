@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -21,6 +21,8 @@
 	#define DENSITY_ASSERT_NOEXCEPT(expr)		static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
 #endif
 
+#define DENSITY_OVERFLOW_IF(bool_expr)			::density::detail::handle_pointer_overflow((bool_expr));
+
 #ifdef _MSC_VER
 	#define DENSITY_NO_INLINE						__declspec(noinline)
 #else
@@ -29,12 +31,26 @@
 
 namespace density
 {
+	class Overflow : public std::exception
+	{
+	public:
+		using std::exception::exception;
+	};
+
 	namespace detail
 	{
 		template <typename TYPE> struct RemoveRefsAndConst
 		{
 			using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
 		};
+
+		inline void handle_pointer_overflow(bool i_overflow)
+		{
+			if (i_overflow)
+			{
+				throw Overflow("pointer overflow");
+			}
+		}
 
 		// size_max: avoid including <algorithm> just to use std::max<size_t>
 		DENSITY_CONSTEXPR inline size_t size_max(size_t i_first, size_t i_second) DENSITY_NOEXCEPT
@@ -402,38 +418,140 @@ namespace density
 			AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
 	};
 
-
-
+		
 	template <typename UINT>
 		class MemSize
 	{
+	private:
+		UINT m_value;
+
 	public:
+
+		static_assert( std::is_integral<UINT>::value && std::is_unsigned<UINT>::value, "UINT must be an unsigned integer" );
 
 		MemSize() DENSITY_NOEXCEPT : m_value(0) { }
 
 		explicit MemSize(UINT i_value) DENSITY_NOEXCEPT : m_value(i_value) { }
 
-		bool operator == (const MemSize & i_source) const			{ return m_value == i_source.m_value; }
-		bool operator != (const MemSize & i_source) const			{ return m_value != i_source.m_value; }
-		bool operator > (const MemSize & i_source) const			{ return m_value > i_source.m_value; }
-		bool operator >= (const MemSize & i_source) const			{ return m_value >= i_source.m_value; }
-		bool operator < (const MemSize & i_source) const			{ return m_value < i_source.m_value; }
-		bool operator <= (const MemSize & i_source) const			{ return m_value <= i_source.m_value; }
+		bool operator == (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
+		bool operator != (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
+		bool operator > (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
+		bool operator >= (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
+		bool operator < (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
+		bool operator <= (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
+
+				// arithmetic operations
 		
-		MemSize operator + (const MemSize & i_source) const			{ return MemSize(m_value + i_source.m_value); }
-		MemSize operator - (const MemSize & i_source) const			{ return MemSize(m_value - i_source.m_value); }
-		MemSize operator * (UINT i_source) const					{ return MemSize(m_value * i_source); }
-		MemSize operator / (UINT i_source) const					{ return MemSize(m_value / i_source); }
+		MemSize operator + (const MemSize & i_source) const
+		{
+			const UINT result = m_value + i_source.m_value;
+			DENSITY_OVERFLOW_IF(result < m_value);
+			return MemSize(result);
+		}
 
-		MemSize operator += (const MemSize & i_source)				{ m_value += i_source.m_value; return *this; }
-		MemSize operator -= (const MemSize & i_source)				{ m_value -= i_source.m_value; return *this; }
-		MemSize operator *= (UINT i_source)							{ m_value *= i_source; return *this; }
-		MemSize operator /= (UINT i_source)							{ m_value /= i_source; return *this; }
+		MemSize operator - (const MemSize & i_source) const	
+		{ 
+			DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
+			return MemSize(m_value - i_source.m_value);
+		}
+		MemSize operator * (UINT i_source) const
+		{
+			/* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow 
+				using the approch of umull_overflow5, as most times the operands will be small. */
+			const auto max_op = ( static_cast<UINT>(1) << (std::numeric_limits<UINT>::digits / 2) ) - 1;
+			const auto max_uint = std::numeric_limits<UINT>::max();
+			DENSITY_OVERFLOW_IF( ( m_value >= max_op || i_source >= max_op) &&
+				i_source != 0 && max_uint / i_source < m_value );
+			const UINT result = static_cast<UINT>(m_value * i_source);
+			return MemSize<UINT>(result);
+		}
 
-		UINT value() const											{ return m_value; }
-	
+		MemSize operator / (UINT i_source) const
+		{
+			assert(i_source != 0);
+			DENSITY_OVERFLOW_IF( (m_value % i_source) != 0);
+			return MemSize(m_value / i_source);
+		}
+
+
+				// compound assignment
+
+		MemSize operator += (const MemSize & i_source)
+		{
+			const UINT result = m_value + i_source.m_value;
+			DENSITY_OVERFLOW_IF(result < m_value);
+			m_value = result;
+			return *this;
+		}
+		MemSize operator -= (const MemSize & i_source)
+		{
+			DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
+			m_value -= i_source.m_value; 
+			return *this;
+		}
+		MemSize operator *= (UINT i_source)
+		{
+			/* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
+				using the approch of umull_overflow5, as most times the operands will be small. */
+			const auto max_op = (static_cast<UINT>(1) << (std::numeric_limits<UINT>::digits / 2)) - 1;
+			const auto max_uint = std::numeric_limits<UINT>::max();
+			DENSITY_OVERFLOW_IF((m_value >= max_op || i_source >= max_op) &&
+				i_source != 0 && max_uint / i_source < m_value);
+			m_value *= i_source;
+			return *this;
+		}
+
+		MemSize operator /= (UINT i_source)
+		{
+			assert(i_source != 0);
+			DENSITY_OVERFLOW_IF((m_value % i_source) != 0);
+			m_value /= i_source;
+			return *this; 
+		}
+
+		UINT value() const DENSITY_NOEXCEPT { return m_value; }
+	};
+		
+	class ArithmeticPointer
+	{
+	public:
+
+		ArithmeticPointer() DENSITY_NOEXCEPT
+			: m_value(nullptr) {}
+
+		explicit ArithmeticPointer(void * i_value) DENSITY_NOEXCEPT
+			: m_value(reinterpret_cast<char*>(i_value) ) {}
+
+		template <typename UINT_SIZE>
+			ArithmeticPointer & operator += (MemSize<UINT_SIZE> i_value)
+		{
+			auto const result = m_value + i_value.value();
+			DENSITY_OVERFLOW_IF(result < m_value);
+			m_value = result;
+		}
+
+		template <typename UINT_SIZE>
+			ArithmeticPointer & operator -= (MemSize<UINT_SIZE> i_value)
+		{
+			auto const result = m_value - i_value.value();
+			DENSITY_OVERFLOW_IF(result > m_value);
+			m_value = result;
+		}
+
+		MemSize<size_t> operator - (ArithmeticPointer i_pointer) const
+		{
+			DENSITY_OVERFLOW_IF(m_value < i_pointer.m_value);
+			return MemSize<size_t>(m_value - i_pointer.m_value);
+		}
+
+		template <typename TYPE>
+			TYPE * as_pointer() const DENSITY_NOEXCEPT
+		{
+			return reinterpret_cast<TYPE*>(m_value);
+		}
+
 	private:
-		UINT m_value;
+		char * m_value;
 	};
 
 	template <typename UINT>

@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016 - 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -14,12 +14,12 @@ namespace density
 {
 	namespace detail
 	{
-		template <typename ALLOCATOR, typename RUNTIME_TYPE, size_t DEFAULT_ELEMENT_ALIGNMENT>
+		template <typename ALLOCATOR, typename RUNTIME_TYPE>
 			class PagedQueueImpl final : private ALLOCATOR
 		{
 		public:
 
-			using FixedQueue = QueueImpl<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>;
+			using FixedQueue = QueueImpl<RUNTIME_TYPE>;
 
 			struct PageHeader
 			{
@@ -88,7 +88,7 @@ namespace density
 				void impl_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
 			{
 				// try to allocate in m_put_page
-				bool result = m_put_page->m_fifo_allocator.push(i_source_type, i_constructor);
+				bool result = m_put_page->m_fifo_allocator.try_push(i_source_type, i_constructor);
 				if (!result)
 				{
 					// move m_put_page to the next page
@@ -108,7 +108,7 @@ namespace density
 					m_put_page = next_page;
 
 					// retry to allocate
-					result = m_put_page->m_fifo_allocator.push(i_source_type, i_constructor);
+					result = m_put_page->m_fifo_allocator.try_push(i_source_type, i_constructor);
 					assert(result); // page_size should be enough to allocate the block
 				}
 			}
@@ -121,10 +121,10 @@ namespace density
 
 	} // namespace detail
 
-	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT>, size_t DEFAULT_ELEMENT_ALIGNMENT = 0 >
+	template < typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
 		class PagedQueue final : private ALLOCATOR
 	{
-		using PagedQueueImpl = detail::PagedQueueImpl<ALLOCATOR, RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>;
+		using PagedQueueImpl = detail::PagedQueueImpl<ALLOCATOR, RUNTIME_TYPE>;
 	public:
 
 		using RuntimeType = RUNTIME_TYPE;
@@ -166,7 +166,7 @@ namespace density
 				DENSITY_NOEXCEPT_V((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
 			m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
-				typename detail::QueueImpl<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>::MoveConstruct(&i_source));
+				typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
 		}
 
 		// overload used if i_source is an lvalue
@@ -175,7 +175,7 @@ namespace density
 				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
 			m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
-				typename detail::QueueImpl<RUNTIME_TYPE, DEFAULT_ELEMENT_ALIGNMENT>::CopyConstruct(&i_source));
+				typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));
 		}
 
 	private:
