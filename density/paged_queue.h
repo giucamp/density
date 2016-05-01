@@ -56,8 +56,8 @@ namespace density
 			/** Removes a page from the linked list */
 			void remove_page(PageHeader * i_page)
 			{
-				assert(i_page != nullptr);
-				assert(m_first_page != nullptr);
+				DENSITY_ASSERT(i_page != nullptr);
+				DENSITY_ASSERT(m_first_page != nullptr);
 
 				PageHeader * curr_page = m_first_page;
 				while (curr_page->m_next_page != i_page)
@@ -109,7 +109,7 @@ namespace density
 
 					// retry to allocate
 					result = m_put_page->m_fifo_allocator.try_push(i_source_type, i_constructor);
-					assert(result); // page_size should be enough to allocate the block
+					DENSITY_ASSERT(result); // page_size should be enough to allocate the block
 				}
 			}
 
@@ -151,7 +151,7 @@ namespace density
 
 		template <typename OPERATION>
 			void consume(OPERATION && i_operation)
-				DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
+				DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
 		{
 			m_impl.consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
 				i_operation(i_type, *static_cast<ELEMENT*>(i_element));
@@ -163,7 +163,7 @@ namespace density
 		// overload used if i_source is an rvalue
 		template <typename ELEMENT_COMPLETE_TYPE>
 			void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
-				DENSITY_NOEXCEPT_V((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
+				DENSITY_NOEXCEPT_IF((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
 			m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
 				typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
@@ -172,7 +172,7 @@ namespace density
 		// overload used if i_source is an lvalue
 		template <typename ELEMENT_COMPLETE_TYPE>
 			void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
-				DENSITY_NOEXCEPT_V((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
+				DENSITY_NOEXCEPT_IF((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
 		{
 			m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
 				typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));

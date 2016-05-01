@@ -219,7 +219,7 @@ namespace density
 
 		template <typename ELEMENT_COMPLETE_TYPE>
 			void push_back(const ELEMENT_COMPLETE_TYPE & i_source)
-				DENSITY_NOEXCEPT_V(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
+				DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
 		{
 			m_impl.insert_impl(m_impl.m_types + m_impl.size(),
 				RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
@@ -228,7 +228,7 @@ namespace density
 
 		template <typename ELEMENT_COMPLETE_TYPE>
 			void push_front(const ELEMENT_COMPLETE_TYPE & i_source)
-				DENSITY_NOEXCEPT_V(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
+				DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
 		{
 			m_impl.insert_impl(m_impl.m_types,
 				RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
@@ -237,7 +237,7 @@ namespace density
 
 		template <typename ELEMENT_COMPLETE_TYPE>
 			void push_back(ELEMENT_COMPLETE_TYPE && i_source)
-				DENSITY_NOEXCEPT_V(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
+				DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
 		{
 			m_impl.insert_impl(m_impl.m_types + m_impl.size(),
 				RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),

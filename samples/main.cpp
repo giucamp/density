@@ -16,9 +16,11 @@ int main()
 {	
 	using namespace density;
 
+	dense_queue_test();
+
 	pointer_arithmetic_test();
 	paged_queue_test();
-	dense_queue_test();
+	
 	list_test();
 	list_benchmark();
 	return 0;

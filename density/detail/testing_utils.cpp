@@ -5,8 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "..\testing_utils.h"
+#include "..\density_common.h"
 #include <random>
-#include <assert.h>
 
 namespace density
 {
@@ -40,8 +40,8 @@ namespace density
 		void TestAllocatorBase::pop_level()
 		{
 			auto & levels = GetThreadData().m_levels;
-			assert(levels.size() > 0);
-			assert(levels.back().m_allocations.size() == 0);
+			DENSITY_ASSERT(levels.size() > 0);
+			DENSITY_ASSERT(levels.back().m_allocations.size() == 0);
 			levels.pop_back();
 		}
 
@@ -59,7 +59,7 @@ namespace density
 
 				auto & allocations = thread_data.m_levels.back().m_allocations;
 				auto res = allocations.insert(std::make_pair(block, entry));
-				assert(res.second);
+				DENSITY_ASSERT(res.second);
 			}
 
 			return block;
@@ -74,7 +74,7 @@ namespace density
 				{
 					auto & allocations = thread_data.m_levels.back().m_allocations;
 					auto it = allocations.find(i_block);
-					assert(it != allocations.end());
+					DENSITY_ASSERT(it != allocations.end());
 					allocations.erase(it);
 				}
 
@@ -140,7 +140,7 @@ namespace density
 
 	void run_exception_stress_test(std::function<void()> i_test)
 	{
-		assert(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
+		DENSITY_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
 
 		i_test();
 

@@ -44,7 +44,7 @@ namespace density
 
 		DenseQueue & operator = (DenseQueue && i_source)
 		{
-			assert(this != &i_source);
+			DENSITY_ASSERT(this != &i_source);
 			destroy_impl();
 			static_cast<Allocator&>(*this) = std::move( static_cast<Allocator&>(i_source) );
 			m_impl = std::move(i_source.m_impl);
@@ -58,7 +58,7 @@ namespace density
 
 		DenseQueue & operator = (const DenseQueue & i_source)
 		{
-			assert(this != &i_source);
+			DENSITY_ASSERT(this != &i_source);
 			destroy_impl();
 			m_impl = Impl();
 			static_cast<Allocator&>(*this) = static_cast<const Allocator&>(i_source); // to do: what if this throws?
@@ -82,7 +82,7 @@ namespace density
 
 		template <typename ELEMENT_COMPLETE_TYPE, typename... PARAMETERS>
 			void emplace(PARAMETERS && ... i_parameters)
-				DENSITY_NOEXCEPT_V((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
+				DENSITY_NOEXCEPT_IF((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
 		{
 			return insert_back_impl(RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
 				[&i_parameters...](const RuntimeType &, void * i_dest) {
@@ -105,7 +105,7 @@ namespace density
 
 		template <typename OPERATION>
 			void consume(OPERATION && i_operation)
-				DENSITY_NOEXCEPT_V(DENSITY_NOEXCEPT_V((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>()))))
+				DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>()))))
 		{
 			m_impl.consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
 				i_operation(i_type, *static_cast<ELEMENT*>(i_element));
@@ -162,25 +162,25 @@ namespace density
 
 			bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
-				return m_impl.m_curr_type == i_other.curr_type();
+				return m_impl == i_other.m_impl;
 			}
 
 			bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
 			{
-				return m_impl.m_curr_type != i_other.curr_type();
+				return m_impl != i_other.m_impl;
 			}
 
 			bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
-				return m_impl.m_curr_type == i_other.curr_type();
+				return m_impl == i_other.m_impl;
 			}
 
 			bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
 			{
-				return m_impl.m_curr_type != i_other.curr_type();
+				return m_impl != i_other.m_impl;
 			}
 
-			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
+			const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.type(); }
 
 			bool is_end() const DENSITY_NOEXCEPT
 			{
@@ -277,22 +277,22 @@ namespace density
 		
 		const ELEMENT & front() DENSITY_NOEXCEPT
 		{
-			assert(!empty());
+			DENSITY_ASSERT(!empty());
 			const auto it = m_impl.begin();
 			return *static_cast<value_type *>(it.element());
 		}
 
-		MemSize<size_t> mem_capacity() const DENSITY_NOEXCEPT
+		MemSize mem_capacity() const DENSITY_NOEXCEPT
 		{
 			return m_impl.mem_capacity();
 		}
 
-		MemSize<size_t> mem_size() const DENSITY_NOEXCEPT
+		MemSize mem_size() const DENSITY_NOEXCEPT
 		{
 			return m_impl.mem_size();
 		}
 
-		MemSize<size_t> mem_free() const DENSITY_NOEXCEPT
+		MemSize mem_free() const DENSITY_NOEXCEPT
 		{
 			return m_impl.mem_capacity() - m_impl.mem_size();
 		}
@@ -317,7 +317,7 @@ namespace density
 			AllocatorUtils::aligned_deallocate(allocator(), m_impl.buffer(), m_impl.mem_capacity().value());
 		}
 
-		void destroy_impl()
+		void destroy_impl() DENSITY_NOEXCEPT
 		{
 			m_impl.delete_all();
 			free();
@@ -336,7 +336,7 @@ namespace density
 
 		void mem_realloc_impl(size_t i_mem_size)
 		{
-			assert(i_mem_size > m_impl.mem_capacity().value());
+			DENSITY_ASSERT(i_mem_size > m_impl.mem_capacity().value());
 
 			Impl new_impl(AllocatorUtils::aligned_allocate(allocator(), i_mem_size, m_impl.element_max_alignment(), 0), i_mem_size);
 			new_impl.move_elements_from(m_impl);

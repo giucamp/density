@@ -12,7 +12,7 @@ namespace density
 {
 	namespace detail
 	{
-		/** Tries to evaluate i_func, and returns whether an Overflow has been thrown */
+		/** Tries to evaluate i_func, and returns whether an EXCEPTION has been thrown */
 		template <typename EXCEPTION, typename FUNCTION> 
 			bool throws(FUNCTION && i_func)
 		{
@@ -26,6 +26,7 @@ namespace density
 			}
 			return false;
 		}
+
 		template <typename FUNCTION>
 			bool throws_any(FUNCTION && i_func)
 		{
@@ -47,68 +48,68 @@ namespace density
 
 		void mem_size_test()
 		{
-			// MemSize<int8_t>(); // <- must fail to compile
+			// BasicMemSize<int8_t>(); // <- must fail to compile
 
-			assert( MemSize<size_t>().value() == 0 );
+			DENSITY_ASSERT( MemSize().value() == 0 );
 			
-			// exhaustive test of MemSize<uint8_t>
+			// exhaustive test of BasicMemSize<uint8_t>
 			for (int32_t first = 0; first < 256; first++)
 			{
 				for (int32_t second = 0; second < 256; second++)
 				{
-					const MemSize<uint8_t> first_size(static_cast<uint8_t>(first)), second_size(static_cast<uint8_t>(second));
-					MemSize<uint8_t> other_size;
+					const BasicMemSize<uint8_t> first_size(static_cast<uint8_t>(first)), second_size(static_cast<uint8_t>(second));
+					BasicMemSize<uint8_t> other_size;
 
-					// test MemSize + MemSize
+					// test BasicMemSize + BasicMemSize
 					const bool sum_throws = throws<Overflow>([=] { first_size + second_size; });
-					assert(sum_throws == !is_valid_as_uint8(first + second));
+					DENSITY_ASSERT(sum_throws == !is_valid_as_uint8(first + second));
 					if (!sum_throws)
 					{
-						// test MemSize += MemSize
+						// test BasicMemSize += BasicMemSize
 						other_size = first_size;
 						other_size += second_size;
-						assert(other_size == MemSize<uint8_t>(static_cast<uint8_t>(first + second)));
+						DENSITY_ASSERT(other_size == BasicMemSize<uint8_t>(static_cast<uint8_t>(first + second)));
 					}
 
-					// test MemSize - MemSize
+					// test BasicMemSize - BasicMemSize
 					const bool diff_throws = throws<Overflow>([=] { first_size - second_size; });
-					assert(diff_throws == !is_valid_as_uint8(first - second));
+					DENSITY_ASSERT(diff_throws == !is_valid_as_uint8(first - second));
 					if (!diff_throws)
 					{
-						// test MemSize -= MemSize
+						// test BasicMemSize -= BasicMemSize
 						other_size = first_size;
 						other_size -= second_size;
-						assert(other_size == MemSize<uint8_t>(static_cast<uint8_t>(first - second)));
+						DENSITY_ASSERT(other_size == BasicMemSize<uint8_t>(static_cast<uint8_t>(first - second)));
 					}
 
-					// test MemSize * uint
+					// test BasicMemSize * uint
 					const bool mul_throws = throws<Overflow>([=] { first_size * static_cast<uint8_t>(second); });
-					assert(mul_throws == !is_valid_as_uint8(first * second));
+					DENSITY_ASSERT(mul_throws == !is_valid_as_uint8(first * second));
 					if (!mul_throws)
 					{
-						// test MemSize *= uint
+						// test BasicMemSize *= uint
 						other_size = first_size;
 						other_size *= static_cast<uint8_t>(second);
-						assert(other_size == MemSize<uint8_t>(static_cast<uint8_t>(first * second)));
+						DENSITY_ASSERT(other_size == BasicMemSize<uint8_t>(static_cast<uint8_t>(first * second)));
 					}
 
 					if (second > 0)
 					{
-						// test MemSize / uint
+						// test BasicMemSize / uint
 						const bool div_throws = throws<Overflow>([=] { first_size / static_cast<uint8_t>(second); });
-						assert(div_throws == ((first % second) != 0) );
+						DENSITY_ASSERT(div_throws == ((first % second) != 0) );
 						if (!div_throws)
 						{
-							// test MemSize /= uint
+							// test BasicMemSize /= uint
 							other_size = first_size;
 							other_size /= static_cast<uint8_t>(second);
-							assert(other_size == MemSize<uint8_t>(static_cast<uint8_t>(first / second)));
+							DENSITY_ASSERT(other_size == BasicMemSize<uint8_t>(static_cast<uint8_t>(first / second)));
 						}
 					}
 				}
 			}
 
-			MemSize<uint8_t> size;
+			BasicMemSize<uint8_t> size;
 		}
 	}
 

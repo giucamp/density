@@ -8,25 +8,45 @@
 #include <assert.h>
 #include <type_traits>
 #include <ostream>
+#include <limits>
+#include <cstddef>
+
+#define DENSITY_DEBUG		0
+
+#define DENSITY_UNUSED(var)		(void)var;
+
+#define DENSITY_POINTER_OVERFLOW_SAFE		1
+
+#if DENSITY_POINTER_OVERFLOW_SAFE
+	#define DENSITY_OVERFLOW_IF(bool_expr)			::density::detail::handle_pointer_overflow((bool_expr))
+#else
+	#define DENSITY_OVERFLOW_IF(bool_expr)			
+#endif
+
+#if DENSITY_DEBUG
+	#define DENSITY_ASSERT(bool_expr)		assert((bool_expr))		
+#else
+	#define DENSITY_ASSERT(bool_expr)
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
 	#define DENSITY_CONSTEXPR
 	#define DENSITY_NOEXCEPT
-	#define DENSITY_NOEXCEPT_V(value)
+	#define DENSITY_NOEXCEPT_IF(value)
 	#define DENSITY_ASSERT_NOEXCEPT(expr)
 #else
 	#define DENSITY_CONSTEXPR					constexpr
 	#define DENSITY_NOEXCEPT						noexcept
-	#define DENSITY_NOEXCEPT_V(value)			noexcept(value)
+	#define DENSITY_NOEXCEPT_IF(value)			noexcept(value)
 	#define DENSITY_ASSERT_NOEXCEPT(expr)		static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
 #endif
 
-#define DENSITY_OVERFLOW_IF(bool_expr)			::density::detail::handle_pointer_overflow((bool_expr));
-
 #ifdef _MSC_VER
-	#define DENSITY_NO_INLINE						__declspec(noinline)
+	#define DENSITY_NO_INLINE					__declspec(noinline)
+	#define DENSITY_STRONG_INLINE				__forceinline
 #else
 	#define DENSITY_NO_INLINE
+	#define DENSITY_STRONG_INLINE
 #endif
 
 namespace density
@@ -65,7 +85,7 @@ namespace density
 		@param i_number must be > 0, otherwise the behavior is undefined */
 	inline bool is_power_of_2(size_t i_number) DENSITY_NOEXCEPT
 	{
-		assert(i_number > 0);
+		DENSITY_ASSERT(i_number > 0);
 		return (i_number & (i_number - 1)) == 0;
 	}
 
@@ -74,7 +94,7 @@ namespace density
 		@i_alignment must be > 0 and a power of 2 */
 	inline bool is_address_aligned(const void * i_address, size_t i_alignment) DENSITY_NOEXCEPT
 	{
-		assert(i_alignment > 0 && is_power_of_2(i_alignment));
+		DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 		return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
 	}
 
@@ -100,13 +120,13 @@ namespace density
 	inline void * address_sub( void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-		assert( uint_pointer >= i_offset );
+		DENSITY_ASSERT( uint_pointer >= i_offset );
 		return reinterpret_cast< void * >( uint_pointer - i_offset );
 	}
 	inline const void * address_sub( const void * i_address, size_t i_offset ) DENSITY_NOEXCEPT
 	{
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-		assert( uint_pointer >= i_offset );
+		DENSITY_ASSERT( uint_pointer >= i_offset );
 		return reinterpret_cast< void * >( uint_pointer - i_offset );
 	}
 
@@ -116,7 +136,7 @@ namespace density
 		@return i_end_address minus i_start_address	*/
 	inline uintptr_t address_diff( const void * i_end_address, const void * i_start_address ) DENSITY_NOEXCEPT
 	{
-		assert( i_end_address >= i_start_address );
+		DENSITY_ASSERT( i_end_address >= i_start_address );
 
 		const uintptr_t end_uint_pointer = reinterpret_cast<uintptr_t>( i_end_address );
 		const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>( i_start_address );
@@ -130,7 +150,7 @@ namespace density
 		@return the aligned address */
 	inline void * address_lower_align( void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
-		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
+		DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 
@@ -140,7 +160,7 @@ namespace density
 	}
 	inline const void * address_lower_align( const void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
-		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
+		DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 
@@ -181,7 +201,7 @@ namespace density
 		@return the aligned address */
 	inline void * address_upper_align( void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
-		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
+		DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 
@@ -191,7 +211,7 @@ namespace density
 	}
 	inline const void * address_upper_align( const void * i_address, size_t i_alignment ) DENSITY_NOEXCEPT
 	{
-		assert( i_alignment > 0 && is_power_of_2( i_alignment ) );
+		DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
 
 		const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
 
@@ -284,7 +304,7 @@ namespace density
 	template <typename ALLOCATOR>
 		void * aligned_alloc(ALLOCATOR & i_allocator, size_t i_size, size_t i_alignment, size_t i_alignment_offset )
 	{
-		assert(is_power_of_2(i_alignment));
+		DENSITY_ASSERT(is_power_of_2(i_alignment));
 
 		if (i_alignment <= std::alignment_of<void*>::value)
 		{
@@ -345,7 +365,7 @@ namespace density
 		{
 			static_assert(std::is_same<typename CHAR_ALLOCATOR::value_type, char>::value, "The valuetype of the allocator must be char");
 
-			assert(is_power_of_2(i_alignment));
+			DENSITY_ASSERT(is_power_of_2(i_alignment));
 
 			size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
 			size_t const actual_size = i_size + extra_size;
@@ -375,7 +395,7 @@ namespace density
 		}
 	};
 
-	/** Finds the aligned placement for a block with the specified size and alignment, such that it is
+	/** Finds the aligned storage for a block with the specified size and alignment, such that it is
 			>= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
 		@param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After
 			the function exits, *io_top_pointer will point to the first address after the new block.
@@ -384,7 +404,7 @@ namespace density
 		@return address of the new block. */
 	inline void * linear_alloc(void * * io_top_pointer, size_t i_size, size_t i_alignment)
 	{
-		assert(is_power_of_2(i_alignment));
+		DENSITY_ASSERT(is_power_of_2(i_alignment));
 
 		auto top = *io_top_pointer;
 		auto new_block = top = address_upper_align(top, i_alignment);
@@ -420,7 +440,7 @@ namespace density
 
 		
 	template <typename UINT>
-		class MemSize
+		class BasicMemSize
 	{
 	private:
 		UINT m_value;
@@ -429,32 +449,33 @@ namespace density
 
 		static_assert( std::is_integral<UINT>::value && std::is_unsigned<UINT>::value, "UINT must be an unsigned integer" );
 
-		MemSize() DENSITY_NOEXCEPT : m_value(0) { }
+		BasicMemSize() DENSITY_NOEXCEPT : m_value(0) { }
 
-		explicit MemSize(UINT i_value) DENSITY_NOEXCEPT : m_value(i_value) { }
+		explicit BasicMemSize(UINT i_value) DENSITY_NOEXCEPT : m_value(i_value) { }
 
-		bool operator == (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
-		bool operator != (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
-		bool operator > (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
-		bool operator >= (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
-		bool operator < (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
-		bool operator <= (const MemSize & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
+		bool operator == (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
+		bool operator != (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
+		bool operator > (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
+		bool operator >= (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
+		bool operator < (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
+		bool operator <= (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
 
 				// arithmetic operations
 		
-		MemSize operator + (const MemSize & i_source) const
+		BasicMemSize operator + (const BasicMemSize & i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			const UINT result = m_value + i_source.m_value;
 			DENSITY_OVERFLOW_IF(result < m_value);
-			return MemSize(result);
+			return BasicMemSize(result);
 		}
 
-		MemSize operator - (const MemSize & i_source) const	
+		BasicMemSize operator - (const BasicMemSize & i_source) const	DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{ 
 			DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
-			return MemSize(m_value - i_source.m_value);
+			return BasicMemSize(m_value - i_source.m_value);
 		}
-		MemSize operator * (UINT i_source) const
+
+		BasicMemSize operator * (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			/* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow 
 				using the approch of umull_overflow5, as most times the operands will be small. */
@@ -463,33 +484,33 @@ namespace density
 			DENSITY_OVERFLOW_IF( ( m_value >= max_op || i_source >= max_op) &&
 				i_source != 0 && max_uint / i_source < m_value );
 			const UINT result = static_cast<UINT>(m_value * i_source);
-			return MemSize<UINT>(result);
+			return BasicMemSize<UINT>(result);
 		}
 
-		MemSize operator / (UINT i_source) const
+		BasicMemSize operator / (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
-			assert(i_source != 0);
+			DENSITY_ASSERT(i_source != 0);
 			DENSITY_OVERFLOW_IF( (m_value % i_source) != 0);
-			return MemSize(m_value / i_source);
+			return BasicMemSize(m_value / i_source);
 		}
 
 
 				// compound assignment
 
-		MemSize operator += (const MemSize & i_source)
+		BasicMemSize operator += (const BasicMemSize & i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			const UINT result = m_value + i_source.m_value;
 			DENSITY_OVERFLOW_IF(result < m_value);
 			m_value = result;
 			return *this;
 		}
-		MemSize operator -= (const MemSize & i_source)
+		BasicMemSize operator -= (const BasicMemSize & i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
 			m_value -= i_source.m_value; 
 			return *this;
 		}
-		MemSize operator *= (UINT i_source)
+		BasicMemSize operator *= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			/* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
 				using the approch of umull_overflow5, as most times the operands will be small. */
@@ -501,61 +522,169 @@ namespace density
 			return *this;
 		}
 
-		MemSize operator /= (UINT i_source)
+		BasicMemSize operator /= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
-			assert(i_source != 0);
+			DENSITY_ASSERT(i_source != 0);
 			DENSITY_OVERFLOW_IF((m_value % i_source) != 0);
 			m_value /= i_source;
 			return *this; 
 		}
 
 		UINT value() const DENSITY_NOEXCEPT { return m_value; }
+
+		bool is_valid_alignment() const DENSITY_NOEXCEPT
+		{			
+			return m_value > 0 && (m_value & (m_value - 1)) == 0;
+		}
 	};
-		
-	class ArithmeticPointer
+
+
+	using MemSize = BasicMemSize<size_t>;
+
+	template <typename TYPE, typename UINT_REPRESENTATION>
+		class BasicArithmeticPointer;
+
+	template <typename UINT_REPRESENTATION>
+		class BasicArithmeticPointer<void, UINT_REPRESENTATION>
 	{
+	private:
+		UINT_REPRESENTATION m_value;
+
 	public:
 
-		ArithmeticPointer() DENSITY_NOEXCEPT
-			: m_value(nullptr) {}
+		BasicArithmeticPointer() DENSITY_NOEXCEPT
+			: m_value(0) {}
 
-		explicit ArithmeticPointer(void * i_value) DENSITY_NOEXCEPT
-			: m_value(reinterpret_cast<char*>(i_value) ) {}
+		explicit BasicArithmeticPointer(nullptr_t) DENSITY_NOEXCEPT
+			: m_value(0) {}
 
-		template <typename UINT_SIZE>
-			ArithmeticPointer & operator += (MemSize<UINT_SIZE> i_value)
+		explicit BasicArithmeticPointer(void * i_value) DENSITY_NOEXCEPT_IF((std::is_same<UINT_REPRESENTATION, uintptr_t>::value))
+			: m_value(reinterpret_cast<UINT_REPRESENTATION>(i_value))
+		{
+			auto const is_safe = std::is_same<UINT_REPRESENTATION, uintptr_t>::value;
+			if (!is_safe)
+			{
+				DENSITY_OVERFLOW_IF(reinterpret_cast<void*>(m_value) != i_value);
+			}			
+		}
+
+		BasicArithmeticPointer & operator = (nullptr_t) DENSITY_NOEXCEPT
+		{
+			m_value = 0;
+			return *this;
+		}
+
+		bool operator == (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
+		bool operator != (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
+		bool operator > (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
+		bool operator >= (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
+		bool operator < (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
+		bool operator <= (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
+
+		BasicArithmeticPointer operator + (BasicMemSize<UINT_REPRESENTATION> i_value) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+		{
+			auto result = *this;
+			result += i_value;
+			return result;
+		}
+
+		BasicArithmeticPointer operator - (BasicMemSize<UINT_REPRESENTATION> i_value) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+		{
+			auto result = *this;
+			result -= i_value;
+			return result;
+		}
+
+		BasicArithmeticPointer & operator += (BasicMemSize<UINT_REPRESENTATION> i_value) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			auto const result = m_value + i_value.value();
 			DENSITY_OVERFLOW_IF(result < m_value);
 			m_value = result;
+			return *this;
 		}
 
-		template <typename UINT_SIZE>
-			ArithmeticPointer & operator -= (MemSize<UINT_SIZE> i_value)
+		BasicArithmeticPointer & operator -= (BasicMemSize<UINT_REPRESENTATION> i_value) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			auto const result = m_value - i_value.value();
 			DENSITY_OVERFLOW_IF(result > m_value);
 			m_value = result;
+			return *this;
 		}
 
-		MemSize<size_t> operator - (ArithmeticPointer i_pointer) const
+		BasicMemSize<UINT_REPRESENTATION> operator - (BasicArithmeticPointer i_pointer) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
 		{
 			DENSITY_OVERFLOW_IF(m_value < i_pointer.m_value);
-			return MemSize<size_t>(m_value - i_pointer.m_value);
+			return BasicMemSize<UINT_REPRESENTATION>(m_value - i_pointer.m_value);
 		}
 
-		template <typename TYPE>
-			TYPE * as_pointer() const DENSITY_NOEXCEPT
+		void * value() const DENSITY_NOEXCEPT
 		{
-			return reinterpret_cast<TYPE*>(m_value);
+			return reinterpret_cast<void*>(m_value);
 		}
 
-	private:
-		char * m_value;
+		bool is_null() const DENSITY_NOEXCEPT
+		{
+			return m_value == 0;
+		}
+
+		BasicArithmeticPointer lower_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const DENSITY_NOEXCEPT
+		{
+			DENSITY_ASSERT(i_alignment.is_valid_alignment());
+			
+			auto const alignment_mask = i_alignment.value() - 1;
+
+			return BasicArithmeticPointer(reinterpret_cast<void*>(
+				m_value & (~alignment_mask) ) );
+		}
+
+		BasicArithmeticPointer upper_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const DENSITY_NOEXCEPT(!DENSITY_POINTER_OVERFLOW_SAFE)
+		{
+			DENSITY_ASSERT(i_alignment.is_valid_alignment());
+
+			auto const alignment_mask = i_alignment.value() - 1;
+
+			return BasicArithmeticPointer(reinterpret_cast<void*>(
+				(m_value + alignment_mask) & (~alignment_mask)));
+		}			
+
+		BasicArithmeticPointer linear_alloc(
+			BasicMemSize<UINT_REPRESENTATION> i_size,
+			BasicMemSize<UINT_REPRESENTATION> i_alignment) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+		{
+			DENSITY_ASSERT(i_alignment.is_valid_alignment());
+
+			auto const result = upper_align(i_alignment);
+			*this = result + i_size;
+			return result;
+		}
+
+		BasicArithmeticPointer linear_alloc(
+			BasicMemSize<UINT_REPRESENTATION> i_size,
+			BasicMemSize<UINT_REPRESENTATION> i_alignment,
+			BasicArithmeticPointer i_end_address) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+		{
+			DENSITY_ASSERT(i_alignment.is_valid_alignment() && m_value <= i_end_address.m_value );
+			
+			BasicArithmeticPointer result = upper_align(i_alignment);
+			BasicArithmeticPointer new_ptr = result;
+			new_ptr += i_size;
+			if (new_ptr <= i_end_address)
+			{
+				m_value = new_ptr.m_value;
+			}
+			else
+			{
+				result.m_value = nullptr;
+			}
+			return result;
+		}
 	};
 
+	template <typename TYPE>
+		using ArithmeticPointer = BasicArithmeticPointer<TYPE, uintptr_t>;
+
 	template <typename UINT>
-		std::ostream & operator << (std::ostream & i_dest, const MemSize<UINT> & i_source)
+		std::ostream & operator << (std::ostream & i_dest, const BasicMemSize<UINT> & i_source)
 	{
 		const char * suffixes[] = { " KiB", " MiB", " GiB", " TiB" };
 		const char * suffixes_p[] = { " KiB(+", " MiB(+", " GiB(+", " TiB(+" };
@@ -601,24 +730,24 @@ namespace density
 
 		/** Total memory size requested to the allocator. This is similar to the capacity of an std::vector (except that it is expressed
 			in bytes rather than in element count). */
-		const MemSize<size_t> & reserved_capacity() const	{ return m_reserved_capacity; }
+		const MemSize & reserved_capacity() const	{ return m_reserved_capacity; }
 
 		/** Total memory size used to store the elements and the required overhead (like the space for types types) and padding (usualy to respect
 			the alignment). The used size is always less than or equal to the reserved_capacity, and it is similar to the size of a vector
 			(except that it is expressed in bytes rather than in element count). Adding new elements to the container makes the used size
 			increase. If the new used size would exceed the reserved capacity, a reallocation will occur. */
-		const MemSize<size_t> & used_size() const			{ return m_used_size; }
+		const MemSize & used_size() const			{ return m_used_size; }
 		
 		/** Total space used for overhead (headers, footers, types). This size is a part of the used size. */
-		const MemSize<size_t> & overhead() const			{ return m_overhead; }
+		const MemSize & overhead() const			{ return m_overhead; }
 		
 		/** Total space wasted to respect the alignment of elements and overhead data. */
-		const MemSize<size_t> & padding() const				{ return m_padding; }
+		const MemSize & padding() const				{ return m_padding; }
 
-		MemStats(const MemSize<size_t> & i_reserved_capacity,
-			const MemSize<size_t> & i_used_size,
-			const MemSize<size_t> & i_overhead,
-			const MemSize<size_t> & i_padding)
+		MemStats(const MemSize & i_reserved_capacity,
+			const MemSize & i_used_size,
+			const MemSize & i_overhead,
+			const MemSize & i_padding)
 			: m_reserved_capacity(i_reserved_capacity), m_used_size(i_used_size), m_overhead(i_overhead), m_padding(i_padding)
 		{
 		}
@@ -640,10 +769,10 @@ namespace density
 		}
 
 	private:
-		MemSize<size_t> m_reserved_capacity;
-		MemSize<size_t> m_used_size;
-		MemSize<size_t> m_overhead;
-		MemSize<size_t> m_padding;
+		MemSize m_reserved_capacity;
+		MemSize m_used_size;
+		MemSize m_overhead;
+		MemSize m_padding;
 	};
 
 } // namespace density

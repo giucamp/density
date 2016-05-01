@@ -5,9 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <assert.h>
 #include <type_traits>
 #include <limits>
+#include <utility>
 #include "density_common.h"
 
 namespace density
@@ -38,6 +38,24 @@ namespace density
 		};
 	
 	*/
+
+	template <typename RUNTIME_TYPE>
+		struct RuntimeTypeConceptCheck
+	{
+		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().~RUNTIME_TYPE()),
+			"The destructor of RUNTIME_TYPE must be noexcept"); // note: destructors are noexcept by default
+
+		static_assert(noexcept(RUNTIME_TYPE(std::declval<const RUNTIME_TYPE>())),
+			"The copy constructor of RUNTIME_TYPE must be declared as noexcept");
+
+		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().size()),
+			"RUNTIME_TYPE::size must be declared as noexcept");
+
+		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().alignment()),
+			"RUNTIME_TYPE::alignment must be declared as noexcept");
+	};
+
+
 	/** Specifies the way in which the size and the alignment of elements of a DenseList are stored */
 	enum SizeAlignmentMode
 	{
@@ -46,13 +64,13 @@ namespace density
 					of the size_t, while the alignment uses all the other bits. For example, if size_t is big 64-bits, the
 					alignment is stored in 16 bits, while the size is stored in 48 bits.
 					If the size or the alignment can't be represented with the given number of bits, the behaviour is undefined.
-					The implementation may report this error with a debug assert.
+					The implementation may report this error with a debug DENSITY_ASSERT.
 					If size_t has not a binary representation (that is std::numeric_limits<size_t>::radix != 2), using this
 					representation wi resut in a compile time error. */
 		assume_normal_alignment /**< Use a size_t word to store the size, and do not store the alignment: just assume that
 					every element does not need an alignment more strict than a void pointer (void*).
 					If an element actually needs a more strict alignment , the behaviour is undefined.
-					The implementation may report this error with a debug assert.*/
+					The implementation may report this error with a debug DENSITY_ASSERT.*/
 	};
 
 	enum ElementTypeCaps
@@ -114,7 +132,7 @@ namespace density
 				: m_size(i_size), m_alignment(i_alignment)
 			{
 				// check the correcteness of the narrowing conversion - a failure on this gives undefined behaviour
-				assert(m_size == i_size && m_alignment == i_alignment);
+				DENSITY_ASSERT(m_size == i_size && m_alignment == i_alignment);
 			}
 			size_t size() const DENSITY_NOEXCEPT { return m_size; }
 			size_t alignment() const DENSITY_NOEXCEPT { return m_alignment; }
@@ -144,7 +162,7 @@ namespace density
 				: m_size(i_size)
 			{
 				// check the correcteness of the alignment - a failure on this gives undefined behaviour
-				assert(i_alignment <= std::alignment_of<void*>::value );
+				DENSITY_ASSERT(i_alignment <= std::alignment_of<void*>::value );
 				(void)i_alignment;
 			}
 
@@ -170,7 +188,7 @@ namespace density
 
 			void destroy(void * i_element) const DENSITY_NOEXCEPT
 			{
-				assert(i_element != nullptr);
+				DENSITY_ASSERT(i_element != nullptr);
 				static_cast<ELEMENT*>(i_element)->~ELEMENT();
 			}
 		};
@@ -186,7 +204,8 @@ namespace density
 
 			void destroy(void * i_element) const DENSITY_NOEXCEPT
 			{
-				assert(i_element != nullptr);
+				DENSITY_ASSERT(i_element != nullptr);
+				DENSITY_UNUSED(i_element);
 				static_cast<ELEMENT*>(i_element)->~ELEMENT();
 			}
 		};
@@ -279,13 +298,13 @@ namespace density
 
 		void * copy_construct(void * i_destination, const void * i_source_element) const
 		{
-			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
+			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			return (*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
 		}
 
 		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
-			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
+			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			return (*m_function)(Operation::move, i_destination, i_source_element);
 		}
 
@@ -365,7 +384,7 @@ namespace density
 
 		void * copy_construct(void * i_destination, const void * i_source_element) const
 		{
-			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
+			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			return (*m_function)(i_destination, const_cast<void*>(i_source_element));
 		}
 
@@ -421,7 +440,7 @@ namespace density
 
 		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
 		{
-			assert(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
+			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
 			return (*m_function)(i_destination, i_source_element);
 		}
 

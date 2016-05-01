@@ -19,10 +19,10 @@ namespace density
 		{
 		public:
 
-			using Queue = DenseQueue<BASE_TYPE, TestAllocator<BASE_TYPE> >;
 			using TestCaseFunction = std::function<void(std::mt19937 & i_random)>;
 
 			ContainerTest()
+				: m_total_probability(0.)
 			{
 				using namespace std::placeholders;
 
@@ -34,25 +34,40 @@ namespace density
 			void add_test_case(const char * i_name, std::function< void(std::mt19937 & i_random) > && i_function,
 				double i_probability = 1. )
 			{
+				m_total_probability += i_probability;
 				m_test_cases.push_back({i_name, std::move(i_function), i_probability});
+			}
+
+
+			void add_push_test_case()
+			{
+
 			}
 
 			void step(std::mt19937 & i_random)
 			{
 				// pick a random test from m_test_cases, and execute it
-				if (m_test_cases.size() > 0)
+				auto target_random_value = std::uniform_real_distribution<double>(0., m_total_probability)(i_random);
+				double cumulative = 0.;
+				for (auto & test_case : m_test_cases)
 				{
-					auto const test_case_index = std::uniform_int_distribution<size_t>(0, m_test_cases.size() - 1)(i_random);
-					m_test_cases[test_case_index].m_function(i_random);
+					cumulative += test_case.m_probability;
+					if (target_random_value < cumulative)
+					{
+						test_case.m_function(i_random);
+						test_case.m_executions++;
+						break;
+					}
 				}
-
-				compare();
+				
+				compare();			
 			}
 
 			// check for equality m_dense_container and m_std_deque
 			void compare()
 			{
 				DENSITY_TEST_ASSERT(m_dense_container.empty() == m_std_deque.empty());
+				DENSITY_TEST_ASSERT(m_dense_container.empty() == (m_dense_container.begin() == m_dense_container.end()) );
 				if (!m_std_deque.empty())
 				{
 					DENSITY_TEST_ASSERT(m_dense_container.front() == *m_std_deque.front());
@@ -144,11 +159,18 @@ namespace density
 
 			struct TestCase
 			{
+				TestCase(std::string i_name, TestCaseFunction i_function, double i_probability)
+					: m_name(std::move(i_name)), m_function(std::move(i_function)), m_probability(i_probability), m_executions(0)
+				{
+				}
+
 				std::string m_name;
 				TestCaseFunction m_function;
 				double m_probability;
+				uint64_t m_executions;
 			};
 			std::vector<TestCase> m_test_cases;
+			double m_total_probability;
 		}; // class template ContainerTest
 
 	} // namespace detail
