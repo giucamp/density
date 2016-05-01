@@ -10,170 +10,170 @@
 
 namespace density
 {
-	namespace detail
-	{
-		#if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-			_declspec(thread) TestAllocatorBase::ThreadData * TestAllocatorBase::st_thread_data;
-		#else
-			thread_local TestAllocatorBase::ThreadData TestAllocatorBase::st_thread_data;
-		#endif
+    namespace detail
+    {
+        #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
+            _declspec(thread) TestAllocatorBase::ThreadData * TestAllocatorBase::st_thread_data;
+        #else
+            thread_local TestAllocatorBase::ThreadData TestAllocatorBase::st_thread_data;
+        #endif
 
-		TestAllocatorBase::ThreadData & TestAllocatorBase::GetThreadData()
-		{
-			#if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-				if (st_thread_data == nullptr)
-				{
-					st_thread_data = new ThreadData;
-				}
-				return *st_thread_data;
-			#else
-				return st_thread_data;
-			#endif
-		}
+        TestAllocatorBase::ThreadData & TestAllocatorBase::GetThreadData()
+        {
+            #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
+                if (st_thread_data == nullptr)
+                {
+                    st_thread_data = new ThreadData;
+                }
+                return *st_thread_data;
+            #else
+                return st_thread_data;
+            #endif
+        }
 
-		void TestAllocatorBase::push_level()
-		{
-			auto & levels = GetThreadData().m_levels;
-			levels.emplace_back();
-		}
+        void TestAllocatorBase::push_level()
+        {
+            auto & levels = GetThreadData().m_levels;
+            levels.emplace_back();
+        }
 
-		void TestAllocatorBase::pop_level()
-		{
-			auto & levels = GetThreadData().m_levels;
-			DENSITY_ASSERT(levels.size() > 0);
-			DENSITY_ASSERT(levels.back().m_allocations.size() == 0);
-			levels.pop_back();
-		}
+        void TestAllocatorBase::pop_level()
+        {
+            auto & levels = GetThreadData().m_levels;
+            DENSITY_ASSERT(levels.size() > 0);
+            DENSITY_ASSERT(levels.back().m_allocations.size() == 0);
+            levels.pop_back();
+        }
 
-		void * TestAllocatorBase::alloc(size_t i_size)
-		{
-			exception_check_point();
+        void * TestAllocatorBase::alloc(size_t i_size)
+        {
+            exception_check_point();
 
-			void * block = operator new (i_size);
+            void * block = operator new (i_size);
 
-			auto & thread_data = GetThreadData();
-			if (thread_data.m_levels.size() > 0)
-			{
-				AllocationEntry entry;
-				entry.m_size = i_size;
+            auto & thread_data = GetThreadData();
+            if (thread_data.m_levels.size() > 0)
+            {
+                AllocationEntry entry;
+                entry.m_size = i_size;
 
-				auto & allocations = thread_data.m_levels.back().m_allocations;
-				auto res = allocations.insert(std::make_pair(block, entry));
-				DENSITY_ASSERT(res.second);
-			}
+                auto & allocations = thread_data.m_levels.back().m_allocations;
+                auto res = allocations.insert(std::make_pair(block, entry));
+                DENSITY_ASSERT(res.second);
+            }
 
-			return block;
-		}
+            return block;
+        }
 
-		void TestAllocatorBase::free(void * i_block)
-		{
-			if (i_block != nullptr)
-			{
-				auto & thread_data = GetThreadData();
-				if (thread_data.m_levels.size() > 0)
-				{
-					auto & allocations = thread_data.m_levels.back().m_allocations;
-					auto it = allocations.find(i_block);
-					DENSITY_ASSERT(it != allocations.end());
-					allocations.erase(it);
-				}
+        void TestAllocatorBase::free(void * i_block)
+        {
+            if (i_block != nullptr)
+            {
+                auto & thread_data = GetThreadData();
+                if (thread_data.m_levels.size() > 0)
+                {
+                    auto & allocations = thread_data.m_levels.back().m_allocations;
+                    auto it = allocations.find(i_block);
+                    DENSITY_ASSERT(it != allocations.end());
+                    allocations.erase(it);
+                }
 
-				operator delete (i_block);
-			}
-		}
-	
-	} // namespace detail
-	
-	NoLeakScope::NoLeakScope()
-	{
-		detail::TestAllocatorBase::push_level();
-	}
+                operator delete (i_block);
+            }
+        }
+    
+    } // namespace detail
+    
+    NoLeakScope::NoLeakScope()
+    {
+        detail::TestAllocatorBase::push_level();
+    }
 
-	NoLeakScope::~NoLeakScope()
-	{
-		detail::TestAllocatorBase::pop_level();
-	}
+    NoLeakScope::~NoLeakScope()
+    {
+        detail::TestAllocatorBase::pop_level();
+    }
 
-	namespace
-	{
-		struct StaticData
-		{
-			int64_t m_current_counter;
-			int64_t m_except_at;
-			StaticData() : m_current_counter(0), m_except_at(-1) {}
-		};
+    namespace
+    {
+        struct StaticData
+        {
+            int64_t m_current_counter;
+            int64_t m_except_at;
+            StaticData() : m_current_counter(0), m_except_at(-1) {}
+        };
 
-		class TestException
-		{
-		};
+        class TestException
+        {
+        };
 
-		#if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-			_declspec(thread) StaticData  * st_static_data;
-		#else
-			thread_local StaticData  * st_static_data;
-		#endif
-	}
+        #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
+            _declspec(thread) StaticData  * st_static_data;
+        #else
+            thread_local StaticData  * st_static_data;
+        #endif
+    }
 
-	void exception_check_point()
-	{
-		auto const static_data = st_static_data;
-		if (static_data != nullptr)
-		{
-			if (static_data->m_current_counter == static_data->m_except_at)
-			{
-				throw TestException();
-			}
-			static_data->m_current_counter++;
-		}
-	}
+    void exception_check_point()
+    {
+        auto const static_data = st_static_data;
+        if (static_data != nullptr)
+        {
+            if (static_data->m_current_counter == static_data->m_except_at)
+            {
+                throw TestException();
+            }
+            static_data->m_current_counter++;
+        }
+    }
 
-	std::random_device g_random_device;
-	std::mt19937 g_rand(g_random_device());
+    std::random_device g_random_device;
+    std::mt19937 g_rand(g_random_device());
 
-	namespace detail
-	{
-		AllocatingTester::AllocatingTester()
-			: m_rand_value(std::allocate_shared<int>(TestAllocator<int>(), std::uniform_int_distribution<int>(100000)(g_rand)))
-		{
-		}
-	}
+    namespace detail
+    {
+        AllocatingTester::AllocatingTester()
+            : m_rand_value(std::allocate_shared<int>(TestAllocator<int>(), std::uniform_int_distribution<int>(100000)(g_rand)))
+        {
+        }
+    }
 
-	void run_exception_stress_test(std::function<void()> i_test)
-	{
-		DENSITY_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
+    void run_exception_stress_test(std::function<void()> i_test)
+    {
+        DENSITY_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
 
-		i_test();
+        i_test();
 
-		StaticData static_data;
-		st_static_data = &static_data;
-		try
-		{
-			int64_t curr_iteration = 0;
-			bool exception_occurred;
-			do {
-				exception_occurred = false;
+        StaticData static_data;
+        st_static_data = &static_data;
+        try
+        {
+            int64_t curr_iteration = 0;
+            bool exception_occurred;
+            do {
+                exception_occurred = false;
 
-				NoLeakScope no_leak_scope;
-				try
-				{
-					static_data.m_current_counter = 0;
-					static_data.m_except_at = curr_iteration;
-					i_test();
-				}
-				catch (TestException)
-				{
-					exception_occurred = true;
-				}
-				curr_iteration++;
+                NoLeakScope no_leak_scope;
+                try
+                {
+                    static_data.m_current_counter = 0;
+                    static_data.m_except_at = curr_iteration;
+                    i_test();
+                }
+                catch (TestException)
+                {
+                    exception_occurred = true;
+                }
+                curr_iteration++;
 
-			} while (exception_occurred);
-		}
-		catch (...)
-		{
-			st_static_data = nullptr; // unknown exception, reset st_static_data and retrhow
-			throw;
-		}
-		st_static_data = nullptr;
-	}
+            } while (exception_occurred);
+        }
+        catch (...)
+        {
+            st_static_data = nullptr; // unknown exception, reset st_static_data and retrhow
+            throw;
+        }
+        st_static_data = nullptr;
+    }
 
 } // namespace density

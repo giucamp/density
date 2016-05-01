@@ -11,8 +11,8 @@
 namespace density
 {
 
-	template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
-		class DenseQueue;
+    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
+        class DenseQueue;
 
 } // namespace density
 

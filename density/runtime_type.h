@@ -8,207 +8,200 @@
 #include <type_traits>
 #include <limits>
 #include <utility>
+#include <typeinfo>
 #include "density_common.h"
 
 namespace density
 {
-	/*
-		Runtime Type Synopsis
+    /*
+        Runtime Type Synopsis
 
-		class RuntimeType
-		{
-			public:
+        class RuntimeType
+        {
+            public:
 
-				template <typename COMPLETE_TYPE> static RuntimeType make() noexcept;
+                template <typename COMPLETE_TYPE> static RuntimeType make() noexcept;
 
-				RuntimeType(const RuntimeType &) noexcept;
-				RuntimeType(RuntimeType &&) noexcept;
-				~RuntimeType() noexcept;
+                RuntimeType(const RuntimeType &) noexcept;
+                RuntimeType(RuntimeType &&) noexcept;
+                ~RuntimeType();
 
-				size_t size() const noexcept;
-				size_t alignment() const noexcept;
+                size_t size() const noexcept;
+                size_t alignment() const noexcept;
 
-				// optional
-				void * copy_construct(void * i_dest_element, const void * i_source_element) const;
+                // optional
+                void * copy_construct(void * i_dest_element, const void * i_source_element) const;
 
-				// optional
-				void * move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept;
-								
-				void destroy(void * i_element) const noexcept;
-		};
-	
-	*/
+                // optional
+                void * move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept;
+                                
+                void destroy(void * i_element) const noexcept;
+        };
+    
+    */
 
-	template <typename RUNTIME_TYPE>
-		struct RuntimeTypeConceptCheck
-	{
-		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().~RUNTIME_TYPE()),
-			"The destructor of RUNTIME_TYPE must be noexcept"); // note: destructors are noexcept by default
+	/** This struct template checks the requirements on a RUNTIME_TYPE. Vioations are detected with static_assert. */
+    template <typename RUNTIME_TYPE>
+        struct RuntimeTypeConceptCheck
+    {
+        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().~RUNTIME_TYPE()),
+            "The destructor of RUNTIME_TYPE must be noexcept"); // note: destructors are noexcept by default
 
-		static_assert(noexcept(RUNTIME_TYPE(std::declval<const RUNTIME_TYPE>())),
-			"The copy constructor of RUNTIME_TYPE must be declared as noexcept");
+        static_assert(noexcept(RUNTIME_TYPE(std::declval<const RUNTIME_TYPE>())),
+            "The copy constructor of RUNTIME_TYPE must be declared as noexcept");
 
-		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().size()),
-			"RUNTIME_TYPE::size must be declared as noexcept");
+        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().size()),
+            "RUNTIME_TYPE::size must be declared as noexcept");
 
-		static_assert(noexcept(std::declval<const RUNTIME_TYPE>().alignment()),
-			"RUNTIME_TYPE::alignment must be declared as noexcept");
-	};
+        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().alignment()),
+            "RUNTIME_TYPE::alignment must be declared as noexcept");
+    };
 
-
-	/** Specifies the way in which the size and the alignment of elements of a DenseList are stored */
-	enum SizeAlignmentMode
-	{
-		most_general, /**< Uses two separate size_t to store the size and the alignment. */
-		compact, /**< Both size and alignment are stored in a single size_t word. The alignment uses the 25% of the bits
-					of the size_t, while the alignment uses all the other bits. For example, if size_t is big 64-bits, the
-					alignment is stored in 16 bits, while the size is stored in 48 bits.
-					If the size or the alignment can't be represented with the given number of bits, the behaviour is undefined.
-					The implementation may report this error with a debug DENSITY_ASSERT.
-					If size_t has not a binary representation (that is std::numeric_limits<size_t>::radix != 2), using this
-					representation wi resut in a compile time error. */
-		assume_normal_alignment /**< Use a size_t word to store the size, and do not store the alignment: just assume that
-					every element does not need an alignment more strict than a void pointer (void*).
-					If an element actually needs a more strict alignment , the behaviour is undefined.
-					The implementation may report this error with a debug DENSITY_ASSERT.*/
-	};
-
-	enum ElementTypeCaps
-	{
-		none = 0,
-		nothrow_move_construtible = 1 << 1,
-		copy_only = 1 << 0,		
-		copy_and_move = nothrow_move_construtible | copy_only,
-	};
 
 	namespace detail
 	{
-		// This class is used by the default type-infos to store the size and the alignment according to the secified SizeAlignmentMode
-		template <SizeAlignmentMode MODE>
-			class ElementType_SizeAlign;
-		template <> class ElementType_SizeAlign<SizeAlignmentMode::most_general>
+		template <typename... FEATURES> struct FeatureList
 		{
-		public:
-
-			ElementType_SizeAlign() = delete;
-			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
-			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
-
-			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
-			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-					: m_size(i_source.m_size), m_alignment(i_source.m_alignment) { }			
-			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
-			#endif
-
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
-				: m_size(i_size), m_alignment(i_alignment) {}
-			
-			size_t size() const DENSITY_NOEXCEPT { return m_size; }
-			size_t alignment() const DENSITY_NOEXCEPT { return m_alignment; }
-						
-		private:
-			const size_t m_size, m_alignment;
+			static const size_t size = sizeof...(FEATURES);
 		};
-		template <> class ElementType_SizeAlign<
-			std::enable_if<std::numeric_limits<size_t>::radix == 2, SizeAlignmentMode>::type::compact>
-		{
-		public:
-			
-			ElementType_SizeAlign() = delete;
-			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
-			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
 
-			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
-			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-					: m_size(i_source.m_size), m_alignment(i_source.m_alignment) { }			
-			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
-			#endif
-			
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
-				: m_size(i_size), m_alignment(i_alignment)
+		struct FeatureSize
+		{
+			using type = size_t;
+
+			template <typename BASE, typename TYPE> struct Impl
+			{				
+				static const uintptr_t value = sizeof(TYPE);
+			};
+		};
+
+		struct FeatureAlignment
+		{
+			using type = size_t;
+
+			template <typename BASE, typename TYPE> struct Impl
 			{
-				// check the correcteness of the narrowing conversion - a failure on this gives undefined behaviour
-				DENSITY_ASSERT(m_size == i_size && m_alignment == i_alignment);
-			}
-			size_t size() const DENSITY_NOEXCEPT { return m_size; }
-			size_t alignment() const DENSITY_NOEXCEPT { return m_alignment; }
-
-		private:
-			//static_assert(std::numeric_limits<size_t>::radix == 2, "size_t is expected to be a binary number");
-			const size_t m_size : std::numeric_limits<size_t>::digits - std::numeric_limits<size_t>::digits / 4;
-			const size_t m_alignment : std::numeric_limits<size_t>::digits / 4;
+				static const uintptr_t value = alignof(TYPE);
+			};
 		};
-		template <> class ElementType_SizeAlign<SizeAlignmentMode::assume_normal_alignment>
+
+		struct FeatureRTTI
 		{
-		public:
+			using type = const std::type_info*;
 
-			ElementType_SizeAlign() = delete;
-			ElementType_SizeAlign & operator = (const ElementType_SizeAlign &) = delete;
-			ElementType_SizeAlign & operator = (ElementType_SizeAlign &&) = delete;
-
-			ElementType_SizeAlign(const ElementType_SizeAlign &) DENSITY_NOEXCEPT = default;
-			#if defined(_MSC_VER) && _MSC_VER < 1900
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-					: m_size(i_source.m_size) { }			
-			#else
-				ElementType_SizeAlign(ElementType_SizeAlign && i_source) DENSITY_NOEXCEPT = default;
-			#endif
-
-			ElementType_SizeAlign(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
-				: m_size(i_size)
+			template <typename BASE, typename TYPE> struct Impl
 			{
-				// check the correcteness of the alignment - a failure on this gives undefined behaviour
-				DENSITY_ASSERT(i_alignment <= std::alignment_of<void*>::value );
-				(void)i_alignment;
-			}
-
-			size_t size() const DENSITY_NOEXCEPT { return m_size; }
-			size_t alignment() const DENSITY_NOEXCEPT { return std::alignment_of<void*>::value; }
-
-		private:
-			const size_t m_size;
+				static const uintptr_t value;
+			};
 		};
 
-		// ElementType_Destr class
-		template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE, 
-			bool HAS_VIRTUAL_DESTRUCTOR = std::has_virtual_destructor<ELEMENT>::value> class ElementType_Destr;
-		template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-			class ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE, true> 
-				: public ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>
+		template <typename BASE, typename TYPE>
+			const uintptr_t FeatureRTTI::Impl<BASE,TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
+
+		struct FeatureCopyConstruct
 		{
-		public:
-			static_assert(std::is_nothrow_destructible<ELEMENT>::value, "the destructor must be nothrow");
+			using type = void * (*) (void * i_dest, const void * i_source);
 
-			ElementType_Destr(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
-				: ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
-
-			void destroy(void * i_element) const DENSITY_NOEXCEPT
+			template <typename BASE, typename TYPE> struct Impl
 			{
-				DENSITY_ASSERT(i_element != nullptr);
-				static_cast<ELEMENT*>(i_element)->~ELEMENT();
-			}
+				static void * invoke(void * i_dest, const void * i_source)
+				{
+					const BASE * source = static_cast<const BASE*>(i_source);
+					BASE * result = new(i_dest) TYPE(*static_cast<const TYPE*>(source));
+					return result;
+				}
+
+				static const uintptr_t value;
+			};
 		};
-		template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-			class ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE, false> 
-				: public ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>
+		template <typename TYPE, typename BASE>
+			const uintptr_t FeatureCopyConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+		struct FeatureMoveConstruct
 		{
-		public:
-			static_assert(std::is_same<ELEMENT, void>::value || std::is_nothrow_destructible<ELEMENT>::value, "the destructor must be nothrow");
+			using type = void * (*)(void * i_dest, void * i_source);
 
-			ElementType_Destr(size_t i_size, size_t i_alignment) DENSITY_NOEXCEPT
-				: ElementType_SizeAlign<SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
-
-			void destroy(void * i_element) const DENSITY_NOEXCEPT
+			template <typename BASE, typename TYPE> struct Impl
 			{
-				DENSITY_ASSERT(i_element != nullptr);
-				DENSITY_UNUSED(i_element);
-				static_cast<ELEMENT*>(i_element)->~ELEMENT();
-			}
+				static void * invoke(void * i_dest, void * i_source) noexcept
+				{
+					BASE * source = static_cast<BASE*>(i_source);
+					BASE * result = new(i_dest) TYPE(std::move(*static_cast<TYPE*>(source)));
+					return result;
+				}
+				static const uintptr_t value;
+			};			
 		};
+		template <typename TYPE, typename BASE>
+			const uintptr_t FeatureMoveConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+
+		struct FeatureDestroy
+		{
+			using type = void (*)(void * i_dest);
+			template <typename BASE, typename TYPE> struct Impl
+			{
+				static void invoke(void * i_dest) noexcept
+				{
+					const auto source = static_cast<BASE*>(i_dest);
+					static_cast<TYPE*>(source)->TYPE::~TYPE();
+				}
+				static const uintptr_t value;
+			};			
+		};
+		template <typename TYPE, typename BASE>
+			const uintptr_t FeatureDestroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+		/** FeatureTable<TYPE, FeatureList<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
+		template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
+		template <typename BASE, typename TYPE, typename... FEATURES>
+			struct FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >
+		{
+			static const void * const s_table[sizeof...(FEATURES)];
+		};
+		template <typename BASE, typename TYPE, typename... FEATURES>
+			const void * const FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >::s_table[sizeof...(FEATURES)]
+				= { reinterpret_cast<void *>( FEATURES::Impl<BASE, TYPE>::value )... };
+
+		/* IndexOfFeature<0, TARGET_FEATURE, FeatureList<FEATURES...> >::value is the index of TARGET_FEATURE in FeatureList<FEATURES...>,
+			or FeatureList<FEATURES...>::size if TARGET_FEATURE is not present */
+		template <size_t START_INDEX, typename TARGET_FEATURE, typename FEATURE_LIST>
+			struct IndexOfFeature;
+		template <size_t START_INDEX, typename TARGET_FEATURE, typename... OTHER_FEATURES>
+			struct IndexOfFeature<START_INDEX, TARGET_FEATURE, FeatureList<OTHER_FEATURES...> >
+		{
+			static const size_t value = START_INDEX;
+		};
+		template <size_t START_INDEX, typename TARGET_FEATURE, typename FIRST_FEATURE, typename... OTHER_FEATURES>
+			struct IndexOfFeature<START_INDEX, TARGET_FEATURE, FeatureList<FIRST_FEATURE, OTHER_FEATURES...> >
+		{
+			static const size_t value = std::is_same<TARGET_FEATURE, FIRST_FEATURE>::value ?
+				START_INDEX : IndexOfFeature<START_INDEX + 1, TARGET_FEATURE, FeatureList<OTHER_FEATURES...> >::value;
+		};
+
+		/** AutoGetFeatures<TYPE>::type */
+		template <typename TYPE,
+			bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_same<void, TYPE>::value,
+			bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_same<void, TYPE>::value
+		> struct AutoGetFeatures;
+
+		template <typename TYPE> struct AutoGetFeatures<TYPE, false, false >
+		{
+			using type = FeatureList<FeatureSize, FeatureAlignment, FeatureRTTI, FeatureDestroy>;
+		};
+		template <typename TYPE> struct AutoGetFeatures<TYPE, true, false >
+		{
+			using type = FeatureList<FeatureSize, FeatureAlignment, FeatureRTTI, FeatureDestroy, FeatureCopyConstruct>;
+		};
+		template <typename TYPE> struct AutoGetFeatures<TYPE, false, true >
+		{
+			using type = FeatureList<FeatureSize, FeatureAlignment, FeatureRTTI, FeatureDestroy, FeatureMoveConstruct>;
+		};
+		template <typename TYPE> struct AutoGetFeatures<TYPE, true, true >
+		{
+			using type = FeatureList<FeatureSize, FeatureAlignment, FeatureRTTI, FeatureDestroy, FeatureMoveConstruct, FeatureCopyConstruct>;
+		};
+
 
 		// CopyConstructImpl<COMPLETE_TYPE>::invoke
 		template <typename COMPLETE_TYPE, bool CAN = std::is_copy_constructible<COMPLETE_TYPE>::value> struct CopyConstructImpl;
@@ -244,268 +237,65 @@ namespace density
 			}
 		};
 
-		template <typename TYPE, 
-			bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_same<void, TYPE>::value,
-			bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_same<void, TYPE>::value
-				> struct GetAutoCopyMoveCap;
-
-		template <typename TYPE > struct GetAutoCopyMoveCap<TYPE, false, false>
-			{ static const ElementTypeCaps value = ElementTypeCaps::none; };
-		template <typename TYPE > struct GetAutoCopyMoveCap<TYPE, false, true>
-			{ static const ElementTypeCaps value = ElementTypeCaps::nothrow_move_construtible; };
-		template <typename TYPE > struct GetAutoCopyMoveCap<TYPE, true, false>
-			{ static const ElementTypeCaps value = ElementTypeCaps::copy_only; };
-		template <typename TYPE > struct GetAutoCopyMoveCap<TYPE, true, true>
-			{ static const ElementTypeCaps value = ElementTypeCaps::copy_and_move; };
-
 	} // namespace detail
-
-	// RuntimeType class declaration
-	template <typename ELEMENT,
-		ElementTypeCaps COPY_MOVE = detail::GetAutoCopyMoveCap<ELEMENT>::value,
-		SizeAlignmentMode SIZE_ALIGNMENT_MODE = SizeAlignmentMode::most_general>
-			class RuntimeType;
 	
-	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::copy_and_move, SIZE_ALIGNMENT_MODE> : public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
+	template <typename BASE, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
+		class RuntimeType
 	{
 	public:
 
-		using Element = ELEMENT;
-		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
-		static const ElementTypeCaps s_caps = ElementTypeCaps::copy_and_move;
-
 		RuntimeType() = delete;
-		RuntimeType & operator = (const RuntimeType &) = delete;
-		RuntimeType & operator = (RuntimeType &&) = delete;
-
+		RuntimeType(RuntimeType && ) DENSITY_NOEXCEPT = default;
 		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
 
-		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
-					{ }			
-		#else
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
-		#endif
-					
-		template <typename COMPLETE_TYPE>
-			static RuntimeType make() DENSITY_NOEXCEPT
+		template <typename TYPE>
+			static RuntimeType make()
 		{
-			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
+			return RuntimeType(detail::FeatureTable<BASE, TYPE, FEATURE_LIST>::s_table);
 		}
 
-		void * copy_construct(void * i_destination, const void * i_source_element) const
+		size_t size() const DENSITY_NOEXCEPT
 		{
-			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			return (*m_function)(Operation::copy, i_destination, const_cast<void*>(i_source_element));
+			return get_feature<detail::FeatureSize>();
 		}
 
-		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
+		size_t alignment() const DENSITY_NOEXCEPT
 		{
-			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			return (*m_function)(Operation::move, i_destination, i_source_element);
+			return get_feature<detail::FeatureAlignment>();
 		}
 
-		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
+		void * copy_construct(void * i_dest, const void * i_source) const
 		{
-			// temp
-			return static_cast<ELEMENT *>(i_complete_type_ptr);
+			return get_feature<detail::FeatureCopyConstruct>()(i_dest, i_source);
 		}
 
-		template <typename TYPE, typename... PARAMS>
-			TYPE * construct(PARAMS &&... i_params)
+		void * move_construct_nothrow(void * i_dest, void * i_source) const DENSITY_NOEXCEPT
 		{
-			return new TYPE(std::forward<PARAMS>(i_params)...);
+			return get_feature<detail::FeatureMoveConstruct>()(i_dest, i_source);
+		}
+
+		void destroy(void * i_dest) const noexcept
+		{
+			get_feature<detail::FeatureDestroy>()(i_dest);
+		}
+
+		const std::type_info & type_info() const noexcept
+		{
+			return get_feature<detail::FeatureRTTI>();
 		}
 
 	private:
+		RuntimeType(const void * const * i_table) : m_table(i_table) { }
 
-		enum class Operation { copy, move, destroy };
- 
-		using FunctionPtr = void * (*)(Operation i_operation, void * i_first, void * i_second );
-
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
-			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
-
-		template <typename COMPLETE_TYPE>
-			static void * function_impl(Operation i_operation, void * i_first, void * i_second)
+		template <typename FEATURE>
+			typename FEATURE::type get_feature() const noexcept
 		{
-			switch (i_operation )
-			{
-				case Operation::copy:
-					return static_cast<ELEMENT*>( detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
-					break;
-
-				case Operation::move:
-					return static_cast<ELEMENT*>(detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
-					break;
-
-				case Operation::destroy:
-					break;
-			}
-			return nullptr;
+			const size_t feature_index = detail::IndexOfFeature<0, FEATURE, FEATURE_LIST>::value;
+			static_assert(feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
+			return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
 		}
 
 	private:
-		const FunctionPtr m_function;
-	};
-
-	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::copy_only, SIZE_ALIGNMENT_MODE> : public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
-	{
-	public:
-
-		using Element = ELEMENT;
-		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
-		static const ElementTypeCaps s_caps = ElementTypeCaps::copy_only;
-
-		RuntimeType() = delete;
-		RuntimeType & operator = (const RuntimeType &) = delete;
-		RuntimeType & operator = (RuntimeType &&) = delete;
-
-		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
-
-		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
-					{ }			
-		#else
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
-		#endif
-					
-		template <typename COMPLETE_TYPE>
-			static RuntimeType make() DENSITY_NOEXCEPT
-		{
-			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
-		}
-
-		void * copy_construct(void * i_destination, const void * i_source_element) const
-		{
-			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			return (*m_function)(i_destination, const_cast<void*>(i_source_element));
-		}
-
-	private:
-
-		enum class Operation { copy, move, destroy };
- 
-		using FunctionPtr = void * (*)(void * i_first, void * i_second );
-
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
-			: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
-
-		template <typename COMPLETE_TYPE>
-			static void * function_impl(void * i_first, void * i_second)
-		{
-			rerturn static_cast<ELEMENT*>( detail::CopyConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
-		}
-
-	private:
-		const FunctionPtr m_function;
-	};
-
-	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::nothrow_move_construtible, SIZE_ALIGNMENT_MODE> 
-			: public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
-	{
-	public:
-
-		using Element = ELEMENT;
-		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
-		static const ElementTypeCaps s_caps = ElementTypeCaps::nothrow_move_construtible;
-
-		RuntimeType() = delete;
-		RuntimeType & operator = (const RuntimeType &) = delete;
-		RuntimeType & operator = (RuntimeType &&) = delete;
-
-		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
-
-		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)), m_function(i_source.m_function)
-					{ }			
-		#else
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
-		#endif
-					
-		template <typename COMPLETE_TYPE>
-			static RuntimeType make() DENSITY_NOEXCEPT
-		{
-			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value, &function_impl< COMPLETE_TYPE > );
-		}
-
-		void * move_construct_nothrow(void * i_destination, void * i_source_element) const DENSITY_NOEXCEPT
-		{
-			DENSITY_ASSERT(i_destination != nullptr && i_source_element != nullptr && i_destination != i_source_element);
-			return (*m_function)(i_destination, i_source_element);
-		}
-
-	private:
-
-		using FunctionPtr = void * (*)(void * i_first, void * i_second );
-
-		RuntimeType(size_t i_size, size_t i_alignment, FunctionPtr i_function) DENSITY_NOEXCEPT
-			: detail::ElementType_Destr<ELEMENT,SIZE_ALIGNMENT_MODE>(i_size, i_alignment), m_function(i_function) { }
-
-		template <typename COMPLETE_TYPE>
-			static void * function_impl(void * i_first, void * i_second)
-		{
-			return static_cast<ELEMENT*>( detail::MoveConstructImpl<COMPLETE_TYPE>::invoke(i_first, i_second) );
-		}
-
-	private:
-		const FunctionPtr m_function;
-	};
-
-	template <typename ELEMENT, SizeAlignmentMode SIZE_ALIGNMENT_MODE>
-		class RuntimeType<ELEMENT, ElementTypeCaps::none, SIZE_ALIGNMENT_MODE>
-			: public detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>
-	{
-	public:
-
-		using Element = ELEMENT;
-		static const SizeAlignmentMode s_size_alignment_mode = SIZE_ALIGNMENT_MODE;
-		static const ElementTypeCaps s_caps = ElementTypeCaps::none;
-
-		RuntimeType() = delete;
-		RuntimeType & operator = (const RuntimeType &) = delete;
-		RuntimeType & operator = (RuntimeType &&) = delete;
-
-		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
-
-		#if defined(_MSC_VER) && _MSC_VER < 1900
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT // visual studio 2013 doesnt seems to support defauted move constructors
-				: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(std::move(i_source)) { }
-		#else
-			RuntimeType(RuntimeType && i_source) DENSITY_NOEXCEPT = default;
-		#endif
-					
-		template <typename COMPLETE_TYPE>
-			static RuntimeType make() DENSITY_NOEXCEPT
-		{
-			static_assert(std::is_same<ELEMENT, COMPLETE_TYPE>::value || std::is_base_of<ELEMENT, COMPLETE_TYPE>::value || std::is_same<ELEMENT, void>::value, "not covariant type");
-			return RuntimeType(sizeof(COMPLETE_TYPE), std::alignment_of<COMPLETE_TYPE>::value );
-		}
-
-		ELEMENT * cast_to_base(void * i_complete_type_ptr) const
-		{
-			// temp
-			return static_cast<ELEMENT *>(i_complete_type_ptr);
-		}
-
-		template <typename TYPE, typename... PARAMS>
-			TYPE * construct(PARAMS &&... i_params)
-		{
-			return new TYPE(std::forward<PARAMS>(i_params)...);
-		}
-
-	private:
-
-		RuntimeType(size_t i_size, size_t i_alignment ) DENSITY_NOEXCEPT
-			: detail::ElementType_Destr<ELEMENT, SIZE_ALIGNMENT_MODE>(i_size, i_alignment) { }
+		const void * const * m_table;
 	};
 }

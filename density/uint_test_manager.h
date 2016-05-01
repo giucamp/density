@@ -10,32 +10,32 @@
 
 namespace density
 {
-	class UnitTestingManager
-	{
-	private:
-		UnitTestingManager();
+    class UnitTestingManager
+    {
+    private:
+        UnitTestingManager();
 
-	public:
+    public:
 
-		static UnitTestingManager & instance();
+        static UnitTestingManager & instance();
 
-		UnitTestingManager(const UnitTestingManager &) = delete;
+        UnitTestingManager(const UnitTestingManager &) = delete;
 
-		UnitTestingManager & operator = (const UnitTestingManager &) = delete;
+        UnitTestingManager & operator = (const UnitTestingManager &) = delete;
 
-		using PerformanceTestFunction = void (*)();
-		
-		using CorrectnessTestFunction = void(*)(CorrectnessTestContext & i_context);
+        using PerformanceTestFunction = void (*)();
+        
+        using CorrectnessTestFunction = void(*)(CorrectnessTestContext & i_context);
 
-		void add_correctness_test(const char * i_path, CorrectnessTestFunction i_function);
+        void add_correctness_test(const char * i_path, CorrectnessTestFunction i_function);
 
-		void add_performance_test(const char * i_path, PerformanceTestFunction i_function, const char *  i_version_label);
+        void add_performance_test(const char * i_path, PerformanceTestFunction i_function, const char *  i_version_label);
 
-		void run(const char * i_path = "");
+        void run(const char * i_path = "");
 
-	private:
-		class Impl;
-		const std::unique_ptr<Impl> m_impl;	
-	};
+    private:
+        class Impl;
+        const std::unique_ptr<Impl> m_impl;    
+    };
 
 }
