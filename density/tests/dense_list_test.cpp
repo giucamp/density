@@ -6,6 +6,7 @@
 
 #include "..\dense_list.h"
 #include "..\testing_utils.h"
+#include "container_test.h"
 #include <vector>
 #include <list>
 
@@ -468,8 +469,8 @@ namespace density
 
             void test_with_exceptions()
             {
-                test_with_exceptions_typed<NoCopy_MoveNoExcept>();
-                test_with_exceptions_typed<Copy_MoveNoExcept>();
+                //test_with_exceptions_typed<MovableTestObject>();
+                //test_with_exceptions_typed<CopyableTestObject>();
             }
 
             void test_void_dense_list()

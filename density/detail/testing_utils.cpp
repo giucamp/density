@@ -40,8 +40,8 @@ namespace density
         void TestAllocatorBase::pop_level()
         {
             auto & levels = GetThreadData().m_levels;
-            DENSITY_ASSERT(levels.size() > 0);
-            DENSITY_ASSERT(levels.back().m_allocations.size() == 0);
+            DENSITY_TEST_ASSERT(levels.size() > 0);
+            DENSITY_TEST_ASSERT(levels.back().m_allocations.size() == 0);
             levels.pop_back();
         }
 
@@ -59,7 +59,7 @@ namespace density
 
                 auto & allocations = thread_data.m_levels.back().m_allocations;
                 auto res = allocations.insert(std::make_pair(block, entry));
-                DENSITY_ASSERT(res.second);
+                DENSITY_TEST_ASSERT(res.second);
             }
 
             return block;
@@ -74,7 +74,7 @@ namespace density
                 {
                     auto & allocations = thread_data.m_levels.back().m_allocations;
                     auto it = allocations.find(i_block);
-                    DENSITY_ASSERT(it != allocations.end());
+                    DENSITY_TEST_ASSERT(it != allocations.end());
                     allocations.erase(it);
                 }
 
@@ -84,16 +84,6 @@ namespace density
     
     } // namespace detail
     
-    NoLeakScope::NoLeakScope()
-    {
-        detail::TestAllocatorBase::push_level();
-    }
-
-    NoLeakScope::~NoLeakScope()
-    {
-        detail::TestAllocatorBase::pop_level();
-    }
-
     namespace
     {
         struct StaticData
@@ -127,20 +117,9 @@ namespace density
         }
     }
 
-    std::random_device g_random_device;
-    std::mt19937 g_rand(g_random_device());
-
-    namespace detail
-    {
-        AllocatingTester::AllocatingTester()
-            : m_rand_value(std::allocate_shared<int>(TestAllocator<int>(), std::uniform_int_distribution<int>(100000)(g_rand)))
-        {
-        }
-    }
-
     void run_exception_stress_test(std::function<void()> i_test)
     {
-        DENSITY_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
+        DENSITY_TEST_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
 
         i_test();
 

@@ -60,11 +60,45 @@ namespace density
 
 	namespace detail
 	{
-		template <typename... FEATURES> struct FeatureList
+		/* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object. 
+			- If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
+			  should be defined in the namespace that contains TYPE (it uses ADL). If such function exits,
+			  its return type must be size_t.
+			- Otherwise std::hash<TYPE> is used to comute the hash
+		see http://stackoverflow.com/questions/257288/is-it-possible-to-write-a-c-template-to-check-for-a-functions-existence */
+		template <typename> struct sfinae_true : std::true_type {};
+		template <typename TYPE> static sfinae_true<decltype(hash_func(std::declval<TYPE>()))> has_hash_func_impl(int);
+		template <typename TYPE> static std::false_type has_hash_func_impl(long);
+		template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type)
 		{
-			static const size_t size = sizeof...(FEATURES);
-		};
+			static_assert( std::is_same< decltype(hash_func(i_object)), size_t >::value, 
+				"if the hash_func() exits for this type, the it must return a size_t" );
+			return hash_func(i_object);
+		}
+		template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type)
+		{
+			return std::hash<TYPE>(i_object);
+		}
+		template <typename TYPE>
+			inline size_t invoke_hash(const TYPE & i_object)
+		{
+			return invoke_hash_func_impl(i_object, decltype(has_hash_func_impl<TYPE>(0))() );
+		}
 
+		/** This struct template rapresent a list of features associated to a RuntimeType.		
+		
+			struct FeatureX
+			{
+				using type = ...;
+
+				template <typename BASE, typename TYPE> struct Impl
+				{
+					static const uintptr_t value = ...;
+				};
+			};
+		*/
+
+		/* This feature stores the size in the table of the type */
 		struct FeatureSize
 		{
 			using type = size_t;
@@ -75,6 +109,7 @@ namespace density
 			};
 		};
 
+		/* This feature stores the alignment in the table of the type */
 		struct FeatureAlignment
 		{
 			using type = size_t;
@@ -85,6 +120,26 @@ namespace density
 			};
 		};
 
+		/* This feature computes the hash of an object*/
+		struct FeatureHash
+		{
+			using type = size_t (*) (const void * i_source);
+
+			template <typename BASE, typename TYPE> struct Impl
+			{				
+				static const uintptr_t value;
+
+				static size_t invoke(const void * i_source)
+				{
+					return invoke_hash( *static_cast<const TYPE*>(i_source) );
+				}
+			};
+		};
+
+		template <typename BASE, typename TYPE>
+			const uintptr_t FeatureHash::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+		/* This feature stores a pointer to the std::type_info in the table of the type */
 		struct FeatureRTTI
 		{
 			using type = const std::type_info*;
@@ -94,21 +149,27 @@ namespace density
 				static const uintptr_t value;
 			};
 		};
-
 		template <typename BASE, typename TYPE>
 			const uintptr_t FeatureRTTI::Impl<BASE,TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
 
+		/* This feature stores a pointer to the copy constructor in the table of the type */
 		struct FeatureCopyConstruct
 		{
-			using type = void * (*) (void * i_dest, const void * i_source);
+			using type = void * (*) (void * i_complete_dest, const void * i_base_source);
 
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				static void * invoke(void * i_dest, const void * i_source)
+				/* Copy-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
+					@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
+					@param i_base_source pointer to a subobjct (of type BASE) of an object whose complete
+						type is TYPE, that is to be used as source of the copy.
+					@return pointer to a subobjct (of type BASE) of the new object. */
+				static void * invoke(void * i_complete_dest, const void * i_base_source)
 				{
-					const BASE * source = static_cast<const BASE*>(i_source);
-					BASE * result = new(i_dest) TYPE(*static_cast<const TYPE*>(source));
-					return result;
+					auto const base_source = static_cast<const BASE*>(i_base_source);
+					// DENSITY_ASSERT( dynamic_cast<const TYPE*>(base_source) != nullptr ); to do: implement a detail::IsInstanceOf
+					BASE * const base_result = new(i_complete_dest) TYPE(*static_cast<const TYPE*>(base_source));
+					return base_result;
 				}
 
 				static const uintptr_t value;
@@ -117,17 +178,24 @@ namespace density
 		template <typename TYPE, typename BASE>
 			const uintptr_t FeatureCopyConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
+		/* This feature stores a pointer to the move constructor in the table of the type */
 		struct FeatureMoveConstruct
 		{
 			using type = void * (*)(void * i_dest, void * i_source);
 
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				static void * invoke(void * i_dest, void * i_source) noexcept
+				/* Move-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
+					@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
+					@param i_base_source pointer to a subobjct (of type BASE) of an object whose complete
+						type is TYPE, that is to be used as source of the move.
+					@return pointer to a subobjct (of type BASE) of the new object. */
+				static void * invoke(void * i_complete_dest, void * i_base_source) noexcept
 				{
-					BASE * source = static_cast<BASE*>(i_source);
-					BASE * result = new(i_dest) TYPE(std::move(*static_cast<TYPE*>(source)));
-					return result;
+					BASE * base_source = static_cast<BASE*>(i_base_source);
+					// DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
+					BASE * base_result = new(i_complete_dest) TYPE(std::move(*static_cast<TYPE*>(base_source)));
+					return base_result;
 				}
 				static const uintptr_t value;
 			};			
@@ -139,18 +207,39 @@ namespace density
 		struct FeatureDestroy
 		{
 			using type = void (*)(void * i_dest);
+
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				static void invoke(void * i_dest) noexcept
+				static void invoke(void * i_base_dest) noexcept
 				{
-					const auto source = static_cast<BASE*>(i_dest);
-					static_cast<TYPE*>(source)->TYPE::~TYPE();
+					const auto base_dest = static_cast<BASE*>(i_base_dest);
+					static_cast<TYPE*>(base_dest)->TYPE::~TYPE();
 				}
 				static const uintptr_t value;
 			};			
 		};
 		template <typename TYPE, typename BASE>
 			const uintptr_t FeatureDestroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+		template <typename... FEATURES> struct FeatureList
+		{
+			static const size_t size = sizeof...(FEATURES);
+		};
+
+		/** (1) FeatureConcat< FeatureList<FEATURES_1...>, FeatureList<FEATURES_2...> >::type
+		    (2) FeatureConcat< FeatureList<FEATURES_1...>, FEATURE_2 >::type
+		*/
+		template <typename...> struct FeatureConcat;
+		template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
+			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, FeatureList<SECOND_FEATURES...>>
+		{
+			using type = typename FeatureList<FIRST_FEATURES..., SECOND_FEATURES...>;
+		};
+		template <typename... FIRST_FEATURES, typename SECOND_FEATURE>
+			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, SECOND_FEATURE>
+		{
+			using type = typename FeatureList<FIRST_FEATURES..., SECOND_FEATURE>;
+		};
 
 		/** FeatureTable<TYPE, FeatureList<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
 		template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
@@ -281,11 +370,8 @@ namespace density
 
 		const std::type_info & type_info() const noexcept
 		{
-			return get_feature<detail::FeatureRTTI>();
+			return *get_feature<detail::FeatureRTTI>();
 		}
-
-	private:
-		RuntimeType(const void * const * i_table) : m_table(i_table) { }
 
 		template <typename FEATURE>
 			typename FEATURE::type get_feature() const noexcept
@@ -294,6 +380,9 @@ namespace density
 			static_assert(feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
 			return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
 		}
+
+	private:
+		RuntimeType(const void * const * i_table) : m_table(i_table) { }
 
 	private:
 		const void * const * m_table;

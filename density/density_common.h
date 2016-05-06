@@ -11,7 +11,7 @@
 #include <limits>
 #include <cstddef>
 
-#define DENSITY_DEBUG        0
+#define DENSITY_DEBUG        1
 
 #define DENSITY_UNUSED(var)        (void)var;
 

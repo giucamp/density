@@ -180,7 +180,10 @@ namespace density
                 return m_impl != i_other.m_impl;
             }
 
-            const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.type(); }
+			const RUNTIME_TYPE & type() const DENSITY_NOEXCEPT
+			{
+				return m_impl.curr_type();
+			}
 
             bool is_end() const DENSITY_NOEXCEPT
             {
@@ -213,7 +216,7 @@ namespace density
 
             value_type & operator * () const DENSITY_NOEXCEPT { return *static_cast<value_type *>(m_impl.element()); }
             value_type * operator -> () const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
-            value_type * curr_element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
+            value_type * element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
 
             const_iterator & operator ++ () DENSITY_NOEXCEPT
             {
@@ -230,12 +233,12 @@ namespace density
 
             bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
             {
-                return m_curr_type == i_other.curr_type();
+                return m_impl == i_other.m_impl;
             }
 
             bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
             {
-                return m_curr_type != i_other.curr_type();
+				return m_impl != i_other.m_impl;
             }
 
             bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
@@ -248,7 +251,10 @@ namespace density
                 return m_impl != i_other.m_impl;
             }
 
-            const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
+            const RUNTIME_TYPE & type() const DENSITY_NOEXCEPT
+			{ 
+				return m_impl.type();
+			}
 
             bool is_end() const DENSITY_NOEXCEPT
             {

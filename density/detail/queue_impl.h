@@ -83,9 +83,9 @@ namespace density
                     return m_curr_control->m_element;
                 }
 
-                const RUNTIME_TYPE * type() const DENSITY_NOEXCEPT
+                const RUNTIME_TYPE & type() const DENSITY_NOEXCEPT
                 {
-                    return m_curr_control;
+                    return *m_curr_control;
                 }
 
                 const Control * control() const DENSITY_NOEXCEPT
@@ -189,11 +189,11 @@ namespace density
                 const IteratorImpl end_it = i_source.end();
                 while (it != end_it)
                 {
-                    auto const type = it.type();
+                    auto const & type = it.type();
                     auto const source_element = it.element();
                     ++it;
 
-                    bool result = try_push(*type,
+                    bool result = try_push(type,
                         typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
                     DENSITY_ASSERT(result);
                     DENSITY_UNUSED(result);
