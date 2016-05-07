@@ -17,6 +17,8 @@
 
 #define DENSITY_POINTER_OVERFLOW_SAFE        1
 
+#define DENSITY_EXCEPTION_SAFE				 1
+
 #if DENSITY_POINTER_OVERFLOW_SAFE
     #define DENSITY_OVERFLOW_IF(bool_expr)            ::density::detail::handle_pointer_overflow((bool_expr))
 #else
@@ -761,7 +763,7 @@ namespace density
             return *this;
         }
 
-        MemStats & operator + (const MemStats & i_source) const
+        MemStats operator + (const MemStats & i_source) const
         {
             MemStats result = *this;
             result += i_source;

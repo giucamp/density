@@ -7,6 +7,7 @@
 #include "..\testing_utils.h"
 #include "..\density_common.h"
 #include <random>
+#include <iostream>
 
 namespace density
 {
@@ -41,6 +42,12 @@ namespace density
         {
             auto & levels = GetThreadData().m_levels;
             DENSITY_TEST_ASSERT(levels.size() > 0);
+
+			for (const auto & leaking_allocation : levels.back().m_allocations)
+			{
+				std::cout << "Leak of " << leaking_allocation.second.m_size << ", progressive: " << leaking_allocation.second.m_progressive << std::endl;
+			}
+
             DENSITY_TEST_ASSERT(levels.back().m_allocations.size() == 0);
             levels.pop_back();
         }
@@ -52,12 +59,13 @@ namespace density
             void * block = operator new (i_size);
 
             auto & thread_data = GetThreadData();
-            if (thread_data.m_levels.size() > 0)
+			if (thread_data.m_levels.size() > 0)
             {
                 AllocationEntry entry;
                 entry.m_size = i_size;
+				entry.m_progressive = thread_data.m_last_progressive++;
 
-                auto & allocations = thread_data.m_levels.back().m_allocations;
+				auto & allocations = thread_data.m_levels.back().m_allocations;
                 auto res = allocations.insert(std::make_pair(block, entry));
                 DENSITY_TEST_ASSERT(res.second);
             }
@@ -91,10 +99,6 @@ namespace density
             int64_t m_current_counter;
             int64_t m_except_at;
             StaticData() : m_current_counter(0), m_except_at(-1) {}
-        };
-
-        class TestException
-        {
         };
 
         #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below

@@ -11,13 +11,13 @@
 namespace density
 {
 
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
-        class DenseQueue;
+    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class dense_queue;
 
 } // namespace density
 
-// definition of the primary class template DenseQueue
+// definition of the primary class template dense_queue
 #include "detail\dense_queue_typed.h"
 
-// definition of the speciaization of DenseQueue for void
+// definition of the speciaization of dense_queue for void
 #include "detail\dense_queue_void.h"

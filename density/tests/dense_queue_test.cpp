@@ -4,6 +4,10 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#if defined(_MSC_VER) // see http://stackoverflow.com/questions/6880045/how-can-i-work-around-visual-c-2005s-decorated-name-length-exceeded-name-wa
+	#pragma warning(disable:4503) // '__LINE__Var': decorated name length exceeded, name was truncated
+#endif
+
 #include "..\dense_queue.h"
 #include "..\testing_utils.h"
 #include "container_test.h"
@@ -23,8 +27,8 @@ namespace density
             void dense_queue_test_same_type(std::mt19937 & i_random)
         {
 			// add detail::FeatureHash to the automatic feature list
-			using Features = typename detail::FeatureConcat< detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type;
-			using Queue = DenseQueue<TYPE, TestAllocator<TYPE>, RuntimeType<TYPE, Features> >;
+			using Features = typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type;
+			using Queue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE, Features> >;
 			ContainerTest<Queue, TYPE> test;
 
             test.add_test_case("push_n_times", [&test](std::mt19937 & i_random) {
@@ -35,7 +39,7 @@ namespace density
                 {
                     const CopyableTestObject new_element(i_random);
                     test.dense_container().push(new_element);
-                    test.shadow_container().push_back(new_element);
+					test.shadow_container().push_back(new_element);
                 }
             });
 
@@ -45,7 +49,7 @@ namespace density
 
 				for (unsigned i = 0; i < times && !test.shadow_container().empty(); i++)
 				{
-					test.dense_container().consume([&test](const typename Queue::RuntimeType &, const TYPE &) {
+					test.dense_container().consume([&test](const typename Queue::runtime_type &, const TYPE &) {
 						test.shadow_container().pop_front();
 					});
 				}
@@ -58,7 +62,7 @@ namespace density
 				volatile unsigned i = 0;
 				while (i < times && !m_dense_container.empty())
 				{
-					m_dense_container.consume([this](const typename DenseQueue<BASE_TYPE>::RuntimeType &, BASE_TYPE) {
+					m_dense_container.consume([this](const typename dense_queue<BASE_TYPE>::runtime_type &, BASE_TYPE) {
 						shadow_container().pop_front();
 					});
 					i++;
@@ -71,7 +75,7 @@ namespace density
 				volatile unsigned i = 0; // <-- may help debug
 				while (!m_dense_container.empty())
 				{
-					m_dense_container.consume([this](const typename DenseQueue<BASE_TYPE>::RuntimeType &, BASE_TYPE i_val) {
+					m_dense_container.consume([this](const typename dense_queue<BASE_TYPE>::runtime_type &, BASE_TYPE i_val) {
 						DENSITY_TEST_ASSERT(shadow_container().size() > 0 && i_val == *shadow_container().front());
 						shadow_container().pop_front();
 					});
@@ -96,14 +100,40 @@ namespace density
 
         }
 
-        void dense_queue_basic_tests()
+		void dense_queue_leak_basic_tests()
+		{
+			NoLeakScope no_leaks;
+			using Queue = dense_queue<int, TestAllocator<int>>;
+			Queue queue;
+			for (int i = 0; i < 1000; i++)
+			{
+				queue.push(i);
+			}
+
+			for (int i = 0; i < 57; i++)
+			{
+				queue.consume([i](const Queue::runtime_type & i_type, int i_element)
+				{
+					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && i_element == i);
+				});
+			}
+		}
+
+		void dense_queue_basic_tests()
         {
-            DenseQueue< DenseQueue<int> > queue_of_queues;
-            DenseQueue<int> queue;
+            dense_queue< dense_queue<int> > queue_of_queues;
+            dense_queue<int> queue;
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);
             }
+			for (int i = 0; i < 57; i++)
+			{
+				queue.consume([i](const dense_queue<int>::runtime_type & i_type, int i_element)
+				{
+					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && i_element == i );
+				});
+			}
 
             // this must use the lvalue overload, so queue must be preserved
             const auto prev_size = queue.mem_size();
@@ -116,7 +146,7 @@ namespace density
             DENSITY_TEST_ASSERT(queue.empty());
 
             // try with a non-copyable type (std::unique_ptr)
-            DenseQueue<std::unique_ptr<int>> queue_of_uncopyable;
+            dense_queue<std::unique_ptr<int>> queue_of_uncopyable;
             queue_of_uncopyable.push(std::make_unique<int>(10));
             queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::make_unique<int>(10));
             DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
@@ -134,6 +164,8 @@ namespace density
 
     void dense_queue_test()
     {
+		//detail::dense_queue_leak_basic_tests();
+
         detail::dense_queue_basic_tests();
 
         run_exception_stress_test([] {

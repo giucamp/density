@@ -121,13 +121,13 @@ namespace density
 
     } // namespace detail
 
-    template < typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
+    template < typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class PagedQueue final : private ALLOCATOR
     {
         using PagedQueueImpl = detail::PagedQueueImpl<ALLOCATOR, RUNTIME_TYPE>;
     public:
 
-        using RuntimeType = RUNTIME_TYPE;
+        using runtime_type = RUNTIME_TYPE;
         using allocator_type = ALLOCATOR;
         using value_type = ELEMENT;
         using reference = ELEMENT &;
@@ -165,7 +165,7 @@ namespace density
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
         {
-            m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+            m_impl.impl_push(runtime_type::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
                 typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
         }
 
@@ -174,7 +174,7 @@ namespace density
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
         {
-            m_impl.impl_push(RuntimeType::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+            m_impl.impl_push(runtime_type::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
                 typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));
         }
 

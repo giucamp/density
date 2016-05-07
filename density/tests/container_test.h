@@ -34,12 +34,14 @@ namespace density
 			TestObjectBase & operator = (const TestObjectBase & i_source)
 			{
 				m_hash = std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash);
+				return *this;
 			}
 
 			TestObjectBase & operator = (TestObjectBase && i_source) noexcept
 			{
 				m_hash = std::move(i_source.m_hash);
 				i_source.m_hash = nullptr;
+				return *this;
 			}
 
 			bool operator == (const TestObjectBase & i_other) const
@@ -139,8 +141,16 @@ namespace density
 				const std::type_info * m_type_info;
 				size_t m_hash;
 			};
-
+			
 		public:
+
+			/* Exception thrown as result to an exception occurred during the update of the shadow container.
+			Handlers for of this exception can't check the tested container against the shadow container. */
+			struct BasicGuaranteeException : TestException
+			{
+				using TestException::TestException;
+			};
+
 
 			ShadowContainer() {}
 
@@ -165,7 +175,7 @@ namespace density
 				const auto end_it = i_container.end();
 				for (auto it = i_container.begin(); it != end_it; it++)
 				{
-					auto hasher = it.type().get_feature<detail::FeatureHash>();
+					auto hasher = it.type().template get_feature<detail::FeatureHash>();
 					const auto & type_info = it.type().type_info();
 					DENSITY_TEST_ASSERT(type_info == *m_deque[index].m_type_info &&
 						hasher(it.element()) == m_deque[index].m_hash );
@@ -175,7 +185,7 @@ namespace density
 				DENSITY_TEST_ASSERT(index == m_deque.size());
 			}
 
-			void compare_at(size_t i_at, typename DENSE_CONTAINER::RuntimeType & i_type, const void * i_element)
+			void compare_at(size_t i_at, typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(i_at < m_deque.size());
 				DENSITY_TEST_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
@@ -183,13 +193,13 @@ namespace density
 				DENSITY_TEST_ASSERT(element_hash == m_deque[i_at].m_hash);
 			}
 
-			void compare_front(typename DENSE_CONTAINER::RuntimeType & i_type, const void * i_element)
+			void compare_front(typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(m_deque.size() > 0);
 				compare_at(0, i_type, i_element);
 			}
 
-			void compare_back(typename DENSE_CONTAINER::RuntimeType & i_type, const void * i_element)
+			void compare_back(typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(m_deque.size() > 0);
 				compare_at(m_deque.size() - 1, i_type, i_element);
@@ -198,10 +208,17 @@ namespace density
 			template <typename TYPE>
 				void insert_at(size_t i_at, const TYPE & i_element, size_t i_count = 1)
 			{
-				using RuntimeType = typename DENSE_CONTAINER::RuntimeType;
-				const auto type = RuntimeType::make<TYPE>();
-				Element new_element{ &type.type_info(), type.get_feature<detail::FeatureHash>()(&i_element) };
-				m_deque.insert(m_deque.begin() + i_at, i_count, new_element );
+				try
+				{
+					using runtime_type = typename DENSE_CONTAINER::runtime_type;
+					const auto type = runtime_type::template make<TYPE>();
+					Element new_element{ &type.type_info(), type.template get_feature<detail::FeatureHash>()(&i_element) };
+					m_deque.insert(m_deque.begin() + i_at, i_count, new_element);
+				}
+				catch (...)
+				{
+					throw BasicGuaranteeException("insert_at failed");
+				}
 			}
 
 			template <typename TYPE>
@@ -212,8 +229,15 @@ namespace density
 
 			void erase_at(size_t i_at, size_t i_count = 1)
 			{
-				DENSITY_TEST_ASSERT(m_deque.size() <= i_at + i_count);
-				m_deque.erase(m_deque.begin() + i_at, m_deque.begin() + i_at + i_count);
+				try
+				{
+					DENSITY_TEST_ASSERT(m_deque.size() <= i_at + i_count);
+					m_deque.erase(m_deque.begin() + i_at, m_deque.begin() + i_at + i_count);
+				}
+				catch (...)
+				{
+					throw BasicGuaranteeException("erase failed");
+				}
 			}
 
 			void pop_back()
@@ -234,7 +258,11 @@ namespace density
 			std::deque<Element> m_deque;
 		};
 
-		/** This class template rapresent a test session to be run on a container implementation. */
+		/** This class template rapresent a test session to be run on a container implementation.
+			The tested container is tested to fullfill the strong exception guarantee: whether or
+			not an exception is thrown during a test case, the DENSE_CONTAINER is compared to the
+			shadow container.
+		*/
 		template <typename DENSE_CONTAINER, typename BASE_TYPE>
 			class ContainerTest
 		{
@@ -269,13 +297,26 @@ namespace density
 					cumulative += test_case.m_probability;
 					if (target_random_value < cumulative)
 					{
-						test_case.m_function(i_random);
-						test_case.m_executions++;
+						try
+						{
+							test_case.m_function(i_random);
+							test_case.m_executions++;
+						}
+						catch (typename ShadowContainer<DENSE_CONTAINER>::BasicGuaranteeException)
+						{
+							// the shadow container could not be updated
+							throw;
+						}
+						catch (...)
+						{
+							compare();
+							throw;
+						}
 						break;
 					}
 				}
                 
-				compare();            
+				compare();
 			}
 
 			// check for equality m_dense_container and shadow_container()

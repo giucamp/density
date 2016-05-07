@@ -30,7 +30,7 @@ namespace density
         using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
         /** Alias for the template parameters */
-        using RuntimeType = RUNTIME_TYPE;
+        using runtime_type = RUNTIME_TYPE;
         
         /** Creates a DenseList containing all the elements specified in the parameter list. 
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
@@ -208,7 +208,7 @@ namespace density
             CopyConstruct(const void * i_source)
                 : m_source(i_source) { }
 
-            void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type)
+            void * operator () (typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type)
             {
                 return i_builder.add_by_copy(i_element_type, m_source);
             }
@@ -221,7 +221,7 @@ namespace density
             MoveConstruct(void * i_source)
                 : m_source(i_source) { }
 
-            void * operator () (typename ListImpl::ListBuilder & i_builder, const RuntimeType & i_element_type) DENSITY_NOEXCEPT
+            void * operator () (typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type) DENSITY_NOEXCEPT
             {
                 return i_builder.add_by_move(i_element_type, m_source);
             }
@@ -231,7 +231,7 @@ namespace density
             void push_back(const ELEMENT_COMPLETE_TYPE & i_source)
         {
             m_impl.insert_impl(m_impl.m_types + m_impl.size(),
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -239,7 +239,7 @@ namespace density
             void push_front(const ELEMENT_COMPLETE_TYPE & i_source)
         {
             m_impl.insert_impl(m_impl.m_types,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -247,7 +247,7 @@ namespace density
             void push_back(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_impl.insert_impl(m_impl.m_types + m_impl.size(),
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
 
@@ -255,7 +255,7 @@ namespace density
             void push_front(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_impl.insert_impl(m_impl.m_types,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
 
@@ -276,7 +276,7 @@ namespace density
             iterator insert(const_iterator i_position, const ELEMENT_COMPLETE_TYPE & i_source)
         {
             return m_impl.insert_impl(i_position.m_curr_type,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -286,7 +286,7 @@ namespace density
             if (i_count > 0)
             {
                 return m_impl.insert_n_impl(i_position.m_curr_type, i_count,
-                    RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                    runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                     CopyConstruct(&i_source) );
             }
             else
@@ -301,7 +301,7 @@ namespace density
             iterator insert(const_iterator i_position, ELEMENT_COMPLETE_TYPE && i_source)
         {
             return ListImpl::insert_impl(i_position.m_curr_type,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }*/
 

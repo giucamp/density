@@ -13,7 +13,7 @@ namespace density
         Insertions\removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate existing iterators.
         The inline storage of DenseList is the same of a pointer. An empty DenseList does not use heap memory.
         All the functions of DenseList gives at least the strong exception guarantee. */
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = RuntimeType<ELEMENT> >
+    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class DenseList final
     {
     private:
@@ -33,7 +33,7 @@ namespace density
         using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
 
         /** Alias for the template arguments */
-        using RuntimeType = RUNTIME_TYPE;
+        using runtime_type = RUNTIME_TYPE;
         
         /** Creates a DenseList containing all the elements specified in the parameter list. 
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
@@ -222,7 +222,7 @@ namespace density
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
             m_impl.insert_impl(m_impl.m_types + m_impl.size(),
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -231,7 +231,7 @@ namespace density
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
             m_impl.insert_impl(m_impl.m_types,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -240,7 +240,7 @@ namespace density
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
             m_impl.insert_impl(m_impl.m_types + m_impl.size(),
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
 
@@ -248,7 +248,7 @@ namespace density
             void push_front(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_impl.insert_impl(m_impl.m_types,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
 
@@ -269,7 +269,7 @@ namespace density
             iterator insert(const_iterator i_position, const ELEMENT_COMPLETE_TYPE & i_source)
         {
             return m_impl.insert_impl(i_position.m_impl.m_curr_type,
-                RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
 
@@ -279,7 +279,7 @@ namespace density
             if (i_count > 0)
             {
                 return m_impl.insert_n_impl(i_position.m_impl.m_curr_type, i_count,
-                    RuntimeType::template make<ELEMENT_COMPLETE_TYPE>(),
+                    runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                     CopyConstruct(&i_source) );
             }
             else

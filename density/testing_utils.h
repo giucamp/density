@@ -28,7 +28,8 @@ namespace density
         private:
             struct AllocationEntry
             {
-                size_t m_size;
+				size_t m_progressive = 0;
+                size_t m_size = 0;
             };
             struct Levels
             {
@@ -37,6 +38,7 @@ namespace density
             struct ThreadData
             {
                 std::vector<Levels> m_levels;
+				size_t m_last_progressive = 0;
             };
             static ThreadData & GetThreadData();
 
@@ -119,22 +121,12 @@ namespace density
         NoLeakScope(const NoLeakScope &) = delete;
         NoLeakScope & operator = (const NoLeakScope &) = delete;
     };
-
-    class TestString : public std::basic_string<char, std::char_traits<char>, TestAllocator<char> >
-    {
-    public:
-        TestString() = default;
-        TestString(const char * i_str) : std::basic_string<char, std::char_traits<char>, TestAllocator<char> >(i_str) {}
-
-        TestString(const TestString&) = default;
-        TestString & operator = (const TestString&) = default;
-
-        TestString(TestString&&) noexcept = default;
-        TestString & operator = (TestString&&) noexcept = default;
-
-        virtual ~TestString() {}
-    };
-    
+		
+	class TestException : public std::exception
+	{
+		using std::exception::exception;
+	};
+  
     /** Runs an exception safeness test, calling the provided function many times.
         First the provided function is called without raising any exception. 
         - Then the function is called, an the first time exception_check_point is called, an exception is thrown
@@ -145,6 +137,5 @@ namespace density
     void run_exception_stress_test(std::function<void()> i_test);
 
     void exception_check_point();
-
 
 } // namespace density

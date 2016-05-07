@@ -16,15 +16,15 @@ namespace density
     /*
         Runtime Type Synopsis
 
-        class RuntimeType
+        class runtime_type
         {
             public:
 
-                template <typename COMPLETE_TYPE> static RuntimeType make() noexcept;
+                template <typename COMPLETE_TYPE> static runtime_type make() noexcept;
 
-                RuntimeType(const RuntimeType &) noexcept;
-                RuntimeType(RuntimeType &&) noexcept;
-                ~RuntimeType();
+                runtime_type(const runtime_type &) noexcept;
+                runtime_type(runtime_type &&) noexcept;
+                ~runtime_type();
 
                 size_t size() const noexcept;
                 size_t alignment() const noexcept;
@@ -85,7 +85,7 @@ namespace density
 			return invoke_hash_func_impl(i_object, decltype(has_hash_func_impl<TYPE>(0))() );
 		}
 
-		/** This struct template rapresent a list of features associated to a RuntimeType.		
+		/** This struct template rapresent a list of features associated to a runtime_type.		
 		
 			struct FeatureX
 			{
@@ -233,12 +233,12 @@ namespace density
 		template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
 			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, FeatureList<SECOND_FEATURES...>>
 		{
-			using type = typename FeatureList<FIRST_FEATURES..., SECOND_FEATURES...>;
+			using type = FeatureList<FIRST_FEATURES..., SECOND_FEATURES...>;
 		};
 		template <typename... FIRST_FEATURES, typename SECOND_FEATURE>
 			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, SECOND_FEATURE>
 		{
-			using type = typename FeatureList<FIRST_FEATURES..., SECOND_FEATURE>;
+			using type = FeatureList<FIRST_FEATURES..., SECOND_FEATURE>;
 		};
 
 		/** FeatureTable<TYPE, FeatureList<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
@@ -246,11 +246,11 @@ namespace density
 		template <typename BASE, typename TYPE, typename... FEATURES>
 			struct FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >
 		{
-			static const void * const s_table[sizeof...(FEATURES)];
+			static void * const s_table[sizeof...(FEATURES)];
 		};
 		template <typename BASE, typename TYPE, typename... FEATURES>
-			const void * const FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >::s_table[sizeof...(FEATURES)]
-				= { reinterpret_cast<void *>( FEATURES::Impl<BASE, TYPE>::value )... };
+			void * const FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >::s_table[sizeof...(FEATURES)]
+				= { reinterpret_cast<void *>( FEATURES::template Impl<BASE, TYPE>::value )... };
 
 		/* IndexOfFeature<0, TARGET_FEATURE, FeatureList<FEATURES...> >::value is the index of TARGET_FEATURE in FeatureList<FEATURES...>,
 			or FeatureList<FEATURES...>::size if TARGET_FEATURE is not present */
@@ -329,18 +329,18 @@ namespace density
 	} // namespace detail
 	
 	template <typename BASE, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
-		class RuntimeType
+		class runtime_type
 	{
 	public:
 
-		RuntimeType() = delete;
-		RuntimeType(RuntimeType && ) DENSITY_NOEXCEPT = default;
-		RuntimeType(const RuntimeType &) DENSITY_NOEXCEPT = default;
+		runtime_type() = delete;
+		runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
+		runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;
 
 		template <typename TYPE>
-			static RuntimeType make()
+			static runtime_type make()
 		{
-			return RuntimeType(detail::FeatureTable<BASE, TYPE, FEATURE_LIST>::s_table);
+			return runtime_type(detail::FeatureTable<BASE, TYPE, FEATURE_LIST>::s_table);
 		}
 
 		size_t size() const DENSITY_NOEXCEPT
@@ -382,9 +382,9 @@ namespace density
 		}
 
 	private:
-		RuntimeType(const void * const * i_table) : m_table(i_table) { }
+		runtime_type(void * const * i_table) : m_table(i_table) { }
 
 	private:
-		const void * const * m_table;
+		void * const * m_table;
 	};
 }

@@ -27,7 +27,7 @@ namespace density
 
             /*for (int i = 0; i < 1000; i++)
             {
-                queue.consume([] (const PagedQueue<int>::RuntimeType &, int val) {
+                queue.consume([] (const PagedQueue<int>::runtime_type &, int val) {
                     std::cout << val << std::endl;
                 });
             }
