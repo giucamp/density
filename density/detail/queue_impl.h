@@ -90,7 +90,7 @@ namespace density
                     return *m_curr_control;
                 }
 
-                const Control * control() const DENSITY_NOEXCEPT
+                Control * control() const DENSITY_NOEXCEPT
                 {
                     return m_curr_control;
                 }
@@ -172,7 +172,7 @@ namespace density
                 while( it != end_it )
                 {
                     auto const control = it.control();
-                    auto const source_element = it.element();
+					auto const source_element = it.element(); // get_complete_type( it.control() );
                     ++it;
 
                     bool result = try_push(*control,
@@ -204,7 +204,7 @@ namespace density
 					while (it != end_it)
 					{
 						auto const & type = it.type();
-						auto const source_element = it.element();
+						auto const source_element = it.element(); // get_complete_type(it.control());
 						++it;
 
 						// to do: a slightly optmized nofail_push may be used here
@@ -280,11 +280,12 @@ namespace density
 						DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_constructor(std::declval<const RUNTIME_TYPE>(), std::declval<void*>()))) */
             {
                 DENSITY_ASSERT(m_buffer_start != nullptr);
+				DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
                 
                 const auto element_aligment = i_source_type.alignment();
 
                 Control * curr_control = m_tail;
-                ArithmeticPointer<void> new_tail(curr_control + 1);
+                void * new_tail = curr_control + 1;
                 void * element = single_push(new_tail, i_source_type.size(), element_aligment);
                 void * next_control = single_push(new_tail, sizeof(Control), alignof(Control) );
                 if (element == nullptr || next_control == nullptr)
@@ -350,7 +351,7 @@ namespace density
                 for (IteratorImpl it = begin(); it != it_end; )
                 {
                     auto const control = it.control();
-                    auto const element = it.element();
+                    auto const element = it.element(); // get_complete_type(it.control());
                     ++it;
 
                     control->destroy(element);
@@ -364,36 +365,41 @@ namespace density
 
         private:
 
+			void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
+			{
+				void * new_tail = i_control + 1;
+				void * element = single_push(new_tail, i_control->size(), i_control->alignment());
+				return element;
+			}
+
             /* Allocates an object on the queue. The return value is the address of the new object.
                This function is used to push the Control and the element. If the required size with the
                required alignment does not fit in the queue the return value is nullptr. 
                Precoditions: *io_tail can't be null, or the behaviour is undefined. */
-            void * single_push(ArithmeticPointer<void> & io_tail, size_t i_size, size_t i_alignment) 
-				/* to do: handle pointer overflow without exceptions
-					DENSITY_NOEXCEPT */
+            void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
             {
-                DENSITY_ASSERT(!io_tail.is_null());
+                DENSITY_ASSERT(io_tail != nullptr);
 
-                auto const prev_tail = io_tail.value();
+                auto const prev_tail = io_tail;
                 
-                auto start_of_block = io_tail.linear_alloc(MemSize(i_size), MemSize(i_alignment));
-                if (io_tail.value() > m_buffer_end)
+                auto start_of_block = linear_alloc(io_tail, i_size, i_alignment);
+                if (io_tail > m_buffer_end)
                 {
                     // wrap to the start...
-                    io_tail = ArithmeticPointer<void>(m_buffer_start);
-                    start_of_block = io_tail.linear_alloc(MemSize(i_size), MemSize(i_alignment));
-                    if (io_tail.value() >= m_head)
+                    io_tail = m_buffer_start;
+                    start_of_block = linear_alloc(io_tail, i_size, i_alignment);
+                    if (io_tail >= m_head)
                     {
                         // ...not enough space before the head, failed!
                         start_of_block = nullptr;
                     }
                 }
-                else if ((prev_tail >= m_head) != (io_tail.value() >= m_head))
+                else if ((prev_tail >= m_head) != (io_tail >= m_head))
                 {
                     // ...crossed the head, failed!
                     start_of_block = nullptr;
                 }
-                return start_of_block.value();
+                return start_of_block;
             }
 
         private: // data members

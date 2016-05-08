@@ -33,12 +33,12 @@ namespace density
             NoLeakScope no_leak_scope;
 
 			{
-				ContainerTest<TestDenseQueue<TestObjectBase>> test("dense_queue<TestObjectBase>");
+				ContainerTest<TestDenseQueue<TestObjectBase>> test("dense_queue");
 				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				/*add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);*/
 				add_test_case_pop_n_times(test, 1.);
 				add_test_case_consume_until_empty(test, .01);
 				add_test_case_copy_and_assign(test, .1);
@@ -46,11 +46,12 @@ namespace density
 			}
 
 			{
-				ContainerTest<TestDenseQueue<ComplexTypeBase>> test("dense_queue<ComplexTypeBase>");
+				ContainerTest<TestDenseQueue<CopyableTestObject>> test("dense_queue");
+				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
 				add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
-				//add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
 				add_test_case_pop_n_times(test, 1.);
 				add_test_case_consume_until_empty(test, .01);
 				add_test_case_copy_and_assign(test, .1);
@@ -58,7 +59,19 @@ namespace density
 			}
 
 			{
-				ContainerTest<TestDenseQueue<ComplexType_A>> test("dense_queue<ComplexType_A>");
+				ContainerTest<TestDenseQueue<ComplexTypeBase>> test("dense_queue");
+				add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				add_test_case_pop_n_times(test, 1.);
+				add_test_case_consume_until_empty(test, .01);
+				add_test_case_copy_and_assign(test, .1);
+				test.run(i_random);
+			}
+
+			{
+				ContainerTest<TestDenseQueue<ComplexType_A>> test("dense_queue");
 				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
 				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
 				add_test_case_pop_n_times(test, 1.);
@@ -68,7 +81,7 @@ namespace density
 			}
 
 			{
-				ContainerTest<TestDenseQueue<void>> test("dense_queue<void>");
+				ContainerTest<TestDenseQueue<void>> test("dense_queue");
 				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
 				add_test_case_push_by_copy_n_times<int>(test, 1., 42);
 				add_test_case_push_by_copy_n_times<double>(test, 1., 42.);

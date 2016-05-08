@@ -483,16 +483,18 @@ namespace density
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
         {
+			auto const base_ptr = detail::down_cast<ELEMENT*>(&i_source);
             insert_back_impl(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
+                typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(base_ptr));
         }
 
         // overload used if i_source is an lvalue
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
         {
+			auto const base_ptr = detail::down_cast<const ELEMENT*>(&i_source);
             insert_back_impl(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));
+                typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(base_ptr));
         }
 
     private:

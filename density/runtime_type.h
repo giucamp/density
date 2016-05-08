@@ -66,13 +66,13 @@ namespace density
 			  its return type must be size_t.
 			- Otherwise std::hash<TYPE> is used to comute the hash
 		see http://stackoverflow.com/questions/257288/is-it-possible-to-write-a-c-template-to-check-for-a-functions-existence */
-		template <typename> struct sfinae_true : std::true_type {};
+		template <typename> struct sfinae_true : std::true_type { };
 		template <typename TYPE> static sfinae_true<decltype(hash_func(std::declval<TYPE>()))> has_hash_func_impl(int);
 		template <typename TYPE> static std::false_type has_hash_func_impl(long);
 		template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type)
 		{
 			static_assert( std::is_same< decltype(hash_func(i_object)), size_t >::value, 
-				"if the hash_func() exits for this type, the it must return a size_t" );
+				"if the hash_func() exits for this type, then it must return a size_t" );
 			return hash_func(i_object);
 		}
 		template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type)
@@ -84,6 +84,33 @@ namespace density
 		{
 			return invoke_hash_func_impl(i_object, decltype(has_hash_func_impl<TYPE>(0))() );
 		}
+
+
+		template <typename DERIVED, typename BASE> static sfinae_true<decltype(
+			static_cast<DERIVED>(std::declval<BASE>())
+			)> can_static_cast_impl(int);
+		template <typename DERIVED, typename BASE> static std::false_type can_static_cast_impl(long);
+
+		template <typename DERIVED, typename BASE>
+			inline DERIVED down_cast_impl(BASE i_base_ptr, std::true_type)
+		{
+			return static_cast<DERIVED>(i_base_ptr);
+		}
+		template <typename DERIVED, typename BASE>
+			inline DERIVED down_cast_impl(BASE i_base_ptr, std::false_type)
+		{
+			return dynamic_cast<DERIVED>(i_base_ptr);
+		}
+		template <typename DERIVED, typename BASE>
+			inline DERIVED down_cast(BASE i_base_ptr)
+		{
+			static_assert( std::is_pointer<DERIVED>::value, "DERIVED must be a pointer" );
+			static_assert( std::is_pointer<BASE>::value, "BASE must be a pointer");
+			/*static_assert( std::is_base_of<typename std::remove_pointer<BASE>::type, 
+				typename std::remove_pointer<DERIVED>::type>::value, "*BASE must be a base of *DERIVED");*/
+			return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))() );
+		}
+			
 
 		/** This struct template rapresent a list of features associated to a runtime_type.		
 		
@@ -131,7 +158,8 @@ namespace density
 
 				static size_t invoke(const void * i_source)
 				{
-					return invoke_hash( *static_cast<const TYPE*>(i_source) );
+					auto const base_ptr = static_cast<const BASE*>(i_source);
+					return invoke_hash( *down_cast<const TYPE*>(base_ptr) );
 				}
 			};
 		};
@@ -168,7 +196,7 @@ namespace density
 				{
 					auto const base_source = static_cast<const BASE*>(i_base_source);
 					// DENSITY_ASSERT( dynamic_cast<const TYPE*>(base_source) != nullptr ); to do: implement a detail::IsInstanceOf
-					BASE * const base_result = new(i_complete_dest) TYPE(*static_cast<const TYPE*>(base_source));
+					BASE * const base_result = new(i_complete_dest) TYPE(*down_cast<const TYPE*>(base_source));
 					return base_result;
 				}
 
@@ -194,7 +222,7 @@ namespace density
 				{
 					BASE * base_source = static_cast<BASE*>(i_base_source);
 					// DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
-					BASE * base_result = new(i_complete_dest) TYPE(std::move(*static_cast<TYPE*>(base_source)));
+					BASE * base_result = new(i_complete_dest) TYPE(std::move(*down_cast<TYPE*>(base_source)));
 					return base_result;
 				}
 				static const uintptr_t value;
@@ -213,7 +241,7 @@ namespace density
 				static void invoke(void * i_base_dest) noexcept
 				{
 					const auto base_dest = static_cast<BASE*>(i_base_dest);
-					static_cast<TYPE*>(base_dest)->TYPE::~TYPE();
+					down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
 				}
 				static const uintptr_t value;
 			};			

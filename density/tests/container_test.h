@@ -26,22 +26,28 @@ namespace density
 				: m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), std::uniform_int_distribution<size_t>()(i_random))) {}
 			
 			TestObjectBase(const TestObjectBase & i_source)
-				: m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash)) {}
+				: m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash))
+			{
+				DENSITY_TEST_ASSERT(i_source.m_check_word == 3232);
+			}
 
 			TestObjectBase(TestObjectBase && i_source) noexcept
 				: m_hash(std::move(i_source.m_hash))
 			{
+				DENSITY_TEST_ASSERT(i_source.m_check_word == 3232);
 				i_source.m_hash = nullptr;
 			}
 
 			TestObjectBase & operator = (const TestObjectBase & i_source)
 			{
+				DENSITY_TEST_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
 				m_hash = std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash);
 				return *this;
 			}
 
 			TestObjectBase & operator = (TestObjectBase && i_source) noexcept
 			{
+				DENSITY_TEST_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
 				m_hash = std::move(i_source.m_hash);
 				i_source.m_hash = nullptr;
 				return *this;
@@ -49,18 +55,25 @@ namespace density
 
 			bool operator == (const TestObjectBase & i_other) const
 			{
+				DENSITY_TEST_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
 				return *m_hash == *i_other.m_hash;
 			}
 
 			bool operator != (const TestObjectBase & i_other) const
 			{
+				DENSITY_TEST_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
 				return *m_hash != *i_other.m_hash;
 			}
 
-			size_t hash() const { return m_hash != nullptr ? *m_hash : 0; }
+			size_t hash() const
+			{
+				DENSITY_TEST_ASSERT(m_check_word == 3232);
+				return m_hash != nullptr ? *m_hash : 0;
+			}
 
 		private:
 			std::shared_ptr<size_t> m_hash;
+			const int m_check_word = 3232;
 		};
 
 		/** Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
@@ -76,6 +89,8 @@ namespace density
 			
 			CopyableTestObject(std::mt19937 & i_random) : TestObjectBase(i_random) { exception_check_point(); }
 			CopyableTestObject(const TestObjectBase & i_source) : TestObjectBase(i_source) {}
+
+			virtual void f() {}
 
 			// copy
 			CopyableTestObject(const CopyableTestObject & i_source)
@@ -109,6 +124,8 @@ namespace density
 
 			MovableTestObject(std::mt19937 & i_random) : TestObjectBase(i_random) { exception_check_point(); }
 			MovableTestObject(const TestObjectBase & i_source) : TestObjectBase(i_source) {}
+
+			virtual void f() {}
 
 			// copy
 			MovableTestObject(const MovableTestObject & i_source) = delete;
@@ -284,6 +301,10 @@ namespace density
 				{
 					auto hasher = it.type().template get_feature<detail::FeatureHash>();
 					const auto & type_info = it.type().type_info();
+					/*auto first_type_info = type_info.name();
+					auto second_type_info = (*m_deque[index].m_type_info).name();
+					auto first_hash = hasher(it.element());
+					auto second_hash = m_deque[index].m_hash;*/
 					DENSITY_TEST_ASSERT(type_info == *m_deque[index].m_type_info &&
 						hasher(it.element()) == m_deque[index].m_hash );
 					index++;
@@ -319,7 +340,8 @@ namespace density
 				{
 					using runtime_type = typename DENSE_CONTAINER::runtime_type;
 					const auto type = runtime_type::template make<TYPE>();
-					Element new_element{ &type.type_info(), type.template get_feature<detail::FeatureHash>()(&i_element) };
+					Element new_element{ &type.type_info(), type.template get_feature<detail::FeatureHash>()(
+						static_cast<const typename DENSE_CONTAINER::value_type*>(&i_element) ) };
 					m_deque.insert(m_deque.begin() + i_at, i_count, new_element);
 				}
 				catch (...)
@@ -376,8 +398,8 @@ namespace density
 
 			using TestCaseFunction = std::function<void(std::mt19937 & i_random)>;
 
-			ContainerTest(const char * i_name)
-				: m_name(i_name), m_total_probability(0.)
+			ContainerTest(std::string i_name)
+				: m_name(i_name + " with " + typeid(typename DENSE_CONTAINER::value_type).name()), m_total_probability(0.)
 			{
 			}
 

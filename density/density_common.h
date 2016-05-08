@@ -785,4 +785,34 @@ namespace density
         MemSize m_padding;
     };
 
+	inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
+	{
+		DENSITY_ASSERT(MemSize(i_alignment).is_valid_alignment() );
+	
+		const auto alignment_mask = i_alignment - 1;
+		
+		auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
+		
+		ptr += alignment_mask;
+		#if DENSITY_POINTER_OVERFLOW_SAFE
+			if (ptr < alignment_mask)
+			{
+				return nullptr;
+			}
+		#endif
+		ptr &= ~alignment_mask;
+		
+		void * result = reinterpret_cast<void*>(ptr);
+		ptr += i_size;
+		#if DENSITY_POINTER_OVERFLOW_SAFE
+			if (ptr < i_size)
+			{
+				return nullptr;
+			}
+		#endif
+
+		io_curr_ptr = reinterpret_cast<void*>(ptr);
+		return result;
+	}
+
 } // namespace density
