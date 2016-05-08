@@ -53,7 +53,7 @@ namespace density
             /** Minimum size of a memory buffer. This requirement avoids the handling of the special case of very small buffers. */
             static const size_t s_minimum_buffer_size = sizeof(Control) * 4;
 
-			/** Minimum alignment of a memory buffer. */
+			/** Minimum alignment of a memory buffer */
 			static const size_t s_minimum_buffer_alignment = alignof(Control);
             
             /** Iterator class, similar to an stl iterator */
@@ -285,14 +285,14 @@ namespace density
 
                 Control * curr_control = m_tail;
                 ArithmeticPointer<void> new_tail(curr_control + 1);
-                void * curr_element = single_push(new_tail, i_source_type.size(), element_aligment);
+                void * element = single_push(new_tail, i_source_type.size(), element_aligment);
                 void * next_control = single_push(new_tail, sizeof(Control), alignof(Control) );
-                if (curr_element == nullptr || next_control == nullptr)
+                if (element == nullptr || next_control == nullptr)
                 {
                     return false;
                 }
 
-                void * new_element = i_constructor(i_source_type, curr_element);
+                void * new_element = i_constructor(i_source_type, element);
                 
 				// from now on, no exception can be raised
                 new(curr_control) Control(i_source_type, new_element, static_cast<Control*>(next_control));

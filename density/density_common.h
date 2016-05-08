@@ -61,10 +61,18 @@ namespace density
 
     namespace detail
     {
-        template <typename TYPE> struct RemoveRefsAndConst
-        {
-            using type = typename std::remove_const<typename std::remove_reference<TYPE>::type>::type;
-        };
+		/** DeferenceVoidPtr<TYPE>::apply(void *) returns *static_cast<TYPE*>(i_ptr). If TYPE is void, returns void */
+		template <typename TYPE> struct DeferenceVoidPtr
+		{
+			using type = TYPE &;
+			inline static type apply(void * i_ptr)
+				{ return *static_cast<TYPE*>(i_ptr); }
+		};
+		template <> struct DeferenceVoidPtr<void>
+		{
+			using type = void;
+			inline static type apply(void * /*i_ptr*/) {}
+		};
 
         inline void handle_pointer_overflow(bool i_overflow)
         {
@@ -436,7 +444,7 @@ namespace density
     template <typename BASE_CLASS, typename FIRST_TYPE, typename... OTHER_TYPES>
         struct AllCovariant<BASE_CLASS, FIRST_TYPE, OTHER_TYPES...>
     {
-        static const bool value = std::is_base_of<BASE_CLASS, FIRST_TYPE>::value &&
+        static const bool value = std::is_convertible<FIRST_TYPE*, BASE_CLASS*>::value &&
             AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
     };
 

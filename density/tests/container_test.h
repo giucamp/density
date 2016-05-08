@@ -161,7 +161,7 @@ namespace density
 				{
 					auto hasher = it->curr_type().get_feature<detail::FeatureHash>();
 					const auto & type_info = it->type().type_info().type_info();
-					m_deque.push_back(Element(type_info, hasher(it->curr_element()) ));
+					m_deque.push_back(Element(type_info, hasher(it->element()) ));
 				}
 			}
 
@@ -185,21 +185,21 @@ namespace density
 				DENSITY_TEST_ASSERT(index == m_deque.size());
 			}
 
-			void compare_at(size_t i_at, typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+			void compare_at(size_t i_at, const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(i_at < m_deque.size());
 				DENSITY_TEST_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
-				const auto element_hash = i_type.get_feature<detail::FeatureHash>()(i_element);
+				const auto element_hash = i_type.template get_feature<detail::FeatureHash>()(i_element);
 				DENSITY_TEST_ASSERT(element_hash == m_deque[i_at].m_hash);
 			}
 
-			void compare_front(typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+			void compare_front(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(m_deque.size() > 0);
 				compare_at(0, i_type, i_element);
 			}
 
-			void compare_back(typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+			void compare_back(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
 			{
 				DENSITY_TEST_ASSERT(m_deque.size() > 0);
 				compare_at(m_deque.size() - 1, i_type, i_element);

@@ -89,13 +89,13 @@ namespace density
 
                 void move_next() DENSITY_NOEXCEPT
                 {
-                    auto const prev_element_ptr = curr_element();
+                    auto const prev_element_ptr = element();
                     auto const curr_element_size = m_curr_type->size();
                     m_curr_type++;
                     m_unaligned_curr_element = address_add(prev_element_ptr, curr_element_size);
                 }
 
-                void * curr_element() const DENSITY_NOEXCEPT
+                void * element() const DENSITY_NOEXCEPT
                 {
                     auto const curr_element_alignment = m_curr_type->alignment();
                     return address_upper_align(m_unaligned_curr_element, curr_element_alignment);
@@ -278,7 +278,7 @@ namespace density
                     {
                         auto curr_type = it.m_curr_type;
                         dense_alignment = detail::size_max(dense_alignment, curr_type->alignment());
-                        curr_type->destroy(it.curr_element());
+                        curr_type->destroy(it.element());
                         curr_type->RUNTIME_TYPE::~RUNTIME_TYPE();
                     }
 
@@ -301,7 +301,7 @@ namespace density
                         auto const end_it = i_source.end();
                         for (auto it = i_source.begin(); it != end_it; ++it)
                         {
-                            builder.add_by_copy(*it.m_curr_type, it.curr_element());
+                            builder.add_by_copy(*it.m_curr_type, it.element());
                         }
 
                         m_types = builder.commit();
@@ -459,7 +459,7 @@ namespace density
                             {
                                 break;
                             }
-                            builder.add_by_move(*it.m_curr_type, it.curr_element());
+                            builder.add_by_move(*it.m_curr_type, it.element());
                             it.move_next();
                         }
                     }
@@ -532,7 +532,7 @@ namespace density
                             if (!is_in_range)
                             {
                                 auto const new_element_info = builder.end_of_types();
-                                auto const new_element = builder.add_by_move(*it.m_curr_type, it.curr_element());
+                                auto const new_element = builder.add_by_move(*it.m_curr_type, it.element());
 
                                 if (first_in_range)
                                 {

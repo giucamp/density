@@ -90,8 +90,8 @@ namespace density
             iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source) {  }
             
-            value_type * curr_element() const DENSITY_NOEXCEPT
-                { return static_cast<value_type *>(m_impl.curr_element()); }
+            value_type * element() const DENSITY_NOEXCEPT
+                { return static_cast<value_type *>(m_impl.element()); }
 
             iterator & operator ++ () DENSITY_NOEXCEPT
             {
@@ -149,8 +149,8 @@ namespace density
             const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
                 : IteratorImpl(i_source) {  }
                                     
-            value_type * curr_element() const DENSITY_NOEXCEPT
-                { return static_cast<value_type *>(m_impl.curr_element()); }
+            value_type * element() const DENSITY_NOEXCEPT
+                { return static_cast<value_type *>(m_impl.element()); }
 
             const_iterator & operator ++ () DENSITY_NOEXCEPT
             {

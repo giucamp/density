@@ -165,7 +165,7 @@ namespace density
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
         {
-            m_impl.impl_push(runtime_type::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+            m_impl.impl_push(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
                 typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
         }
 
@@ -174,7 +174,7 @@ namespace density
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
         {
-            m_impl.impl_push(runtime_type::template make<typename detail::RemoveRefsAndConst<ELEMENT_COMPLETE_TYPE>::type>(),
+            m_impl.impl_push(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
                 typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));
         }
 

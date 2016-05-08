@@ -49,9 +49,10 @@ namespace density
 
 				for (unsigned i = 0; i < times && !test.shadow_container().empty(); i++)
 				{
-					test.dense_container().consume([&test](const typename Queue::runtime_type &, const TYPE &) {
-						test.shadow_container().pop_front();
-					});
+					auto first = test.dense_container().begin();
+					test.shadow_container().compare_front(first.type(), first.element());
+					test.shadow_container().pop_front();
+					test.dense_container().pop();
 				}
 			});
 
@@ -95,6 +96,8 @@ namespace density
         void dense_queue_test_impl(std::mt19937 & i_random)
         {
             NoLeakScope no_leak_scope;
+
+			detail::dense_queue_test_same_type<void>(i_random);
 
             detail::dense_queue_test_same_type<TestObjectBase>(i_random);
 

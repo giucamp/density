@@ -494,7 +494,7 @@ namespace density
                 int sum = 0;
                 for (auto it = void_list.begin(); it != void_list.end(); it++)
                 {
-                    sum += *(int*)it.curr_element();
+                    sum += *(int*)it.element();
                 }
                 (void)sum;*/
             }
