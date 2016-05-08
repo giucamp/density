@@ -77,7 +77,7 @@ namespace density
 		}
 		template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type)
 		{
-			return std::hash<TYPE>(i_object);
+			return std::hash<TYPE>()(i_object);
 		}
 		template <typename TYPE>
 			inline size_t invoke_hash(const TYPE & i_object)

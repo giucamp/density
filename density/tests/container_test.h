@@ -10,11 +10,14 @@
 #include <deque>
 #include <string>
 #include <typeinfo>
+#include <iostream>
 
 namespace density
 {
     namespace detail
     {
+		/** This class is used to test density containers. It onwns an object which alocates memory with TestAllocator. In this
+			way a TestObjectBase which is not corretcly destroyed, will cause a memory leak that wil be detected during unit tests. */
 		class TestObjectBase
 		{
 		public:
@@ -60,12 +63,14 @@ namespace density
 			std::shared_ptr<size_t> m_hash;
 		};
 
+		/** Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
 		inline size_t hash_func(const TestObjectBase & i_object)
-		{
+		{			
 			return i_object.hash();
 		}
 
-		class CopyableTestObject final : public TestObjectBase
+		/** Copyable class deriving from CopyableTestObject. */
+		class CopyableTestObject : public TestObjectBase
 		{
 		public:
 			
@@ -91,17 +96,14 @@ namespace density
 			CopyableTestObject & operator = (CopyableTestObject && i_source) noexcept = default;
 
 			bool operator == (const CopyableTestObject & i_other) const
-			{
-				return TestObjectBase::operator == (i_other);
-			}
+				{ return TestObjectBase::operator == (i_other); }
 
 			bool operator != (const CopyableTestObject & i_other) const
-			{
-				return TestObjectBase::operator != (i_other);
-			}
+				{ return TestObjectBase::operator != (i_other); }
 		};
 
-		class MovableTestObject final : public TestObjectBase
+		/** Movable class deriving from CopyableTestObject. */
+		class MovableTestObject : public TestObjectBase
 		{
 		public:
 
@@ -117,15 +119,119 @@ namespace density
 			MovableTestObject & operator = (MovableTestObject && i_source) noexcept = default;
 
 			bool operator == (const MovableTestObject & i_other) const
-			{
-				return TestObjectBase::operator == (i_other);
-			}
+				{ return TestObjectBase::operator == (i_other); }
 
 			bool operator != (const MovableTestObject & i_other) const
-			{
-				return TestObjectBase::operator != (i_other);
-			}
+				{ return TestObjectBase::operator != (i_other); }
 		};
+
+		template <size_t SIZE, size_t ALIGNMENT>
+			struct alignas(ALIGNMENT) AlignedRandomStorage
+		{
+		public:
+			
+			AlignedRandomStorage(std::mt19937 & i_random)
+			{
+				for (size_t i = 0; i < SIZE; i++)
+				{
+					m_data[i] = static_cast<unsigned char>( std::uniform_int_distribution<unsigned>()(i_random) );
+				}
+			}
+
+			size_t hash() const
+			{
+				size_t result = 0;
+				for (size_t i = 0; i < SIZE; i++)
+				{
+					result = result * 33 + m_data[i];
+				}
+				return result;
+			}
+
+		private:
+			unsigned char m_data[SIZE];
+		};
+
+		/** Returns the hash of an AlignedRandomStorage. This function is compliant with detail::FeatureHash */
+		template <size_t SIZE, size_t ALIGNMENT>
+			inline size_t hash_func(const AlignedRandomStorage<SIZE, ALIGNMENT> & i_object)
+		{			
+			return i_object.hash();
+		}
+
+		class ComplexTypeBase : public virtual CopyableTestObject
+		{
+		public:
+			ComplexTypeBase(std::mt19937 & i_random)
+				: CopyableTestObject(i_random),
+				  m_hash(std::uniform_int_distribution<size_t>(0, 7)(i_random))
+					{ }
+
+			virtual size_t hash() const
+				{ return m_hash ^ CopyableTestObject::hash(); }
+
+		private:
+			size_t m_hash;
+		};
+
+		class ComplexType_A : public virtual ComplexTypeBase
+		{
+		public:
+			ComplexType_A(std::mt19937 & i_random)
+				: CopyableTestObject(i_random), 
+				  ComplexTypeBase(i_random),
+				  m_hash(std::uniform_int_distribution<size_t>(0, 7)(i_random))
+					{ }
+
+			virtual size_t hash() const
+			{
+				return m_hash ^ ComplexTypeBase::hash();
+			}
+
+		private:
+			size_t m_hash;
+		};
+
+		class ComplexType_B : public virtual ComplexTypeBase
+		{
+		public:
+			ComplexType_B(std::mt19937 & i_random)
+				: CopyableTestObject(i_random),
+				  ComplexTypeBase(i_random),
+				  m_hash(std::uniform_int_distribution<size_t>(0, 7)(i_random))
+					{ }
+
+			virtual size_t hash() const
+			{
+				return m_hash ^ ComplexTypeBase::hash();
+			}
+
+		private:
+			size_t m_hash;
+		};
+
+		class ComplexType_C : public ComplexType_A, public ComplexType_B
+		{
+		public:
+			ComplexType_C(std::mt19937 & i_random)
+				: CopyableTestObject(i_random), ComplexTypeBase(i_random), ComplexType_A(i_random), ComplexType_B(i_random),
+				  m_hash(std::uniform_int_distribution<size_t>(0, 7)(i_random))
+					{ }
+
+			virtual size_t hash() const
+			{
+				return m_hash ^ ComplexTypeBase::hash();
+			}
+
+		private:
+			size_t m_hash;
+		};
+
+		/** Returns the hash of an ComplexTypeBase. This function is compliant with detail::FeatureHash */
+		inline size_t hash_func(const ComplexTypeBase & i_object)
+		{			
+			return i_object.hash();
+		}
 
 		/** A ShadowContainer keeps information about a dense container, to easy unit testing. It keeps a std::type_info
 			and an hash for every element in the dense container. The dense container is owned externally. 
@@ -150,8 +256,7 @@ namespace density
 			{
 				using TestException::TestException;
 			};
-
-
+			
 			ShadowContainer() {}
 
 			ShadowContainer(const DENSE_CONTAINER & i_container)
@@ -170,8 +275,10 @@ namespace density
 				DENSITY_TEST_ASSERT(m_deque.empty() == i_container.empty());
 				DENSITY_TEST_ASSERT(i_container.empty() == (i_container.begin() == i_container.end()));
 
-				size_t index = 0;
+				auto const dist = std::distance(i_container.begin(), i_container.end());
+				DENSITY_TEST_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());
 
+				size_t index = 0;
 				const auto end_it = i_container.end();
 				for (auto it = i_container.begin(); it != end_it; it++)
 				{
@@ -261,23 +368,17 @@ namespace density
 		/** This class template rapresent a test session to be run on a container implementation.
 			The tested container is tested to fullfill the strong exception guarantee: whether or
 			not an exception is thrown during a test case, the DENSE_CONTAINER is compared to the
-			shadow container.
-		*/
-		template <typename DENSE_CONTAINER, typename BASE_TYPE>
+			shadow container. */
+		template <typename DENSE_CONTAINER>
 			class ContainerTest
 		{
 		public:
 
 			using TestCaseFunction = std::function<void(std::mt19937 & i_random)>;
 
-			ContainerTest()
-				: m_total_probability(0.)
+			ContainerTest(const char * i_name)
+				: m_name(i_name), m_total_probability(0.)
 			{
-				using namespace std::placeholders;
-
-				add_test_case("copy_and_assignment", std::bind(&ContainerTest::test_copy_and_assignment, this, _1));
-				/*add_test_case("consume_until_empty", std::bind(&ContainerTest::builtin_test_case_consume_until_empty, this, _1));
-				add_test_case("consume_n_times", std::bind(&ContainerTest::builtin_test_case_consume_n_times, this, _1));*/
 			}
 
 			void add_test_case(const char * i_name, std::function< void(std::mt19937 & i_random) > && i_function,
@@ -285,6 +386,16 @@ namespace density
 			{
 				m_total_probability += i_probability;
 				m_test_cases.push_back({i_name, std::move(i_function), i_probability});
+			}
+
+			void run(std::mt19937 & i_random)
+			{
+				std::cout << "Running the test " << m_name << std::endl;
+				unsigned step_count = std::uniform_int_distribution<unsigned>(0, 1000)(i_random);
+				for (unsigned step_index = 0; step_index < step_count; step_index++)
+				{
+					step(i_random);
+				}
 			}
 
 			void step(std::mt19937 & i_random)
@@ -297,6 +408,7 @@ namespace density
 					cumulative += test_case.m_probability;
 					if (target_random_value < cumulative)
 					{
+						std::cout << "\ttest case: " << test_case.m_name << ", size: " << m_shadow_container.size() << std::endl;
 						try
 						{
 							test_case.m_function(i_random);
@@ -322,10 +434,6 @@ namespace density
 			// check for equality m_dense_container and shadow_container()
 			void compare()
 			{
-				/*if (!shadow_container().empty())
-				{
-					DENSITY_TEST_ASSERT(m_dense_container.front() == *shadow_container().front());
-				}*/
 				m_shadow_container.compare_all(m_dense_container);
 			}
 
@@ -334,34 +442,12 @@ namespace density
 
 			ShadowContainer<DENSE_CONTAINER> & shadow_container() { return m_shadow_container; }
 			const ShadowContainer<DENSE_CONTAINER> & shadow_container() const { return m_shadow_container; }
-
-		private:
-
-			void test_copy_and_assignment(std::mt19937 & /*i_random*/)
-			{
-				/* Assign m_dense_container from a copy of itself. m_dense_container and shadow_container() must preserve the equality. */
-				auto copy = m_dense_container;
-				m_dense_container = copy;
-                
-				// check the size with the iterators
-				const auto size_1 = std::distance(m_dense_container.cbegin(), m_dense_container.cend());
-				const auto size_2 = std::distance(copy.cbegin(), copy.cend());
-				DENSITY_TEST_ASSERT(size_1 == size_2);
-
-				// move construct m_dense_container to tmp
-				auto tmp(std::move(m_dense_container));
-				DENSITY_TEST_ASSERT(m_dense_container.empty());
-				const auto size_3 = std::distance(tmp.cbegin(), tmp.cend());
-				DENSITY_TEST_ASSERT(size_1 == size_3);
-
-				// move assign tmp to m_dense_container
-				m_dense_container = std::move(tmp);
-			}
-
+			
 		private: // data members
 			NoLeakScope m_no_leak_scope;            
 			DENSE_CONTAINER m_dense_container;
 			ShadowContainer<DENSE_CONTAINER> m_shadow_container;
+			std::string m_name;
 
 			struct TestCase
 			{
@@ -378,6 +464,87 @@ namespace density
 			std::vector<TestCase> m_test_cases;
 			double m_total_probability;
 		}; // class template ContainerTest
+
+		template <typename DENSE_CONTAINER>
+			void add_test_case_copy_and_assign(ContainerTest<DENSE_CONTAINER> & i_test, double i_probability)
+		{
+			i_test.add_test_case("copy_and_assign", [&i_test](std::mt19937 & /*i_random*/) {
+				
+				auto & dense_container = i_test.dense_container();
+
+				/* Assign dense_container from a copy of itself. dense_container and shadow_container() must preserve the equality. */
+				auto copy = dense_container;
+				dense_container = copy;
+
+				// check the size with the iterators
+				const auto size_1 = std::distance(dense_container.cbegin(), dense_container.cend());
+				const auto size_2 = std::distance(copy.cbegin(), copy.cend());
+				DENSITY_TEST_ASSERT(size_1 == size_2);
+
+				// move construct dense_container to tmp
+				auto tmp(std::move(dense_container));
+				DENSITY_TEST_ASSERT(dense_container.empty());
+				const auto size_3 = std::distance(tmp.cbegin(), tmp.cend());
+				DENSITY_TEST_ASSERT(size_1 == size_3);
+
+				// move assign tmp to dense_container
+				dense_container = std::move(tmp);
+			}, i_probability);
+		}
+
+		template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
+			void add_test_case_push_by_copy_n_times(
+				ContainerTest<DENSE_CONTAINER> & i_test,
+				double i_probability,
+				CONSTRUCTION_PARAMS && ... i_construction_parameters )
+		{
+			i_test.add_test_case("push_n_times", [&i_test, &i_construction_parameters...](std::mt19937 & i_random) {
+				const auto times = std::uniform_int_distribution<unsigned>(0, 9)(i_random);
+				for (unsigned i = 0; i < times; i++)
+				{
+					const COMPLETE_ELEMENT new_element(i_construction_parameters...);
+					i_test.dense_container().push(new_element);
+					i_test.shadow_container().push_back(new_element);
+				}
+			}, i_probability);
+		}
+
+		template <typename DENSE_CONTAINER>
+			void add_test_case_pop_n_times(
+				ContainerTest<DENSE_CONTAINER> & i_test,
+				double i_probability )
+		{
+			i_test.add_test_case("pop_n_times", [&i_test](std::mt19937 & i_random) {
+				const auto times = std::uniform_int_distribution<unsigned>(0, 7)(i_random);
+				for (unsigned i = 0; i < times && !i_test.dense_container().empty(); i++)
+				{
+					auto first = i_test.dense_container().begin();
+					i_test.shadow_container().compare_front(first.type(), first.element());
+					i_test.shadow_container().pop_front();
+					i_test.dense_container().pop();
+				}
+			}, i_probability);
+		}
+
+		template <typename DENSE_CONTAINER>
+			void add_test_case_consume_until_empty(
+				ContainerTest<DENSE_CONTAINER> & i_test,
+				double i_probability )
+		{
+			i_test.add_test_case("consume_until_empty", [&i_test](std::mt19937 & /*i_random*/) {
+				while(!i_test.dense_container().empty())
+				{
+					DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
+					i_test.dense_container().consume(
+						[](const typename DENSE_CONTAINER::runtime_type & i_type, const typename DENSE_CONTAINER::value_type * i_element )
+					{ 
+						i_type.template get_feature<detail::FeatureHash>()(i_element);
+					} );
+					i_test.shadow_container().pop_front();
+				}
+				DENSITY_TEST_ASSERT(i_test.shadow_container().empty());
+			}, i_probability);
+		}
 
     } // namespace detail
     

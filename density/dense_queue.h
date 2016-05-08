@@ -13,13 +13,15 @@ namespace density
     /** Class template that implements an heterogeneous fifo container with dynamic size. 
         A dense_queue allocates one memory buffer with the provided allocator, and sub-allocates inplace
 		its elements. The buffer is reallocated accompish push and emplace requests.
+		The memory management of this container is similar to an std::vector: since all the elements are 
+		stored in the same memory block, when a reallocation is performed, all the elements have to be moved.
 		Thread safeness: None. The user is responsible to avoid race conditions.
 		Exception safeness: Any function of dense_queue is noexcept or gives the strong exception guarantee.
-			@param ELEMENT base type of the elements of the queue. The queue enforces the compile-time
+			@param ELEMENT Base type of the elements of the queue. The queue enforces the compile-time
 				contraint that the type of each element must be covariant to ELEMENT, that is:
-					std::is_convertible<ELEMENT*, COMPLETE_ELEMENT*>::value
+					std::is_convertible<ELEMENT*, typename std::decay<COMPLETE_ELEMENT>::type *>::value
 				must be true, where COMPLETE_ELEMENT is the compete type of an element. 
-				If ELEMENT is void, elements of any compete type can be added to the container. In this
+				If ELEMENT is void, elements of any complete type can be added to the container. In this
 				case, the methods of dense_queue (and its iterators) that returns a pointer to an element
 				will return a void* to a complete object, while the methods that returns a reference to
 				an element will return void. Use iterators and pointer semantic if you write generic code
@@ -29,12 +31,12 @@ namespace density
 				type of al elements will be exactly ELEMENT (that is, the container wil not be heterogeneous). In
 				this case a standard container (like std::queue) instead of std::dense_queue is a better choise.
 				If ELEMENT is not void, it must be noexcept move constructible.
-			@param ALLOCATOR allocator to be used to allocate the memory buffer. The queue may rebind
+			@param ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
 				this allocator to a different type, eventualy unrelated to ELEMENT
-			@param RUNTIME_TYPE type to be used to rapresent the actual complete type of each element. 
+			@param RUNTIME_TYPE Type to be used to rapresent the actual complete type of each element. 
 				This type must meet the requirements of RuntimeType.
 		dense_queue provides only forward iteration. Only the first element is accessibe in constant time (with
-		the method dense_queue::front, dense_queue::begin. The iterator provides access to both the ELEMENT (with
+		the functions: dense_queue::front, dense_queue::begin). The iterator provides access to both the ELEMENT (with
 		the function element) and the RUNTIME_TYPE (with the function type).
 		There is not constant time function that gives the number of elements in a dense_queue in constant time,
 		but std::distance wil do (in linear time). Anyway dense_queue::mem_size, dense_queue::mem_capacity and
@@ -222,10 +224,10 @@ namespace density
 
         template <typename OPERATION>
             void consume(OPERATION && i_operation)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>()))))
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
             m_impl.consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-                i_operation(i_type, detail::DeferenceVoidPtr<ELEMENT>::apply(i_element));
+                i_operation(i_type, static_cast<ELEMENT*>(i_element));
             });
         }
 

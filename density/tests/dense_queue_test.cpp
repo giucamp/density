@@ -23,84 +23,61 @@ namespace density
 {
     namespace detail
     {
-        template <typename TYPE>
-            void dense_queue_test_same_type(std::mt19937 & i_random)
-        {
-			// add detail::FeatureHash to the automatic feature list
-			using Features = typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type;
-			using Queue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE, Features> >;
-			ContainerTest<Queue, TYPE> test;
-
-            test.add_test_case("push_n_times", [&test](std::mt19937 & i_random) {
-
-                const unsigned times = std::uniform_int_distribution<unsigned>(0, 100)(i_random);
-
-                for (unsigned i = 0; i < times; i++ )
-                {
-                    const CopyableTestObject new_element(i_random);
-                    test.dense_container().push(new_element);
-					test.shadow_container().push_back(new_element);
-                }
-            });
-
-			test.add_test_case("consume_n_times", [&test](std::mt19937 & i_random) {
-
-				const unsigned times = std::uniform_int_distribution<unsigned>(0, 100)(i_random);
-
-				for (unsigned i = 0; i < times && !test.shadow_container().empty(); i++)
-				{
-					auto first = test.dense_container().begin();
-					test.shadow_container().compare_front(first.type(), first.element());
-					test.shadow_container().pop_front();
-					test.dense_container().pop();
-				}
-			});
-
-			/* call consume n times, or until the m_dense_container is empty. */
-			/*void builtin_test_case_consume_n_times(std::mt19937 & i_random)
-			{
-				const unsigned times = std::uniform_int_distribution<unsigned>(0, 100)(i_random);
-				volatile unsigned i = 0;
-				while (i < times && !m_dense_container.empty())
-				{
-					m_dense_container.consume([this](const typename dense_queue<BASE_TYPE>::runtime_type &, BASE_TYPE) {
-						shadow_container().pop_front();
-					});
-					i++;
-				}
-			}*/
-
-			/* call consume until the m_dense_container is empty. */
-			/*void builtin_test_case_consume_until_empty(std::mt19937 & )
-			{
-				volatile unsigned i = 0; // <-- may help debug
-				while (!m_dense_container.empty())
-				{
-					m_dense_container.consume([this](const typename dense_queue<BASE_TYPE>::runtime_type &, BASE_TYPE i_val) {
-						DENSITY_TEST_ASSERT(shadow_container().size() > 0 && i_val == *shadow_container().front());
-						shadow_container().pop_front();
-					});
-					i++;
-				}
-				DENSITY_TEST_ASSERT(shadow_container().empty());
-				DENSITY_TEST_ASSERT(m_dense_container.mem_free() == m_dense_container.mem_capacity());
-			}*/
-
-            unsigned step_count = std::uniform_int_distribution<unsigned>(0, 1000)(i_random);
-            for (unsigned step_index = 0; step_index < step_count; step_index++)
-            {
-                test.step(i_random);
-            }    
-        }
+		/* TestDenseQueue - dense_queue that uses TestAlocator and adds detail::FeatureHash to the automatic runtime type */
+		template <typename TYPE>
+			using TestDenseQueue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE, 
+				typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
 
         void dense_queue_test_impl(std::mt19937 & i_random)
         {
             NoLeakScope no_leak_scope;
 
-			detail::dense_queue_test_same_type<void>(i_random);
+			{
+				ContainerTest<TestDenseQueue<TestObjectBase>> test("dense_queue<TestObjectBase>");
+				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				add_test_case_pop_n_times(test, 1.);
+				add_test_case_consume_until_empty(test, .01);
+				add_test_case_copy_and_assign(test, .1);
+				test.run(i_random);
+			}
 
-            detail::dense_queue_test_same_type<TestObjectBase>(i_random);
+			{
+				ContainerTest<TestDenseQueue<ComplexTypeBase>> test("dense_queue<ComplexTypeBase>");
+				add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
+				//add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				add_test_case_pop_n_times(test, 1.);
+				add_test_case_consume_until_empty(test, .01);
+				add_test_case_copy_and_assign(test, .1);
+				test.run(i_random);
+			}
 
+			{
+				ContainerTest<TestDenseQueue<ComplexType_A>> test("dense_queue<ComplexType_A>");
+				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
+				add_test_case_pop_n_times(test, 1.);
+				add_test_case_consume_until_empty(test, .01);
+				add_test_case_copy_and_assign(test, .1);
+				test.run(i_random);
+			}
+
+			{
+				ContainerTest<TestDenseQueue<void>> test("dense_queue<void>");
+				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
+				add_test_case_push_by_copy_n_times<int>(test, 1., 42);
+				add_test_case_push_by_copy_n_times<double>(test, 1., 42.);
+				add_test_case_push_by_copy_n_times<AlignedRandomStorage<32, 32> >(test, 1., i_random);
+				add_test_case_pop_n_times(test, 1.);
+				add_test_case_consume_until_empty(test, .01);
+				add_test_case_copy_and_assign(test, .1);
+				test.run(i_random);
+			}
         }
 
 		void dense_queue_leak_basic_tests()
@@ -115,9 +92,9 @@ namespace density
 
 			for (int i = 0; i < 57; i++)
 			{
-				queue.consume([i](const Queue::runtime_type & i_type, int i_element)
+				queue.consume([i](const Queue::runtime_type & i_type, int * i_element)
 				{
-					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && i_element == i);
+					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i);
 				});
 			}
 		}
@@ -132,9 +109,9 @@ namespace density
             }
 			for (int i = 0; i < 57; i++)
 			{
-				queue.consume([i](const dense_queue<int>::runtime_type & i_type, int i_element)
+				queue.consume([i](const dense_queue<int>::runtime_type & i_type, int * i_element)
 				{
-					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && i_element == i );
+					DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
 				});
 			}
 
@@ -167,9 +144,8 @@ namespace density
 
     void dense_queue_test()
     {
-		//detail::dense_queue_leak_basic_tests();
-
-        detail::dense_queue_basic_tests();
+		detail::dense_queue_leak_basic_tests();
+		detail::dense_queue_basic_tests();
 
         run_exception_stress_test([] {
             std::mt19937 random;
