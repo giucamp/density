@@ -1,10 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\density\correctness_test_context.h" />
     <ClInclude Include="..\density\density_common.h" />
-    <ClInclude Include="..\density\testing_utils.h" />
-    <ClInclude Include="..\density\uint_test_manager.h" />
     <ClInclude Include="..\density\dense_list.h" />
     <ClInclude Include="..\density\detail\dense_list_typed.h">
       <Filter>detail</Filter>
@@ -21,6 +18,15 @@
     <ClInclude Include="..\density\tests\container_test.h">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\density\tests\testing_utils.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\density\tests\uint_test_manager.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\density\tests\correctness_test_context.h">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="detail">
@@ -34,12 +40,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\density\detail\testing_utils.cpp">
-      <Filter>detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\density\detail\unit_test_manager.cpp">
-      <Filter>detail</Filter>
-    </ClCompile>
     <ClCompile Include="..\density\tests\dense_list_test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -56,6 +56,12 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\density\tests\pointer_arithmetic_test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\unit_test_manager.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\testing_utils.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>

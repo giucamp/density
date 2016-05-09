@@ -9,7 +9,7 @@
 #endif
 
 #include "..\dense_queue.h"
-#include "..\testing_utils.h"
+#include "testing_utils.h"
 #include "container_test.h"
 #include <deque>
 #include <complex>
@@ -35,10 +35,6 @@ namespace density
 			{
 				ContainerTest<TestDenseQueue<TestObjectBase>> test("dense_queue");
 				add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
-				/*add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
-				add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
-				add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
-				add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);*/
 				add_test_case_pop_n_times(test, 1.);
 				add_test_case_consume_until_empty(test, .01);
 				add_test_case_copy_and_assign(test, .1);

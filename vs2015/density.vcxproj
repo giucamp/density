@@ -204,7 +204,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\density\correctness_test_context.h" />
     <ClInclude Include="..\density\dense_queue.h" />
     <ClInclude Include="..\density\dense_list.h" />
     <ClInclude Include="..\density\paged_queue.h" />
@@ -213,18 +212,19 @@
     <ClInclude Include="..\density\detail\dense_list_void.h" />
     <ClInclude Include="..\density\detail\queue_impl.h" />
     <ClInclude Include="..\density\runtime_type.h" />
-    <ClInclude Include="..\density\testing_utils.h" />
     <ClInclude Include="..\density\tests\container_test.h" />
-    <ClInclude Include="..\density\uint_test_manager.h" />
+    <ClInclude Include="..\density\tests\correctness_test_context.h" />
+    <ClInclude Include="..\density\tests\testing_utils.h" />
+    <ClInclude Include="..\density\tests\uint_test_manager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\density\detail\testing_utils.cpp" />
-    <ClCompile Include="..\density\detail\unit_test_manager.cpp" />
     <ClCompile Include="..\density\tests\dense_queue_test.cpp" />
     <ClCompile Include="..\density\tests\dense_list_benchmark.cpp" />
     <ClCompile Include="..\density\tests\dense_list_test.cpp" />
     <ClCompile Include="..\density\tests\paged_queue_test.cpp" />
     <ClCompile Include="..\density\tests\pointer_arithmetic_test.cpp" />
+    <ClCompile Include="..\density\tests\testing_utils.cpp" />
+    <ClCompile Include="..\density\tests\unit_test_manager.cpp" />
     <ClCompile Include="..\samples\main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

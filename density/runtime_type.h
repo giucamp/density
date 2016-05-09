@@ -86,11 +86,12 @@ namespace density
 		}
 
 
+		/** DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - down cast from a base class to a derived, assuming
+			that the cast is legal. A static_cast is used if it is possible. Otherwise, if a virtual base is
+			involved, dynamic_cast is used.	*/
 		template <typename DERIVED, typename BASE> static sfinae_true<decltype(
-			static_cast<DERIVED>(std::declval<BASE>())
-			)> can_static_cast_impl(int);
+			static_cast<DERIVED>(std::declval<BASE>()))> can_static_cast_impl(int);
 		template <typename DERIVED, typename BASE> static std::false_type can_static_cast_impl(long);
-
 		template <typename DERIVED, typename BASE>
 			inline DERIVED down_cast_impl(BASE i_base_ptr, std::true_type)
 		{
@@ -106,8 +107,12 @@ namespace density
 		{
 			static_assert( std::is_pointer<DERIVED>::value, "DERIVED must be a pointer" );
 			static_assert( std::is_pointer<BASE>::value, "BASE must be a pointer");
-			/*static_assert( std::is_base_of<typename std::remove_pointer<BASE>::type, 
-				typename std::remove_pointer<DERIVED>::type>::value, "*BASE must be a base of *DERIVED");*/
+
+			using BaseNaked = typename std::decay<typename std::remove_pointer<BASE>::type>::type;
+			using DerivedNaked = typename std::decay<typename std::remove_pointer<DERIVED>::type>::type;
+			static_assert(std::is_same< BaseNaked, void >::value || std::is_same< BaseNaked, DerivedNaked >::value ||
+				std::is_base_of< BaseNaked, DerivedNaked >::value, "*BASE must be void, the same or a base a base of *DERIVED");
+
 			return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))() );
 		}
 			

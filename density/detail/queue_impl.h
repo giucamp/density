@@ -365,12 +365,12 @@ namespace density
 
         private:
 
-			void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
+			/*void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
 			{
 				void * new_tail = i_control + 1;
 				void * element = single_push(new_tail, i_control->size(), i_control->alignment());
 				return element;
-			}
+			}*/
 
             /* Allocates an object on the queue. The return value is the address of the new object.
                This function is used to push the Control and the element. If the required size with the

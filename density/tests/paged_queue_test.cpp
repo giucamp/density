@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "..\paged_queue.h"
-#include "..\testing_utils.h"
+#include "testing_utils.h"
 #include <iostream>
 #include <random>
 

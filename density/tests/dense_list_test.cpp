@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "..\dense_list.h"
-#include "..\testing_utils.h"
+#include "testing_utils.h"
 #include "container_test.h"
 #include <vector>
 #include <list>

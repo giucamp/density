@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "..\density_common.h"
-#include "..\testing_utils.h"
+#include "testing_utils.h"
 #include <random>
 #include <deque>
 #include <string>
@@ -142,6 +142,7 @@ namespace density
 				{ return TestObjectBase::operator != (i_other); }
 		};
 
+		/** AlignedRandomStorage  */
 		template <size_t SIZE, size_t ALIGNMENT>
 			struct alignas(ALIGNMENT) AlignedRandomStorage
 		{
@@ -157,6 +158,8 @@ namespace density
 
 			size_t hash() const
 			{
+				DENSITY_TEST_ASSERT(m_check_word_1 == 7865);
+
 				size_t result = 0;
 				for (size_t i = 0; i < SIZE; i++)
 				{
@@ -167,6 +170,7 @@ namespace density
 
 		private:
 			unsigned char m_data[SIZE];
+			const int m_check_word_1 = 7865;
 		};
 
 		/** Returns the hash of an AlignedRandomStorage. This function is compliant with detail::FeatureHash */
@@ -185,10 +189,14 @@ namespace density
 					{ }
 
 			virtual size_t hash() const
-				{ return m_hash ^ CopyableTestObject::hash(); }
+			{
+				DENSITY_TEST_ASSERT(m_check_word_2 == 7865);
+				return m_hash ^ CopyableTestObject::hash();
+			}
 
 		private:
 			size_t m_hash;
+			const int m_check_word_2 = 7865;
 		};
 
 		class ComplexType_A : public virtual ComplexTypeBase
@@ -202,11 +210,13 @@ namespace density
 
 			virtual size_t hash() const
 			{
+				DENSITY_TEST_ASSERT(m_check_word_3 == 1543);
 				return m_hash ^ ComplexTypeBase::hash();
 			}
 
 		private:
 			size_t m_hash;
+			const int m_check_word_3 = 1543;
 		};
 
 		class ComplexType_B : public virtual ComplexTypeBase
@@ -220,11 +230,13 @@ namespace density
 
 			virtual size_t hash() const
 			{
+				DENSITY_TEST_ASSERT(m_check_word_4 == 12465);
 				return m_hash ^ ComplexTypeBase::hash();
 			}
 
 		private:
 			size_t m_hash;
+			const int m_check_word_4 = 12465;
 		};
 
 		class ComplexType_C : public ComplexType_A, public ComplexType_B
@@ -268,7 +280,7 @@ namespace density
 		public:
 
 			/* Exception thrown as result to an exception occurred during the update of the shadow container.
-			Handlers for of this exception can't check the tested container against the shadow container. */
+				Handlers for of this exception can't check the tested container against the shadow container. */
 			struct BasicGuaranteeException : TestException
 			{
 				using TestException::TestException;
@@ -289,8 +301,10 @@ namespace density
 
 			void compare_all(const DENSE_CONTAINER & i_container)
 			{
-				DENSITY_TEST_ASSERT(m_deque.empty() == i_container.empty());
-				DENSITY_TEST_ASSERT(i_container.empty() == (i_container.begin() == i_container.end()));
+				const auto container_is_empty = i_container.empty();
+				DENSITY_TEST_ASSERT(container_is_empty == m_deque.empty());
+				DENSITY_TEST_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
+				DENSITY_TEST_ASSERT(container_is_empty == (i_container.mem_size().value() == 0));
 
 				auto const dist = std::distance(i_container.begin(), i_container.end());
 				DENSITY_TEST_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());
@@ -301,12 +315,9 @@ namespace density
 				{
 					auto hasher = it.type().template get_feature<detail::FeatureHash>();
 					const auto & type_info = it.type().type_info();
-					/*auto first_type_info = type_info.name();
-					auto second_type_info = (*m_deque[index].m_type_info).name();
-					auto first_hash = hasher(it.element());
-					auto second_hash = m_deque[index].m_hash;*/
-					DENSITY_TEST_ASSERT(type_info == *m_deque[index].m_type_info &&
-						hasher(it.element()) == m_deque[index].m_hash );
+					const auto hash = hasher(it.element());
+					DENSITY_TEST_ASSERT(type_info == *m_deque[index].m_type_info
+						&& hash == m_deque[index].m_hash );
 					index++;
 				}
 
@@ -418,6 +429,7 @@ namespace density
 				{
 					step(i_random);
 				}
+				print_stats("test completed");
 			}
 
 			void step(std::mt19937 & i_random)
@@ -430,7 +442,7 @@ namespace density
 					cumulative += test_case.m_probability;
 					if (target_random_value < cumulative)
 					{
-						std::cout << "\ttest case: " << test_case.m_name << ", size: " << m_shadow_container.size() << std::endl;
+						//std::cout << "\ttest case: " << test_case.m_name << ", size: " << m_shadow_container.size() << std::endl;
 						try
 						{
 							test_case.m_function(i_random);
@@ -439,11 +451,13 @@ namespace density
 						catch (typename ShadowContainer<DENSE_CONTAINER>::BasicGuaranteeException)
 						{
 							// the shadow container could not be updated
+							print_stats("BasicGuaranteeException raised");
 							throw;
 						}
 						catch (...)
 						{
-							compare();
+							print_stats("exception raised");
+							compare();							
 							throw;
 						}
 						break;
@@ -457,6 +471,16 @@ namespace density
 			void compare()
 			{
 				m_shadow_container.compare_all(m_dense_container);
+			}
+
+			void print_stats(const char * i_msg) const
+			{
+				std::cout << "\t" << i_msg << ", container size: " << m_shadow_container.size() << std::endl;
+				for (const auto & test_case : m_test_cases)
+				{
+					std::cout << "\ttest case: " << test_case.m_name << " times: " << test_case.m_executions << std::endl;
+				}
+				std::cout << std::endl;
 			}
 
 			const DENSE_CONTAINER & dense_container() const { return m_dense_container; }
