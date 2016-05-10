@@ -28,7 +28,7 @@ namespace density
         private:
             struct AllocationEntry
             {
-				size_t m_progressive = 0;
+                size_t m_progressive = 0;
                 size_t m_size = 0;
             };
             struct Levels
@@ -38,7 +38,7 @@ namespace density
             struct ThreadData
             {
                 std::vector<Levels> m_levels;
-				size_t m_last_progressive = 0;
+                size_t m_last_progressive = 0;
             };
             static ThreadData & GetThreadData();
 
@@ -116,16 +116,16 @@ namespace density
     class NoLeakScope
     {
     public:
-		NoLeakScope() { detail::TestAllocatorBase::push_level(); }
-		~NoLeakScope() { detail::TestAllocatorBase::pop_level(); }
+        NoLeakScope() { detail::TestAllocatorBase::push_level(); }
+        ~NoLeakScope() { detail::TestAllocatorBase::pop_level(); }
         NoLeakScope(const NoLeakScope &) = delete;
         NoLeakScope & operator = (const NoLeakScope &) = delete;
     };
-		
-	class TestException : public std::exception
-	{
-		using std::exception::exception;
-	};
+        
+    class TestException : public std::exception
+    {
+        using std::exception::exception;
+    };
   
     /** Runs an exception safeness test, calling the provided function many times.
         First the provided function is called without raising any exception. 

@@ -12,13 +12,13 @@ namespace density
 {
     namespace detail
     {
-        /** This internal class template implements an heterogeneous fifo container that allocates the elements on an externally-owned 
-           memory buffer. QueueImpl is moveable but not copyable.
+        /** This internal class template implements an heterogeneous FIFO container that allocates the elements on an externally-owned 
+           memory buffer. QueueImpl is movable but not copyable.
            A null-QueueImpl is a QueueImpl with no associated memory buffer. A default constructed QueueImpl is a null-QueueImpl. The
-           source of a move-costructor or move-assignment becomes a null-QueueImpl. The only way for null-QueueImpl to become a non-
-           null-QueueImpl is being the destination of a move-assigment with a non-null source. A null-QueueImpl is always empty, and a
-           try_push on it results in undefined behaviour.
-           Implementation: the layout of the buffer is composed by a linear-allocated sequence of Control-element pairs. This squence
+           source of a move-constructor or move-assignment becomes a null-QueueImpl. The only way for null-QueueImpl to become a non-
+           null-QueueImpl is being the destination of a move-assignment with a non-null source. A null-QueueImpl is always empty, and a
+           try_push on it results in undefined behavior.
+           Implementation: the layout of the buffer is composed by a linear-allocated sequence of Control-element pairs. This sequence
            wraps to the boundaries of the memory buffer. Control is a private struct that contains:
               - the RUNTIME_TYPE associated to the element. If RUNTIME_TYPE is an empty struct, no storage is wasted (Control exploits
                 the empty base optimization).
@@ -29,13 +29,13 @@ namespace density
                       a non-void type). Note: the address of a subobject (the base class "part") is not equal to the address of the
                       complete type (that is, a static-casting a pointer is not a no-operation).                    
               - a pointer to the Control of the next element. The content of the pointed memory is undefined if this
-                element is the last one. Usualy this points to the end of the element, upper-aligned according to the alignment requirement
+                element is the last one. Usually this points to the end of the element, upper-aligned according to the alignment requirement
                 of Control. This pointer may wrap to the beginning of the memory buffer. */
         template <typename RUNTIME_TYPE>
             class QueueImpl final
         {
-			// this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventualy compilation to fail
-			static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
+            // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
+            static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
 
             struct Control : RUNTIME_TYPE
             {
@@ -44,8 +44,8 @@ namespace density
 
                 Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
                     : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next)
-				{
-				}
+                {
+                }
             };
 
         public:
@@ -53,8 +53,8 @@ namespace density
             /** Minimum size of a memory buffer. This requirement avoids the handling of the special case of very small buffers. */
             static const size_t s_minimum_buffer_size = sizeof(Control) * 4;
 
-			/** Minimum alignment of a memory buffer */
-			static const size_t s_minimum_buffer_alignment = alignof(Control);
+            /** Minimum alignment of a memory buffer */
+            static const size_t s_minimum_buffer_alignment = alignof(Control);
             
             /** Iterator class, similar to an stl iterator */
             struct IteratorImpl
@@ -85,7 +85,7 @@ namespace density
                     return m_curr_control->m_element;
                 }
 
-                const RUNTIME_TYPE & type() const DENSITY_NOEXCEPT
+                const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
                 {
                     return *m_curr_control;
                 }
@@ -106,17 +106,17 @@ namespace density
             {
             }
 
-            /** Construct a QueueImpl provinding a memory buffer. 
+            /** Construct a QueueImpl providing a memory buffer. 
                 Preconditions: 
                  * i_buffer_address can't be null
-                 * the whole memory buffer must be readable and writeable. 
+                 * the whole memory buffer must be readable and writable. 
                  * i_buffer_byte_capacity must be >= s_minimum_buffer_size
-				 * i_buffer_alignment must be >= s_minimum_buffer_alignment*/
+                 * i_buffer_alignment must be >= s_minimum_buffer_alignment */
             QueueImpl(void * i_buffer_address, size_t i_buffer_byte_capacity, size_t i_buffer_alignment = s_minimum_buffer_alignment) DENSITY_NOEXCEPT
             {
                 DENSITY_ASSERT(i_buffer_address != nullptr && 
-					i_buffer_byte_capacity >= s_minimum_buffer_size &&
-					i_buffer_alignment >= s_minimum_buffer_alignment);
+                    i_buffer_byte_capacity >= s_minimum_buffer_size &&
+                    i_buffer_alignment >= s_minimum_buffer_alignment);
 
                 m_buffer_start = i_buffer_address;
                 m_buffer_end = address_add(m_buffer_start, i_buffer_byte_capacity);
@@ -156,23 +156,23 @@ namespace density
             QueueImpl(const QueueImpl & i_source) = delete;
             QueueImpl & operator = (const QueueImpl & i_source) = delete;
                         
-            /** Moves the elements from i_source to this queue, move constructing them to this QueueImpl, and desytroying 
+            /** Moves the elements from i_source to this queue, move constructing them to this QueueImpl, and destroying 
                 them from the source. After the call, i_source will be empty.
                 This queue must have enough space to allocate space for all the elements of i_source,
-                otherwise the behaviour is undefined. If you assign to this QueueImpl a memory buffer with the same size
+                otherwise the behavior is undefined. If you assign to this QueueImpl a memory buffer with the same size
                 of the source, but with (at least) the aligned to i_source.element_max_alignment(), the space will always
                 be enough.
-				Precondition: this queue must be empty, and must have enough space to contain all the element of the source.
-				This function never throws. */
+                Precondition: this queue must be empty, and must have enough space to contain all the element of the source.
+                This function never throws. */
             void move_elements_from(QueueImpl & i_source) DENSITY_NOEXCEPT
             {
-				DENSITY_ASSERT(empty());
+                DENSITY_ASSERT(empty());
                 auto it = i_source.begin();
                 const auto end_it = i_source.end();
                 while( it != end_it )
                 {
                     auto const control = it.control();
-					auto const source_element = it.element(); // get_complete_type( it.control() );
+                    auto const source_element = it.element(); // get_complete_type( it.control() );
                     ++it;
 
                     bool result = try_push(*control,
@@ -188,37 +188,37 @@ namespace density
             }
 
             /** Copies the elements from i_source to this queue. This queue must have enough space to 
-                allocate space for all the elements of i_source, otherwise the behaviour is undefined.
+                allocate space for all the elements of i_source, otherwise the behavior is undefined.
                 If you assign to this QueueImpl a memory buffer with the same size of the source, but
                 with (at least) the aligned to i_source.element_max_alignment(), the space will always be enough.
-				Precondition: this queue must be empty, and must have enough space to contain all the element of the source.
-				Can throw: anything that the copy constructor of the elements can throw
-				Exception guarantee: strong (if an exception is raised during this function, this object is left unchanged). */
+                Precondition: this queue must be empty, and must have enough space to contain all the element of the source.
+                Can throw: anything that the copy constructor of the elements can throw
+                Exception guarantee: strong (if an exception is raised during this function, this object is left unchanged). */
             void copy_elements_from(const QueueImpl & i_source)
             {
-				DENSITY_ASSERT(empty());
-				try
-				{
-					IteratorImpl it = i_source.begin();
-					const IteratorImpl end_it = i_source.end();
-					while (it != end_it)
-					{
-						auto const & type = it.type();
-						auto const source_element = it.element(); // get_complete_type(it.control());
-						++it;
+                DENSITY_ASSERT(empty());
+                try
+                {
+                    IteratorImpl it = i_source.begin();
+                    const IteratorImpl end_it = i_source.end();
+                    while (it != end_it)
+                    {
+                        auto const & type = it.complete_type();
+                        auto const source_element = it.element(); // get_complete_type(it.control());
+                        ++it;
 
-						// to do: a slightly optmized nofail_push may be used here
-						bool result = try_push(type,
-							typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
-						DENSITY_ASSERT(result);
-						DENSITY_UNUSED(result);
-					}
-				}
-				catch(...)
-				{
-					delete_all(); // <- this call is noexcept
-					throw;
-				}
+                        // to do: a slightly optimized nofail_push may be used here
+                        bool result = try_push(type,
+                            typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
+                        DENSITY_ASSERT(result);
+                        DENSITY_UNUSED(result);
+                    }
+                }
+                catch(...)
+                {
+                    delete_all(); // <- this call is noexcept
+                    throw;
+                }
             }
 
             /** Returns whether the queue is empty. Same to begin()==end() */
@@ -263,7 +263,7 @@ namespace density
                 }
             };
 
-            /** Tries to insert a new element in the queue. If this is a null-QueueImpl, the behaviour is undefined.
+            /** Tries to insert a new element in the queue. If this is a null-QueueImpl, the behavior is undefined.
                 @param i_source_type type of the element to insert
                 @param i_constructor function object to which the construction of the new element is delegated. The
                     expected signature of the function is:
@@ -277,10 +277,10 @@ namespace density
             template <typename CONSTRUCTOR>
                 bool try_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
                     /* This function may throw as consequences of a pointer overflow. It would be better to make the function just return false.
-						DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_constructor(std::declval<const RUNTIME_TYPE>(), std::declval<void*>()))) */
+                        DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_constructor(std::declval<const RUNTIME_TYPE>(), std::declval<void*>()))) */
             {
                 DENSITY_ASSERT(m_buffer_start != nullptr);
-				DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
+                DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
                 
                 const auto element_aligment = i_source_type.alignment();
 
@@ -295,7 +295,7 @@ namespace density
 
                 void * new_element = i_constructor(i_source_type, element);
                 
-				// from now on, no exception can be raised
+                // from now on, no exception can be raised
                 new(curr_control) Control(i_source_type, new_element, static_cast<Control*>(next_control));
                 m_tail = static_cast<Control *>(next_control);
                 m_element_max_alignment = size_max(m_element_max_alignment, element_aligment);
@@ -303,7 +303,7 @@ namespace density
             }
 
             /** Calls the specified function object on the first element (the oldest one), and then
-                deletes it from the queue. The queue must be non emty, otherwise the behaviour is undefined. 
+                deletes it from the queue. The queue must be non emty, otherwise the behavior is undefined. 
                 The expected signature of i_operation is:
                         void (const RUNTIME_TYPE & i_type, void * i_element) */
             template <typename OPERATION>
@@ -365,17 +365,17 @@ namespace density
 
         private:
 
-			/*void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
-			{
-				void * new_tail = i_control + 1;
-				void * element = single_push(new_tail, i_control->size(), i_control->alignment());
-				return element;
-			}*/
+            /*void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
+            {
+                void * new_tail = i_control + 1;
+                void * element = single_push(new_tail, i_control->size(), i_control->alignment());
+                return element;
+            }*/
 
             /* Allocates an object on the queue. The return value is the address of the new object.
                This function is used to push the Control and the element. If the required size with the
                required alignment does not fit in the queue the return value is nullptr. 
-               Precoditions: *io_tail can't be null, or the behaviour is undefined. */
+               Preconditions: *io_tail can't be null, or the behavior is undefined. */
             void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
             {
                 DENSITY_ASSERT(io_tail != nullptr);

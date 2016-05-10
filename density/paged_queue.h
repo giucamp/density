@@ -7,36 +7,40 @@
 #pragma once
 #include <vector>
 #include "density_common.h"
+#include "page_allocator.h"
 #include "detail\queue_impl.h"
-#include <list>
 
 namespace density
 {
     namespace detail
     {
-        template <typename ALLOCATOR, typename RUNTIME_TYPE>
-            class PagedQueueImpl final : private ALLOCATOR
-        {
+        template <typename PAGE_ALLOCATOR, typename RUNTIME_TYPE>
+            class PagedQueueImpl final : private PAGE_ALLOCATOR
+        {            
         public:
+
+			struct PageHeader
+			{
+				QueueImpl<RUNTIME_TYPE> m_fifo_allocator;
+				PageHeader * m_next_page;
+
+				PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
+					: m_fifo_allocator(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
+			};
+
+            static const size_t min_page_size = sizeof(PageHeader) * 4 + alignof(PageHeader);
+            //static_assert(PAGE_ALLOCATOR::page_size >= min_page_size, "the page size of the page allocator is too small");
 
             using FixedQueue = QueueImpl<RUNTIME_TYPE>;
 
-            struct PageHeader
-            {
-                FixedQueue m_fifo_allocator;
-                PageHeader * m_next_page;
 
-                PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
-                    : m_fifo_allocator(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
-            };
-
-            static const size_t s_min_page_size = sizeof(PageHeader) * 4 + alignof(PageHeader);
+                       
 
             PagedQueueImpl(size_t i_min_page_size)
             {
                 m_last_page = m_first_page = m_peek_page = m_put_page 
                     = new_page(i_min_page_size);
-                m_first_page->m_next_page = m_first_page; // the linked ist is circular
+                m_first_page->m_next_page = m_first_page; // the linked list is circular
                 m_page_size = i_min_page_size;
             }
             
@@ -44,8 +48,8 @@ namespace density
             PageHeader * new_page(size_t i_min_size)
             {
                 size_t size = size_max(i_min_size, s_min_page_size);
-                typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(
-                    *static_cast<ALLOCATOR*>(this) );
+                typename std::allocator_traits<PAGE_ALLOCATOR>::template rebind_alloc<char> char_alloc(
+                    *static_cast<PAGE_ALLOCATOR*>(this) );
 
                 PageHeader * header = reinterpret_cast< PageHeader * >( char_alloc.allocate(i_min_size) );
                 ::new(header) PageHeader(header + 1, size - sizeof(PageHeader));
@@ -74,13 +78,13 @@ namespace density
                     m_put_page = i_page->m_next_page;
             }
 
-            /** Deletes a page (it should be removed from the inked list first) */
+            /** Deletes a page (it should be removed from the linked list first) */
             void delete_page(PageHeader * i_page)
             {
                 i_page->~PageHeader();
 
-                typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(
-                    static_cast<ALLOCATOR*>(this));
+                typename std::allocator_traits<PAGE_ALLOCATOR>::template rebind_alloc<char> char_alloc(
+                    static_cast<PAGE_ALLOCATOR*>(this));
                 char_alloc.deallocate(i_page);
             }
 
@@ -121,14 +125,14 @@ namespace density
 
     } // namespace detail
 
-    template < typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class PagedQueue final : private ALLOCATOR
+    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class PagedQueue final : private PAGE_ALLOCATOR
     {
-        using PagedQueueImpl = detail::PagedQueueImpl<ALLOCATOR, RUNTIME_TYPE>;
+        using PagedQueueImpl = detail::PagedQueueImpl<PAGE_ALLOCATOR, RUNTIME_TYPE>;
     public:
 
         using runtime_type = RUNTIME_TYPE;
-        using allocator_type = ALLOCATOR;
+        using allocator_type = PAGE_ALLOCATOR;
         using value_type = ELEMENT;
         using reference = ELEMENT &;
         using const_reference = const ELEMENT &;
@@ -160,7 +164,7 @@ namespace density
 
     private:
 
-        // overload used if i_source is an rvalue
+        // overload used if i_source is an r-value
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
@@ -169,7 +173,7 @@ namespace density
                 typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
         }
 
-        // overload used if i_source is an lvalue
+        // overload used if i_source is an l-value
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))

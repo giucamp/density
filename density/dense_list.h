@@ -170,7 +170,7 @@ namespace density
                 }
 
                 /* Adds a (type-info, element) pair to the list. The new element is copy-constructed.
-                Note: ELEMENT is not the comlete type of the element, as the
+                Note: ELEMENT is not the complete type of the element, as the
                 list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
                 void * add_by_copy(const RUNTIME_TYPE & i_element_info, const void * i_source)
                     // DENSITY_NOEXCEPT_IF(std::declval<RUNTIME_TYPE>().copy_construct(nullptr, std::declval<ELEMENT>() ))

@@ -14,20 +14,20 @@ namespace density
 {
     namespace detail
     {
-		class TestString : public std::basic_string<char, std::char_traits<char>, TestAllocator<char> >
-		{
-		public:
-			TestString() = default;
-			TestString(const char * i_str) : std::basic_string<char, std::char_traits<char>, TestAllocator<char> >(i_str) {}
+        class TestString : public std::basic_string<char, std::char_traits<char>, TestAllocator<char> >
+        {
+        public:
+            TestString() = default;
+            TestString(const char * i_str) : std::basic_string<char, std::char_traits<char>, TestAllocator<char> >(i_str) {}
 
-			TestString(const TestString&) = default;
-			TestString & operator = (const TestString&) = default;
+            TestString(const TestString&) = default;
+            TestString & operator = (const TestString&) = default;
 
-			TestString(TestString&&) noexcept = default;
-			TestString & operator = (TestString&&) noexcept = default;
+            TestString(TestString&&) noexcept = default;
+            TestString & operator = (TestString&&) noexcept = default;
 
-			virtual ~TestString() {}
-		};
+            virtual ~TestString() {}
+        };
 
         namespace DenseListTest
         {
@@ -327,7 +327,7 @@ namespace density
                     throw;
                 }
                 
-                // appy the action on the list
+                // apply the action on the list
                 i_action_std_list(std_list_copy);
 
                 // compare std_list_copy and dense_list_copy (should be equal)

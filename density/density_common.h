@@ -17,7 +17,7 @@
 
 #define DENSITY_POINTER_OVERFLOW_SAFE        1
 
-#define DENSITY_EXCEPTION_SAFE				 1
+#define DENSITY_EXCEPTION_SAFE                 1
 
 #if DENSITY_POINTER_OVERFLOW_SAFE
     #define DENSITY_OVERFLOW_IF(bool_expr)            ::density::detail::handle_pointer_overflow((bool_expr))
@@ -38,8 +38,8 @@
     #define DENSITY_ASSERT_NOEXCEPT(expr)
 #else
     #define DENSITY_CONSTEXPR                    constexpr
-    #define DENSITY_NOEXCEPT                        noexcept
-    #define DENSITY_NOEXCEPT_IF(value)            noexcept(value)
+    #define DENSITY_NOEXCEPT                     noexcept
+    #define DENSITY_NOEXCEPT_IF(value)           noexcept(value)
     #define DENSITY_ASSERT_NOEXCEPT(expr)        static_assert(noexcept(expr), "The expression " #expr " is required not be noexcept");
 #endif
 
@@ -51,6 +51,13 @@
     #define DENSITY_STRONG_INLINE
 #endif
 
+/*! \mainpage Memo: overwiew and usage
+
+\section whats What's density
+Density is an open source C++ header-only library that provides heterogeneous containers.
+
+*/
+
 namespace density
 {
     class Overflow : public std::exception
@@ -61,18 +68,18 @@ namespace density
 
     namespace detail
     {
-		/** DeferenceVoidPtr<TYPE>::apply(void *) returns *static_cast<TYPE*>(i_ptr). If TYPE is void, returns void */
-		template <typename TYPE> struct DeferenceVoidPtr
-		{
-			using type = TYPE &;
-			inline static type apply(void * i_ptr)
-				{ return *static_cast<TYPE*>(i_ptr); }
-		};
-		template <> struct DeferenceVoidPtr<void>
-		{
-			using type = void;
-			inline static type apply(void * /*i_ptr*/) {}
-		};
+        /** DeferenceVoidPtr<TYPE>::apply(void *) returns *static_cast<TYPE*>(i_ptr). If TYPE is void, returns void */
+        template <typename TYPE> struct DeferenceVoidPtr
+        {
+            using type = TYPE &;
+            inline static type apply(void * i_ptr)
+                { return *static_cast<TYPE*>(i_ptr); }
+        };
+        template <> struct DeferenceVoidPtr<void>
+        {
+            using type = void;
+            inline static type apply(void * /*i_ptr*/) {}
+        };
 
         inline void handle_pointer_overflow(bool i_overflow)
         {
@@ -339,10 +346,10 @@ namespace density
     }
 
     /** Frees an address allocated with aligned_alloc. This function just deallocates (no destructors are called). It never throws.
-            @param i_allocator allocator to use. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
-            @param i_block block to free (returned by aligned_alloc). If it's not a valid block the behaviour is undefined.
-            @param i_size size of the block to free, in bytes. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined.
-            @param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behaviour is undefined. */
+            @param i_allocator allocator to use. Must be the same passed to aligned_alloc, otherwise the behavior is undefined.
+            @param i_block block to free (returned by aligned_alloc). If it's not a valid block the behavior is undefined.
+            @param i_size size of the block to free, in bytes. Must be the same passed to aligned_alloc, otherwise the behavior is undefined.
+            @param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behavior is undefined. */
     template <typename ALLOCATOR>
         void aligned_free(ALLOCATOR & i_allocator, void * i_block, size_t i_size, size_t i_alignment ) DENSITY_NOEXCEPT
     {
@@ -785,34 +792,34 @@ namespace density
         MemSize m_padding;
     };
 
-	inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
-	{
-		DENSITY_ASSERT(MemSize(i_alignment).is_valid_alignment() );
-	
-		const auto alignment_mask = i_alignment - 1;
-		
-		auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
-		
-		ptr += alignment_mask;
-		#if DENSITY_POINTER_OVERFLOW_SAFE
-			if (ptr < alignment_mask)
-			{
-				return nullptr;
-			}
-		#endif
-		ptr &= ~alignment_mask;
-		
-		void * result = reinterpret_cast<void*>(ptr);
-		ptr += i_size;
-		#if DENSITY_POINTER_OVERFLOW_SAFE
-			if (ptr < i_size)
-			{
-				return nullptr;
-			}
-		#endif
+    inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
+    {
+        DENSITY_ASSERT(MemSize(i_alignment).is_valid_alignment() );
+    
+        const auto alignment_mask = i_alignment - 1;
+        
+        auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
+        
+        ptr += alignment_mask;
+        #if DENSITY_POINTER_OVERFLOW_SAFE
+            if (ptr < alignment_mask)
+            {
+                return nullptr;
+            }
+        #endif
+        ptr &= ~alignment_mask;
+        
+        void * result = reinterpret_cast<void*>(ptr);
+        ptr += i_size;
+        #if DENSITY_POINTER_OVERFLOW_SAFE
+            if (ptr < i_size)
+            {
+                return nullptr;
+            }
+        #endif
 
-		io_curr_ptr = reinterpret_cast<void*>(ptr);
-		return result;
-	}
+        io_curr_ptr = reinterpret_cast<void*>(ptr);
+        return result;
+    }
 
 } // namespace density

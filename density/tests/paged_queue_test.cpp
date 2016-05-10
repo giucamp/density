@@ -17,13 +17,13 @@ namespace density
         {
             (void)i_random;
 
-            PagedQueue<int> queue(128);
+            /*PagedQueue<int> queue(128);
             std::vector<int> ints;
             
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);
-            }
+            }*/
 
             /*for (int i = 0; i < 1000; i++)
             {

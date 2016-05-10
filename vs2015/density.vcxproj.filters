@@ -21,10 +21,11 @@
     <ClInclude Include="..\density\tests\testing_utils.h">
       <Filter>tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\density\tests\uint_test_manager.h">
+    <ClInclude Include="..\density\tests\correctness_test_context.h">
       <Filter>tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\density\tests\correctness_test_context.h">
+    <ClInclude Include="..\density\page_allocator.h" />
+    <ClInclude Include="..\density\tests\unit_test_manager.h">
       <Filter>tests</Filter>
     </ClInclude>
   </ItemGroup>

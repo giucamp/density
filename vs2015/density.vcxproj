@@ -211,11 +211,12 @@
     <ClInclude Include="..\density\detail\dense_list_typed.h" />
     <ClInclude Include="..\density\detail\dense_list_void.h" />
     <ClInclude Include="..\density\detail\queue_impl.h" />
+    <ClInclude Include="..\density\page_allocator.h" />
     <ClInclude Include="..\density\runtime_type.h" />
     <ClInclude Include="..\density\tests\container_test.h" />
     <ClInclude Include="..\density\tests\correctness_test_context.h" />
     <ClInclude Include="..\density\tests\testing_utils.h" />
-    <ClInclude Include="..\density\tests\uint_test_manager.h" />
+    <ClInclude Include="..\density\tests\unit_test_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\density\tests\dense_queue_test.cpp" />
