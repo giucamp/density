@@ -18,14 +18,14 @@ namespace density
         static const size_t page_size = 4096;
         static const size_t page_alignment = alignof(std::max_align_t);
 
-        void * alloc_page()
+        void * allocate_page()
         {
-            return ALLOCATOR::allocate(page_size);
+            return allocate(page_size);
         }
 
-        void free_page(void * i_page)
+        void deallocate_page(void * i_page)
         {
-            ALLOCATOR::deallocate(i_page);
+            deallocate(static_cast<char*>(i_page), page_size);
         }
     };
 

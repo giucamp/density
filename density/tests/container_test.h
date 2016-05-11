@@ -581,10 +581,11 @@ namespace density
                 while(!i_test.dense_container().empty())
                 {
                     DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
-                    i_test.dense_container().consume(
-                        [](const typename DENSE_CONTAINER::runtime_type & i_type, const typename DENSE_CONTAINER::value_type * i_element )
+                    i_test.dense_container().manual_consume(
+                        [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
                     { 
                         i_type.template get_feature<detail::FeatureHash>()(i_element);
+						i_type.destroy(i_element);
                     } );
                     i_test.shadow_container().pop_front();
                 }

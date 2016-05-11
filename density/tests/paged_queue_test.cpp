@@ -17,24 +17,24 @@ namespace density
         {
             (void)i_random;
 
-            /*PagedQueue<int> queue(128);
+            PagedQueue<int> queue;
             std::vector<int> ints;
             
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);
-            }*/
+            }
 
-            /*for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 1000; i++)
             {
-                queue.consume([] (const PagedQueue<int>::runtime_type &, int val) {
-                    std::cout << val << std::endl;
+                queue.manual_consume([] (const PagedQueue<int>::runtime_type &, int * val) {
+                    std::cout << *val << std::endl;
                 });
             }
 
             DENSITY_TEST_ASSERT(queue.empty());
 
-            for (int i = 0; i < 1000; i++)
+          /*  for (int i = 0; i < 1000; i++)
             {
                 size_t size = 0;
                 auto e = queue.end();

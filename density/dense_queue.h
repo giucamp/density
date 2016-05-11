@@ -10,7 +10,7 @@
 
 namespace density
 {
-    /** Class template that implements an heterogeneous FIFO container with dynamic size. 
+    /** \brief Class template that implements an heterogeneous FIFO container with dynamic size. 
         A dense_queue allocates one memory buffer with the provided allocator, and sub-allocates inplace
         its elements. The buffer is reallocated accomplish push and emplace requests.
         The memory management of this container is similar to an std::vector: since all the elements are 
@@ -55,7 +55,7 @@ namespace density
         static_assert( std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT,void>::value : true,
             "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )" );
 
-		using Allocator = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+		using allocator_type = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -69,7 +69,7 @@ namespace density
             queue consumes heap memory). The allocator inside the queue is default-constructed.
             @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
             @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
-            Preconditions: 
+            \pre: 
                 * i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
             Throws: ... */
         dense_queue(size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
@@ -83,11 +83,10 @@ namespace density
             @param i_allocator object to be used as source to copy-construct the allocator.
             @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
             @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
-            Preconditions:
-                * i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
+            \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
             Throws: ... */
         dense_queue(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
-            : Allocator(i_allocator)
+            : allocator_type(i_allocator)
         {
             alloc(std::max(i_initial_reserved_bytes, QueueImp::s_initial_mem_reserve),
                 std::max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
@@ -99,10 +98,10 @@ namespace density
             Throws: nothing
             Complexity: constant */
         dense_queue(dense_queue && i_source) DENSITY_NOEXCEPT
-            : Allocator(std::move(static_cast<Allocator&>(i_source))),
+            : allocator_type(std::move(static_cast<allocator_type&>(i_source))),
               m_impl(std::move(i_source.m_impl))
         {
-            static_assert(DENSITY_NOEXCEPT_IF( Allocator(std::move(std::declval<Allocator>()))),
+            static_assert(DENSITY_NOEXCEPT_IF( allocator_type(std::move(std::declval<allocator_type>()))),
                 "The move constructor of the allocator is required to be noexcept");
         }
 
@@ -118,13 +117,13 @@ namespace density
             Complexity: linear in the size of destination (its content must be destroyed). */
         dense_queue & operator = (dense_queue && i_source) DENSITY_NOEXCEPT
         {
-            static_assert(DENSITY_NOEXCEPT_IF(std::declval<Allocator>() = std::move(std::declval<Allocator>())),
+            static_assert(DENSITY_NOEXCEPT_IF(std::declval<allocator_type>() = std::move(std::declval<allocator_type>())),
                 "The move assignment of the allocator is required to be noexcept");
 
             DENSITY_ASSERT(this != &i_source);
             m_impl.delete_all();
             free();
-            static_cast<Allocator&>(*this) = std::move( static_cast<Allocator&>(i_source) );
+            static_cast<allocator_type&>(*this) = std::move( static_cast<allocator_type&>(i_source) );
             m_impl = std::move(i_source.m_impl);
             return *this;
         }
@@ -134,7 +133,7 @@ namespace density
             Throws: anything that the allocator or the copy-constructor of the element throws
             Complexity: linear in the size of the source. */
         dense_queue(const dense_queue & i_source)
-            : Allocator(static_cast<const Allocator&>(i_source))
+            : allocator_type(static_cast<const allocator_type&>(i_source))
         {
             try // to do: would a RAII approach be better than explicit try-catch?
             {
@@ -177,19 +176,19 @@ namespace density
             free();
         }
 
-                    // insertion \ removal
-        
+     
         /** Adds an element at the end of the queue. ELEMENT_COMPLETE_TYPE * must be implicitly convertible 
             to ELEMENT *, or a compile-time error will be issued. Furthermore, an ELEMENT * must be convertible
             to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast (the latter condition is not met
             if ELEMENT is a non-polymorphic (direct or indirect) virtual base of ELEMENT_COMPLETE_TYPE).
             If the new element doesn't fit in the reserved memory buffer, a reallocation is performed. 
             @param i_source object to be used as source for the construction of the new element.
-                * If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
-                * If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
-            Invalidated iterators: all
-            Throws: ...
-            Complexity: constant amortized (a reallocation may be required). */
+                - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+                - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+            
+			\n<b> Invalidated iterators </b>: all\br
+            \n\b Throws: ...
+            \n\b Complexity: constant amortized (a reallocation may be required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
@@ -221,7 +220,7 @@ namespace density
             return insert_back_impl(runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 [&i_parameters...](const runtime_type &, void * i_dest) {
                     void * const result = new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_parameters)...);
-                    return result;
+                    return static_cast<ELEMENT*>(result);
             });
         }
 
@@ -240,22 +239,36 @@ namespace density
                 typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(i_source));
         }
 
+        /** Calls the specified function object on the first element (the oldest one), and then
+			removes it from the queue without calling its destructor.
+			@param i_operation function object with a signature compatible with:
+			\code
+			void (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
+			\endcode
+			\n to be called for the first element. This function object is responsible of synchronously
+			destroying the element. The first parameter is the complete type of the element. The second 
+			parameter is a pointer to a subobject ELEMENT of the element being removed.
+				
+			\pre The queue must be non-empty (otherwise the behavior is undefined).
+        */
         template <typename OPERATION>
-            void consume(OPERATION && i_operation)
+            void manual_consume(OPERATION && i_operation)
                 DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
-            m_impl.consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+            m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
                 i_operation(i_type, static_cast<ELEMENT*>(i_element));
             });
         }
 
-        /** Erases the first element of the queue, which must be non-empty. This function never causes a reallocation.
-            Preconditions: if this queue is empty, the behavior is undefined
-            Throws: nothing
-            Complexity: constant. */
+        /** Deletes the first element of the queue (the oldest one).
+			\pre The queue must be non-empty (otherwise the behavior is undefined).
+				
+			\n\b Invalidated iterators: only iterators and references to the first element are invalidated
+			\n\b Throws: nothing
+			\n\b Complexity: constant */
         void pop() DENSITY_NOEXCEPT
         {
-            m_impl.consume([](const RUNTIME_TYPE &, void *) {});
+            m_impl.pop();
         }
 
         /** Reserve the specified space in the queue, reallocating it if necessary.
@@ -442,15 +455,13 @@ namespace density
         const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
 
         /** Returns true if this queue contains no elements.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
         bool empty() const DENSITY_NOEXCEPT { return m_impl.empty(); }
 
         /** Removes all the elements from this queue.
-            Preconditions: none
-            Throws: nothing
-            Complexity: linear */
+            \n\b Throws: nothing
+            \n\b Complexity: linear */
         void clear() DENSITY_NOEXCEPT 
         { 
             m_impl.delete_all(); 
@@ -458,7 +469,7 @@ namespace density
         
         /** Returns a reference to the first element of this queue. If ELEMENT is void,
             the this function returns void.
-            Preconditions: the queue must be non-empty
+            \pre The queue must be non-empty
             Throws: nothing
             Complexity: constant */
         reference front() DENSITY_NOEXCEPT
@@ -470,9 +481,10 @@ namespace density
 
         /** Returns a const reference to the first element of this queue. If ELEMENT is void,
             the this function returns void.
-            Preconditions: the queue must be non-empty
-            Throws: nothing
-            Complexity: constant */
+            \pre The queue must be non-empty
+
+			\n\b Throws: nothing
+			\n\b Complexity: constant */
         const_reference front() const DENSITY_NOEXCEPT
         {
             DENSITY_ASSERT(!empty());
@@ -481,10 +493,11 @@ namespace density
         }
 
         /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements. 
-            Note: there is no way to predict if the next push\emplace will cause a reallocation.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
+            \remark There is no way to predict if the next push\emplace will cause a reallocation.
+			\pre The queue must be non-empty
+
+			\n\b Throws: nothing
+			\n\b Complexity: constant */
         MemSize mem_capacity() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_capacity();
@@ -493,49 +506,44 @@ namespace density
         /** Returns the used size in bytes. This size is dependant, in an implementation defined way, to the count, the type and
             the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is recommended
             to use the function dense_queue::empty to check if the queue is empty.
-            Note: there is no way to predict if the next push\emplace will cause a reallocation.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
+            \remark There is no way to predict if the next push\emplace will cause a reallocation.
+			
+			\n\b Throws: nothing
+			\n\b Complexity: constant */
         MemSize mem_size() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_size();
         }
 
         /** Returns the free size in bytes. This is equivalent to dense_queue::mem_capacity decreased by dense_queue::mem_size.
-            Note: there is no way to predict if the next push\emplace will cause a reallocation.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
+            \remark There is no way to predict if the next push\emplace will cause a reallocation.
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
         MemSize mem_free() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_capacity() - m_impl.mem_size();
         }
 
-
         /** Returns a copy of the allocator instance owned by the queue.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
-		Allocator get_allocator() const DENSITY_NOEXCEPT
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+		allocator_type get_allocator() const DENSITY_NOEXCEPT
         {
             return *this;
         }
 
         /** Returns a reference to the allocator instance owned by the queue.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
-        Allocator & get_allocator_ref() DENSITY_NOEXCEPT
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+        allocator_type & get_allocator_ref() DENSITY_NOEXCEPT
         {
             return *this;
         }
 
         /** Returns a const reference to the allocator instance owned by the queue.
-            Preconditions: none
-            Throws: nothing
-            Complexity: constant */
-        const Allocator & get_allocator_ref() const DENSITY_NOEXCEPT
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+        const allocator_type & get_allocator_ref() const DENSITY_NOEXCEPT
         {
             return *this;
         }
@@ -546,7 +554,6 @@ namespace density
         static const size_t s_initial_mem_alignment = detail::QueueImpl<RUNTIME_TYPE>::s_minimum_buffer_alignment;
 
         using Impl = typename detail::QueueImpl<RUNTIME_TYPE>;
-        using Allocator = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
         
         void alloc(size_t i_size, size_t i_alignment)
         {
@@ -578,7 +585,32 @@ namespace density
             m_impl = std::move(new_impl);
         }
 
-        template <typename CONSTRUCTOR>
+        // overload used if i_source is an r-value
+        template <typename ELEMENT_COMPLETE_TYPE>
+            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
+        {
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+			insert_back_impl(runtime_type::template make<ElementCompleteType>(),
+				[&i_source](const runtime_type &, void * i_dest) {
+				auto const result = new(i_dest) ElementCompleteType(std::move(i_source));
+				return static_cast<ELEMENT*>(result);
+			});
+        }
+
+        // overload used if i_source is an l-value
+        template <typename ELEMENT_COMPLETE_TYPE>
+            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
+        {
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+			insert_back_impl(runtime_type::template make<ElementCompleteType>(),
+				[&i_source](const runtime_type &, void * i_dest) {
+				auto const result = new(i_dest) ElementCompleteType(i_source);
+				return static_cast<ELEMENT*>(result);
+			});
+        }
+
+		// this function is used by push_back and emplace
+		template <typename CONSTRUCTOR>
             void insert_back_impl(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
         {
             while(!m_impl.try_push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor)))
@@ -587,24 +619,6 @@ namespace density
                     m_impl.mem_capacity().value() * 2, 
                     i_source_type.size() * 16 + i_source_type.alignment() ) );
             }
-        }
-
-        // overload used if i_source is an rvalue
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
-        {
-            auto const base_ptr = static_cast<ELEMENT*>(&i_source);
-            insert_back_impl(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(base_ptr));
-        }
-
-        // overload used if i_source is an lvalue
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
-        {
-            auto const base_ptr = static_cast<const ELEMENT*>(&i_source);
-            insert_back_impl(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(base_ptr));
         }
 
     private:

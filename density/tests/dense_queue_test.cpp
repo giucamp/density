@@ -101,7 +101,7 @@ namespace density
 
             for (int i = 0; i < 57; i++)
             {
-                queue.consume([i](const Queue::runtime_type & i_type, int * i_element)
+                queue.manual_consume([i](const Queue::runtime_type & i_type, int * i_element)
                 {
                     DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i);
                 });
@@ -118,7 +118,7 @@ namespace density
             }
             for (int i = 0; i < 57; i++)
             {
-                queue.consume([i](const dense_queue<int>::runtime_type & i_type, int * i_element)
+                queue.manual_consume([i](const dense_queue<int>::runtime_type & i_type, int * i_element)
                 {
                     DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
                 });

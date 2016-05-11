@@ -12,179 +12,208 @@
 
 namespace density
 {
-    namespace detail
-    {
-        template <typename PAGE_ALLOCATOR, typename RUNTIME_TYPE>
-            class PagedQueueImpl final : private PAGE_ALLOCATOR
-        {            
-        public:
+    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+		class PagedQueue final : private PAGE_ALLOCATOR
+	{
+	public:
 
-			struct PageHeader
+		static_assert(std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT, void>::value : true,
+			"If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )");
+
+		using allocator_type = PAGE_ALLOCATOR;
+		using runtime_type = RUNTIME_TYPE;
+		using value_type = ELEMENT;
+		using reference = typename std::add_lvalue_reference< ELEMENT >::type;
+		using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
+		using difference_type = ptrdiff_t;
+		using size_type = size_t;
+		class iterator;
+		class const_iterator;
+
+		PagedQueue()
+		{
+			auto new_page = static_cast<PageHeader*>(get_allocator_ref().allocate_page());
+			new(new_page) PageHeader(new_page + 1, PAGE_ALLOCATOR::page_size - sizeof(PageHeader));
+			m_pop_page = m_push_page = new_page;
+		}
+
+		/** Adds an element at the end of the queue. ELEMENT_COMPLETE_TYPE * must be implicitly convertible
+			to ELEMENT *, or a compile-time error will be issued. Furthermore, an ELEMENT * must be convertible
+			to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast (the latter condition is not met
+			if ELEMENT is a non-polymorphic (direct or indirect) virtual base of ELEMENT_COMPLETE_TYPE).
+			If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
+			@param i_source object to be used as source for the construction of the new element.
+				- If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+				- If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+
+			\n<b> Invalidated iterators </b>: all\br
+			\n\b Throws: ...
+			\n\b Complexity: constant. */
+		template <typename ELEMENT_COMPLETE_TYPE>
+			void push(ELEMENT_COMPLETE_TYPE && i_source)
+		{
+			static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+				"ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT");
+			push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
+				typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
+		}
+
+        /** Deletes the first element of the queue (the oldest one).
+			\pre The queue must be non-empty (otherwise the behavior is undefined).
+				
+			\n\b Invalidated iterators: only iterators and references to the first element are invalidated
+			\n\b Throws: nothing
+			\n\b Complexity: constant */
+		void pop() DENSITY_NOEXCEPT
+		{
+			// the emptiness-precondition is checked in QueueImpl
+
+			m_pop_page->m_queue.pop();
+			if (m_pop_page->m_queue.empty())
 			{
-				QueueImpl<RUNTIME_TYPE> m_fifo_allocator;
-				PageHeader * m_next_page;
+				auto const next = m_pop_page->m_next_page;
+				// assuming that the destructor of an empty QueueImpl is trivial
+				get_allocator_ref().deallocate_page(next);
+				m_pop_page = next;				
+			}
 
-				PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
-					: m_fifo_allocator(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
-			};
-
-            static const size_t min_page_size = sizeof(PageHeader) * 4 + alignof(PageHeader);
-            //static_assert(PAGE_ALLOCATOR::page_size >= min_page_size, "the page size of the page allocator is too small");
-
-            using FixedQueue = QueueImpl<RUNTIME_TYPE>;
+			// postconditions
+			DENSITY_ASSERT(m_pop_page == m_push_page || !m_pop_page->m_queue.empty());
+		}
 
 
-                       
-
-            PagedQueueImpl(size_t i_min_page_size)
-            {
-                m_last_page = m_first_page = m_peek_page = m_put_page 
-                    = new_page(i_min_page_size);
-                m_first_page->m_next_page = m_first_page; // the linked list is circular
-                m_page_size = i_min_page_size;
-            }
-            
-            /** Creates a pages that has at least the specified size, (but does not adds it to the linked list) */
-            PageHeader * new_page(size_t i_min_size)
-            {
-                size_t size = size_max(i_min_size, s_min_page_size);
-                typename std::allocator_traits<PAGE_ALLOCATOR>::template rebind_alloc<char> char_alloc(
-                    *static_cast<PAGE_ALLOCATOR*>(this) );
-
-                PageHeader * header = reinterpret_cast< PageHeader * >( char_alloc.allocate(i_min_size) );
-                ::new(header) PageHeader(header + 1, size - sizeof(PageHeader));
-                header->m_next_page = nullptr;
-                return header;
-            }
-
-            /** Removes a page from the linked list */
-            void remove_page(PageHeader * i_page)
-            {
-                DENSITY_ASSERT(i_page != nullptr);
-                DENSITY_ASSERT(m_first_page != nullptr);
-
-                PageHeader * curr_page = m_first_page;
-                while (curr_page->m_next_page != i_page)
-                {
-                    curr_page = curr_page->m_next_page;
-                }
-
-                curr_page->m_next_page = i_page->m_next_page;
-                if (i_page == m_last_page)
-                    m_last_page = curr_page;
-                if (i_page == m_first_page)
-                    m_first_page = i_page->m_next_page;
-                if (i_page == m_put_page)
-                    m_put_page = i_page->m_next_page;
-            }
-
-            /** Deletes a page (it should be removed from the linked list first) */
-            void delete_page(PageHeader * i_page)
-            {
-                i_page->~PageHeader();
-
-                typename std::allocator_traits<PAGE_ALLOCATOR>::template rebind_alloc<char> char_alloc(
-                    static_cast<PAGE_ALLOCATOR*>(this));
-                char_alloc.deallocate(i_page);
-            }
-
-            template <typename CONSTRUCTOR>
-                void impl_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
-            {
-                // try to allocate in m_put_page
-                bool result = m_put_page->m_fifo_allocator.try_push(i_source_type, i_constructor);
-                if (!result)
-                {
-                    // move m_put_page to the next page
-                    PageHeader * next_page = m_put_page->m_next_page;
-                    if (next_page == m_peek_page)
-                    {
-                        // m_put_page is reaching reached m_peek_page, create a new page
-                        const size_t requiredSize = (i_source_type.size() + i_source_type.alignment() + s_min_page_size + 1 + sizeof(PageHeader)) & ~(i_source_type.alignment() - 1);
-                        next_page = new_page(size_max(m_page_size, requiredSize));
-
-                        // insert the new page in the linked list
-                        next_page->m_next_page = m_put_page->m_next_page;
-                        m_put_page->m_next_page = next_page;
-                        if (m_put_page == m_last_page)
-                            m_last_page = next_page;
-                    }
-                    m_put_page = next_page;
-
-                    // retry to allocate
-                    result = m_put_page->m_fifo_allocator.try_push(i_source_type, i_constructor);
-                    DENSITY_ASSERT(result); // page_size should be enough to allocate the block
-                }
-            }
-
-        private:
-            PageHeader * m_put_page, * m_peek_page; // head and tail of the queue
-            PageHeader * m_first_page, *m_last_page; // linked list of all pages
-            size_t m_page_size;
-        };
-
-    } // namespace detail
-
-    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class PagedQueue final : private PAGE_ALLOCATOR
-    {
-        using PagedQueueImpl = detail::PagedQueueImpl<PAGE_ALLOCATOR, RUNTIME_TYPE>;
-    public:
-
-        using runtime_type = RUNTIME_TYPE;
-        using allocator_type = PAGE_ALLOCATOR;
-        using value_type = ELEMENT;
-        using reference = ELEMENT &;
-        using const_reference = const ELEMENT &;
-        using pointer = typename std::allocator_traits<allocator_type>::pointer;
-        using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
-        using difference_type = ptrdiff_t;
-        using size_type = size_t;
-        class iterator;
-        class const_iterator;
-
-        PagedQueue(size_t i_min_page_size = 1024 * 128)
-            : m_impl(i_min_page_size) {}
-
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push(ELEMENT_COMPLETE_TYPE && i_source)
-        {
-            push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
-                typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
-        }
-
+        /** Calls the specified function object on the first element (the oldest one), and then
+			removes it from the queue without calling its destructor.
+			@param i_operation function object with a signature compatible with:
+			\code
+			void (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
+			\endcode
+			\n to be called for the first element. This function object is responsible of synchronously
+			destroying the element. The first parameter is the complete type of the element. The second 
+			parameter is a pointer to a subobject ELEMENT of the element being removed.
+				
+			\pre The queue must be non-empty (otherwise the behavior is undefined).
+        */
         template <typename OPERATION>
-            void consume(OPERATION && i_operation)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation( std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT>() ))))
+            void manual_consume(OPERATION && i_operation)
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
-            m_impl.consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-                i_operation(i_type, *static_cast<ELEMENT*>(i_element));
-            });
+			// the emptiness-precondition is checked in QueueImpl
+
+			m_pop_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+				i_operation(i_type, static_cast<ELEMENT*>(i_element));
+			});
+			if (m_pop_page->m_queue.empty())
+			{
+				auto const next = m_pop_page->m_next_page;
+				// assuming that the destructor of an empty QueueImpl is trivial
+				get_allocator_ref().deallocate_page(next);
+				m_pop_page = next;
+			}
+
+			// postconditions
+			DENSITY_ASSERT(m_pop_page == m_push_page || !m_pop_page->m_queue.empty());
         }
 
-    private:
+		/** Returns true if this queue contains no elements.
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+        bool empty() const DENSITY_NOEXCEPT { return m_pop_page == m_push_page && m_pop_page->m_queue.empty(); }
 
-        // overload used if i_source is an r-value
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
-                DENSITY_NOEXCEPT_IF((std::is_nothrow_move_constructible<ELEMENT_COMPLETE_TYPE>::value))
+        /** Returns a copy of the allocator instance owned by the queue.
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+		allocator_type get_allocator() const DENSITY_NOEXCEPT
         {
-            m_impl.impl_push(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(&i_source));
+            return *this;
         }
 
-        // overload used if i_source is an l-value
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
-                DENSITY_NOEXCEPT_IF((std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value))
+        /** Returns a reference to the allocator instance owned by the queue.
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+        allocator_type & get_allocator_ref() DENSITY_NOEXCEPT
         {
-            m_impl.impl_push(runtime_type::template make<typename std::decay<ELEMENT_COMPLETE_TYPE>::type>(),
-                typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(&i_source));
+            return *this;
         }
 
-    private:
-        PagedQueueImpl m_impl;
-    }; // class PagedQueue
+        /** Returns a const reference to the allocator instance owned by the queue.
+            \n\b Throws: nothing
+            \n\b Complexity: constant */
+        const allocator_type & get_allocator_ref() const DENSITY_NOEXCEPT
+        {
+            return *this;
+        }
+
+	private:
+
+		struct PageHeader
+		{
+			detail::QueueImpl<RUNTIME_TYPE> m_queue;
+			PageHeader * m_next_page;
+
+			PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
+				: m_queue(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
+		};
+
+		// overload used if i_source is an r-value
+		template <typename ELEMENT_COMPLETE_TYPE>
+			void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
+		{
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+			insert_back_impl(runtime_type::template make<ElementCompleteType>(),
+				[&i_source](const runtime_type &, void * i_dest) {
+				auto const result = new(i_dest) ElementCompleteType(std::move(i_source));
+				return static_cast<ELEMENT*>(result);
+			});
+		}
+
+		// overload used if i_source is an l-value
+		template <typename ELEMENT_COMPLETE_TYPE>
+			void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
+		{
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+			insert_back_impl(runtime_type::template make<ElementCompleteType>(),
+				[&i_source](const runtime_type &, void * i_dest) {
+				auto const result = new(i_dest) ElementCompleteType(i_source);
+				return static_cast<ELEMENT*>(result);
+			});
+		}
+
+		// this function is used by push_back and emplace
+		template <typename CONSTRUCTOR>
+			void insert_back_impl(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+		{
+			while(!m_push_page->m_queue.try_push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor)))
+			{
+				make_space(i_source_type.size(), i_source_type.alignment());
+			}
+		}
+
+		DENSITY_NO_INLINE void make_space(size_t i_required_size, size_t i_required_alignment)
+		{
+			const size_t min_page_size = detail::size_max(i_required_alignment, alignof(PageHeader)) + i_required_size + sizeof(PageHeader);
+			if (min_page_size <= PAGE_ALLOCATOR::page_size)
+			{
+				auto new_page = static_cast<PageHeader*>( get_allocator_ref().allocate_page() );
+				new(new_page) PageHeader(new_page + 1, PAGE_ALLOCATOR::page_size - sizeof(PageHeader));
+				m_push_page->m_next_page = new_page;
+				m_push_page = new_page;
+			}
+		}
+
+		#if DENSITY_DEBUG
+			void check_invariants()
+			{
+				for (PageHeader * page = m_push_page; page != nullptr; page = page->m_next_page)
+				{
+
+				}
+			}
+		#endif
+
+	private:
+		PageHeader * m_push_page, * m_pop_page; // head and tail of the queue
+	}; // class PagedQueue
 
 } // namespace density
 

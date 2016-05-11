@@ -55,7 +55,14 @@
 
 \section whats What's density
 Density is an open source C++ header-only library that provides heterogeneous containers.
-
+*  \dot
+*  digraph example {
+*      node [shape=record, fontname=Helvetica, fontsize=10];
+*      b [ label="class B" URL="\ref B"];
+*      c [ label="class C" URL="\ref C"];
+*      b -> c [ arrowhead="open", style="dashed" ];
+*  }
+*  \enddot
 */
 
 namespace density

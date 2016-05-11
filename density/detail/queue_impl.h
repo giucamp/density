@@ -50,7 +50,7 @@ namespace density
 
         public:
 
-            /** Minimum size of a memory buffer. This requirement avoids the handling of the special case of very small buffers. */
+            /** Minimum size of a memory buffer. This requirement avoids the need of handling the special case of very small buffers. */
             static const size_t s_minimum_buffer_size = sizeof(Control) * 4;
 
             /** Minimum alignment of a memory buffer */
@@ -116,7 +116,7 @@ namespace density
             {
                 DENSITY_ASSERT(i_buffer_address != nullptr && 
                     i_buffer_byte_capacity >= s_minimum_buffer_size &&
-                    i_buffer_alignment >= s_minimum_buffer_alignment);
+                    i_buffer_alignment >= s_minimum_buffer_alignment); // preconditions
 
                 m_buffer_start = i_buffer_address;
                 m_buffer_end = address_add(m_buffer_start, i_buffer_byte_capacity);
@@ -124,7 +124,7 @@ namespace density
                 m_tail = m_head;
                 m_element_max_alignment = i_buffer_alignment;
 
-                DENSITY_ASSERT(m_head + 1 <= m_buffer_end);
+                DENSITY_ASSERT(m_head + 1 <= m_buffer_end); // postcondition
             }
 
             /** Move construct a QueueImpl. The source becomes a null-QueueImpl. */
@@ -175,6 +175,7 @@ namespace density
                     auto const source_element = it.element(); // get_complete_type( it.control() );
                     ++it;
 
+					// to do: a slightly optimized nofail_push may be used here
                     bool result = try_push(*control,
                         typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(source_element));
                     DENSITY_ASSERT(result);
@@ -185,6 +186,7 @@ namespace density
                 }
                 // set the source as empty
                 i_source.m_tail = i_source.m_head = static_cast<Control*>(address_upper_align(i_source.m_buffer_start, alignof(Control)));
+				i_source.m_element_max_alignment = alignof(Control);
             }
 
             /** Copies the elements from i_source to this queue. This queue must have enough space to 
@@ -303,11 +305,18 @@ namespace density
             }
 
             /** Calls the specified function object on the first element (the oldest one), and then
-                deletes it from the queue. The queue must be non emty, otherwise the behavior is undefined. 
-                The expected signature of i_operation is:
-                        void (const RUNTIME_TYPE & i_type, void * i_element) */
+				removes it from the queue without calling its destructor.
+				@param i_operation function object with a signature compatible with:
+				\code
+				void (const RUNTIME_TYPE & i_complete_type, void * i_element_base_ptr)
+				\endcode
+				\n to be called for the first element. This function object is responsible of synchronously
+				destroying the element.
+				
+				\pre The queue must be non-empty (otherwise the behavior is undefined).
+            */
             template <typename OPERATION>
-                void consume(OPERATION && i_operation)
+                void manual_consume(OPERATION && i_operation)
                     DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
             {
                 DENSITY_ASSERT(!empty()); // the queue must not be empty
@@ -316,12 +325,26 @@ namespace density
                 void * const element_ptr = first_control->m_element;
                 i_operation(*first_control, element_ptr);
                 m_head = first_control->m_next;
+                first_control->Control::~Control();
+            }
+
+            /** Deletes the first element of the queue (the oldest one).
+				\pre The queue must be non-empty (otherwise the behavior is undefined).
+				\n\b Throws: nothing
+				\n\b Complexity: constant */
+            void pop() DENSITY_NOEXCEPT
+            {
+                DENSITY_ASSERT(!empty()); // the queue must not be empty
+
+                Control * first_control = m_head;
+                void * const element_ptr = first_control->m_element;
+                m_head = first_control->m_next;
                 first_control->destroy(element_ptr);
                 first_control->Control::~Control();
             }
 
             /** Returns a pointer to the beginning of the memory buffer. Note: this is not like a data() method, as
-                the data deoes not start here (it starts where m_head points to). */
+                the data does not start here (it starts where m_head points to). */
             void * buffer() DENSITY_NOEXCEPT { return m_buffer_start; }
 
             /** Returns the size of the memory buffer assigned to the queue */
