@@ -11,8 +11,8 @@
 namespace density
 {
     /** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
-        A dense_queue allocates one monolithic memory buffer with the provided allocator, and sub-allocates 
-		inplace its elements. This buffer is eventually reallocated to accomplish push and emplace requests.
+        A dense_queue allocates one monolithic memory buffer with the provided allocator, and sub-allocates
+        inplace its elements. This buffer is eventually reallocated to accomplish push and emplace requests.
         The memory management of this container is similar to an std::vector: since all the elements are
         stored in the same memory block, when a reallocation is performed, all the elements have to be moved.
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
@@ -65,14 +65,14 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Default and reserving constructor. It is unspecified whether the default constructor allocates a memory block (that is, if a 
-			default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
-				@param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
-				@param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
+        /** Default and reserving constructor. It is unspecified whether the default constructor allocates a memory block (that is, if a
+            default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
+                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
+                @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
             \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
-            
-			\n\b Throws: unspecified.
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
+
+            \n\b Throws: unspecified.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
         dense_queue(size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
         {
             DENSITY_ASSERT(i_initial_alignment == 0 || MemSize(i_initial_alignment).is_valid_alignment() );
@@ -80,14 +80,14 @@ namespace density
                 std::max(i_initial_alignment, s_initial_mem_alignment));
         }
 
-        /** Constructs a queue. It is unspecified whether the default constructor allocates a memory block (that is, if a 
-			default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
-				@param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
-				@param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
+        /** Constructs a queue. It is unspecified whether the default constructor allocates a memory block (that is, if a
+            default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
+                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
+                @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
             \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
-            
-			\n\b Throws: unspecified.
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
+
+            \n\b Throws: unspecified.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
         dense_queue(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
             : allocator_type(i_allocator)
         {
@@ -96,9 +96,9 @@ namespace density
         }
 
         /** Move constructs the queue, transferring the content from another queue
-				@param i_source queue to move from. After the call the source queue will be empty.
-			
-			\n\b Requires: the move-constructor of the allocator must be noexcept
+                @param i_source queue to move from. After the call the source queue will be empty.
+
+            \n\b Requires: the move-constructor of the allocator must be noexcept
             \n\b Throws: nothing
             \n\b Complexity: constant */
         dense_queue(dense_queue && i_source) DENSITY_NOEXCEPT
@@ -110,9 +110,9 @@ namespace density
         }
 
         /** Move assignment. The content of this queue is cleared, then the content of the source is transferred to this queue.
-				@param i_source queue to move from. After the call this queue will be empty
+                @param i_source queue to move from. After the call this queue will be empty
             \n\b Requires: the move-assignment of the allocator must be noexcept
-			\n\b Effects on iterators: 
+            \n\b Effects on iterators:
                 - iterators referring to the destination queue are invalidated.
                 - iterators referring to the source queue become valid for the destination queue.
             \pre The behavior is undefined if the source and the destination are same object
@@ -135,7 +135,7 @@ namespace density
         /** Copy constructor. Copies the content of the source queue (deep copy).
             \n\b Throws: anything that the allocator or the copy-constructor of the element throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-			\n\b Complexity: linear in the size of the source. */
+            \n\b Complexity: linear in the size of the source. */
         dense_queue(const dense_queue & i_source)
             : allocator_type(static_cast<const allocator_type&>(i_source))
         {
@@ -153,14 +153,14 @@ namespace density
 
         /** Copy assignment. Clear the content of this queue, and copies the content of the source queue (deep copy).
             \pre The behavior is undefined if the source and the destination are same object
-            
-			\n<b>Effects on iterators</b>: iterators referring to the destination queue are invalidated.
-            \n\b Throws: 
-				- anything that the allocator throws
+
+            \n<b>Effects on iterators</b>: iterators referring to the destination queue are invalidated.
+            \n\b Throws:
+                - anything that the allocator throws
                 - anything that the copy-constructor of the elements throws
-			
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-			\n\b Complexity: linear in the size of the source. */
+
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear in the size of the source. */
         dense_queue & operator = (const dense_queue & i_source)
         {
             DENSITY_ASSERT(this != &i_source);
@@ -183,22 +183,22 @@ namespace density
 
 
         /** Adds an element at the end of the queue. If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
-			\n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
+            \n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
             @param i_source object to be used as source for the construction of the new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
-			\n\b Requires: 
-				- the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
-				- an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
-				- an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast 
-					(this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual 
-					base of ELEMENT_COMPLETE_TYPE).
-            
-			\n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Requires:
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
+
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-			\n\b Complexity: constant amortized (a reallocation may be required). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: constant amortized (a reallocation may be required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
@@ -209,20 +209,20 @@ namespace density
         }
 
         /** Adds an element at the end of the queue, constructing it inplace. If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
-			\n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
-				@i_parameters construction params for the new element
+            \n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
+                @i_parameters construction params for the new element
 
-			\n\b Requires: 
-				- the ELEMENT_COMPLETE_TYPE must be constructible with the specified parameter list
-				- an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
-				- an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast 
-					(this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual 
-					base of ELEMENT_COMPLETE_TYPE).
-            
-			\n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Requires:
+                - the ELEMENT_COMPLETE_TYPE must be constructible with the specified parameter list
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
+
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-			\n\b Complexity: constant amortized (a reallocation may be required). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: constant amortized (a reallocation may be required). */
         template <typename ELEMENT_COMPLETE_TYPE, typename... PARAMETERS>
             void emplace(PARAMETERS && ... i_parameters)
                 DENSITY_NOEXCEPT_IF((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
@@ -258,17 +258,28 @@ namespace density
             void (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
             \endcode
             \n to be called for the first element. This function object is responsible of synchronously
-            destroying the element. The first parameter is the complete type of the element. The second
-            parameter is a pointer to a subobject ELEMENT of the element being removed.
+            destroying the element.
+				- The first parameter is the complete type of the element.
+				- The second parameter is a pointer to a subobject ELEMENT of the element being removed.
+
+			\n Note: a call to pop() is equivalent to a call to manual_consume() with 
+				\code [] (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
+					{ i_complete_type.destroy(i_element_base_ptr); }
+				\endcode
+			\n This function is to be considered a low-level functionality: use it only for a good reason,
+				otherwise use front(), begin() and pop().
 
             \pre The queue must be non-empty (otherwise the behavior is undefined).
-        */
+
+			\n\b Throws: anything that the function object throws
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+			\n\b Complexity: constant */
         template <typename OPERATION>
-            void manual_consume(OPERATION && i_operation)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+            auto manual_consume(OPERATION && i_operation) -> decltype( i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()) )
+//                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
-            m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-                i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            return m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+				return i_operation(i_type, static_cast<ELEMENT*>(i_element));
             });
         }
 
@@ -284,10 +295,10 @@ namespace density
         }
 
         /** Reserve the specified space in the queue, reallocating it if necessary.
-				@param i_mem_size space to reserve, in bytes
-            
-			\n\b Throws: unspecified
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+                @param i_mem_size space to reserve, in bytes
+
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: linear in case of reallocation, constant otherwise */
         void mem_reserve(size_t i_mem_size)
         {
@@ -481,9 +492,9 @@ namespace density
 
         /** Returns a reference to the first element of this queue. If ELEMENT is void,
             the this function returns void.
-            \pre The queue must be non-empty
-            
-			\n\b Throws: nothing
+            \pre The queue must be non-empty (otherwise the behavior is undefined)
+
+            \n\b Throws: nothing
             \n\b Complexity: constant */
         reference front() DENSITY_NOEXCEPT
         {
@@ -494,7 +505,7 @@ namespace density
 
         /** Returns a const reference to the first element of this queue. If ELEMENT is void,
             the this function returns void.
-            \pre The queue must be non-empty
+            \pre The queue must be non-empty (otherwise the behavior is undefined)
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
@@ -507,7 +518,6 @@ namespace density
 
         /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
-            \pre The queue must be non-empty
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
@@ -660,9 +670,16 @@ namespace density
             return first.complete_type().template get_feature<typename detail::FeatureInvoke<value_type>>()(first.element(), i_params...);
         }
 
+		RET_VAL consume_front(PARAMS... i_params)
+		{
+			return m_queue.manual_consume([&i_params...](const runtime_type<void, Features > & i_complete_type, void * i_element) {
+				return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
+			} );
+		}
+
         bool empty() DENSITY_NOEXCEPT
         {
-            return m_queue;
+            return m_queue.empty();
         }
 
         void clear() DENSITY_NOEXCEPT
@@ -674,7 +691,7 @@ namespace density
         using Features = detail::FeatureList<
             density::detail::FeatureSize, density::detail::FeatureAlignment,
             density::detail::FeatureCopyConstruct, density::detail::FeatureMoveConstruct,
-            density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type> >;
+            density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type>, typename detail::FeatureInvokeDestroy<value_type> >;
         dense_queue<void, std::allocator<char>, runtime_type<void, Features > > m_queue;
     };
 

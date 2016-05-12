@@ -316,16 +316,11 @@ namespace density
                 \pre The queue must be non-empty (otherwise the behavior is undefined).
             */
             template <typename OPERATION>
-                void manual_consume(OPERATION && i_operation)
-                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
+                auto manual_consume(OPERATION && i_operation) -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
+//                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
             {
-                DENSITY_ASSERT(!empty()); // the queue must not be empty
-
-                Control * first_control = m_head;
-                void * const element_ptr = first_control->m_element;
-                i_operation(*first_control, element_ptr);
-                m_head = first_control->m_next;
-                first_control->Control::~Control();
+				using ReturnType = decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()));
+				return manual_consume(std::forward<OPERATION>(i_operation), std::is_same<ReturnType, void>());
             }
 
             /** Deletes the first element of the queue (the oldest one).
@@ -394,6 +389,33 @@ namespace density
                 void * element = single_push(new_tail, i_control->size(), i_control->alignment());
                 return element;
             }*/
+
+			template <typename OPERATION>
+                auto manual_consume(OPERATION && i_operation, std::false_type) -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
+                   //DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+            {
+				DENSITY_ASSERT(!empty()); // the queue must not be empty
+
+                Control * first_control = m_head;
+                void * const element_ptr = first_control->m_element;
+				decltype(auto) result = i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
+                m_head = first_control->m_next;
+                first_control->Control::~Control();
+				return result;
+            }
+
+			template <typename OPERATION>
+                void manual_consume(OPERATION && i_operation, std::true_type)
+                   DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+            {
+				DENSITY_ASSERT(!empty()); // the queue must not be empty
+
+                Control * first_control = m_head;
+                void * const element_ptr = first_control->m_element;
+				i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
+                m_head = first_control->m_next;
+                first_control->Control::~Control();
+            }
 
             /* Allocates an object on the queue. The return value is the address of the new object.
                This function is used to push the Control and the element. If the required size with the

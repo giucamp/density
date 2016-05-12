@@ -153,7 +153,7 @@ namespace density
 
     void dense_queue_test()
     {
-        /*function_queue<double (int a , int b)> q;
+        function_queue<double (int a , int b)> q;
 
         auto lam = 1;
         static_assert( std::is_copy_constructible<decltype(lam)>::value, "");
@@ -162,8 +162,9 @@ namespace density
             return (double)(a + b);
         });
 
-        double p = q.invoke_front(4,5);*/
-
+        double p = q.invoke_front(4,5);
+		p = q.consume_front(4, 5);
+		bool k = q.empty();
         detail::dense_queue_leak_basic_tests();
         detail::dense_queue_basic_tests();
 

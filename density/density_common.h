@@ -54,6 +54,13 @@
 /*! \mainpage Memo: overwiew and usage
 
 \section whats What's density
+
+Differences between dense_queue and paged_queue:
+- push or emplace may require a compete reallocation on a dense_queue (which is a O(n) operation). paged_queue's never need
+	a reallocation.
+- push or emplace operations invalidates the iterators on a dense_queue, but not of a paged_queue
+- the memory consumption of a paged_queue is quantized by the page size: a paged_queue allocates at least one page
+
 Density is an open source C++ header-only library that provides heterogeneous containers.
 *  \dot
 *  digraph example {

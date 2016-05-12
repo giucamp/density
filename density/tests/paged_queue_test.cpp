@@ -17,7 +17,7 @@ namespace density
         {
             (void)i_random;
 
-            PagedQueue<int> queue;
+            paged_queue<int> queue;
             std::vector<int> ints;
 
             for (int i = 0; i < 1000; i++)
@@ -27,7 +27,7 @@ namespace density
 
             for (int i = 0; i < 1000; i++)
             {
-                queue.manual_consume([] (const PagedQueue<int>::runtime_type &, int * val) {
+                queue.manual_consume([] (const paged_queue<int>::runtime_type &, int * val) {
                     std::cout << *val << std::endl;
                 });
             }
