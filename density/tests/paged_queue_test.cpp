@@ -19,7 +19,7 @@ namespace density
 
             PagedQueue<int> queue;
             std::vector<int> ints;
-            
+
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);

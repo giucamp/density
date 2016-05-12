@@ -25,7 +25,7 @@ namespace density
     {
         /* TestDenseQueue - dense_queue that uses TestAlocator and adds detail::FeatureHash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseQueue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE, 
+            using TestDenseQueue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
                 typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
 
         void dense_queue_test_impl(std::mt19937 & i_random)
@@ -148,7 +148,7 @@ namespace density
             //auto copy = queue_of_uncopyable;
             //copy = queue_of_uncopyable;
         }
-    
+
     } // namespace detail
 
     void dense_queue_test()
@@ -163,7 +163,7 @@ namespace density
         });
 
         double p = q.invoke_front(4,5);*/
-        
+
         detail::dense_queue_leak_basic_tests();
         detail::dense_queue_basic_tests();
 

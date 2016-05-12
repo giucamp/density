@@ -82,14 +82,14 @@ namespace density
             bool operator != (const TestAllocator<OTHER_TYPE> &) const
         {
             return false;
-        }                
+        }
 
         #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-                    
+
             template<class Other> struct rebind { typedef TestAllocator<Other> other; };
 
             void construct(TYPE * i_pointer)
-            {    
+            {
                 new (i_pointer) TYPE();
             }
 
@@ -121,17 +121,17 @@ namespace density
         NoLeakScope(const NoLeakScope &) = delete;
         NoLeakScope & operator = (const NoLeakScope &) = delete;
     };
-        
+
     class TestException : public std::exception
     {
         using std::exception::exception;
     };
-  
+
     /** Runs an exception safeness test, calling the provided function many times.
-        First the provided function is called without raising any exception. 
+        First the provided function is called without raising any exception.
         - Then the function is called, an the first time exception_check_point is called, an exception is thrown
         - then the function is called, an the second time exception_check_point is called, an exception is thrown
-        During the execution of the function the function exception_check_point should be called to 
+        During the execution of the function the function exception_check_point should be called to
         test the effect of throwing an exception.
     */
     void run_exception_stress_test(std::function<void()> i_test);

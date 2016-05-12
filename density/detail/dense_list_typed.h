@@ -9,7 +9,7 @@ namespace density
     /** A dense-list is a polymorphic sequence container optimized to be compact in both heap memory and inline storage.
         Elements is a DenseList are allocated respecting their alignment requirements.
         In a polymorphic container every element can have a different complete type, provided that this type is covariant to the type ELEMENT.
-        All the elements of a DenseList are arranged in the same memory block of the heap. 
+        All the elements of a DenseList are arranged in the same memory block of the heap.
         Insertions\removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate existing iterators.
         The inline storage of DenseList is the same of a pointer. An empty DenseList does not use heap memory.
         All the functions of DenseList gives at least the strong exception guarantee. */
@@ -17,7 +17,7 @@ namespace density
         class DenseList final
     {
     private:
-        
+
         using ListImpl = detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
         using IteratorImpl = typename ListImpl::IteratorBaseImpl;
 
@@ -34,12 +34,12 @@ namespace density
 
         /** Alias for the template arguments */
         using runtime_type = RUNTIME_TYPE;
-        
-        /** Creates a DenseList containing all the elements specified in the parameter list. 
+
+        /** Creates a DenseList containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
-                @param i_args elements to add to the list. 
+                @param i_args elements to add to the list.
                 @return the new DenseList
-            Example: 
+            Example:
                 const auto list = DenseList<int>::make(1, 2, 3);
                 const auto list1 = DenseList<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
@@ -53,8 +53,8 @@ namespace density
 
         /** Creates a DenseList containing all the elements specified in the parameter list. The allocator of the new DenseList is copy-constructed from the provided one.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
-                @param i_args elements to add to the list. 
-                @return the new DenseList 
+                @param i_args elements to add to the list.
+                @return the new DenseList
             Example:
                 MyAlloc<int> my_alloc;
                 MyAlloc<ListImpl> my_alloc1;
@@ -82,7 +82,7 @@ namespace density
 
         class iterator;
         class const_iterator;
-        
+
         class iterator final
         {
         public:
@@ -97,7 +97,7 @@ namespace density
 
             iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source) {  }
-            
+
             value_type & operator * () const DENSITY_NOEXCEPT { return *element(); }
             value_type * operator -> () const DENSITY_NOEXCEPT { return element(); }
             value_type * element() const DENSITY_NOEXCEPT
@@ -135,7 +135,7 @@ namespace density
             {
                 return m_impl.m_curr_type != i_other.m_impl.m_curr_type;
             }
-            
+
             const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
 
             friend class const_iterator;
@@ -161,7 +161,7 @@ namespace density
 
             const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source.m_impl) {  }
-                                    
+
             value_type & operator * () const DENSITY_NOEXCEPT { return *element(); }
             value_type * operator -> () const DENSITY_NOEXCEPT { return element(); }
             value_type * element() const DENSITY_NOEXCEPT
@@ -201,7 +201,7 @@ namespace density
             }
 
             const RUNTIME_TYPE * curr_type() const DENSITY_NOEXCEPT { return m_impl.m_curr_type; }
-        
+
             friend class DenseList;
 
         private:

@@ -41,7 +41,7 @@ namespace density
                 m_types = nullptr;
             }
 
-        
+
             DenseListImpl() DENSITY_NOEXCEPT
                 : m_types(nullptr)
                     { }

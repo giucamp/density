@@ -24,7 +24,7 @@ namespace density
         UnitTestingManager & operator = (const UnitTestingManager &) = delete;
 
         using PerformanceTestFunction = void (*)();
-        
+
         using CorrectnessTestFunction = void(*)(CorrectnessTestContext & i_context);
 
         void add_correctness_test(const char * i_path, CorrectnessTestFunction i_function);
@@ -35,7 +35,7 @@ namespace density
 
     private:
         class Impl;
-        const std::unique_ptr<Impl> m_impl;    
+        const std::unique_ptr<Impl> m_impl;
     };
 
 }

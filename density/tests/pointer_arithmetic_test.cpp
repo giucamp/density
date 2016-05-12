@@ -12,7 +12,7 @@ namespace density
     namespace detail
     {
         /** Tries to evaluate i_func, and returns whether an EXCEPTION has been thrown */
-        template <typename EXCEPTION, typename FUNCTION> 
+        template <typename EXCEPTION, typename FUNCTION>
             bool throws(FUNCTION && i_func)
         {
             try
@@ -50,7 +50,7 @@ namespace density
             // BasicMemSize<int8_t>(); // <- must fail to compile
 
             DENSITY_ASSERT( MemSize().value() == 0 );
-            
+
             // exhaustive test of BasicMemSize<uint8_t>
             for (int32_t first = 0; first < 256; first++)
             {

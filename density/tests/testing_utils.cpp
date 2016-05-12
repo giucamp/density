@@ -89,9 +89,9 @@ namespace density
                 operator delete (i_block);
             }
         }
-    
+
     } // namespace detail
-    
+
     namespace
     {
         struct StaticData

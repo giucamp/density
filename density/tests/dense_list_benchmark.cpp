@@ -29,7 +29,7 @@ namespace density
         };
 
         class TestObjectDerived : public TestObjectBase
-        {        
+        {
         public:
             volatile int a, b, c, d;
         };
@@ -72,7 +72,7 @@ namespace density
             }
 
             List m_list;
-        };        
+        };
 
 
         void memory_stress()

@@ -22,11 +22,11 @@
 #if DENSITY_POINTER_OVERFLOW_SAFE
     #define DENSITY_OVERFLOW_IF(bool_expr)            ::density::detail::handle_pointer_overflow((bool_expr))
 #else
-    #define DENSITY_OVERFLOW_IF(bool_expr)            
+    #define DENSITY_OVERFLOW_IF(bool_expr)
 #endif
 
 #if DENSITY_DEBUG
-    #define DENSITY_ASSERT(bool_expr)        assert((bool_expr))        
+    #define DENSITY_ASSERT(bool_expr)        assert((bool_expr))
 #else
     #define DENSITY_ASSERT(bool_expr)
 #endif
@@ -164,7 +164,7 @@ namespace density
 
         const uintptr_t end_uint_pointer = reinterpret_cast<uintptr_t>( i_end_address );
         const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>( i_start_address );
-        
+
         return end_uint_pointer - start_uint_pointer;
     }
 
@@ -205,7 +205,7 @@ namespace density
         address = address_lower_align( address, i_alignment );
 
         address = address_sub( address, i_alignment_offset );
-        
+
         return address;
     }
     inline const void * address_lower_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
@@ -215,7 +215,7 @@ namespace density
         address = address_lower_align( address, i_alignment );
 
         address = address_sub( address, i_alignment_offset );
-        
+
         return address;
     }
 
@@ -256,7 +256,7 @@ namespace density
         address = address_upper_align( address, i_alignment );
 
         address = address_sub( address, i_alignment_offset );
-        
+
         return address;
     }
     inline const void * address_upper_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) DENSITY_NOEXCEPT
@@ -266,7 +266,7 @@ namespace density
         address = address_upper_align( address, i_alignment );
 
         address = address_sub( address, i_alignment_offset );
-        
+
         return address;
     }
 
@@ -317,13 +317,13 @@ namespace density
             void * m_block;
         };
     }
-    
+
     /** Allocates aligned memory using the provided allocator. This function just allocates (no constructors are called). Throws std::bad_alloc if allocation fails.
             @param i_allocator allocator to use
             @param i_size size of the requested memory block, in bytes
             @param i_alignment alignment of the requested memory block, in bytes. Must be >0 and a power of 2
             @param i_alignment_offset offset of the block to be aligned. The alignment is guaranteed only at i_alignment_offset
-                from the beginning of the block. 
+                from the beginning of the block.
             @return address of the new memory block */
     template <typename ALLOCATOR>
         void * aligned_alloc(ALLOCATOR & i_allocator, size_t i_size, size_t i_alignment, size_t i_alignment_offset )
@@ -462,7 +462,7 @@ namespace density
             AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
     };
 
-        
+
     template <typename UINT>
         class BasicMemSize
     {
@@ -485,7 +485,7 @@ namespace density
         bool operator <= (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
 
                 // arithmetic operations
-        
+
         BasicMemSize operator + (const BasicMemSize & i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             const UINT result = m_value + i_source.m_value;
@@ -494,14 +494,14 @@ namespace density
         }
 
         BasicMemSize operator - (const BasicMemSize & i_source) const    DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
-        { 
+        {
             DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
             return BasicMemSize(m_value - i_source.m_value);
         }
 
         BasicMemSize operator * (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
-            /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow 
+            /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
                 using the approch of umull_overflow5, as most times the operands will be small. */
             const auto max_op = ( static_cast<UINT>(1) << (std::numeric_limits<UINT>::digits / 2) ) - 1;
             const auto max_uint = std::numeric_limits<UINT>::max();
@@ -531,7 +531,7 @@ namespace density
         BasicMemSize operator -= (const BasicMemSize & i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
-            m_value -= i_source.m_value; 
+            m_value -= i_source.m_value;
             return *this;
         }
         BasicMemSize operator *= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
@@ -551,13 +551,13 @@ namespace density
             DENSITY_ASSERT(i_source != 0);
             DENSITY_OVERFLOW_IF((m_value % i_source) != 0);
             m_value /= i_source;
-            return *this; 
+            return *this;
         }
 
         UINT value() const DENSITY_NOEXCEPT { return m_value; }
 
         bool is_valid_alignment() const DENSITY_NOEXCEPT
-        {            
+        {
             return m_value > 0 && (m_value & (m_value - 1)) == 0;
         }
     };
@@ -589,7 +589,7 @@ namespace density
             if (!is_safe)
             {
                 DENSITY_OVERFLOW_IF(reinterpret_cast<void*>(m_value) != i_value);
-            }            
+            }
         }
 
         BasicArithmeticPointer & operator = (nullptr_t) DENSITY_NOEXCEPT
@@ -654,7 +654,7 @@ namespace density
         BasicArithmeticPointer lower_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const DENSITY_NOEXCEPT
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment());
-            
+
             auto const alignment_mask = i_alignment.value() - 1;
 
             return BasicArithmeticPointer(reinterpret_cast<void*>(
@@ -669,7 +669,7 @@ namespace density
 
             return BasicArithmeticPointer(reinterpret_cast<void*>(
                 (m_value + alignment_mask) & (~alignment_mask)));
-        }            
+        }
 
         BasicArithmeticPointer linear_alloc(
             BasicMemSize<UINT_REPRESENTATION> i_size,
@@ -688,7 +688,7 @@ namespace density
             BasicArithmeticPointer i_end_address) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment() && m_value <= i_end_address.m_value );
-            
+
             BasicArithmeticPointer result = upper_align(i_alignment);
             BasicArithmeticPointer new_ptr = result;
             new_ptr += i_size;
@@ -761,10 +761,10 @@ namespace density
             (except that it is expressed in bytes rather than in element count). Adding new elements to the container makes the used size
             increase. If the new used size would exceed the reserved capacity, a reallocation will occur. */
         const MemSize & used_size() const            { return m_used_size; }
-        
+
         /** Total space used for overhead (headers, footers, types). This size is a part of the used size. */
         const MemSize & overhead() const            { return m_overhead; }
-        
+
         /** Total space wasted to respect the alignment of elements and overhead data. */
         const MemSize & padding() const                { return m_padding; }
 
@@ -802,11 +802,11 @@ namespace density
     inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
     {
         DENSITY_ASSERT(MemSize(i_alignment).is_valid_alignment() );
-    
+
         const auto alignment_mask = i_alignment - 1;
-        
+
         auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
-        
+
         ptr += alignment_mask;
         #if DENSITY_POINTER_OVERFLOW_SAFE
             if (ptr < alignment_mask)
@@ -815,7 +815,7 @@ namespace density
             }
         #endif
         ptr &= ~alignment_mask;
-        
+
         void * result = reinterpret_cast<void*>(ptr);
         ptr += i_size;
         #if DENSITY_POINTER_OVERFLOW_SAFE

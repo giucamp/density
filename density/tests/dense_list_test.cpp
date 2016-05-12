@@ -193,7 +193,7 @@ namespace density
                 void typed_alignment_test()
             {
                 using List = DenseList< BASE_CLASS, TestAllocator<BASE_CLASS> >;
-                
+
                 std::vector<List> lists = {
                     List::make(),
                     List::make(StructA_16<BASE_CLASS>()),
@@ -286,7 +286,7 @@ namespace density
 
             template <typename ELEMENT, typename ACTION_ON_STD_LIST, typename ACTION_ON_DENSE_LIST>
                 void test_operation_with_exceptions(
-                    const DenseList< ELEMENT, TestAllocator<ELEMENT> > & i_dense_list, 
+                    const DenseList< ELEMENT, TestAllocator<ELEMENT> > & i_dense_list,
                     ACTION_ON_DENSE_LIST i_action_on_dense_list, ACTION_ON_STD_LIST i_action_std_list )
             {
                 // dense_list_copy = i_dense_list
@@ -326,7 +326,7 @@ namespace density
 
                     throw;
                 }
-                
+
                 // apply the action on the list
                 i_action_std_list(std_list_copy);
 
@@ -426,7 +426,7 @@ namespace density
                 static void do_it(const LIST & i_list)
                 {
                     TestWithExceptionsOnList<false, LIST>::do_it(i_list);
-                    
+
                     using Element = typename LIST::value_type;
                     Element new_element;
 

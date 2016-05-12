@@ -25,7 +25,7 @@ namespace density
                 remaining_path += token_length;
             }
         }
-        
+
         class CorrectnessTest
         {
         public:
@@ -40,7 +40,7 @@ namespace density
                 (*m_function)(i_context);
             }
 
-        private:            
+        private:
             CorrectnessTestFunction m_function;
             std::chrono::duration<double> m_duration;
         };
@@ -66,7 +66,7 @@ namespace density
         };
 
         class Node
-        {        
+        {
         public:
 
             Node(std::string i_name) : m_name(std::move(i_name)) {}
@@ -203,7 +203,7 @@ namespace density
         static UnitTestingManager instance;
         return instance;
     }
-    
+
     UnitTestingManager::UnitTestingManager()
         : m_impl( std::make_unique<Impl>() )
     {

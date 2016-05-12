@@ -21,10 +21,10 @@ namespace density
         class TestObjectBase
         {
         public:
-                
+
             TestObjectBase(std::mt19937 & i_random)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), std::uniform_int_distribution<size_t>()(i_random))) {}
-            
+
             TestObjectBase(const TestObjectBase & i_source)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash))
             {
@@ -78,7 +78,7 @@ namespace density
 
         /** Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
         inline size_t hash_func(const TestObjectBase & i_object)
-        {            
+        {
             return i_object.hash();
         }
 
@@ -86,7 +86,7 @@ namespace density
         class CopyableTestObject : public TestObjectBase
         {
         public:
-            
+
             CopyableTestObject(std::mt19937 & i_random) : TestObjectBase(i_random) { exception_check_point(); }
             CopyableTestObject(const TestObjectBase & i_source) : TestObjectBase(i_source) {}
 
@@ -147,7 +147,7 @@ namespace density
             struct alignas(ALIGNMENT) AlignedRandomStorage
         {
         public:
-            
+
             AlignedRandomStorage(std::mt19937 & i_random)
             {
                 for (size_t i = 0; i < SIZE; i++)
@@ -176,7 +176,7 @@ namespace density
         /** Returns the hash of an AlignedRandomStorage. This function is compliant with detail::FeatureHash */
         template <size_t SIZE, size_t ALIGNMENT>
             inline size_t hash_func(const AlignedRandomStorage<SIZE, ALIGNMENT> & i_object)
-        {            
+        {
             return i_object.hash();
         }
 
@@ -203,7 +203,7 @@ namespace density
         {
         public:
             ComplexType_A(std::mt19937 & i_random)
-                : CopyableTestObject(i_random), 
+                : CopyableTestObject(i_random),
                   ComplexTypeBase(i_random),
                   m_hash(std::uniform_int_distribution<size_t>(0, 7)(i_random))
                     { }
@@ -258,12 +258,12 @@ namespace density
 
         /** Returns the hash of an ComplexTypeBase. This function is compliant with detail::FeatureHash */
         inline size_t hash_func(const ComplexTypeBase & i_object)
-        {            
+        {
             return i_object.hash();
         }
 
         /** A ShadowContainer keeps information about a dense container, to easy unit testing. It keeps a std::type_info
-            and an hash for every element in the dense container. The dense container is owned externally. 
+            and an hash for every element in the dense container. The dense container is owned externally.
             The units test performs the same operations on the dense container and on the shadow container, and checks
             for consistency. If an exception is thrown during an operation on a dense container, the shadow container can
             be used to check the strong exception guarantee. */
@@ -276,7 +276,7 @@ namespace density
                 const std::type_info * m_type_info;
                 size_t m_hash;
             };
-            
+
         public:
 
             /* Exception thrown as result to an exception occurred during the update of the shadow container.
@@ -285,7 +285,7 @@ namespace density
             {
                 using TestException::TestException;
             };
-            
+
             ShadowContainer() {}
 
             ShadowContainer(const DENSE_CONTAINER & i_container)
@@ -457,13 +457,13 @@ namespace density
                         catch (...)
                         {
                             print_stats("exception raised");
-                            compare();                            
+                            compare();
                             throw;
                         }
                         break;
                     }
                 }
-                
+
                 compare();
             }
 
@@ -488,9 +488,9 @@ namespace density
 
             ShadowContainer<DENSE_CONTAINER> & shadow_container() { return m_shadow_container; }
             const ShadowContainer<DENSE_CONTAINER> & shadow_container() const { return m_shadow_container; }
-            
+
         private: // data members
-            NoLeakScope m_no_leak_scope;            
+            NoLeakScope m_no_leak_scope;
             DENSE_CONTAINER m_dense_container;
             ShadowContainer<DENSE_CONTAINER> m_shadow_container;
             std::string m_name;
@@ -515,7 +515,7 @@ namespace density
             void add_test_case_copy_and_assign(ContainerTest<DENSE_CONTAINER> & i_test, double i_probability)
         {
             i_test.add_test_case("copy_and_assign", [&i_test](std::mt19937 & /*i_random*/) {
-                
+
                 auto & dense_container = i_test.dense_container();
 
                 /* Assign dense_container from a copy of itself. dense_container and shadow_container() must preserve the equality. */
@@ -583,9 +583,9 @@ namespace density
                     DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
                     i_test.dense_container().manual_consume(
                         [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
-                    { 
+                    {
                         i_type.template get_feature<detail::FeatureHash>()(i_element);
-						i_type.destroy(i_element);
+                        i_type.destroy(i_element);
                     } );
                     i_test.shadow_container().pop_front();
                 }
@@ -594,5 +594,5 @@ namespace density
         }
 
     } // namespace detail
-    
+
 } // namespace density

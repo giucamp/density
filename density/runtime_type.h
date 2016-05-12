@@ -34,10 +34,10 @@ namespace density
 
                 // optional
                 void * move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept;
-                                
+
                 void destroy(void * i_element) const noexcept;
         };
-    
+
     */
 
     /** This struct template checks the requirements on a RUNTIME_TYPE. Vioations are detected with static_assert. */
@@ -60,7 +60,7 @@ namespace density
 
     namespace detail
     {
-        /* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object. 
+        /* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object.
             - If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
               should be defined in the namespace that contains TYPE (it uses ADL). If such function exits,
               its return type must be size_t.
@@ -71,7 +71,7 @@ namespace density
         template <typename TYPE> static std::false_type has_hash_func_impl(long);
         template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type)
         {
-            static_assert( std::is_same< decltype(hash_func(i_object)), size_t >::value, 
+            static_assert( std::is_same< decltype(hash_func(i_object)), size_t >::value,
                 "if the hash_func() exits for this type, then it must return a size_t" );
             return hash_func(i_object);
         }
@@ -116,8 +116,8 @@ namespace density
             return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))() );
         }
 
-        /** This struct template represent a list of features associated to a runtime_type.        
-        
+        /** This struct template represent a list of features associated to a runtime_type.
+
             struct FeatureX
             {
                 using type = ...;
@@ -135,7 +135,7 @@ namespace density
             using type = size_t;
 
             template <typename BASE, typename TYPE> struct Impl
-            {                
+            {
                 static const uintptr_t value = sizeof(TYPE);
             };
         };
@@ -157,7 +157,7 @@ namespace density
             using type = size_t (*) (const void * i_source);
 
             template <typename BASE, typename TYPE> struct Impl
-            {                
+            {
                 static const uintptr_t value;
 
                 static size_t invoke(const void * i_source)
@@ -230,7 +230,7 @@ namespace density
                     return base_result;
                 }
                 static const uintptr_t value;
-            };            
+            };
         };
         template <typename TYPE, typename BASE>
             const uintptr_t FeatureMoveConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
@@ -278,7 +278,7 @@ namespace density
         template <typename RET, typename... PARAMS>
             template <typename TYPE, typename BASE>
                 const uintptr_t FeatureInvokeDestroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
-                
+
         struct FeatureDestroy
         {
             using type = void (*)(void * i_dest);
@@ -291,7 +291,7 @@ namespace density
                     down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
                 }
                 static const uintptr_t value;
-            };            
+            };
         };
         template <typename TYPE, typename BASE>
             const uintptr_t FeatureDestroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
@@ -402,7 +402,7 @@ namespace density
         };
 
     } // namespace detail
-    
+
     template <typename BASE, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
         class runtime_type
     {
