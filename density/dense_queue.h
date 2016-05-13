@@ -82,7 +82,8 @@ namespace density
 
         /** Constructs a queue. It is unspecified whether the default constructor allocates a memory block (that is, if a
             default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
-                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
+                @param i_allocator source to use to copy-construct the allocator
+				@param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
                 @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
             \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
 
@@ -95,7 +96,7 @@ namespace density
                 std::max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
         }
 
-        /** Move constructs the queue, transferring the content from another queue
+        /** Move constructs the queue, transferring the content from another queue.
                 @param i_source queue to move from. After the call the source queue will be empty.
 
             \n\b Requires: the move-constructor of the allocator must be noexcept
@@ -225,7 +226,6 @@ namespace density
             \n\b Complexity: constant amortized (a reallocation may be required). */
         template <typename ELEMENT_COMPLETE_TYPE, typename... PARAMETERS>
             void emplace(PARAMETERS && ... i_parameters)
-                DENSITY_NOEXCEPT_IF((std::is_nothrow_constructible<ELEMENT_COMPLETE_TYPE, PARAMETERS...>::value))
         {
             static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
                 "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT");
@@ -237,7 +237,6 @@ namespace density
         }
 
         /**
-
         */
         void push_by_copy(const RUNTIME_TYPE & i_type, const ELEMENT * i_source)
         {
@@ -251,38 +250,6 @@ namespace density
                 typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(i_source));
         }
 
-        /** Calls the specified function object on the first element (the oldest one), and then
-            removes it from the queue without calling its destructor.
-            @param i_operation function object with a signature compatible with:
-            \code
-            void (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
-            \endcode
-            \n to be called for the first element. This function object is responsible of synchronously
-            destroying the element.
-				- The first parameter is the complete type of the element.
-				- The second parameter is a pointer to a subobject ELEMENT of the element being removed.
-
-			\n Note: a call to pop() is equivalent to a call to manual_consume() with 
-				\code [] (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
-					{ i_complete_type.destroy(i_element_base_ptr); }
-				\endcode
-			\n This function is to be considered a low-level functionality: use it only for a good reason,
-				otherwise use front(), begin() and pop().
-
-            \pre The queue must be non-empty (otherwise the behavior is undefined).
-
-			\n\b Throws: anything that the function object throws
-			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-			\n\b Complexity: constant */
-        template <typename OPERATION>
-            auto manual_consume(OPERATION && i_operation) -> decltype( i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()) )
-//                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
-        {
-            return m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-				return i_operation(i_type, static_cast<ELEMENT*>(i_element));
-            });
-        }
-
         /** Deletes the first element of the queue (the oldest one).
             \pre The queue must be non-empty (otherwise the behavior is undefined).
 
@@ -292,6 +259,39 @@ namespace density
         void pop() DENSITY_NOEXCEPT
         {
             m_impl.pop();
+        }
+
+        /** Calls the specified function object on the first element (the oldest one), and then
+            removes it from the queue without calling its destructor.
+            @param i_operation function object with a signature compatible with:
+            \code
+            void (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
+            \endcode
+            \n to be called for the first element. This function object is responsible of synchronously
+            destroying the element.
+                - The first parameter is the complete type of the element.
+                - The second parameter is a pointer to a subobject ELEMENT of the element being removed.
+
+            \n Note: a call to pop() is equivalent to a call to manual_consume() with
+                \code [] (const RUNTIME_TYPE & i_complete_type, ELEMENT * i_element_base_ptr)
+                    { i_complete_type.destroy(i_element_base_ptr); }
+                \endcode
+            \n This function is to be considered a low-level functionality: use it only for a good reason,
+                otherwise use front(), begin() and pop().
+
+            \pre The queue must be non-empty (otherwise the behavior is undefined).
+
+            \n\b Throws: anything that the function object throws
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: constant */
+        template <typename OPERATION>
+            auto manual_consume(OPERATION && i_operation) 
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+					-> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
+        {
+            return m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+                return i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            });
         }
 
         /** Reserve the specified space in the queue, reallocating it if necessary.
@@ -321,6 +321,8 @@ namespace density
             using reference = typename dense_queue::reference;
             using const_reference = typename dense_queue::const_reference;
 
+            /** Constructs an iterator which is not dereferenceable
+                \n\b Throws: nothing */
             iterator() DENSITY_NOEXCEPT {}
 
             /** Initializing constructor. Provided for internal use only, do not use. */
@@ -345,14 +347,14 @@ namespace density
 
             iterator & operator ++ () DENSITY_NOEXCEPT
             {
-                m_impl.move_next();
+                ++m_impl;
                 return *this;
             }
 
             iterator operator++ (int) DENSITY_NOEXCEPT
             {
                 const iterator copy(*this);
-                m_impl.move_next();
+                ++m_impl;
                 return copy;
             }
 
@@ -391,9 +393,8 @@ namespace density
             using reference = typename dense_queue::const_reference;
             using const_reference = typename dense_queue::const_reference;
 
-            /** Default constructor. A default constructed iterator has an unspecified but valid state.
-                \n\b Throws: nothing
-                \n\b Complexity: constant */
+            /** Constructs an iterator which is not dereferenceable
+                \n\b Throws: nothing */
             const_iterator() DENSITY_NOEXCEPT {}
 
             /** Initializing constructor. Provided for internal use only, do not use. */
@@ -482,7 +483,7 @@ namespace density
             \n\b Complexity: constant */
         bool empty() const DENSITY_NOEXCEPT { return m_impl.empty(); }
 
-        /** Removes all the elements from this queue.
+        /** Deletes all the elements from this queue.
             \n\b Throws: nothing
             \n\b Complexity: linear */
         void clear() DENSITY_NOEXCEPT
@@ -670,12 +671,12 @@ namespace density
             return first.complete_type().template get_feature<typename detail::FeatureInvoke<value_type>>()(first.element(), i_params...);
         }
 
-		RET_VAL consume_front(PARAMS... i_params)
-		{
-			return m_queue.manual_consume([&i_params...](const runtime_type<void, Features > & i_complete_type, void * i_element) {
-				return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
-			} );
-		}
+        RET_VAL consume_front(PARAMS... i_params)
+        {
+            return m_queue.manual_consume([&i_params...](const runtime_type<void, Features > & i_complete_type, void * i_element) {
+                return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
+            } );
+        }
 
         bool empty() DENSITY_NOEXCEPT
         {

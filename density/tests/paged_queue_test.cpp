@@ -62,10 +62,4 @@ namespace density
             }*/
         }
     }
-
-    void paged_queue_test()
-    {
-        std::mt19937 random;
-        detail::paged_queue_test(random);
-    }
 }

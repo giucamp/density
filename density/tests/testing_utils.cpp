@@ -64,6 +64,7 @@ namespace density
                 AllocationEntry entry;
                 entry.m_size = i_size;
                 entry.m_progressive = thread_data.m_last_progressive++;
+				// DENSITY_TEST_ASSERT(entry.m_progressive != ...);
 
                 auto & allocations = thread_data.m_levels.back().m_allocations;
                 auto res = allocations.insert(std::make_pair(block, entry));

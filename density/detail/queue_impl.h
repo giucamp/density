@@ -25,8 +25,8 @@ namespace density
               - a pointer to the element. This pointer does always not point to the end of the Control, as:
                     * the storage of each element is aligned according to its type
                     * this pointer may wrap to the beginning of the buffer, when there is not enough space in the buffer after the Control.
-                    * this pointer may point to a subobject of the element, in case of typed containers (that if the public container has
-                      a non-void type). Note: the address of a subobject (the base class "part") is not equal to the address of the
+                    * this pointer may point to a sub-object of the element, in case of typed containers (that if the public container has
+                      a non-void type). Note: the address of a sub-object (the base class "part") is not equal to the address of the
                       complete type (that is, a static-casting a pointer is not a no-operation).
               - a pointer to the Control of the next element. The content of the pointed memory is undefined if this
                 element is the last one. Usually this points to the end of the element, upper-aligned according to the alignment requirement
@@ -316,11 +316,12 @@ namespace density
                 \pre The queue must be non-empty (otherwise the behavior is undefined).
             */
             template <typename OPERATION>
-                auto manual_consume(OPERATION && i_operation) -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
-//                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>())))
+                auto manual_consume(OPERATION && i_operation) 
+					DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+						-> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
-				using ReturnType = decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()));
-				return manual_consume(std::forward<OPERATION>(i_operation), std::is_same<ReturnType, void>());
+                using ReturnType = decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()));
+                return manual_consume(std::forward<OPERATION>(i_operation), std::is_same<ReturnType, void>());
             }
 
             /** Deletes the first element of the queue (the oldest one).
@@ -361,7 +362,7 @@ namespace density
                 }
             }
 
-            /** Deletes al the element from the queue. After this call the memory buffer is still
+            /** Deletes all the element from the queue. After this call the memory buffer is still
                 associated to the queue, but it is empty. */
             void delete_all() DENSITY_NOEXCEPT
             {
@@ -390,29 +391,30 @@ namespace density
                 return element;
             }*/
 
-			template <typename OPERATION>
-                auto manual_consume(OPERATION && i_operation, std::false_type) -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
-                   //DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+            template <typename OPERATION>
+                auto manual_consume(OPERATION && i_operation, std::false_type)
+                   DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+					-> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
-				DENSITY_ASSERT(!empty()); // the queue must not be empty
+                DENSITY_ASSERT(!empty()); // the queue must not be empty
 
                 Control * first_control = m_head;
                 void * const element_ptr = first_control->m_element;
-				decltype(auto) result = i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
+                auto && result = i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
                 m_head = first_control->m_next;
                 first_control->Control::~Control();
-				return result;
+                return result;
             }
 
-			template <typename OPERATION>
+            template <typename OPERATION>
                 void manual_consume(OPERATION && i_operation, std::true_type)
                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
             {
-				DENSITY_ASSERT(!empty()); // the queue must not be empty
+                DENSITY_ASSERT(!empty()); // the queue must not be empty
 
                 Control * first_control = m_head;
                 void * const element_ptr = first_control->m_element;
-				i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
+                i_operation(static_cast<const RUNTIME_TYPE &>(*first_control), element_ptr);
                 m_head = first_control->m_next;
                 first_control->Control::~Control();
             }

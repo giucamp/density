@@ -9,11 +9,10 @@
 #endif
 
 #include "..\dense_queue.h"
+#include "..\paged_queue.h"
 #include "testing_utils.h"
 #include "container_test.h"
 #include <deque>
-#include <complex>
-#include <tuple>
 #include <random>
 #include <memory>
 #include <functional>
@@ -23,17 +22,23 @@ namespace density
 {
     namespace detail
     {
-        /* TestDenseQueue - dense_queue that uses TestAlocator and adds detail::FeatureHash to the automatic runtime type */
+        /* TestDenseQueue<TYPE> - dense_queue that uses TestAllocator and adds detail::FeatureHash to the automatic runtime type */
         template <typename TYPE>
             using TestDenseQueue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
                 typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
 
-        void dense_queue_test_impl(std::mt19937 & i_random)
+        /* TestPagedQueue<TYPE> - paged_queue that uses TestAllocator and adds detail::FeatureHash to the automatic runtime type */
+        template <typename TYPE>
+            using TestPagedQueue = paged_queue<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
+                typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
+
+		template <template <class> class QUEUE>
+			void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
         {
             NoLeakScope no_leak_scope;
 
             {
-                ContainerTest<TestDenseQueue<TestObjectBase>> test("dense_queue");
+                ContainerTest<QUEUE<TestObjectBase>> test(i_container_name);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
                 add_test_case_consume_until_empty(test, .01);
@@ -42,7 +47,7 @@ namespace density
             }
 
             {
-                ContainerTest<TestDenseQueue<CopyableTestObject>> test("dense_queue");
+                ContainerTest<QUEUE<CopyableTestObject>> test(i_container_name);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
@@ -55,7 +60,7 @@ namespace density
             }
 
             {
-                ContainerTest<TestDenseQueue<ComplexTypeBase>> test("dense_queue");
+                ContainerTest<QUEUE<ComplexTypeBase>> test(i_container_name);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
@@ -67,7 +72,7 @@ namespace density
             }
 
             {
-                ContainerTest<TestDenseQueue<ComplexType_A>> test("dense_queue");
+                ContainerTest<QUEUE<ComplexType_A>> test(i_container_name);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
@@ -77,7 +82,7 @@ namespace density
             }
 
             {
-                ContainerTest<TestDenseQueue<void>> test("dense_queue");
+                ContainerTest<QUEUE<void>> test(i_container_name);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<int>(test, 1., 42);
                 add_test_case_push_by_copy_n_times<double>(test, 1., 42.);
@@ -153,7 +158,8 @@ namespace density
 
     void dense_queue_test()
     {
-        function_queue<double (int a , int b)> q;
+		using namespace detail;
+       /* function_queue<double (int a , int b)> q;
 
         auto lam = 1;
         static_assert( std::is_copy_constructible<decltype(lam)>::value, "");
@@ -163,15 +169,26 @@ namespace density
         });
 
         double p = q.invoke_front(4,5);
-		p = q.consume_front(4, 5);
-		bool k = q.empty();
-        detail::dense_queue_leak_basic_tests();
-        detail::dense_queue_basic_tests();
+        p = q.consume_front(4, 5);
+        bool k = q.empty();*/
+
+        dense_queue_leak_basic_tests();
+        dense_queue_basic_tests();
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            detail::dense_queue_test_impl(random);
+            queue_test_impl<TestDenseQueue>(random, "dense_queue");
         });
     }
+
+	void paged_queue_test()
+	{
+		using namespace detail;
+
+		run_exception_stress_test([] {
+			std::mt19937 random;
+			queue_test_impl<TestPagedQueue>(random, "paged_queue");
+		});
+	}
 
 } // namespace density

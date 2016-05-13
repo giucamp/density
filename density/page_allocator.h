@@ -20,12 +20,12 @@ namespace density
 
         void * allocate_page()
         {
-            return allocate(page_size);
+            return this->allocate(page_size);
         }
 
         void deallocate_page(void * i_page)
         {
-            deallocate(static_cast<char*>(i_page), page_size);
+			return this->deallocate(static_cast<char*>(i_page), page_size);
         }
     };
 

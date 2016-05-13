@@ -53,9 +53,6 @@
     <ClCompile Include="..\density\tests\paged_queue_test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\density\tests\dense_queue_test.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\density\tests\pointer_arithmetic_test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -63,6 +60,9 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\density\tests\testing_utils.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\tests\queue_test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
