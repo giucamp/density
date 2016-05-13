@@ -316,9 +316,9 @@ namespace density
                 \pre The queue must be non-empty (otherwise the behavior is undefined).
             */
             template <typename OPERATION>
-                auto manual_consume(OPERATION && i_operation) 
-					DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
-						-> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
+                auto manual_consume(OPERATION && i_operation)
+                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+                        -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
                 using ReturnType = decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()));
                 return manual_consume(std::forward<OPERATION>(i_operation), std::is_same<ReturnType, void>());
@@ -394,7 +394,7 @@ namespace density
             template <typename OPERATION>
                 auto manual_consume(OPERATION && i_operation, std::false_type)
                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
-					-> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
+                    -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
                 DENSITY_ASSERT(!empty()); // the queue must not be empty
 

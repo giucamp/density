@@ -76,14 +76,14 @@ namespace density
         dense_queue(size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
         {
             DENSITY_ASSERT(i_initial_alignment == 0 || MemSize(i_initial_alignment).is_valid_alignment() );
-            alloc(std::max(i_initial_reserved_bytes, s_initial_mem_reserve),
-                std::max(i_initial_alignment, s_initial_mem_alignment));
+            alloc(detail::size_max(i_initial_reserved_bytes, s_initial_mem_reserve),
+                detail::size_max(i_initial_alignment, s_initial_mem_alignment));
         }
 
         /** Constructs a queue. It is unspecified whether the default constructor allocates a memory block (that is, if a
             default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
                 @param i_allocator source to use to copy-construct the allocator
-				@param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
+                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
                 @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
             \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
 
@@ -92,8 +92,8 @@ namespace density
         dense_queue(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
             : allocator_type(i_allocator)
         {
-            alloc(std::max(i_initial_reserved_bytes, QueueImp::s_initial_mem_reserve),
-                std::max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
+            alloc(detail::size_max(i_initial_reserved_bytes, QueueImp::s_initial_mem_reserve),
+                detail::size_max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
         }
 
         /** Move constructs the queue, transferring the content from another queue.
@@ -285,9 +285,9 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: constant */
         template <typename OPERATION>
-            auto manual_consume(OPERATION && i_operation) 
+            auto manual_consume(OPERATION && i_operation)
                 DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
-					-> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
+                    -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
         {
             return m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
                 return i_operation(i_type, static_cast<ELEMENT*>(i_element));
@@ -649,51 +649,5 @@ namespace density
     private:
         detail::QueueImpl<RUNTIME_TYPE> m_impl; /* m_impl manages the memory buffer, but dense_queue owns it */
     }; // class template dense_queue
-
-    template <typename> class function_queue;
-
-    template <typename RET_VAL, typename... PARAMS>
-        class function_queue<RET_VAL (PARAMS...)>
-    {
-    public:
-
-        using value_type = RET_VAL(PARAMS...);
-
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push(ELEMENT_COMPLETE_TYPE && i_source)
-        {
-            m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
-        }
-
-        RET_VAL invoke_front(PARAMS... i_params)
-        {
-            auto first = m_queue.begin();
-            return first.complete_type().template get_feature<typename detail::FeatureInvoke<value_type>>()(first.element(), i_params...);
-        }
-
-        RET_VAL consume_front(PARAMS... i_params)
-        {
-            return m_queue.manual_consume([&i_params...](const runtime_type<void, Features > & i_complete_type, void * i_element) {
-                return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
-            } );
-        }
-
-        bool empty() DENSITY_NOEXCEPT
-        {
-            return m_queue.empty();
-        }
-
-        void clear() DENSITY_NOEXCEPT
-        {
-            m_queue.clear();
-        }
-
-    private:
-        using Features = detail::FeatureList<
-            density::detail::FeatureSize, density::detail::FeatureAlignment,
-            density::detail::FeatureCopyConstruct, density::detail::FeatureMoveConstruct,
-            density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type>, typename detail::FeatureInvokeDestroy<value_type> >;
-        dense_queue<void, std::allocator<char>, runtime_type<void, Features > > m_queue;
-    };
 
 } // namespace density

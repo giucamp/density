@@ -247,7 +247,7 @@ namespace density
                 static RET invoke(void * i_base_dest, PARAMS... i_params)
                 {
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    return (*down_cast<TYPE*>(base_dest))(i_params...);
+                    return (*down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
                 }
                 static const uintptr_t value;
             };
@@ -265,19 +265,31 @@ namespace density
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static RET invoke(void * i_base_dest, PARAMS... i_params)
+                static RET invoke_and_destroy(void * i_base_dest, PARAMS... i_params)
+                {
+                    return invoke_and_destroy_impl(i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)... );
+                }
+                static const uintptr_t value;
+
+            private:
+                static RET invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
                 {
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    auto result = (*down_cast<TYPE*>(base_dest))(i_params...);
+                    auto && result = (*down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
                     down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
                     return result;
                 }
-                static const uintptr_t value;
+                static void invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
+                {
+                    const auto base_dest = static_cast<BASE*>(i_base_dest);
+                    (*down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
+                    down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
+                }
             };
         };
         template <typename RET, typename... PARAMS>
             template <typename TYPE, typename BASE>
-                const uintptr_t FeatureInvokeDestroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+                const uintptr_t FeatureInvokeDestroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke_and_destroy);
 
         struct FeatureDestroy
         {

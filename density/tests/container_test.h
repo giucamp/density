@@ -306,11 +306,11 @@ namespace density
                 DENSITY_TEST_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
                 DENSITY_TEST_ASSERT(container_is_empty == (i_container.mem_size().value() == 0));
 
-				const auto end_it1 = i_container.end();
-				for (auto it = i_container.begin(); it != end_it1; it++)
-				{
-					it.complete_type();
-				}
+                const auto end_it1 = i_container.end();
+                for (auto it = i_container.begin(); it != end_it1; it++)
+                {
+                    it.complete_type();
+                }
 
                 auto const dist = std::distance(i_container.begin(), i_container.end());
                 DENSITY_TEST_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());

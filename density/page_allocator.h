@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-
 #pragma once
 #include <memory>
 #include <cstddef>
@@ -25,7 +24,7 @@ namespace density
 
         void deallocate_page(void * i_page)
         {
-			return this->deallocate(static_cast<char*>(i_page), page_size);
+            return this->deallocate(static_cast<char*>(i_page), page_size);
         }
     };
 

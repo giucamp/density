@@ -32,8 +32,8 @@ namespace density
             using TestPagedQueue = paged_queue<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
                 typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
 
-		template <template <class> class QUEUE>
-			void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
+        template <template <class> class QUEUE>
+            void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
         {
             NoLeakScope no_leak_scope;
 
@@ -158,7 +158,7 @@ namespace density
 
     void dense_queue_test()
     {
-		using namespace detail;
+        using namespace detail;
        /* function_queue<double (int a , int b)> q;
 
         auto lam = 1;
@@ -181,14 +181,14 @@ namespace density
         });
     }
 
-	void paged_queue_test()
-	{
-		using namespace detail;
+    void paged_queue_test()
+    {
+        using namespace detail;
 
-		run_exception_stress_test([] {
-			std::mt19937 random;
-			queue_test_impl<TestPagedQueue>(random, "paged_queue");
-		});
-	}
+        run_exception_stress_test([] {
+            std::mt19937 random;
+            queue_test_impl<TestPagedQueue>(random, "paged_queue");
+        });
+    }
 
 } // namespace density

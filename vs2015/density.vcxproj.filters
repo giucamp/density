@@ -28,6 +28,8 @@
     <ClInclude Include="..\density\tests\unit_test_manager.h">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\density\dense_function_queue.h" />
+    <ClInclude Include="..\density\paged_function_queue.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="detail">
@@ -38,6 +40,9 @@
     </Filter>
     <Filter Include="samples">
       <UniqueIdentifier>{83e1f83e-b771-41db-b257-9bde74af65e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="performance_tests">
+      <UniqueIdentifier>{c6b88093-78a7-46e8-8754-83a266441317}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +69,9 @@
     </ClCompile>
     <ClCompile Include="..\density\tests\queue_test.cpp">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\density\benchmarks\function_queue_benchmarks.cpp">
+      <Filter>performance_tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

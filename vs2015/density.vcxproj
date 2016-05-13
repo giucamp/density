@@ -206,6 +206,8 @@
   <ItemGroup>
     <ClInclude Include="..\density\dense_queue.h" />
     <ClInclude Include="..\density\dense_list.h" />
+    <ClInclude Include="..\density\dense_function_queue.h" />
+    <ClInclude Include="..\density\paged_function_queue.h" />
     <ClInclude Include="..\density\paged_queue.h" />
     <ClInclude Include="..\density\density_common.h" />
     <ClInclude Include="..\density\detail\dense_list_typed.h" />
@@ -219,6 +221,7 @@
     <ClInclude Include="..\density\tests\unit_test_manager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\density\benchmarks\function_queue_benchmarks.cpp" />
     <ClCompile Include="..\density\tests\queue_test.cpp" />
     <ClCompile Include="..\density\tests\dense_list_benchmark.cpp" />
     <ClCompile Include="..\density\tests\dense_list_test.cpp" />
