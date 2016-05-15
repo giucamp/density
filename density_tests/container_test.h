@@ -16,7 +16,7 @@ namespace density
 {
     namespace tests
     {
-		using namespace testity;
+        using namespace testity;
 
         /** This class is used to test density containers. It owns an object which allocates memory with TestAllocator. In this
             way a TestObjectBase which is not correctly destroyed, will cause a memory leak that will be detected during unit tests. */

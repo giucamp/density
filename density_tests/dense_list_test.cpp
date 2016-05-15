@@ -14,7 +14,7 @@ namespace density
 {
     namespace tests
     {
-		using namespace testity;
+        using namespace testity;
 
         class TestString : public std::basic_string<char, std::char_traits<char>, TestAllocator<char> >
         {
@@ -507,10 +507,10 @@ namespace density
     {
         tests::DenseListTest::test_void_dense_list();
 
-		tests::DenseListTest::test1();
-		tests::DenseListTest::test2();
-		tests::DenseListTest::test3();
-		tests::DenseListTest::test4();
+        tests::DenseListTest::test1();
+        tests::DenseListTest::test2();
+        tests::DenseListTest::test3();
+        tests::DenseListTest::test4();
 
         testity::run_exception_stress_test(&tests::DenseListTest::test_with_exceptions);
     }

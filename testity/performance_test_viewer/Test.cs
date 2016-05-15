@@ -1,4 +1,10 @@
-﻿using System;
+
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -41,7 +47,7 @@ namespace performance_test_viewer
             {
                 m_values[i_index][index] = long.Parse(val);
                 index++;
-            }                
+            }
         }
 
         public Color color
@@ -92,7 +98,7 @@ namespace performance_test_viewer
         private string m_compiler;
         private string m_operating_sytem;
         private string m_sytem_info;
-        private string m_date_time;        
+        private string m_date_time;
         private int m_multepicity;
         private int m_sizeof_pointer;
         private long m_cardinality_start, m_cardinality_step, m_cardinality_end;
@@ -123,7 +129,7 @@ namespace performance_test_viewer
         public int sizeof_pointer
         {
             get { return m_sizeof_pointer; }
-        }        
+        }
 
         public void set_cardinality(long i_index, long i_cardinality)
         {
@@ -177,7 +183,7 @@ namespace performance_test_viewer
                     {
                         var min = test.get_values(row).Min();
                         time = Math.Min(time, min);
-                    }                    
+                    }
                 }
                 return time;
             }
@@ -243,7 +249,7 @@ namespace performance_test_viewer
                         var values = value.Split(separators, StringSplitOptions.RemoveEmptyEntries);
                         m_cardinality[curr_row_index] = long.Parse(values[0]);
                         for (int i = 0; i < m_tests.Count; i++ )
-                        {                           
+                        {
                            m_tests[i].set_values(curr_row_index, values[i+1]);
                         }
                         curr_row_index++;
@@ -255,7 +261,7 @@ namespace performance_test_viewer
                     case "TABLE_END": break;
                     case "PERFORMANCE_TEST_GROUP_END":
                         finished = true;
-                        break;                        
+                        break;
                 }
             }
 

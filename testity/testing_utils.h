@@ -13,8 +13,8 @@
 
 namespace testity
 {
-	namespace detail
-	{
+    namespace detail
+    {
         class TestAllocatorBase
         {
         public:

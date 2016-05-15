@@ -1,4 +1,10 @@
-﻿namespace performance_test_viewer
+
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+namespace performance_test_viewer
 {
     partial class PerformanceTestViewer
     {
@@ -32,19 +38,19 @@
             this.comboTestGroup = new System.Windows.Forms.ComboBox();
             this.txtFile = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
-            // 
+            //
             // panel
-            // 
-            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel.Location = new System.Drawing.Point(12, 57);
             this.panel.Name = "panel";
             this.panel.Size = new System.Drawing.Size(992, 656);
             this.panel.TabIndex = 0;
-            // 
+            //
             // comboTestGroup
-            // 
+            //
             this.comboTestGroup.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboTestGroup.FormattingEnabled = true;
             this.comboTestGroup.Location = new System.Drawing.Point(472, 30);
@@ -52,17 +58,17 @@
             this.comboTestGroup.Size = new System.Drawing.Size(319, 21);
             this.comboTestGroup.TabIndex = 1;
             this.comboTestGroup.SelectedIndexChanged += new System.EventHandler(this.comboTestGroup_SelectedIndexChanged);
-            // 
+            //
             // txtFile
-            // 
+            //
             this.txtFile.Location = new System.Drawing.Point(12, 31);
             this.txtFile.Name = "txtFile";
             this.txtFile.Size = new System.Drawing.Size(399, 20);
             this.txtFile.TabIndex = 2;
             this.txtFile.TextChanged += new System.EventHandler(this.txtFile_TextChanged);
-            // 
+            //
             // PerformanceTestViewer
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1007, 718);
