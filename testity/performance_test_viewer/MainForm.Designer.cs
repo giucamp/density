@@ -37,41 +37,69 @@ namespace performance_test_viewer
             this.panel = new System.Windows.Forms.Panel();
             this.comboTestGroup = new System.Windows.Forms.ComboBox();
             this.txtFile = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            //
+            // 
             // panel
-            //
-            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            // 
+            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel.Location = new System.Drawing.Point(12, 57);
             this.panel.Name = "panel";
             this.panel.Size = new System.Drawing.Size(992, 656);
             this.panel.TabIndex = 0;
-            //
+            // 
             // comboTestGroup
-            //
+            // 
+            this.comboTestGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.comboTestGroup.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboTestGroup.FormattingEnabled = true;
-            this.comboTestGroup.Location = new System.Drawing.Point(472, 30);
+            this.comboTestGroup.Location = new System.Drawing.Point(435, 30);
             this.comboTestGroup.Name = "comboTestGroup";
-            this.comboTestGroup.Size = new System.Drawing.Size(319, 21);
+            this.comboTestGroup.Size = new System.Drawing.Size(560, 21);
             this.comboTestGroup.TabIndex = 1;
             this.comboTestGroup.SelectedIndexChanged += new System.EventHandler(this.comboTestGroup_SelectedIndexChanged);
-            //
+            // 
             // txtFile
-            //
+            // 
+            this.txtFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtFile.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.txtFile.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystem;
             this.txtFile.Location = new System.Drawing.Point(12, 31);
             this.txtFile.Name = "txtFile";
             this.txtFile.Size = new System.Drawing.Size(399, 20);
             this.txtFile.TabIndex = 2;
             this.txtFile.TextChanged += new System.EventHandler(this.txtFile_TextChanged);
-            //
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(15, 11);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(139, 13);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "Performance test output file:";
+            // 
+            // label2
+            // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(432, 11);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(76, 13);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "Session / Test";
+            // 
             // PerformanceTestViewer
-            //
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1007, 718);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.txtFile);
             this.Controls.Add(this.comboTestGroup);
             this.Controls.Add(this.panel);
@@ -87,6 +115,8 @@ namespace performance_test_viewer
         private System.Windows.Forms.Panel panel;
         private System.Windows.Forms.ComboBox comboTestGroup;
         private System.Windows.Forms.TextBox txtFile;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
     }
 }
 

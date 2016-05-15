@@ -53,6 +53,7 @@ namespace performance_test_viewer
             try
             {
                 comboTestGroup.Items.Clear();
+                test_groups.Clear();
                 panel.Visible = true;
                 string[] rows = File.ReadAllLines(txtFile.Text);
                 int row_index = 0;

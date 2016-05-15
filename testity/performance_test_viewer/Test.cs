@@ -108,7 +108,7 @@ namespace performance_test_viewer
 
         public override string ToString()
         {
-            return m_date_time;
+            return m_test_name + ", " + m_date_time;
         }
 
         public long get_cardinality(int i_index)
