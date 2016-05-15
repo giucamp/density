@@ -31,13 +31,13 @@ int main()
 
 	results.save_to("perf.txt");
 
-	paged_queue_test();
+	/*paged_queue_test();
 	dense_queue_test();
 
 	pointer_arithmetic_test();
 		
 	list_test();
-	list_benchmark();
+	list_benchmark();*/
 
 	return 0;
 }

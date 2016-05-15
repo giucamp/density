@@ -9,6 +9,11 @@
 #include <sstream>
 #include <random>
 #include <fstream>
+#include <ctime>
+#include <iomanip>
+#ifdef _MSC_VER
+	#include <time.h>
+#endif
 
 namespace testity
 {
@@ -152,15 +157,46 @@ namespace testity
 	{
 		for (const auto & performance_test_group : i_test_tree.performance_tests())
 		{
-			i_ostream << i_path << std::endl;
-
+			i_ostream << "-------------------------------------" << std::endl;
+			i_ostream << "PERFORMANCE_TEST_GROUP:" << i_path << std::endl;
+			i_ostream << "COMPILER:" << m_environment.compiler() << std::endl;
+			i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
+			i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;
+			
+			const auto date_time = std::chrono::system_clock::to_time_t(m_environment.startup_clock());
+			#ifdef _MSC_VER
+				tm local_tm;
+				localtime_s(&local_tm, &date_time);
+			#else
+				const auto local_tm = *std::localtime(&date_time);
+			#endif
+			i_ostream << "DATE_TIME:" << std::put_time(&local_tm, "%d-%m-%Y %H:%M:%S") << std::endl;
+			
+			i_ostream << "CARDINALITY_START:" << performance_test_group.cardinality_start() << std::endl;
+			i_ostream << "CARDINALITY_STEP:" << performance_test_group.cardinality_step() << std::endl;
+			i_ostream << "CARDINALITY_END:" << performance_test_group.cardinality_end() << std::endl;
+			i_ostream << "MULTEPLICITY:" << m_repetitions << std::endl;
+			
+			// write legend
+			i_ostream << "LEGEND_START:" << std::endl;
+			{
+				for (auto & test : performance_test_group.tests())
+				{
+					i_ostream << "TEST:" << test.source_code() << std::endl;
+				}
+			}
+			i_ostream << "LEGEND_END:" << std::endl;
+			
+			// write table
+			i_ostream << "TABLE_START:-----------------------" << std::endl;
 			for (size_t cardinality = performance_test_group.cardinality_start();
 				cardinality < performance_test_group.cardinality_end(); cardinality += performance_test_group.cardinality_step())
 			{
+				i_ostream << "ROW:";
 				i_ostream << cardinality << '\t';
 
 				for (auto & test : performance_test_group.tests())
-				{
+				{					
 					auto range = m_performance_results.equal_range(TestId{ &test, cardinality });
 					bool is_first = true;
 					for (auto it = range.first; it != range.second; ++it)
@@ -176,12 +212,13 @@ namespace testity
 						i_ostream << it->second.count();
 					}
 
-					i_ostream << '\t';
-				}
-
+					i_ostream << '\t';		
+				}	
 				i_ostream << std::endl;
-			}
-		}
+			}	
+			i_ostream << "TABLE_END:-----------------------" << std::endl;
+			i_ostream << "PERFORMANCE_TEST_GROUP_END:" << i_path << std::endl;
+		}		
 
 		for (const auto & node : i_test_tree.children())
 		{
@@ -238,7 +275,7 @@ namespace testity
 		}
 
 		i_dest_stream << "performing tests..." << endl;
-		Results results(i_test_tree);
+		Results results(i_test_tree, m_repetitions);
 		for (Operations::size_type index = 0; index < operations_size; index++)
 		{
 			operations[index](results);

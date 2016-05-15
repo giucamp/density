@@ -27,6 +27,7 @@ namespace testity
 
 		const std::string & operating_sytem() const { return m_operating_sytem; }
 		const std::string & compiler() const { return m_compiler; }
+		const std::string & system_info() const { return m_system_info; }
 		const std::chrono::system_clock::time_point & startup_clock() const { return m_startup_clock; }
 
 	private:
@@ -73,8 +74,8 @@ namespace testity
 
 	private:
 		size_t m_cardinality_start = 0;
-		size_t m_cardinality_step = 10;
-		size_t m_cardinality_end = 1000;
+		size_t m_cardinality_step = 1000;
+		size_t m_cardinality_end = 100000;
 		std::vector<BenchmarkTest> m_tests;
 		std::string m_name;
 	};
@@ -136,7 +137,7 @@ namespace testity
 	{
 	public:
 
-		Results(const TestTree & i_test_tree) : m_test_tree(i_test_tree) {}
+		Results(const TestTree & i_test_tree, size_t i_repetitions) : m_test_tree(i_test_tree), m_repetitions(i_repetitions) {}
 
 		void add_result(const BenchmarkTest * i_test, size_t i_cardinality, Duration i_duration);
 
@@ -163,6 +164,8 @@ namespace testity
 		};
 		std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
 		const TestTree & m_test_tree;
+		TestEnvironment m_environment;
+		size_t m_repetitions;
 	};
 	
 	class Session
@@ -178,7 +181,7 @@ namespace testity
 	private:
 		bool m_deterministic = true;
 		bool m_random_shuffle = true;
-		size_t m_repetitions = 4;
+		size_t m_repetitions = 8;
 	};
 
 } // namespace testity
