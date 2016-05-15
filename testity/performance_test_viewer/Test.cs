@@ -94,6 +94,7 @@ namespace performance_test_viewer
         private string m_sytem_info;
         private string m_date_time;        
         private int m_multepicity;
+        private int m_sizeof_pointer;
         private long m_cardinality_start, m_cardinality_step, m_cardinality_end;
         private List<Test> m_tests = new List<Test>();
         private ReadOnlyCollection<Test> m_readony_tests;
@@ -109,7 +110,7 @@ namespace performance_test_viewer
             return m_cardinality[i_index];
         }
 
-        public long get_cardinality_num()
+        public int get_cardinality_num()
         {
             return m_cardinality.Length;
         }
@@ -118,6 +119,11 @@ namespace performance_test_viewer
         {
             get { return m_multepicity; }
         }
+
+        public int sizeof_pointer
+        {
+            get { return m_sizeof_pointer; }
+        }        
 
         public void set_cardinality(long i_index, long i_cardinality)
         {
@@ -227,6 +233,7 @@ namespace performance_test_viewer
                         m_cardinality = new long[compute_cardinality()];
                         break;
                     case "MULTEPLICITY": m_multepicity = int.Parse(value); break;
+                    case "SIZEOF_POINTER": m_sizeof_pointer = int.Parse(value); break;
                     case "TEST":
                         int color_index = m_tests.Count % s_colors.Length;
                         m_tests.Add( new Test(s_colors[color_index], value, compute_cardinality(), m_multepicity) );

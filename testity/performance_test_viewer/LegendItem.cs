@@ -26,7 +26,15 @@ namespace performance_test_viewer
         public string SourceCode
         {
             get { return txtSourceCode.Text; }
-            set { txtSourceCode.Text = value; }
+            set
+            {
+                string code = value;
+                code = code.Replace("    ", "  ");
+                code = code.Replace("   ", "  ");
+                code = code.Replace("\t", "  ");                
+                code = code.Replace("#nl#", "\r\n");
+                txtSourceCode.Text = code;
+            }
         }
 
         public string Percentage

@@ -40,7 +40,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel.Location = new System.Drawing.Point(12, 57);
             this.panel.Name = "panel";
-            this.panel.Size = new System.Drawing.Size(992, 605);
+            this.panel.Size = new System.Drawing.Size(992, 656);
             this.panel.TabIndex = 0;
             // 
             // comboTestGroup
@@ -65,7 +65,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1007, 667);
+            this.ClientSize = new System.Drawing.Size(1007, 718);
             this.Controls.Add(this.txtFile);
             this.Controls.Add(this.comboTestGroup);
             this.Controls.Add(this.panel);

@@ -23,57 +23,40 @@ namespace density
 			PerformanceTestGroup group("push & consume");
 
 			// paged_function_queue
-			group.add_test( DENSITY_MAKE_BENCHMARK_TEST(
+			group.add_test( __FILE__, __LINE__, [](size_t i_cardinality) {
 				paged_function_queue< void() > queue;
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.push([]() { volatile int dummy = 1; (void)dummy; });
-				}
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.consume_front();
-				}
-			));
+			}, __LINE__ );
 
 			// dense_function_queue
-			group.add_test( DENSITY_MAKE_BENCHMARK_TEST(
+			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
 				dense_function_queue< void() > queue;
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.push([]() { volatile int dummy = 1; (void)dummy; });
-				}
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.consume_front();
-				}
-			));
+			}, __LINE__);
 
 			// std::queue< std::function >
-			group.add_test( DENSITY_MAKE_BENCHMARK_TEST(
+			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
 				std::queue< std::function<void()> > queue;
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.push([]() { volatile int dummy = 1; (void)dummy; });
-				}
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
-					queue.front()();
-					queue.pop();
-				}
-			));
+					queue.front()(), queue.pop();
+			}, __LINE__);
 
 			// std::vector< std::function >
-			group.add_test( DENSITY_MAKE_BENCHMARK_TEST(
+			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
 				std::vector< std::function<void()> > queue;
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue.push_back([]() { volatile int dummy = 1; (void)dummy; });
-				}
 				for (size_t index = 0; index < i_cardinality; index++)
-				{
 					queue[index]();
-				}
-			));
+			}, __LINE__);
 
 			i_test_node["/density/function_queue_test"].add_performance_test(group);
 		}

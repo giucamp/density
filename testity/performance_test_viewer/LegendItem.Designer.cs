@@ -48,10 +48,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtSourceCode.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.txtSourceCode.Location = new System.Drawing.Point(45, 42);
+            this.txtSourceCode.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtSourceCode.Location = new System.Drawing.Point(11, 38);
             this.txtSourceCode.Name = "txtSourceCode";
             this.txtSourceCode.ReadOnly = true;
-            this.txtSourceCode.Size = new System.Drawing.Size(225, 96);
+            this.txtSourceCode.Size = new System.Drawing.Size(383, 107);
             this.txtSourceCode.TabIndex = 1;
             this.txtSourceCode.Text = "";
             // 
@@ -72,7 +73,7 @@
             this.Controls.Add(this.txtSourceCode);
             this.Controls.Add(this.lblColorBox);
             this.Name = "LegendItem";
-            this.Size = new System.Drawing.Size(282, 145);
+            this.Size = new System.Drawing.Size(406, 148);
             this.ResumeLayout(false);
 
         }

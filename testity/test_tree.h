@@ -15,7 +15,7 @@
 #include <ostream>
 #include <unordered_map>
 
-#define DENSITY_MAKE_BENCHMARK_TEST(...)			testity::BenchmarkTest(#__VA_ARGS__, [](size_t i_cardinality) { __VA_ARGS__; })
+#define DENSITY_MAKE_BENCHMARK_TEST(...)			testity::BenchmarkTest(#__VA_ARGS__, [](size_t i_cardinality) { __VA_ARGS__; } )
 
 namespace testity
 {
@@ -28,6 +28,7 @@ namespace testity
 		const std::string & operating_sytem() const { return m_operating_sytem; }
 		const std::string & compiler() const { return m_compiler; }
 		const std::string & system_info() const { return m_system_info; }
+		size_t sizeof_pointer() const { return sizeof(void*); }
 		const std::chrono::system_clock::time_point & startup_clock() const { return m_startup_clock; }
 
 	private:
@@ -66,6 +67,9 @@ namespace testity
 		{
 			m_tests.push_back(std::move(i_test));
 		}
+
+		void add_test(const char * i_source_file, int i_start_line,
+			std::function<BenchmarkTest::TestFunction> i_function, int i_end_line);
 
 		size_t cardinality_start() const { return m_cardinality_start; }
 		size_t cardinality_step() const { return m_cardinality_step; }

@@ -66,11 +66,24 @@ namespace performance_test_viewer
             if (m_group == null)
                 return;
 
-            PrintString(e, m_group.compiler);
-            PrintString(e, m_group.date_time);
-            PrintString(e, m_group.operating_sytem);
-            PrintString(e, m_group.sytem_info);
-            PrintString(e, m_group.multepicity.ToString());
+            float clientHeight = ClientSize.Height;
+            Pen pen = new Pen(Color.FromArgb(20, 20, 20));
+            pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            for (int row = 0; row < m_group.get_cardinality_num(); row++)
+            {
+                long cardinality = m_group.get_cardinality(row);
+                PointF point = GetPoint(cardinality, 0);
+                e.Graphics.DrawLine(pen, point.X, 0, point.X, clientHeight);
+            }
+
+
+            PrintString(e, "compiler: " + m_group.compiler);
+            PrintString(e, "os:" + m_group.operating_sytem);
+            PrintString(e, "sys:" + m_group.sytem_info);
+            PrintString(e, "sizeof pointer: " + m_group.sizeof_pointer);
+            PrintString(e, "i_cardinality = " + m_group.get_cardinality(0) + ".." + m_group.get_cardinality(m_group.get_cardinality_num() - 1));
+            PrintString(e, "sampling: " + m_group.multepicity.ToString() + "x" );
+            PrintString(e, "date-time: " + m_group.date_time);
 
             for (int mult = 0; mult < m_group.multepicity; mult++)
             {
