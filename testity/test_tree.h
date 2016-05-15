@@ -74,8 +74,8 @@ namespace testity
 
 	private:
 		size_t m_cardinality_start = 0;
-		size_t m_cardinality_step = 1000;
-		size_t m_cardinality_end = 100000;
+		size_t m_cardinality_step = 10000;
+		size_t m_cardinality_end = 800000;
 		std::vector<BenchmarkTest> m_tests;
 		std::string m_name;
 	};

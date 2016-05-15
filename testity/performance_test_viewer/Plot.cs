@@ -34,16 +34,6 @@ namespace performance_test_viewer
                 m_max_x = m_group.MaxCardinaity;
                 m_min_y = m_group.MinTime;
                 m_max_y = m_group.MaxTime;
-
-                /*int test_index = 0;
-                foreach (Test test in m_group.Tests)
-                {
-                    LegendItem item = new LegendItem();
-                    item.Color = s_colors[test_index % s_colors.Length];
-                    item.SourceCode = test.source_code;
-                    legendPanel.Controls.Add(item);
-                    test_index++;
-                }*/
             }
         }
         protected override void OnResize(EventArgs e)
@@ -59,12 +49,28 @@ namespace performance_test_viewer
             return new PointF( (float)(rx * ClientSize.Width), (float)(ry * ClientSize.Height) );
         }
 
+        float m_text_pos = 0.0f;
+
+        private void PrintString(PaintEventArgs e, string i_string)
+        {
+            e.Graphics.DrawString("\t" + i_string, Font, Brushes.White, 0.0f, m_text_pos);
+            m_text_pos += e.Graphics.MeasureString(i_string, Font).Height;
+        }
+        
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
+            m_text_pos = 10.0f;
+
             if (m_group == null)
                 return;
+
+            PrintString(e, m_group.compiler);
+            PrintString(e, m_group.date_time);
+            PrintString(e, m_group.operating_sytem);
+            PrintString(e, m_group.sytem_info);
+            PrintString(e, m_group.multepicity.ToString());
 
             for (int mult = 0; mult < m_group.multepicity; mult++)
             {

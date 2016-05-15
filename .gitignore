@@ -19,8 +19,7 @@
 *.iobj
 *.ipdb
 doc/
-testity/performance_test_viewer/bin/Debug/performance_test_viewer.exe.config
-testity/performance_test_viewer/obj/Debug/performance_test_viewer.Plot.resources
 testity/performance_test_viewer/obj/
 testity/performance_test_viewer/bin/
 density_tests/vs2015/density_test.VC.db
+testity/performance_test_viewer/performance_test_viewer.VC.db

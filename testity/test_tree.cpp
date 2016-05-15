@@ -144,7 +144,7 @@ namespace testity
 
 	void Results::save_to(const char * i_filename) const
 	{
-		std::ofstream file(i_filename);
+		std::ofstream file(i_filename, std::ios_base::out | std::ios_base::app);
 		save_to(file);
 	}
 
@@ -276,8 +276,16 @@ namespace testity
 
 		i_dest_stream << "performing tests..." << endl;
 		Results results(i_test_tree, m_repetitions);
+		double last_perc = -1.;
+		const double perc_mult = 100. / operations_size;
 		for (Operations::size_type index = 0; index < operations_size; index++)
 		{
+			const double perc = floor(index * perc_mult);
+			if (perc != last_perc)
+			{
+				i_dest_stream << perc << "%" << endl;
+				last_perc = perc;
+			}
 			operations[index](results);
 		}
 		return results;

@@ -54,10 +54,33 @@ namespace performance_test_viewer
             get { return m_pen; }
         }
 
+        public string Percentage
+        {
+            get { return m_percentage; }
+            set { m_percentage = value; }
+        }
+
+        public double get_average()
+        {
+            // http://stackoverflow.com/questions/1930454/what-is-a-good-solution-for-calculating-an-average-where-the-sum-of-all-values-e
+            double avg = 0;
+            double total = 1;
+            for(int i = 0; i < m_values.Length; i++)
+            {
+                for (int j = 0; j < m_values[i].Length; j++)
+                {
+                    avg += (m_values[i][j] - avg) / total;
+                    total += 1.0;
+                }
+            }
+            return avg;
+        }
+
         private string m_source_code;
         private long[][] m_values;
         private Color m_color;
         private Pen m_pen;
+        private string m_percentage;
     }
 
     public class TestGroup
@@ -69,12 +92,17 @@ namespace performance_test_viewer
         private string m_compiler;
         private string m_operating_sytem;
         private string m_sytem_info;
-        private string m_date_time;
+        private string m_date_time;        
         private int m_multepicity;
         private long m_cardinality_start, m_cardinality_step, m_cardinality_end;
         private List<Test> m_tests = new List<Test>();
         private ReadOnlyCollection<Test> m_readony_tests;
         private long[] m_cardinality;
+
+        public override string ToString()
+        {
+            return m_date_time;
+        }
 
         public long get_cardinality(int i_index)
         {
@@ -110,6 +138,12 @@ namespace performance_test_viewer
             }
             return result;
         }
+
+        public string test_name { get { return m_test_name; } }
+        public string compiler { get { return m_compiler; } }
+        public string operating_sytem { get { return m_operating_sytem; } }
+        public string sytem_info { get { return m_sytem_info; } }
+        public string date_time { get { return m_date_time; } }
 
         public long MinCardinaity
         {
@@ -170,7 +204,8 @@ namespace performance_test_viewer
                 io_curr_line++;
             }
             long curr_row_index = 0;
-            for (;;)
+            bool finished = false;
+            while(!finished)
             {
                 var curr_line = i_lines[io_curr_line];
                 io_curr_line++;
@@ -212,8 +247,22 @@ namespace performance_test_viewer
                     case "TABLE_START": break;
                     case "TABLE_END": break;
                     case "PERFORMANCE_TEST_GROUP_END":
-                        return;                        
+                        finished = true;
+                        break;                        
                 }
+            }
+
+            double [] averages = new double[m_tests.Count];
+            for (int i = 0; i < m_tests.Count; i++)
+            {
+                averages[i] = m_tests[i].get_average();
+            }
+
+            double max_avg = averages.Max();
+
+            for (int i = 0; i < m_tests.Count; i++)
+            {
+                m_tests[i].Percentage = ((averages[i] / max_avg) * 100.0).ToString("f2") + "% avg time";
             }
         }
 

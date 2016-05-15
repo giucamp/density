@@ -30,6 +30,7 @@
         {
             this.lblColorBox = new System.Windows.Forms.Label();
             this.txtSourceCode = new System.Windows.Forms.RichTextBox();
+            this.lblPercentage = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // lblColorBox
@@ -46,16 +47,28 @@
             this.txtSourceCode.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtSourceCode.Location = new System.Drawing.Point(45, 8);
+            this.txtSourceCode.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtSourceCode.Location = new System.Drawing.Point(45, 42);
             this.txtSourceCode.Name = "txtSourceCode";
-            this.txtSourceCode.Size = new System.Drawing.Size(225, 124);
+            this.txtSourceCode.ReadOnly = true;
+            this.txtSourceCode.Size = new System.Drawing.Size(225, 96);
             this.txtSourceCode.TabIndex = 1;
             this.txtSourceCode.Text = "";
+            // 
+            // lblPercentage
+            // 
+            this.lblPercentage.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPercentage.Location = new System.Drawing.Point(42, 12);
+            this.lblPercentage.Name = "lblPercentage";
+            this.lblPercentage.Size = new System.Drawing.Size(190, 27);
+            this.lblPercentage.TabIndex = 2;
+            this.lblPercentage.Text = "label1";
             // 
             // LegendItem
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.lblPercentage);
             this.Controls.Add(this.txtSourceCode);
             this.Controls.Add(this.lblColorBox);
             this.Name = "LegendItem";
@@ -68,5 +81,6 @@
 
         private System.Windows.Forms.Label lblColorBox;
         private System.Windows.Forms.RichTextBox txtSourceCode;
+        private System.Windows.Forms.Label lblPercentage;
     }
 }

@@ -28,5 +28,11 @@ namespace performance_test_viewer
             get { return txtSourceCode.Text; }
             set { txtSourceCode.Text = value; }
         }
+
+        public string Percentage
+        {
+            get { return lblPercentage.Text; }
+            set { lblPercentage.Text = value; }
+        }
     }
 }

@@ -10,6 +10,7 @@
 #include <functional>
 #include <deque>
 #include <queue>
+#include <vector>
 
 namespace density
 {
@@ -58,6 +59,19 @@ namespace density
 				{
 					queue.front()();
 					queue.pop();
+				}
+			));
+
+			// std::vector< std::function >
+			group.add_test( DENSITY_MAKE_BENCHMARK_TEST(
+				std::vector< std::function<void()> > queue;
+				for (size_t index = 0; index < i_cardinality; index++)
+				{
+					queue.push_back([]() { volatile int dummy = 1; (void)dummy; });
+				}
+				for (size_t index = 0; index < i_cardinality; index++)
+				{
+					queue[index]();
 				}
 			));
 

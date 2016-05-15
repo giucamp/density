@@ -29,14 +29,14 @@
         private void InitializeComponent()
         {
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.legendPanel = new System.Windows.Forms.FlowLayoutPanel();
-            this.lblTimeMax = new System.Windows.Forms.Label();
-            this.lblTimeMin = new System.Windows.Forms.Label();
-            this.lblCardMin = new System.Windows.Forms.Label();
-            this.lblCardMax = new System.Windows.Forms.Label();
-            this.plotPanel = new System.Windows.Forms.Panel();
-            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
+            this.plotPanel = new System.Windows.Forms.Panel();
+            this.lblCardMax = new System.Windows.Forms.Label();
+            this.lblCardMin = new System.Windows.Forms.Label();
+            this.lblTimeMin = new System.Windows.Forms.Label();
+            this.lblTimeMax = new System.Windows.Forms.Label();
+            this.legendPanel = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -66,56 +66,26 @@
             this.splitContainer1.SplitterDistance = 452;
             this.splitContainer1.TabIndex = 0;
             // 
-            // legendPanel
+            // label2
             // 
-            this.legendPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.legendPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.legendPanel.Location = new System.Drawing.Point(0, 0);
-            this.legendPanel.Name = "legendPanel";
-            this.legendPanel.Size = new System.Drawing.Size(93, 443);
-            this.legendPanel.TabIndex = 0;
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(224, 412);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(55, 13);
+            this.label2.TabIndex = 6;
+            this.label2.Text = "Cardinality";
             // 
-            // lblTimeMax
+            // label1
             // 
-            this.lblTimeMax.AutoSize = true;
-            this.lblTimeMax.Location = new System.Drawing.Point(17, 16);
-            this.lblTimeMax.Name = "lblTimeMax";
-            this.lblTimeMax.Size = new System.Drawing.Size(50, 13);
-            this.lblTimeMax.TabIndex = 0;
-            this.lblTimeMax.Text = "MaxTime";
-            this.lblTimeMax.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // lblTimeMin
-            // 
-            this.lblTimeMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblTimeMin.AutoSize = true;
-            this.lblTimeMin.Location = new System.Drawing.Point(17, 390);
-            this.lblTimeMin.Name = "lblTimeMin";
-            this.lblTimeMin.Size = new System.Drawing.Size(47, 13);
-            this.lblTimeMin.TabIndex = 1;
-            this.lblTimeMin.Text = "MinTime";
-            this.lblTimeMin.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // lblCardMin
-            // 
-            this.lblCardMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblCardMin.AutoSize = true;
-            this.lblCardMin.Location = new System.Drawing.Point(65, 412);
-            this.lblCardMin.Name = "lblCardMin";
-            this.lblCardMin.Size = new System.Drawing.Size(52, 13);
-            this.lblCardMin.TabIndex = 2;
-            this.lblCardMin.Text = "CardTime";
-            // 
-            // lblCardMax
-            // 
-            this.lblCardMax.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblCardMax.AutoSize = true;
-            this.lblCardMax.Location = new System.Drawing.Point(387, 412);
-            this.lblCardMax.Name = "lblCardMax";
-            this.lblCardMax.Size = new System.Drawing.Size(52, 13);
-            this.lblCardMax.TabIndex = 3;
-            this.lblCardMax.Text = "CardTime";
-            this.lblCardMax.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(16, 183);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(50, 39);
+            this.label1.TabIndex = 5;
+            this.label1.Text = "Time\r\n(micro-\r\nseconds)";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // plotPanel
             // 
@@ -127,25 +97,52 @@
             this.plotPanel.Size = new System.Drawing.Size(366, 392);
             this.plotPanel.TabIndex = 4;
             // 
-            // label1
+            // lblCardMax
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(14, 184);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(30, 13);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Time";
+            this.lblCardMax.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblCardMax.Location = new System.Drawing.Point(348, 412);
+            this.lblCardMax.Name = "lblCardMax";
+            this.lblCardMax.Size = new System.Drawing.Size(91, 13);
+            this.lblCardMax.TabIndex = 3;
+            this.lblCardMax.Text = "CardTime";
+            this.lblCardMax.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
-            // label2
+            // lblCardMin
             // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(224, 412);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(55, 13);
-            this.label2.TabIndex = 6;
-            this.label2.Text = "Cardinality";
+            this.lblCardMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblCardMin.Location = new System.Drawing.Point(74, 412);
+            this.lblCardMin.Name = "lblCardMin";
+            this.lblCardMin.Size = new System.Drawing.Size(77, 13);
+            this.lblCardMin.TabIndex = 2;
+            this.lblCardMin.Text = "CardTime";
+            // 
+            // lblTimeMin
+            // 
+            this.lblTimeMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblTimeMin.Location = new System.Drawing.Point(17, 390);
+            this.lblTimeMin.Name = "lblTimeMin";
+            this.lblTimeMin.Size = new System.Drawing.Size(58, 19);
+            this.lblTimeMin.TabIndex = 1;
+            this.lblTimeMin.Text = "MinTime";
+            this.lblTimeMin.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // lblTimeMax
+            // 
+            this.lblTimeMax.Location = new System.Drawing.Point(14, 16);
+            this.lblTimeMax.Name = "lblTimeMax";
+            this.lblTimeMax.Size = new System.Drawing.Size(61, 19);
+            this.lblTimeMax.TabIndex = 0;
+            this.lblTimeMax.Text = "MaxTime";
+            this.lblTimeMax.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // legendPanel
+            // 
+            this.legendPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.legendPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.legendPanel.Location = new System.Drawing.Point(0, 0);
+            this.legendPanel.Name = "legendPanel";
+            this.legendPanel.Size = new System.Drawing.Size(93, 443);
+            this.legendPanel.TabIndex = 0;
             // 
             // TestGroupView
             // 
