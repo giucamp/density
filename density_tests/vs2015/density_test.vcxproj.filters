@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="testity">
+      <UniqueIdentifier>{2b9f7620-4805-4856-a214-ab37d5ce0b53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="density_tests">
+      <UniqueIdentifier>{59dbaf31-2bf8-4bcf-98e1-6ee014008b02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="density">
+      <UniqueIdentifier>{40e862db-7a51-4ac5-ab13-97fc36184d00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="density\detail">
+      <UniqueIdentifier>{69cd13f2-5223-44de-89a9-b1c409fc7d9a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\dense_list_benchmark.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dense_list_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\function_queue_benchmarks.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\paged_queue_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pointer_arithmetic_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\queue_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\testing_utils.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\..\testity\test_tree.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\container_test.h">
+      <Filter>density_tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\dense_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\density_common.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\page_allocator.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\paged_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\paged_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\runtime_type.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\dense_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\dense_list.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\dense_list_void.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\queue_impl.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\dense_list_typed.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\correctness_test_context.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\testing_utils.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\test_tree.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

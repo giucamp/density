@@ -11,7 +11,11 @@
 #include <limits>
 #include <cstddef>
 
-#define DENSITY_DEBUG        0
+#ifndef _DEBUG
+	#define DENSITY_DEBUG        1
+#else
+	#define DENSITY_DEBUG        0
+#endif
 
 #define DENSITY_UNUSED(var)        (void)var;
 
@@ -26,7 +30,7 @@
 #endif
 
 #if DENSITY_DEBUG
-    #define DENSITY_ASSERT(bool_expr)        assert((bool_expr))
+    #define DENSITY_ASSERT(bool_expr)				  assert((bool_expr))
 #else
     #define DENSITY_ASSERT(bool_expr)
 #endif
