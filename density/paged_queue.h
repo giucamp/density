@@ -766,22 +766,22 @@ namespace density
                 check_invariants();
             #endif
 
-            PageHeader * alloc;
-            size_t alloc_size;
-
             const size_t min_page_size = detail::size_max(i_required_alignment, alignof(PageHeader)) + i_required_size + sizeof(PageHeader);
+
+            PageHeader * alloc;
+            size_t actual_page_size;
             if (min_page_size <= PAGE_ALLOCATOR::page_size)
             {
+                actual_page_size = PAGE_ALLOCATOR::page_size;
                 alloc = static_cast<PageHeader*>( get_allocator_ref().allocate_page() );
             }
             else
             {
-                alloc = 0;
-                alloc_size = 0;
-                //char *  get_allocator_ref().allocate();
+                actual_page_size = min_page_size;
+                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate(actual_page_size));
             }
 
-            auto new_page = new(alloc) PageHeader(alloc + 1, PAGE_ALLOCATOR::page_size - sizeof(PageHeader));
+            auto new_page = new(alloc) PageHeader(alloc + 1, actual_page_size - sizeof(PageHeader));
             if (m_last_page != nullptr)
             {
                 m_last_page->m_next_page = new_page;
@@ -790,7 +790,6 @@ namespace density
             {
                 m_first_page = new_page;
             }
-
             m_last_page = new_page;
         }
 
@@ -798,7 +797,20 @@ namespace density
         {
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());
-            get_allocator_ref().deallocate_page(i_page);
+
+            size_t actual_page_size = i_page->m_queue.mem_capacity().value();
+            DENSITY_ASSERT(actual_page_size >= sizeof(PageHeader));
+            actual_page_size += sizeof(PageHeader);
+            DENSITY_ASSERT(actual_page_size >= PAGE_ALLOCATOR::page_size);
+            if (actual_page_size <= PAGE_ALLOCATOR::page_size)
+            {
+                get_allocator_ref().deallocate_page(i_page);
+            }
+            else
+            {
+                char * block = reinterpret_cast<char*>(i_page);
+                get_allocator_ref().deallocate(block, actual_page_size);
+            }
         }
 
         void delete_all() DENSITY_NOEXCEPT

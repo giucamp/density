@@ -62,7 +62,7 @@ namespace density
     {
         /* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object.
             - If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
-              should be defined in the namespace that contains TYPE (it uses ADL). If such function exits,
+              should be defined in the namespace that contains TYPE (it will use ADL). If such function exits,
               its return type must be size_t.
             - Otherwise std::hash<TYPE> is used to compute the hash
         see http://stackoverflow.com/questions/257288/is-it-possible-to-write-a-c-template-to-check-for-a-functions-existence */
@@ -88,7 +88,7 @@ namespace density
 
         /** DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - down cast from a base class to a derived, assuming
             that the cast is legal. A static_cast is used if it is possible. Otherwise, if a virtual base is
-            involved, dynamic_cast is used.    */
+            involved, dynamic_cast is used. */
         template <typename DERIVED, typename BASE> static sfinae_true<decltype(
             static_cast<DERIVED>(std::declval<BASE>()))> can_static_cast_impl(int);
         template <typename DERIVED, typename BASE> static std::false_type can_static_cast_impl(long);
@@ -132,10 +132,12 @@ namespace density
         /* This feature stores the size in the table of the type */
         struct FeatureSize
         {
-            using type = size_t;
+            using type = uintptr_t;
 
             template <typename BASE, typename TYPE> struct Impl
             {
+                static_assert(sizeof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
+                    "Type with size >= 1/4 of the address space are not supported");
                 static const uintptr_t value = sizeof(TYPE);
             };
         };
@@ -143,10 +145,12 @@ namespace density
         /* This feature stores the alignment in the table of the type */
         struct FeatureAlignment
         {
-            using type = size_t;
+            using type = uintptr_t;
 
             template <typename BASE, typename TYPE> struct Impl
             {
+                static_assert(alignof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
+                    "Type with alignment >= 1/4 of the address space are not supported" );
                 static const uintptr_t value = alignof(TYPE);
             };
         };

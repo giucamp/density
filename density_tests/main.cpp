@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-
 #include <iostream>
 #include <vector>
 #include "..\testity\test_tree.h"
@@ -28,19 +27,18 @@ namespace density
 int main()
 {
     using namespace density;
-    testity::TestTree test_tree("");
 
+    //paged_queue_test();
+    //dense_queue_test();
+
+    testity::TestTree test_tree("");
     tests::register_function_queue_benchmarks(test_tree);
 
     testity::Session test_session;
     auto results = test_session.run(test_tree, std::cout);
-
     results.save_to("perf.txt");
 
-    /*paged_queue_test();
-    dense_queue_test();
-
-    pointer_arithmetic_test();
+    /*pointer_arithmetic_test();
 
     list_test();
     list_benchmark();*/

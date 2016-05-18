@@ -94,7 +94,9 @@ namespace performance_test_viewer
         private static Color[] s_colors = new Color[] {
             Color.Red, Color.Green, Color.Blue, Color.Magenta, Color.Yellow};
 
+        private string m_test_path;
         private string m_test_name;
+        private string m_version_label;
         private string m_compiler;
         private string m_operating_sytem;
         private string m_sytem_info;
@@ -108,7 +110,7 @@ namespace performance_test_viewer
 
         public override string ToString()
         {
-            return m_test_name + ", " + m_date_time;
+            return m_test_path + " - " + m_version_label + " - " + m_test_name + ", " + m_date_time;
         }
 
         public long get_cardinality(int i_index)
@@ -151,6 +153,8 @@ namespace performance_test_viewer
             return result;
         }
 
+        public string test_path { get { return m_test_path; } }
+        public string version_label { get { return m_version_label; } }
         public string test_name { get { return m_test_name; } }
         public string compiler { get { return m_compiler; } }
         public string operating_sytem { get { return m_operating_sytem; } }
@@ -227,7 +231,9 @@ namespace performance_test_viewer
                 string value = curr_line.Substring(col_pos + 1);
                 switch (type)
                 {
-                    case "PERFORMANCE_TEST_GROUP": m_test_name = value; break;
+                    case "PERFORMANCE_TEST_GROUP": m_test_path = value; break;
+                    case "NAME": m_test_name = value; break;
+                    case "VERSION_LABEL": m_version_label = value; break;
                     case "COMPILER": m_compiler = value; break;
                     case "OS": m_operating_sytem = value; break;
                     case "SYSTEM": m_sytem_info = value; break;

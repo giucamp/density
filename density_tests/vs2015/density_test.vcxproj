@@ -204,6 +204,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
     <ClCompile Include="..\dense_list_benchmark.cpp" />
@@ -227,6 +228,7 @@
     <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
     <ClInclude Include="..\..\testity\correctness_test_context.h" />
+    <ClInclude Include="..\..\testity\environment.h" />
     <ClInclude Include="..\..\testity\testing_utils.h" />
     <ClInclude Include="..\..\testity\test_tree.h" />
     <ClInclude Include="..\container_test.h" />

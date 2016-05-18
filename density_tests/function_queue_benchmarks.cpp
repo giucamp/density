@@ -20,7 +20,7 @@ namespace density
 
         void register_function_queue_benchmarks(TestTree & i_test_node)
         {
-            PerformanceTestGroup group("push & consume");
+            PerformanceTestGroup group("push & consume", "density version: " + std::to_string( DENSITY_VERSION ) );
 
             // paged_function_queue
             group.add_test( __FILE__, __LINE__, [](size_t i_cardinality) {
@@ -52,6 +52,16 @@ namespace density
             // std::vector< std::function >
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
                 std::vector< std::function<void()> > queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push_back([]() { volatile int dummy = 1; (void)dummy; });
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue[index]();
+            }, __LINE__);
+
+            // std::vector< std::function > with reserve
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                std::vector< std::function<void()> > queue;
+                queue.reserve(i_cardinality);
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push_back([]() { volatile int dummy = 1; (void)dummy; });
                 for (size_t index = 0; index < i_cardinality; index++)

@@ -6,6 +6,7 @@
 
 #pragma once
 #include "correctness_test_context.h"
+#include "environment.h"
 #include <memory>
 #include <string>
 #include <deque>
@@ -19,25 +20,6 @@
 
 namespace testity
 {
-    class TestEnvironment
-    {
-    public:
-
-        TestEnvironment();
-
-        const std::string & operating_sytem() const { return m_operating_sytem; }
-        const std::string & compiler() const { return m_compiler; }
-        const std::string & system_info() const { return m_system_info; }
-        size_t sizeof_pointer() const { return sizeof(void*); }
-        const std::chrono::system_clock::time_point & startup_clock() const { return m_startup_clock; }
-
-    private:
-        std::string m_operating_sytem;
-        std::string m_compiler;
-        std::string m_system_info;
-        std::chrono::system_clock::time_point m_startup_clock;
-    };
-
     class BenchmarkTest
     {
     public:
@@ -60,8 +42,8 @@ namespace testity
     {
     public:
 
-        PerformanceTestGroup(std::string i_name)
-            : m_name(std::move(i_name)) {}
+        PerformanceTestGroup(std::string i_name, std::string i_version_label)
+            : m_name(std::move(i_name)), m_version_label(std::move(i_version_label)) { }
 
         void add_test(BenchmarkTest i_test)
         {
@@ -70,6 +52,9 @@ namespace testity
 
         void add_test(const char * i_source_file, int i_start_line,
             std::function<BenchmarkTest::TestFunction> i_function, int i_end_line);
+
+        const std::string & name() const { return m_name; }
+        const std::string & version_label() const { return m_version_label; }
 
         size_t cardinality_start() const { return m_cardinality_start; }
         size_t cardinality_step() const { return m_cardinality_step; }
@@ -81,7 +66,7 @@ namespace testity
         size_t m_cardinality_step = 10000;
         size_t m_cardinality_end = 800000;
         std::vector<BenchmarkTest> m_tests;
-        std::string m_name;
+        std::string m_name, m_version_label;
     };
 
     using CorrectnessTestFunction = void(*)(CorrectnessTestContext & i_context);
@@ -168,7 +153,7 @@ namespace testity
         };
         std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
         const TestTree & m_test_tree;
-        TestEnvironment m_environment;
+        Environment m_environment;
         size_t m_repetitions;
     };
 

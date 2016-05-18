@@ -6,7 +6,6 @@
 
 #include "test_tree.h"
 #include <string.h>
-#include <sstream>
 #include <random>
 #include <fstream>
 #include <ctime>
@@ -97,32 +96,6 @@ namespace testity
         }
 
         add_test(BenchmarkTest(source_code.c_str(), move(i_function) ));
-    }
-
-    TestEnvironment::TestEnvironment()
-        : m_startup_clock(std::chrono::system_clock::now())
-    {
-        std::ostringstream compiler, os;
-
-        // detect the compiler
-        #ifdef _MSC_VER
-            compiler << "MSC - " << _MSC_VER;
-        #elif __clang__
-            compiler << "Clang - "<< __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
-        #else
-            compiler << "unknown";
-        #endif
-
-        // detect the os
-        #ifdef _WIN32
-            os << "Windows";
-        #else
-            os << "unknown";
-        #endif
-
-        m_compiler = compiler.str();
-        m_operating_sytem = os.str();
-        m_system_info = "unknown";
     }
 
     TestTree & TestTree::operator [] (const char * i_path)
@@ -223,6 +196,8 @@ namespace testity
         {
             i_ostream << "-------------------------------------" << std::endl;
             i_ostream << "PERFORMANCE_TEST_GROUP:" << i_path << std::endl;
+            i_ostream << "NAME:" << performance_test_group.name() << std::endl;
+            i_ostream << "VERSION_LABEL:" << performance_test_group.version_label() << std::endl;
             i_ostream << "COMPILER:" << m_environment.compiler() << std::endl;
             i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
             i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;

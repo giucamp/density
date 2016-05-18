@@ -40,6 +40,9 @@
     <ClCompile Include="..\..\testity\test_tree.cpp">
       <Filter>testity</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\testity\environment.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
@@ -85,6 +88,9 @@
       <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\test_tree.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\environment.h">
       <Filter>testity</Filter>
     </ClInclude>
   </ItemGroup>

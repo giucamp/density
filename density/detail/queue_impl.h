@@ -12,6 +12,16 @@ namespace density
 {
     namespace detail
     {
+        template <typename RUNTIME_TYPE>
+            struct ControlBlock : RUNTIME_TYPE
+        {
+            ControlBlock(const RUNTIME_TYPE & i_type, void * i_element, ControlBlock * i_next) DENSITY_NOEXCEPT
+                : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
+
+            void * const m_element;
+            ControlBlock * const m_next;
+        };
+
         /** This internal class template implements an heterogeneous FIFO container that allocates the elements on an externally-owned
            memory buffer. QueueImpl is movable but not copyable.
            A null-QueueImpl is a QueueImpl with no associated memory buffer. A default constructed QueueImpl is a null-QueueImpl. The
@@ -37,16 +47,7 @@ namespace density
             // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
             static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
 
-            struct Control : RUNTIME_TYPE
-            {
-                void * const m_element;
-                Control * const m_next;
-
-                Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
-                    : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next)
-                {
-                }
-            };
+            using Control = ControlBlock<RUNTIME_TYPE>;
 
         public:
 

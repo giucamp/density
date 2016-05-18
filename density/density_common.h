@@ -11,6 +11,8 @@
 #include <limits>
 #include <cstddef>
 
+#define DENSITY_VERSION            0x0001
+
 #ifdef _DEBUG
     #define DENSITY_DEBUG        1
 #else

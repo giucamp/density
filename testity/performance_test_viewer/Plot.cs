@@ -83,6 +83,8 @@ namespace performance_test_viewer
             }
 
 
+            PrintString(e, "test: " + m_group.test_path + m_group.test_name);
+            PrintString(e, "version label: " + m_group.version_label);
             PrintString(e, "compiler: " + m_group.compiler);
             PrintString(e, "os:" + m_group.operating_sytem);
             PrintString(e, "sys:" + m_group.sytem_info);
