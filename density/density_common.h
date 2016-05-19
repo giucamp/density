@@ -11,12 +11,14 @@
 #include <limits>
 #include <cstddef>
 
-#define DENSITY_VERSION            0x0001
+#define DENSITY_VERSION            0x0003
 
 #ifdef _DEBUG
-    #define DENSITY_DEBUG        1
+    #define DENSITY_DEBUG					1
+	#define DENSITY_DEBUG_INTERNAL			1
 #else
-    #define DENSITY_DEBUG        0
+    #define DENSITY_DEBUG					0
+	#define DENSITY_DEBUG_INTERNAL			0
 #endif
 
 #define DENSITY_UNUSED(var)        (void)var;
@@ -32,9 +34,11 @@
 #endif
 
 #if DENSITY_DEBUG
-    #define DENSITY_ASSERT(bool_expr)                  assert((bool_expr))
+	#define DENSITY_ASSERT(bool_expr)              if(!(bool_expr)) { __debugbreak(); }
+	#define DENSITY_ASSERT_INTERNAL(bool_expr)     if(!(bool_expr)) { __debugbreak(); }
 #else
     #define DENSITY_ASSERT(bool_expr)
+	#define DENSITY_ASSERT_INTERNAL(bool_expr)
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
@@ -814,27 +818,22 @@ namespace density
 
     inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
     {
-        DENSITY_ASSERT(MemSize(i_alignment).is_valid_alignment() );
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
         const auto alignment_mask = i_alignment - 1;
 
         auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
+		const auto original_ptr = ptr;
 
         ptr += alignment_mask;
-        #if DENSITY_POINTER_OVERFLOW_SAFE
-            if (ptr < alignment_mask)
-            {
-                return nullptr;
-            }
-        #endif
         ptr &= ~alignment_mask;
+		void * result = reinterpret_cast<void*>(ptr);
+		ptr += i_size;		
 
-        void * result = reinterpret_cast<void*>(ptr);
-        ptr += i_size;
-        #if DENSITY_POINTER_OVERFLOW_SAFE
-            if (ptr < i_size)
+		#if DENSITY_POINTER_OVERFLOW_SAFE
+            if (ptr < original_ptr)
             {
-                return nullptr;
+				io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
             }
         #endif
 

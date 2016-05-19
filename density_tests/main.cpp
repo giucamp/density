@@ -28,8 +28,10 @@ int main()
 {
     using namespace density;
 
-    //paged_queue_test();
-    //dense_queue_test();
+	#ifdef  _DEBUG
+		paged_queue_test();
+		dense_queue_test();
+	#endif //  _DEBUG
 
     testity::TestTree test_tree("");
     tests::register_function_queue_benchmarks(test_tree);

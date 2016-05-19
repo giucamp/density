@@ -60,10 +60,15 @@ namespace performance_test_viewer
             get { return m_pen; }
         }
 
-        public string Percentage
+        public double TimeAvgPercentage
         {
-            get { return m_percentage; }
-            set { m_percentage = value; }
+            get { return m_time_avg_percentage; }
+            set { m_time_avg_percentage = value; }
+        }
+
+        public string PercentageStr
+        {
+            get { return (m_time_avg_percentage * 100.0).ToString("f2") + "% avg time"; }
         }
 
         public double get_average()
@@ -86,7 +91,7 @@ namespace performance_test_viewer
         private long[][] m_values;
         private Color m_color;
         private Pen m_pen;
-        private string m_percentage;
+        private double m_time_avg_percentage;
     }
 
     public class TestGroup
@@ -287,7 +292,7 @@ namespace performance_test_viewer
 
             for (int i = 0; i < m_tests.Count; i++)
             {
-                m_tests[i].Percentage = ((averages[i] / max_avg) * 100.0).ToString("f2") + "% avg time";
+                m_tests[i].TimeAvgPercentage = averages[i] / max_avg;
             }
         }
 

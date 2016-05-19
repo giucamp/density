@@ -20,7 +20,7 @@ namespace performance_test_viewer
     {
         private Plot m_plot;
         private TestGroup m_group;
-
+        private bool m_sort_legend_by_avg = true;
 
         public TestGroupView()
         {
@@ -66,12 +66,19 @@ namespace performance_test_viewer
                 lblCardMin.Text = m_group.MinCardinaity.ToString();
                 lblCardMax.Text = m_group.MaxCardinaity.ToString();
 
-                foreach( Test test in m_group.Tests)
+                IEnumerable<Test> tests = m_group.Tests;
+                if(m_sort_legend_by_avg)
+                {
+                    var sorted_tests = new List<Test>(tests);
+                    sorted_tests.Sort((first, second) => { return -first.TimeAvgPercentage.CompareTo( second.TimeAvgPercentage); });
+                    tests = sorted_tests;
+                }
+                foreach ( Test test in tests)
                 {
                     LegendItem item = new LegendItem();
                     item.Color = test.color;
                     item.SourceCode = test.source_code;
-                    item.Percentage = test.Percentage;
+                    item.Percentage = test.PercentageStr;
                     legendPanel.Controls.Add(item);
                 }
 

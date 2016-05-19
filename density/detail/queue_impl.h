@@ -284,18 +284,67 @@ namespace density
             {
                 DENSITY_ASSERT(m_buffer_start != nullptr);
                 DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
+				DENSITY_ASSERT(i_source_type.alignment() > 0 && is_power_of_2(i_source_type.alignment()));
+				
+				const auto element_size = i_source_type.size();
+				const auto element_aligment = i_source_type.alignment();
+				const auto element_aligment_mask = element_aligment - 1;
+				Control * const curr_control = m_tail;
 
-                const auto element_aligment = i_source_type.alignment();
+				/* first try to allocate the element and the next control doing only bound and overflow
+					checking once. Note: both size and alignment of elements are constrained to be <=
+					std::numeric_limits < std::numeric_limits<uintptr_t>::max() / 4. */
+				uintptr_t original_tail = reinterpret_cast<uintptr_t>(curr_control + 1);
+				uintptr_t new_tail = original_tail;
 
-                Control * curr_control = m_tail;
-                void * new_tail = curr_control + 1;
-                void * element = single_push(new_tail, i_source_type.size(), element_aligment);
-                void * next_control = single_push(new_tail, sizeof(Control), alignof(Control) );
-                if (element == nullptr || next_control == nullptr)
-                {
-                    return false;
-                }
+				// allocate element
+				new_tail += element_aligment_mask;
+				new_tail &= ~element_aligment_mask;
+				void * element = reinterpret_cast<void *>(new_tail);
+				new_tail += element_size;
 
+				// allocate next control
+				new_tail += (std::alignment_of<Control>::value - 1);
+				new_tail &= ~(std::alignment_of<Control>::value - 1);
+				void * next_control = reinterpret_cast<void *>(new_tail);
+				new_tail += sizeof(Control);
+
+				bool special_case = false;
+				if (new_tail < original_tail)
+				{
+					// overflow
+					special_case = true;
+				}
+				else if (new_tail > reinterpret_cast<uintptr_t>(m_buffer_end))
+				{
+					// must wrap
+					special_case = true;
+				}
+				else if ((original_tail >= reinterpret_cast<uintptr_t>(m_head)) 
+					!= (new_tail >= reinterpret_cast<uintptr_t>(m_head)))
+				{
+					// crossed the head
+					special_case = true;
+				}
+				if (special_case)
+				{
+					void * tail = curr_control + 1;
+					const auto & res = double_push(tail, element_size, element_aligment);
+					element = res.m_element;
+					next_control = res.m_next_control;
+					if (element == nullptr || next_control == nullptr)
+					{
+						return false;
+					}
+				}
+
+				#if DENSITY_DEBUG_INTERNAL
+					void * dbg_new_tail = curr_control + 1;
+					void * dbg_element = single_push(dbg_new_tail, i_source_type.size(), element_aligment);
+					void * dbg_next_control = single_push(dbg_new_tail, sizeof(Control), alignof(Control) );
+					DENSITY_ASSERT_INTERNAL(dbg_element == element && dbg_next_control == next_control);
+				#endif
+				
                 void * new_element = i_constructor(i_source_type, element);
 
                 // from now on, no exception can be raised
@@ -424,7 +473,7 @@ namespace density
                This function is used to push the Control and the element. If the required size with the
                required alignment does not fit in the queue the return value is nullptr.
                Preconditions: *io_tail can't be null, or the behavior is undefined. */
-            void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
+			DENSITY_STRONG_INLINE void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
             {
                 DENSITY_ASSERT(io_tail != nullptr);
 
@@ -449,6 +498,18 @@ namespace density
                 }
                 return start_of_block;
             }
+
+			/* Allocates two objects on the queue. The return value is the address of the new object.
+				simgle_push(io_tail, i_element_size, i_element_alignment)
+				
+				. */			
+			DENSITY_NO_INLINE struct { void * m_element, * m_next_control; } 
+				double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
+			{
+				return { single_push(io_tail, i_element_size, i_element_alignment),
+					single_push(io_tail, sizeof(Control), alignof(Control)) };
+			}
+
 
         private: // data members
             Control * m_head; /**< points to the first Control. If m_tail==m_head the queue is empty, otherwise this member points
