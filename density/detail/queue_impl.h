@@ -309,25 +309,16 @@ namespace density
 				void * next_control = reinterpret_cast<void *>(new_tail);
 				new_tail += sizeof(Control);
 
-				bool special_case = false;
-				if (new_tail < original_tail)
+				const auto u_buffer_end = reinterpret_cast<uintptr_t>(m_buffer_end);
+				const auto u_head = reinterpret_cast<uintptr_t>(m_head);
+				uintptr_t upper_limit = u_buffer_end;
+				if (m_head >= m_tail)
 				{
-					// overflow
-					special_case = true;
+					upper_limit = u_head;
 				}
-				else if (new_tail > reinterpret_cast<uintptr_t>(m_buffer_end))
+				if (new_tail >= upper_limit || new_tail < original_tail)
 				{
-					// must wrap
-					special_case = true;
-				}
-				else if ((original_tail >= reinterpret_cast<uintptr_t>(m_head)) 
-					!= (new_tail >= reinterpret_cast<uintptr_t>(m_head)))
-				{
-					// crossed the head
-					special_case = true;
-				}
-				if (special_case)
-				{
+					// handle: wrapping to the end of the buffer, allocation failure, pointer arithmetic overflow
 					void * tail = curr_control + 1;
 					const auto & res = double_push(tail, element_size, element_aligment);
 					element = res.m_element;
