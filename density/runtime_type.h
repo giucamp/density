@@ -138,6 +138,7 @@ namespace density
             {
                 static_assert(sizeof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
                     "Type with size >= 1/4 of the address space are not supported");
+				// constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
                 static const uintptr_t value = sizeof(TYPE);
             };
         };
@@ -151,7 +152,8 @@ namespace density
             {
                 static_assert(alignof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
                     "Type with alignment >= 1/4 of the address space are not supported" );
-                static const uintptr_t value = alignof(TYPE);
+				// constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
+				static const uintptr_t value = alignof(TYPE);
             };
         };
 

@@ -103,6 +103,8 @@ namespace performance_test_viewer
         private string m_date_time;
         private int m_multepicity;
         private int m_sizeof_pointer;
+        private string m_random_shuffle;
+        private bool m_deterministic;
         private long m_cardinality_start, m_cardinality_step, m_cardinality_end;
         private List<Test> m_tests = new List<Test>();
         private ReadOnlyCollection<Test> m_readony_tests;
@@ -160,6 +162,8 @@ namespace performance_test_viewer
         public string operating_sytem { get { return m_operating_sytem; } }
         public string sytem_info { get { return m_sytem_info; } }
         public string date_time { get { return m_date_time; } }
+        public string random_shuffle { get { return m_random_shuffle; } }
+        public bool deterministic { get { return m_deterministic; } }
 
         public long MinCardinaity
         {
@@ -246,6 +250,8 @@ namespace performance_test_viewer
                         break;
                     case "MULTEPLICITY": m_multepicity = int.Parse(value); break;
                     case "SIZEOF_POINTER": m_sizeof_pointer = int.Parse(value); break;
+                    case "DETERMINISTIC": m_deterministic = value.Trim().ToLowerInvariant() == "yes"; break;
+                    case "RANDOM_SHUFFLE": m_random_shuffle = value; break;
                     case "TEST":
                         int color_index = m_tests.Count % s_colors.Length;
                         m_tests.Add( new Test(s_colors[color_index], value, compute_cardinality(), m_multepicity) );

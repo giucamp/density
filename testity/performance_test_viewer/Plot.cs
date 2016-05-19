@@ -90,7 +90,8 @@ namespace performance_test_viewer
             PrintString(e, "sys:" + m_group.sytem_info);
             PrintString(e, "sizeof pointer: " + m_group.sizeof_pointer);
             PrintString(e, "i_cardinality = " + m_group.get_cardinality(0) + ".." + m_group.get_cardinality(m_group.get_cardinality_num() - 1));
-            PrintString(e, "sampling: " + m_group.multepicity.ToString() + "x" );
+            PrintString(e, "deterministic: " + m_group.deterministic);
+            PrintString(e, "sampling: " + m_group.multepicity.ToString() + "x, random_shuffle: " + m_group.random_shuffle);
             PrintString(e, "date-time: " + m_group.date_time);
 
             for (int mult = 0; mult < m_group.multepicity; mult++)

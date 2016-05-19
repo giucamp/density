@@ -202,7 +202,9 @@ namespace testity
             i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
             i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;
             i_ostream << "SIZEOF_POINTER:" << m_environment.sizeof_pointer() << std::endl;
-
+			i_ostream << "DETERMINISTIC:" << (m_session.deterministic() ? "yes" : "no") << std::endl;
+			i_ostream << "RANDOM_SHUFFLE:" << (m_session.random_shuffle() ? "yes (with std::mt19937)" : "no") << std::endl;
+			
             const auto date_time = std::chrono::system_clock::to_time_t(m_environment.startup_clock());
             #ifdef _MSC_VER
                 tm local_tm;
@@ -215,7 +217,7 @@ namespace testity
             i_ostream << "CARDINALITY_START:" << performance_test_group.cardinality_start() << std::endl;
             i_ostream << "CARDINALITY_STEP:" << performance_test_group.cardinality_step() << std::endl;
             i_ostream << "CARDINALITY_END:" << performance_test_group.cardinality_end() << std::endl;
-            i_ostream << "MULTEPLICITY:" << m_repetitions << std::endl;
+            i_ostream << "MULTEPLICITY:" << m_session.repetitions() << std::endl;
 
             // write legend
             i_ostream << "LEGEND_START:" << std::endl;
@@ -315,7 +317,7 @@ namespace testity
         }
 
         i_dest_stream << "performing tests..." << endl;
-        Results results(i_test_tree, m_repetitions);
+        Results results(i_test_tree, *this);
         double last_perc = -1.;
         const double perc_mult = 100. / operations_size;
         for (Operations::size_type index = 0; index < operations_size; index++)

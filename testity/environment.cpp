@@ -157,38 +157,45 @@ namespace testity
             CComPtr<IWbemLocator> m_locator;
             CComPtr<IWbemServices> m_services;
         };
-    #endif
+    #endif // #ifdef _WIN32
 
     Environment::Environment()
         : m_startup_clock(std::chrono::system_clock::now())
     {
-        std::ostringstream compiler, os;
+		// detect the compiler
+		std::ostringstream compiler;
+		#ifdef _MSC_VER
+				compiler << "MSC - " << _MSC_VER;
+		#elif __clang__
+				compiler << "Clang - " << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
+		#else
+				compiler << "unknown";
+		#endif
+		m_compiler = compiler.str();
+		
+		#ifdef _WIN32
+			WMIServices wmi;
+			
+			// query system info
+	        auto proc_prop = wmi.get_properties(L"SELECT * FROM Win32_Processor", { L"Caption", L"Name", L"L2CacheSize" } );
+			m_system_info = proc_prop[0] + " - " + proc_prop[1] + " - L2Cache(KiB) " + proc_prop[2];
+			MEMORYSTATUSEX memory_status;
+			ZeroMemory(&memory_status, sizeof(memory_status));
+			memory_status.dwLength = sizeof(memory_status);
+			if (GlobalMemoryStatusEx(&memory_status))
+			{
+				std::ostringstream memory_size;
+				memory_size << ", System memory: " << memory_status.ullTotalPhys / (1024. * 1024.) << " GiB";
+				m_system_info += memory_size.str();
+			}
 
-        /*WMIServices serv;
-        auto vals = serv.get_properties(L"SELECT * FROM Win32_Processor", { L"Name", L"Caption", L"L2CacheSize" } );
-
-        auto all = serv.get_all_properties(L"SELECT * FROM Win32_Processor");
-        auto all1 = serv.get_all_properties(L"SELECT * FROM Win32_PhysicalMemory");*/
-
-        // detect the compiler
-        #ifdef _MSC_VER
-            compiler << "MSC - " << _MSC_VER;
-        #elif __clang__
-            compiler << "Clang - "<< __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
-        #else
-            compiler << "unknown";
-        #endif
-
-        // detect the os
-        #ifdef _WIN32
-            os << "Windows";
-        #else
-            os << "unknown";
-        #endif
-
-        m_compiler = compiler.str();
-        m_operating_sytem = os.str();
-        m_system_info = "unknown";
+			// query os name
+			auto os_prop = wmi.get_properties(L"SELECT * FROM Win32_OperatingSystem", { L"Caption" });
+			m_operating_sytem = os_prop[0];
+		#else
+			m_operating_sytem = "unknown";
+			m_system_info = "unknown";
+		#endif
     }
 
 } // namespace testity
