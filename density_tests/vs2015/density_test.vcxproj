@@ -220,8 +220,7 @@
     <ClInclude Include="..\..\density\dense_list.h" />
     <ClInclude Include="..\..\density\dense_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
-    <ClInclude Include="..\..\density\detail\dense_list_typed.h" />
-    <ClInclude Include="..\..\density\detail\dense_list_void.h" />
+    <ClInclude Include="..\..\density\detail\dense_list_impl.h" />
     <ClInclude Include="..\..\density\detail\queue_impl.h" />
     <ClInclude Include="..\..\density\paged_function_queue.h" />
     <ClInclude Include="..\..\density\paged_queue.h" />

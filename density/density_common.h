@@ -287,7 +287,7 @@ namespace density
         return address;
     }
 
-    /** Returns    wheter two memory ranges overlap */
+    /** Returns whether two memory ranges overlap */
     inline bool address_overlap( const void * i_first, size_t i_first_size, const void * i_second, size_t i_second_size ) DENSITY_NOEXCEPT
     {
         if( i_first < i_second )
@@ -519,7 +519,7 @@ namespace density
         BasicMemSize operator * (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
-                using the approch of umull_overflow5, as most times the operands will be small. */
+                using the approach of umull_overflow5, as most times the operands will be small. */
             const auto max_op = ( static_cast<UINT>(1) << (std::numeric_limits<UINT>::digits / 2) ) - 1;
             const auto max_uint = std::numeric_limits<UINT>::max();
             DENSITY_OVERFLOW_IF( ( m_value >= max_op || i_source >= max_op) &&
@@ -554,7 +554,7 @@ namespace density
         BasicMemSize operator *= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
-                using the approch of umull_overflow5, as most times the operands will be small. */
+                using the approach of umull_overflow5, as most times the operands will be small. */
             const auto max_op = (static_cast<UINT>(1) << (std::numeric_limits<UINT>::digits / 2)) - 1;
             const auto max_uint = std::numeric_limits<UINT>::max();
             DENSITY_OVERFLOW_IF((m_value >= max_op || i_source >= max_op) &&

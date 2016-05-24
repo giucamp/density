@@ -11,7 +11,8 @@
 namespace density
 {
     template < typename FUNCTION > class dense_function_queue;
-
+	
+	/** \brief Queue of callable objects (or function object).  */
     template < typename RET_VAL, typename... PARAMS >
         class dense_function_queue<RET_VAL (PARAMS...)>
     {

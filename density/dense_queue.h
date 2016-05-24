@@ -236,8 +236,6 @@ namespace density
             });
         }
 
-        /**
-        */
         void push_by_copy(const RUNTIME_TYPE & i_type, const ELEMENT * i_source)
         {
             insert_back_impl(i_type,

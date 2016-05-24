@@ -12,16 +12,6 @@ namespace density
 {
     namespace detail
     {
-        template <typename RUNTIME_TYPE>
-            struct ControlBlock : RUNTIME_TYPE
-        {
-            ControlBlock(const RUNTIME_TYPE & i_type, void * i_element, ControlBlock * i_next) DENSITY_NOEXCEPT
-                : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
-
-            void * const m_element;
-            ControlBlock * const m_next;
-        };
-
         /** This internal class template implements an heterogeneous FIFO container that allocates the elements on an externally-owned
            memory buffer. QueueImpl is movable but not copyable.
            A null-QueueImpl is a QueueImpl with no associated memory buffer. A default constructed QueueImpl is a null-QueueImpl. The
@@ -47,7 +37,14 @@ namespace density
             // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
             static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
 
-            using Control = ControlBlock<RUNTIME_TYPE>;
+			struct Control : RUNTIME_TYPE
+			{
+				Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
+					: RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
+
+				void * const m_element;
+				Control * const m_next;
+			};
 
         public:
 
@@ -424,14 +421,7 @@ namespace density
             size_t element_max_alignment() const DENSITY_NOEXCEPT { return m_element_max_alignment; }
 
         private:
-
-            /*void * get_complete_type(Control * i_control) const DENSITY_NOEXCEPT
-            {
-                void * new_tail = i_control + 1;
-                void * element = single_push(new_tail, i_control->size(), i_control->alignment());
-                return element;
-            }*/
-
+			
             template <typename OPERATION>
                 auto manual_consume(OPERATION && i_operation, std::false_type)
                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
@@ -490,12 +480,9 @@ namespace density
                 return start_of_block;
             }
 
-			/* Allocates two objects on the queue. The return value is the address of the new object.
-				simgle_push(io_tail, i_element_size, i_element_alignment)
-				
-				. */			
-			DENSITY_NO_INLINE struct { void * m_element, * m_next_control; } 
-				double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
+			/* Allocates two objects on the queue. The return value is the address of the new object. */			
+			struct DoublePushResult { void * m_element, *m_next_control; };
+			DENSITY_NO_INLINE DoublePushResult double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
 			{
 				return { single_push(io_tail, i_element_size, i_element_alignment),
 					single_push(io_tail, sizeof(Control), alignof(Control)) };

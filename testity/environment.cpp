@@ -8,7 +8,14 @@
 #include "environment.h"
 #include <sstream>
 #include <vector>
-#ifdef _WIN32
+
+#if defined( _WIN32 ) && ! defined( __clang__ )
+	#define WIN32_WMI 1
+#else
+	#define WIN32_WMI 0
+#endif
+
+#if WIN32_WMI
     #include <Objbase.h>
     #include <Wbemidl.h>
     #include <atlbase.h>
@@ -17,7 +24,7 @@
 
 namespace testity
 {
-    #ifdef _WIN32
+	#if WIN32_WMI
 
         #define TESTITY_COM_CALL(call)        { if(FAILED((call))) throw std::exception("Com call failed: " #call); }
 
@@ -173,7 +180,7 @@ namespace testity
 		#endif
 		m_compiler = compiler.str();
 		
-		#ifdef _WIN32
+		#if WIN32_WMI
 			WMIServices wmi;
 			
 			// query system info

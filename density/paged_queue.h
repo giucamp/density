@@ -831,7 +831,7 @@ namespace density
         }
 
         #if DENSITY_DEBUG
-            void check_invariants()
+            void check_invariants() const
             {
                 DENSITY_ASSERT( (m_first_page == nullptr) == (m_last_page == nullptr) );
 

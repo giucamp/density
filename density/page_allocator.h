@@ -14,7 +14,7 @@ namespace density
         class page_allocator : private std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>
     {
     private:
-        using Base = std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+        using Base = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
 
     public:
         static const size_t page_size = 4096;
