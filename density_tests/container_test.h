@@ -55,6 +55,11 @@ namespace density
                 return *this;
             }
 
+			~TestObjectBase()
+			{
+				m_check_word = 1239873;
+			}
+
             bool operator == (const TestObjectBase & i_other) const
             {
                 DENSITY_TEST_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
@@ -75,7 +80,7 @@ namespace density
 
         private:
             std::shared_ptr<size_t> m_hash;
-            const int m_check_word = 3232;
+            int m_check_word = 3232;
         };
 
         /** Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
@@ -306,8 +311,7 @@ namespace density
                 const auto container_is_empty = i_container.empty();
                 DENSITY_TEST_ASSERT(container_is_empty == m_deque.empty());
                 DENSITY_TEST_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
-                DENSITY_TEST_ASSERT(container_is_empty == (i_container.mem_size().value() == 0));
-
+                
                 const auto end_it1 = i_container.end();
                 for (auto it = i_container.begin(); it != end_it1; it++)
                 {
@@ -323,9 +327,10 @@ namespace density
                 {
                     auto hasher = it.complete_type().template get_feature<detail::FeatureHash>();
                     const auto & type_info = it.complete_type().type_info();
+					const auto & deq_entry = m_deque[index];
                     const auto hash = hasher(it.element());
-                    DENSITY_TEST_ASSERT(type_info == *m_deque[index].m_type_info
-                        && hash == m_deque[index].m_hash );
+                    DENSITY_TEST_ASSERT(type_info == *deq_entry.m_type_info
+                        && hash == deq_entry.m_hash );
                     index++;
                 }
 
@@ -475,9 +480,16 @@ namespace density
                 compare();
             }
 
+			void set_custom_check(const std::function<void()> & i_custom_check)
+			{
+				m_custom_check = i_custom_check;
+			}
+
             // check for equality m_dense_container and shadow_container()
             void compare()
             {
+				if (m_custom_check)
+					m_custom_check();
                 m_shadow_container.compare_all(m_dense_container);
             }
 
@@ -502,6 +514,7 @@ namespace density
             DENSE_CONTAINER m_dense_container;
             ShadowContainer<DENSE_CONTAINER> m_shadow_container;
             std::string m_name;
+			std::function<void()> m_custom_check;
 
             struct TestCase
             {
@@ -543,61 +556,6 @@ namespace density
 
                 // move assign tmp to dense_container
                 dense_container = std::move(tmp);
-            }, i_probability);
-        }
-
-        template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
-            void add_test_case_push_by_copy_n_times(
-                ContainerTest<DENSE_CONTAINER> & i_test,
-                double i_probability,
-                CONSTRUCTION_PARAMS && ... i_construction_parameters )
-        {
-            i_test.add_test_case("push_n_times", [&i_test, &i_construction_parameters...](std::mt19937 & i_random) {
-                const auto times = std::uniform_int_distribution<unsigned>(0, 9)(i_random);
-                for (unsigned i = 0; i < times; i++)
-                {
-                    const COMPLETE_ELEMENT new_element(i_construction_parameters...);
-                    i_test.dense_container().push(new_element);
-                    i_test.shadow_container().push_back(new_element);
-                }
-            }, i_probability);
-        }
-
-        template <typename DENSE_CONTAINER>
-            void add_test_case_pop_n_times(
-                ContainerTest<DENSE_CONTAINER> & i_test,
-                double i_probability )
-        {
-            i_test.add_test_case("pop_n_times", [&i_test](std::mt19937 & i_random) {
-                const auto times = std::uniform_int_distribution<unsigned>(0, 7)(i_random);
-                for (unsigned i = 0; i < times && !i_test.dense_container().empty(); i++)
-                {
-                    auto first = i_test.dense_container().begin();
-                    i_test.shadow_container().compare_front(first.complete_type(), first.element());
-                    i_test.shadow_container().pop_front();
-                    i_test.dense_container().pop();
-                }
-            }, i_probability);
-        }
-
-        template <typename DENSE_CONTAINER>
-            void add_test_case_consume_until_empty(
-                ContainerTest<DENSE_CONTAINER> & i_test,
-                double i_probability )
-        {
-            i_test.add_test_case("consume_until_empty", [&i_test](std::mt19937 & /*i_random*/) {
-                while(!i_test.dense_container().empty())
-                {
-                    DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
-                    i_test.dense_container().manual_consume(
-                        [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
-                    {
-                        i_type.template get_feature<detail::FeatureHash>()(i_element);
-                        i_type.destroy(i_element);
-                    } );
-                    i_test.shadow_container().pop_front();
-                }
-                DENSITY_TEST_ASSERT(i_test.shadow_container().empty());
             }, i_probability);
         }
 

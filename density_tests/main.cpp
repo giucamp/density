@@ -18,7 +18,7 @@ namespace density
 
     namespace tests
     {
-        void register_function_queue_benchmarks(testity::TestTree & i_test_manager);
+		testity::PerformanceTestGroup make_function_queue_benchmarks();
     }
 }
 
@@ -27,6 +27,8 @@ namespace density
 int main()
 {
     using namespace density;
+	using namespace density::tests;
+	using namespace testity;
 
 	#ifdef  _DEBUG
 		list_test();
@@ -35,7 +37,8 @@ int main()
 	#endif //  _DEBUG
 
     testity::TestTree test_tree("");
-    tests::register_function_queue_benchmarks(test_tree);
+
+	test_tree["/density/function_queue_test"].add_performance_test(make_function_queue_benchmarks());
 
     testity::Session test_session;
     auto results = test_session.run(test_tree, std::cout);

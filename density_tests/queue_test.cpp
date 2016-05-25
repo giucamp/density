@@ -12,10 +12,6 @@
 #include "../density/paged_queue.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
-#include <deque>
-#include <random>
-#include <memory>
-#include <functional>
 #include <algorithm>
 
 namespace density
@@ -32,6 +28,69 @@ namespace density
             using TestPagedQueue = paged_queue<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
                 typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
 
+        template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
+            void add_test_case_push_by_copy_n_times(
+                ContainerTest<DENSE_CONTAINER> & i_test,
+                double i_probability,
+                CONSTRUCTION_PARAMS && ... i_construction_parameters )
+        {
+            i_test.add_test_case("push_n_times", [&i_test, &i_construction_parameters...](std::mt19937 & i_random) {
+                const auto times = std::uniform_int_distribution<unsigned>(0, 9)(i_random);
+                for (unsigned i = 0; i < times; i++)
+                {
+                    const COMPLETE_ELEMENT new_element(i_construction_parameters...);
+                    i_test.dense_container().push(new_element);
+                    i_test.shadow_container().push_back(new_element);
+                }
+            }, i_probability);
+        }
+
+        template <typename DENSE_CONTAINER>
+            void add_test_case_pop_n_times(
+                ContainerTest<DENSE_CONTAINER> & i_test,
+                double i_probability )
+        {
+            i_test.add_test_case("pop_n_times", [&i_test](std::mt19937 & i_random) {
+                const auto times = std::uniform_int_distribution<unsigned>(0, 7)(i_random);
+                for (unsigned i = 0; i < times && !i_test.dense_container().empty(); i++)
+                {
+                    auto first = i_test.dense_container().begin();
+                    i_test.shadow_container().compare_front(first.complete_type(), first.element());
+                    i_test.shadow_container().pop_front();
+                    i_test.dense_container().pop();
+                }
+            }, i_probability);
+        }
+
+        template <typename DENSE_CONTAINER>
+            void add_test_case_consume_until_empty(
+                ContainerTest<DENSE_CONTAINER> & i_test,
+                double i_probability )
+        {
+            i_test.add_test_case("consume_until_empty", [&i_test](std::mt19937 & /*i_random*/) {
+                while(!i_test.dense_container().empty())
+                {
+                    DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
+                    i_test.dense_container().manual_consume(
+                        [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
+                    {
+                        i_type.template get_feature<detail::FeatureHash>()(i_element);
+                        i_type.destroy(i_element);
+                    } );
+                    i_test.shadow_container().pop_front();
+                }
+                DENSITY_TEST_ASSERT(i_test.shadow_container().empty());
+            }, i_probability);
+        }
+
+		template <typename CONTAINER_TEST>
+			void set_queue_custom_check(CONTAINER_TEST & i_container_test)
+		{
+			i_container_test.set_custom_check([&i_container_test] {
+				const bool mem_size_is_zero = i_container_test.dense_container().mem_size().value() == 0;
+				DENSITY_TEST_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
+		}
+
         template <template <class> class QUEUE>
             void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
         {
@@ -39,6 +98,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<TestObjectBase>> test(i_container_name);
+				set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
                 add_test_case_consume_until_empty(test, .01);
@@ -48,6 +108,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<CopyableTestObject>> test(i_container_name);
+				set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
@@ -61,6 +122,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<ComplexTypeBase>> test(i_container_name);
+				set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
@@ -73,6 +135,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<ComplexType_A>> test(i_container_name);
+				set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
@@ -83,6 +146,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<void>> test(i_container_name);
+				set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<int>(test, 1., 42);
                 add_test_case_push_by_copy_n_times<double>(test, 1., 42.);
@@ -154,23 +218,11 @@ namespace density
             //copy = queue_of_uncopyable;
         }
 
-    } // namespace detail
+    } // namespace tests
 
     void dense_queue_test()
     {
         using namespace tests;
-       /* function_queue<double (int a , int b)> q;
-
-        auto lam = 1;
-        static_assert( std::is_copy_constructible<decltype(lam)>::value, "");
-        q.push([](int a, int b)
-        {
-            return (double)(a + b);
-        });
-
-        double p = q.invoke_front(4,5);
-        p = q.consume_front(4, 5);
-        bool k = q.empty();*/
 
         dense_queue_leak_basic_tests();
         dense_queue_basic_tests();

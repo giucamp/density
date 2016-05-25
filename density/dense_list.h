@@ -9,14 +9,14 @@
 namespace density
 {
     /** A dense-list is a polymorphic sequence container optimized to be compact in both heap memory and inline storage.
-        Elements is a DenseList are allocated respecting their alignment requirements.
+        Elements is a dense_list are allocated respecting their alignment requirements.
         In a polymorphic container every element can have a different complete type, provided that this type is covariant to the type ELEMENT.
-        All the elements of a DenseList are arranged in the same memory block of the heap.
+        All the elements of a dense_list are arranged in the same memory block of the heap.
         Insertions\removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate existing iterators.
-        The inline storage of DenseList is the same of a pointer. An empty DenseList does not use heap memory.
-        All the functions of DenseList gives at least the strong exception guarantee. */
+        The inline storage of dense_list is the same of a pointer. An empty dense_list does not use heap memory.
+        All the functions of dense_list gives at least the strong exception guarantee. */
     template <typename ELEMENT, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class DenseList final
+        class dense_list final
     {
     private:
 
@@ -37,36 +37,36 @@ namespace density
         /** Alias for the template arguments */
         using runtime_type = RUNTIME_TYPE;
 
-        /** Creates a DenseList containing all the elements specified in the parameter list.
+        /** Creates a dense_list containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_args elements to add to the list.
-                @return the new DenseList
+                @return the new dense_list
             Example:
-                const auto list = DenseList<int>::make(1, 2, 3);
-                const auto list1 = DenseList<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
+                const auto list = dense_list<int>::make(1, 2, 3);
+                const auto list1 = dense_list<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static DenseList make(TYPES &&... i_args)
+            inline static dense_list make(TYPES &&... i_args)
         {
             static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the paraneter types must be covariant to ELEMENT" );
-            DenseList new_list;
+            dense_list new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
             return std::move(new_list);
         }
 
-        /** Creates a DenseList containing all the elements specified in the parameter list. The allocator of the new DenseList is copy-constructed from the provided one.
+        /** Creates a dense_list containing all the elements specified in the parameter list. The allocator of the new dense_list is copy-constructed from the provided one.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_args elements to add to the list.
-                @return the new DenseList
+                @return the new dense_list
             Example:
                 MyAlloc<int> my_alloc;
                 MyAlloc<ListImpl> my_alloc1;
-                const auto list = DenseList<int>::make_with_alloc(my_alloc, 1, 2, 3);
-                const auto list1 = DenseList<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
+                const auto list = dense_list<int>::make_with_alloc(my_alloc, 1, 2, 3);
+                const auto list1 = dense_list<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static DenseList make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_args)
+            inline static dense_list make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_args)
         {
             static_assert(AllCovariant<ELEMENT, TYPES...>::value, "Al the paraneter types must be covariant to ELEMENT");
-            DenseList new_list;
+            dense_list new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
             return std::move(new_list);
         }
@@ -177,7 +177,7 @@ namespace density
 
             const_iterator operator++ (int) DENSITY_NOEXCEPT
             {
-                iterator copy(*this);
+				const_iterator copy(*this);
                 m_impl.move_next();
                 return copy;
             }
@@ -204,7 +204,7 @@ namespace density
 
 			const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT { return m_impl.complete_type(); }
 
-			friend class DenseList; // this allows DenseList to access m_impl
+			friend class dense_list; // this allows dense_list to access m_impl
 			            
         private:
             IteratorImpl m_impl;
@@ -223,7 +223,7 @@ namespace density
             void push_back(const ELEMENT_COMPLETE_TYPE & i_source)
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
-            m_impl.insert_impl(m_impl.m_types + m_impl.size(),
+            m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
                 runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
@@ -232,7 +232,7 @@ namespace density
             void push_front(const ELEMENT_COMPLETE_TYPE & i_source)
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
-            m_impl.insert_impl(m_impl.m_types,
+            m_impl.insert_impl(m_impl.get_control_blocks(),
                 runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
         }
@@ -241,7 +241,7 @@ namespace density
             void push_back(ELEMENT_COMPLETE_TYPE && i_source)
                 DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
         {
-            m_impl.insert_impl(m_impl.m_types + m_impl.size(),
+            m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
                 runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
@@ -249,7 +249,7 @@ namespace density
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_front(ELEMENT_COMPLETE_TYPE && i_source)
         {
-            m_impl.insert_impl(m_impl.m_types,
+            m_impl.insert_impl(m_impl.get_control_blocks(),
                 runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 MoveConstruct(&i_source) );
         }
@@ -310,15 +310,15 @@ namespace density
             }
         }
 
-        void swap(DenseList & i_other) DENSITY_NOEXCEPT
+        void swap(dense_list & i_other) DENSITY_NOEXCEPT
         {
-            std::swap(m_impl.m_types, i_other.m_types);
+            std::swap(m_impl.edit_control_blocks(), m_impl.i_other.edit_control_blocks());
         }
 
                     /////////////////////////
 
         /* to do, & WARNING!: this function is slicing-comparing. Fix or delete. */
-        bool equal_to(const DenseList & i_source) const
+        bool equal_to(const dense_list & i_source) const
         {
             if (m_impl.size() != i_source.size())
             {
@@ -338,8 +338,8 @@ namespace density
             }
         }
 
-        bool operator == (const DenseList & i_source) const { return equal_to(i_source); }
-        bool operator != (const DenseList & i_source) const { return !equal_to(i_source); }
+        bool operator == (const dense_list & i_source) const { return equal_to(i_source); }
+        bool operator != (const dense_list & i_source) const { return !equal_to(i_source); }
 
     private:
 
@@ -371,12 +371,12 @@ namespace density
 
     private:
         detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
-    }; // class DenseList;
+    }; // class dense_list;
 
     template <typename ELEMENT, typename... TYPES>
-        inline DenseList<ELEMENT> make_dense_list(TYPES &&... i_args)
+        inline dense_list<ELEMENT> make_dense_list(TYPES &&... i_args)
     {
-        return DenseList<ELEMENT>::make(std::forward<TYPES>(i_args)...);
+        return dense_list<ELEMENT>::make(std::forward<TYPES>(i_args)...);
     }
 
 } // namespace density

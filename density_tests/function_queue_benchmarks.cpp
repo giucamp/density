@@ -18,7 +18,7 @@ namespace density
     {
         using namespace testity;
 
-        void register_function_queue_benchmarks(TestTree & i_test_node)
+		PerformanceTestGroup make_function_queue_benchmarks()
         {
             PerformanceTestGroup group("push & consume", "density version: " + std::to_string( DENSITY_VERSION ) );
 
@@ -68,7 +68,7 @@ namespace density
                     queue[index]();
             }, __LINE__);
 
-            i_test_node["/density/function_queue_test"].add_performance_test(group);
+			return group;            
         }
 
     } // namespace benchmarks

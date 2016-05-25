@@ -55,7 +55,7 @@ namespace density
         {
         public:
 
-            using List = DenseList< TestObjectBase, std::allocator<TestObjectBase> >;
+            using List = dense_list< TestObjectBase, std::allocator<TestObjectBase> >;
 
             TestContainerList()
             {

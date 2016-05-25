@@ -309,6 +309,8 @@ namespace density
 				#endif
             };
 
+			ControlBlock * & edit_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
+
 			ControlBlock * get_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
 			const ControlBlock * get_control_blocks() const DENSITY_NOEXCEPT { return m_control_blocks; }
 

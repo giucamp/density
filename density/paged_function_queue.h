@@ -48,6 +48,11 @@ namespace density
             m_queue.clear();
         }
 
+		void pop() DENSITY_NOEXCEPT
+		{
+			m_queue.pop();
+		}
+
     private:
         using Features = detail::FeatureList<
             density::detail::FeatureSize, density::detail::FeatureAlignment,

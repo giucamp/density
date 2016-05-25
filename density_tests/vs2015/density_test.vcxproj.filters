@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\dense_list_benchmark.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\dense_list_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\function_queue_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
@@ -42,6 +36,15 @@
     </ClCompile>
     <ClCompile Include="..\..\testity\environment.cpp">
       <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\old_dense_list_benchmark.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\old_dense_list_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\list_test.cpp">
+      <Filter>density_tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

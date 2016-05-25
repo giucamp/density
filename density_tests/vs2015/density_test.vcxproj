@@ -207,8 +207,9 @@
     <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
-    <ClCompile Include="..\dense_list_benchmark.cpp" />
-    <ClCompile Include="..\dense_list_test.cpp" />
+    <ClCompile Include="..\list_test.cpp" />
+    <ClCompile Include="..\old_dense_list_benchmark.cpp" />
+    <ClCompile Include="..\old_dense_list_test.cpp" />
     <ClCompile Include="..\function_queue_benchmarks.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\paged_queue_test.cpp" />
