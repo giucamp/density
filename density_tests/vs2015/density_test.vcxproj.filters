@@ -46,6 +46,9 @@
     <ClCompile Include="..\list_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\lifo_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
@@ -92,6 +95,12 @@
     </ClInclude>
     <ClInclude Include="..\..\density\detail\dense_list_impl.h">
       <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\void_allocator.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\lifo.h">
+      <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

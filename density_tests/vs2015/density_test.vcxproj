@@ -207,6 +207,7 @@
     <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
+    <ClCompile Include="..\lifo_test.cpp" />
     <ClCompile Include="..\list_test.cpp" />
     <ClCompile Include="..\old_dense_list_benchmark.cpp" />
     <ClCompile Include="..\old_dense_list_test.cpp" />
@@ -223,10 +224,12 @@
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\detail\dense_list_impl.h" />
     <ClInclude Include="..\..\density\detail\queue_impl.h" />
+    <ClInclude Include="..\..\density\lifo.h" />
     <ClInclude Include="..\..\density\paged_function_queue.h" />
     <ClInclude Include="..\..\density\paged_queue.h" />
     <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
+    <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\testity\correctness_test_context.h" />
     <ClInclude Include="..\..\testity\environment.h" />
     <ClInclude Include="..\..\testity\testing_utils.h" />

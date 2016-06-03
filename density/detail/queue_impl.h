@@ -156,7 +156,7 @@ namespace density
 
             /** Moves the elements from i_source to this queue, move constructing them to this QueueImpl, and destroying
                 them from the source. After the call, i_source will be empty.
-                This queue must have enough space to allocate space for all the elements of i_source,
+                This queue must have enough space to allocate all the elements of i_source,
                 otherwise the behavior is undefined. If you assign to this QueueImpl a memory buffer with the same size
                 of the source, but with (at least) the aligned to i_source.element_max_alignment(), the space will always
                 be enough.

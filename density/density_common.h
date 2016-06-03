@@ -454,6 +454,31 @@ namespace density
         return new_block;
     }
 
+	inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
+    {
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+
+        const auto alignment_mask = i_alignment - 1;
+
+        auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
+		const auto original_ptr = ptr;
+
+        ptr += alignment_mask;
+        ptr &= ~alignment_mask;
+		void * result = reinterpret_cast<void*>(ptr);
+		ptr += i_size;		
+
+		#if DENSITY_POINTER_OVERFLOW_SAFE
+            if (ptr < original_ptr)
+            {
+				io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
+            }
+        #endif
+
+        io_curr_ptr = reinterpret_cast<void*>(ptr);
+        return result;
+    }
+
     /** Finds the aligned placement for a block with the size and alignment of the template parameter TYPE, , such that it is
             >= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
         @param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After
@@ -816,29 +841,6 @@ namespace density
         MemSize m_padding;
     };
 
-    inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
-    {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-
-        const auto alignment_mask = i_alignment - 1;
-
-        auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
-		const auto original_ptr = ptr;
-
-        ptr += alignment_mask;
-        ptr &= ~alignment_mask;
-		void * result = reinterpret_cast<void*>(ptr);
-		ptr += i_size;		
-
-		#if DENSITY_POINTER_OVERFLOW_SAFE
-            if (ptr < original_ptr)
-            {
-				io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
-            }
-        #endif
-
-        io_curr_ptr = reinterpret_cast<void*>(ptr);
-        return result;
-    }
+    
 
 } // namespace density
