@@ -135,7 +135,7 @@ namespace density
 		DENSITY_NO_INLINE void * alloc_new_page(size_t i_size)
 		{
 			const size_t page_size = detail::size_max(
-				i_size + alignof(PageHeader),
+				i_size + sizeof(PageHeader),
 				detail::size_max(s_min_page_size, UNDERLYING_VOID_ALLOCATOR::s_min_block_size));
 			
 			PageHeader * const new_page = static_cast<PageHeader*>( get_underlying_allocator().allocate(page_size, s_granularity) );
@@ -444,9 +444,9 @@ namespace density
 
 		const_iterator cend() const DENSITY_NOEXCEPT	{ return m_elements + m_size; }
 
-		const_iterator begin() const DENSITY_NOEXCEPT { return m_elements; }
+		const_iterator begin() const DENSITY_NOEXCEPT	{ return m_elements; }
 
-		const_iterator end() const DENSITY_NOEXCEPT { return m_elements + m_size; }
+		const_iterator end() const DENSITY_NOEXCEPT		{ return m_elements + m_size; }
 			
 		LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
 		{

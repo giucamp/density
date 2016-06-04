@@ -49,6 +49,9 @@
     <ClCompile Include="..\lifo_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\lifo_benchmarks.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
