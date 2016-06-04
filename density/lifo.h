@@ -12,32 +12,92 @@
 
 namespace density
 {
+	/** Class template that provides a typeless LIFO memory management.
+		Memory is allocated\freed with the member function allocate and deallocate. A living block is a block allocated, 
+		eventually reallocated, but not yet deallocated.
+		ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not 
+		the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
+		For simplicity, lifo_allocator does not support custom alignments: every block is guaranteed to be like
+		std::max_align_t.
+		Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
+		The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block.
+		lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
+		See thread_lifo_allocator for a stateless LIFO allocator. */
 	template <typename UNDERLYING_VOID_ALLOCATOR = void_allocator >
-		class lifo_allocator
+		class lifo_allocator : private UNDERLYING_VOID_ALLOCATOR
 	{
 	public:
 
-		static const size_t s_granularity = alignof(std::max_align_t);
+		/** Alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+		static const size_t s_alignment = alignof(std::max_align_t);
 
-		lifo_allocator() = delete;		
+		lifo_allocator() = default;
+
+		// disable copying
+		lifo_allocator(const lifo_allocator &) = delete;
+		lifo_allocator & operator = (const lifo_allocator &) = delete;
 		
-		static void * allocate(size_t i_size)
+		/** Destroys the allocator, deallocating any living bock*/
+		~lifo_allocator()
 		{
-			DENSITY_ASSERT(i_size % s_granularity == 0);
+			deallocate_all();
+		}
 
-			ThreadData & thread_data = get_thread_data();
-			void * result = thread_data.m_last_page->allocate(i_size);
+		/** Allocates a memory block. The content of the newly allocated memory is undefined. 
+				@param i_block i_mem_size The size of the requested block, in bytes.
+			\n\b Throws: unspecified.
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+		void * allocate(size_t i_mem_size)
+		{
+			auto const actual_size = (i_mem_size + s_alignment_mask) & ~s_alignment_mask;
+			auto result = m_last_page->allocate(actual_size);
 			if (result == nullptr)
 			{
-				result = alloc_new_page(i_size);
+				// allocate a new page, and then allocate the requested block on it. This may throw
+				result = alloc_new_page(actual_size);
 			}
 			return result;
 		}
-		
-		static void deallocate(void * i_block)
+
+		/** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
+			The address of the block may change. The content of the memory block is preserved up to the exiting extend.
+			If the memory block is moved to another address, its content is copied with memcopy.
+				@param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
+					because it may point to invalid memory.
+				@param i_block i_new_mem_size the new size requested for the block, in bytes.
+				@return address of the resized block.
+			\n\b Throws: unspecified.
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+		void * reallocate(void * i_block, size_t i_new_mem_size)
 		{
-			ThreadData & thread_data = get_thread_data();
-			auto const last_page = thread_data.m_last_page;
+			auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
+			if (m_last_page->reallocate(i_block, new_actual_size))
+			{
+				return i_block;
+			}
+			else
+			{
+				auto prev_last_page = m_last_page;
+				auto size_to_copy = m_last_page->size_of_most_recent_block(i_block);
+				if (size_to_copy >= new_actual_size)
+				{
+					size_to_copy = new_actual_size;
+				}
+				// the following line may throw
+				auto const new_block = alloc_new_page(actual_size);
+				memcpy(new_block, i_block, size_to_copy);
+				prev_last_page->deallocate(i_block);
+				return new_block;
+			}
+		}
+		
+		/** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
+				@param i_block The memory block to deallocate
+			\pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
+			\n\b Throws: nothing. */
+		void deallocate(void * i_block) DENSITY_NOEXCEPT
+		{
+			auto const last_page = m_last_page;
 			last_page->free(i_block);
 			if (last_page->is_empty())
 			{
@@ -45,54 +105,70 @@ namespace density
 			}
 		}
 
-		static UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator()
+		/** Deallocates any living block.
+			\n\b Throws: nothing. */
+		void deallocate_all() DENSITY_NOEXCEPT
 		{
-			return get_thread_data();
+			auto const empty_page = get_empty_page();
+			while (m_last_page != empty_page)
+			{
+				pop_page();
+			}
+		}
+
+		UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() DENSITY_NOEXCEPT
+		{
+			return *this;
+		}
+
+		const UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() const DENSITY_NOEXCEPT
+		{
+			return *this;
 		}
 
 	private:
 
+		static const size_t s_granularity = alignof(std::max_align_t);
+		static const size_t s_alignment_mask = s_alignment - 1;
 		static const size_t s_min_page_size = 2048;
 
-		DENSITY_NO_INLINE static void * alloc_new_page(size_t i_size)
+		DENSITY_NO_INLINE void * alloc_new_page(size_t i_size)
 		{
 			const size_t page_size = detail::size_max(
 				i_size + alignof(PageHeader),
 				detail::size_max(s_min_page_size, UNDERLYING_VOID_ALLOCATOR::s_min_block_size));
 			
-			ThreadData & thread_data = get_thread_data();
-
 			PageHeader * const new_page = static_cast<PageHeader*>( get_underlying_allocator().allocate(page_size, s_granularity) );
-			thread_data.m_last_page = new(new_page) PageHeader(thread_data.m_last_page, 
+			m_last_page = new(new_page) PageHeader(m_last_page, 
 				new_page + 1, address_add(new_page, page_size));
 
-			void * const new_block = new_page->allocate(i_size);
+			/* note: the size of the first block of a page cannot be zero, otherwise is_empty() would
+				return true even if this block is living. */
+			void * const new_block = new_page->allocate(i_size > 0 ? i_size : s_granularity);
 			DENSITY_ASSERT_INTERNAL(new_block != nullptr);
 			return new_block;
 		}
 
-		static void pop_page()
+		void pop_page() DENSITY_NOEXCEPT
 		{
-			ThreadData & thread_data = get_thread_data();
-
-			auto const last_page = thread_data.m_last_page;
+			auto const last_page = m_last_page;
 			auto const prev_page = last_page->prev_page();
 			last_page->PageHeader::~PageHeader();
 			get_underlying_allocator().deallocate(last_page, last_page->capacity() + sizeof(PageHeader), s_granularity);
-			thread_data.m_last_page = prev_page;
+			m_last_page = prev_page;
 		}
 
-		class PageHeader
+		class PageHeader 
 		{
 		public:
 
-			PageHeader(PageHeader * const i_prev_page, void * i_start_address, void * i_end_address)
+			PageHeader(PageHeader * const i_prev_page, void * i_start_address, void * i_end_address) DENSITY_NOEXCEPT
 				: m_end_address(i_end_address), m_curr_address(i_start_address),
 				  m_prev_page(i_prev_page), m_start_address(i_start_address)
 			{
 			}
 
-			void * allocate(size_t i_size)
+			void * allocate(size_t i_size) DENSITY_NOEXCEPT
 			{
 				const auto start_of_block = m_curr_address;
 				const auto end_of_block = address_add(start_of_block, i_size);
@@ -108,24 +184,44 @@ namespace density
 				}
 			}
 
-			void free(void * i_block)
+			bool reallocate(void * i_block, size_t i_new_size) DENSITY_NOEXCEPT
+			{
+				const auto start_of_block = i_block;
+				const auto end_of_block = address_add(i_block, i_new_size);
+				if (end_of_block >= start_of_block && end_of_block <= m_end_address)
+				{
+					m_curr_address = end_of_block;
+					return true;
+				}
+				else
+				{
+					return false;
+				}				
+			}
+
+			size_t size_of_most_recent_block(void * i_block) const DENSITY_NOEXCEPT
+			{
+				return address_diff(m_curr_address, i_block);
+			}
+
+			void free(void * i_block) DENSITY_NOEXCEPT
 			{
 				m_curr_address = i_block;
 			}
 
-			bool owns(void * i_address) const
+			bool owns(void * i_address) const DENSITY_NOEXCEPT
 			{
 				return i_address >= m_start_address && i_address < m_end_address;
 			}
 
-			bool is_empty() const
+			bool is_empty() const DENSITY_NOEXCEPT
 			{
 				return m_curr_address == m_start_address;
 			}
 
-			PageHeader * prev_page() const		{ return m_prev_page; }
+			PageHeader * prev_page() const DENSITY_NOEXCEPT { return m_prev_page; }
 
-			size_t capacity() const				{ return address_diff(m_end_address, m_start_address); }
+			size_t capacity() const DENSITY_NOEXCEPT { return address_diff(m_end_address, m_start_address); }
 			
 		private:
 			void * const m_end_address;
@@ -139,43 +235,108 @@ namespace density
 			static PageHeader s_empty(nullptr, nullptr, nullptr);
 			return &s_empty;
 		}
-		
-		struct ThreadData : UNDERLYING_VOID_ALLOCATOR
-		{
-			PageHeader * m_last_page = get_empty_page();
-		};
 
-		static ThreadData & get_thread_data()
+		bool operator == (const lifo_allocator & i_other) const DENSITY_NOEXCEPT
 		{
-			return t_thread_data;
+			return this == &i_other;
 		}
 
-		static thread_local ThreadData t_thread_data;
+		bool operator != (const lifo_allocator & i_other) const DENSITY_NOEXCEPT
+		{
+			return this != &i_other;
+		}
+		
+	private: // data members
+		PageHeader * m_last_page = get_empty_page();
 	};
 
-	template <typename UNDERLYING_VOID_ALLOCATOR>
-		thread_local typename lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::ThreadData lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_thread_data;
-
-	template <typename LIFO_ALLOCATOR = lifo_allocator<> >
-		class lifo_buffer
+	/** Stateless class template that provides a thread local LIFO memory management.
+		Memory is allocated\freed with the member function allocate and deallocate. A living block is a block allocated,
+		eventually reallocated, but not yet deallocated. Every thread has its own stack of living blocks.
+		ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED BY A THREAD. If a block which is not
+		the most recently allocated living block of the caling thread is deallocated or reallocated, the behavior is undefined.
+		For simplicity, thread_lifo_allocator does not support custom alignments : every block is guaranteed to be like
+		std::max_align_t.
+		Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator. 
+		Only the calling thread matters.
+		When a thread exits all its living block are deallocated. */
+	template <typename UNDERLYING_VOID_ALLOCATOR = void_allocator >
+		class thread_lifo_allocator
 	{
 	public:
 
-		lifo_buffer(size_t i_size) 
-			: m_buffer(LIFO_ALLOCATOR::allocate(i_size)), m_size(i_size) { }
+		/** Alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+		static const size_t s_alignment = lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::s_alignment;
+
+		/** Allocates a memory block. The content of the newly allocated memory is undefined. 
+				@param i_block i_mem_size The size of the requested block, in bytes.
+			\n\b Throws: unspecified.
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+		void * allocate(size_t i_mem_size)
+		{
+			return t_allocator.allocate(i_mem_size);
+		}
+
+		/** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
+			The address of the block may change. The content of the memory block is preserved up to the exiting extend.
+			If the memory block is moved to another address, its content is copied with memcopy.
+				@param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
+					because it may point to invalid memory.
+				@param i_block i_new_mem_size the new size requested for the block, in bytes.
+				@return address of the resized block.
+			\n\b Throws: unspecified.
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+		void * reallocate(void * i_block, size_t i_new_mem_size)
+		{
+			return t_allocator.reallocate(i_block, i_new_mem_size);
+		}
+
+		/** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
+				@param i_block The memory block to deallocate
+			\pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
+			\n\b Throws: nothing. */
+		void deallocate(void * i_block) DENSITY_NOEXCEPT
+		{
+			t_allocator.deallocate(i_block);
+		}
+
+	private:
+		static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> t_allocator;
+	};
+
+	template <typename UNDERLYING_VOID_ALLOCATOR>
+		thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> thread_lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_allocator;
+	
+	template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
+	class lifo_buffer : LIFO_ALLOCATOR
+	{
+	public:
+
+		lifo_buffer(size_t i_mem_size)
+		{
+			m_buffer = get_allocator().allocate(i_mem_size);
+			m_mem_size = i_mem_size;
+		}
+
+		lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size)
+			: LIFO_ALLOCATOR(i_allocator)
+		{
+			m_buffer = get_allocator().allocate(i_mem_size);
+			m_mem_size = i_mem_size;
+		}
 
 		lifo_buffer(const lifo_buffer &) = delete;
 		lifo_buffer & operator = (const lifo_buffer &) = delete;
 
 		~lifo_buffer()
 		{
-			LIFO_ALLOCATOR::deallocate(m_buffer);
+			get_allocator().deallocate(m_buffer);
 		}
 
 		void resize(size_t i_new_size)
 		{
-			m_buffer = LIFO_ALLOCATOR::reallocate(m_buffer, i_new_size);
-			m_size = i_new_size;
+			m_buffer = get_allocator().reallocate(m_buffer, i_new_size);
+			m_mem_size = i_new_size;
 		}
 
 		void * data() const
@@ -183,24 +344,118 @@ namespace density
 			return m_buffer;
 		}
 
-		size_t size() const
+		size_t mem_size() const DENSITY_NOEXCEPT
 		{
-			return m_size;
+			return m_mem_size;
+		}
+
+		LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+		{
+			return *this;
+		}
+
+		const LIFO_ALLOCATOR & get_allocator() const DENSITY_NOEXCEPT
+		{
+			return *this;
 		}
 
 	private:
 		void * m_buffer;
-		size_t m_size;
+		size_t m_mem_size;
 	};
 
-	template <typename TYPE>
-		class lifo_array
+	template <typename TYPE, typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
+		class lifo_array : LIFO_ALLOCATOR
 	{
 	public:
 
-		lifo_array(size_t i_size)
+		using value_type = TYPE;
+		using reference = TYPE &;
+		using const_reference = TYPE &;
+		using pointer = TYPE *;
+		using const_pointer = const TYPE *;
+		using iterator = TYPE *;
+		using const_iterator = const TYPE *;
+		
+		template <typename... CONSTRUCTION_PARAMS>
+			lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
 		{
+			m_elements = static_cast<TYPE*>( get_allocator().allocate(i_size * sizeof(TYPE)) );
+			m_size = i_size;
+			size_t element_index = 0;
+			try
+			{
+				for (; element_index < i_size; element_index++)
+				{
+					new(m_elements + element_index) TYPE(i_construction_params...);
+				}
+			}
+			catch (...)
+			{
+				// destroy all the elements constructed till now, and then deallocate
+				auto it = m_elements + element_index;
+				it--;
+				for (; it >= m_elements; it--)
+				{
+					it->TYPE::~TYPE();
+				}
+				get_allocator().deallocate(m_elements);
+				throw;
+			}
+		}
+		
+		~lifo_array()
+		{
+			auto it = m_elements + m_size;
+			it--;
+			for (; it >= m_elements; it--)
+			{
+				it->TYPE::~TYPE();
+			}
+			get_allocator().deallocate(m_elements);
+		}
 
+		size_t size() const DENSITY_NOEXCEPT
+		{
+			return m_size;
+		}
+
+		TYPE & operator [] (size_t i_index) DENSITY_NOEXCEPT
+		{
+			DENSITY_ASSERT(i_index < m_size);
+			return m_elements[i_index];
+		}
+
+		const TYPE & operator [] (size_t i_index) const DENSITY_NOEXCEPT
+		{
+			DENSITY_ASSERT(i_index < m_size);
+			return m_elements[i_index];
+		}
+
+		pointer data() DENSITY_NOEXCEPT					{ return m_elements; }
+
+		const_pointer data() const DENSITY_NOEXCEPT		{ return m_elements; }
+
+		iterator begin() DENSITY_NOEXCEPT				{ return m_elements; }
+		
+		iterator end() DENSITY_NOEXCEPT					{ return m_elements + m_size; }
+
+		const_iterator cbegin() const DENSITY_NOEXCEPT	{ return m_elements; }
+
+		const_iterator cend() const DENSITY_NOEXCEPT	{ return m_elements + m_size; }
+
+		const_iterator begin() const DENSITY_NOEXCEPT { return m_elements; }
+
+		const_iterator end() const DENSITY_NOEXCEPT { return m_elements + m_size; }
+			
+		LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+		{
+			return *this;
+		}
+
+		const LIFO_ALLOCATOR & get_allocator() const DENSITY_NOEXCEPT
+		{
+			return *this;
 		}
 
 	private:
