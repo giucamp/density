@@ -60,15 +60,46 @@ namespace density
 		}
 
 		/** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
-			The address of the block may change. The content of the memory block is preserved up to the exiting extend.
+			The address of the block may change. The content of the memory block is not preserved.
 			If the memory block is moved to another address, its content is copied with memcopy.
 				@param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
 					because it may point to invalid memory.
-				@param i_block i_new_mem_size the new size requested for the block, in bytes.
+				@param i_new_mem_size the new size requested for the block, in bytes.
 				@return address of the resized block.
 			\n\b Throws: unspecified.
 			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
 		void * reallocate(void * i_block, size_t i_new_mem_size)
+		{
+			auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
+			if (m_last_page->reallocate(i_block, new_actual_size))
+			{
+				return i_block;
+			}
+			else
+			{
+				auto prev_last_page = m_last_page;
+				auto size_to_copy = m_last_page->size_of_most_recent_block(i_block);
+				if (size_to_copy >= new_actual_size)
+				{
+					size_to_copy = new_actual_size;
+				}
+				// the following line may throw
+				auto const new_block = alloc_new_page(new_actual_size);
+				prev_last_page->free(i_block);
+				return new_block;
+			}
+		}
+
+		/** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
+			The address of the block may change. The content of the memory block is preserved up to the exiting extend.
+			If the memory block is moved to another address, its content is copied with memcopy.
+				@param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
+					because it may point to invalid memory.
+				@param i_new_mem_size the new size requested for the block, in bytes.
+				@return address of the resized block.
+			\n\b Throws: unspecified.
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+		void * reallocate_preserve(void * i_block, size_t i_new_mem_size)
 		{
 			auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
 			if (m_last_page->reallocate(i_block, new_actual_size))
@@ -282,7 +313,7 @@ namespace density
 			If the memory block is moved to another address, its content is copied with memcopy.
 				@param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
 					because it may point to invalid memory.
-				@param i_block i_new_mem_size the new size requested for the block, in bytes.
+				@param i_new_mem_size the new size requested for the block, in bytes.
 				@return address of the resized block.
 			\n\b Throws: unspecified.
 			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
@@ -308,21 +339,37 @@ namespace density
 		thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> thread_lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_allocator;
 	
 	template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
-	class lifo_buffer : LIFO_ALLOCATOR
+		class lifo_buffer : LIFO_ALLOCATOR
 	{
 	public:
 
 		lifo_buffer(size_t i_mem_size)
 		{
-			m_buffer = get_allocator().allocate(i_mem_size);
+			m_buffer = m_block = get_allocator().allocate(i_mem_size);
+			m_mem_size = i_mem_size;
+		}
+
+		lifo_buffer(size_t i_mem_size, size_t i_alignment)
+		{
+			// the lifo block is already aligned like std::max_align_t
+			auto actual_block_size = i_mem_size;
+			if (i_alignment > alignof(std::max_align_t))
+			{
+				actual_block_size += i_alignment - alignof(std::max_align_t);
+			}
+			m_block = get_allocator().allocate(actual_block_size);
+			m_buffer = address_upper_align(m_block, i_alignment);
 			m_mem_size = i_mem_size;
 		}
 
 		lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size)
-			: LIFO_ALLOCATOR(i_allocator)
+			: LIFO_ALLOCATOR(i_allocator), lifo_buffer(i_mem_size)
 		{
-			m_buffer = get_allocator().allocate(i_mem_size);
-			m_mem_size = i_mem_size;
+		}
+
+		lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size, size_t i_alignment)
+			: LIFO_ALLOCATOR(i_allocator), lifo_buffer(i_mem_size, i_alignment)
+		{
 		}
 
 		lifo_buffer(const lifo_buffer &) = delete;
@@ -335,11 +382,24 @@ namespace density
 
 		void resize(size_t i_new_size)
 		{
-			m_buffer = get_allocator().reallocate(m_buffer, i_new_size);
+			m_buffer = m_block = get_allocator().reallocate(m_block, i_new_size);
 			m_mem_size = i_new_size;
 		}
 
-		void * data() const
+		void resize(size_t i_new_mem_size, size_t i_alignment)
+		{
+			// the lifo block is already aligned like std::max_align_t
+			auto actual_block_size = i_new_mem_size;
+			if (i_alignment > alignof(std::max_align_t))
+			{
+				actual_block_size += i_alignment - alignof(std::max_align_t);
+			}
+			m_block = get_allocator().reallocate(m_block, actual_block_size);
+			m_buffer = address_upper_align(m_block, i_alignment);
+			m_mem_size = i_new_mem_size;
+		}
+
+		void * data() const DENSITY_NOEXCEPT
 		{
 			return m_buffer;
 		}
@@ -359,13 +419,73 @@ namespace density
 			return *this;
 		}
 
-	private:
+	private:		
 		void * m_buffer;
 		size_t m_mem_size;
+		void * m_block;
 	};
 
+	namespace detail
+	{
+		template <typename TYPE, typename LIFO_ALLOCATOR, bool WIDE_ALIGNMENT = (alignof(TYPE) > alignof(std::max_align_t)) >
+			struct LifoArrayImpl;
+
+		template <typename TYPE, typename LIFO_ALLOCATOR>
+			struct LifoArrayImpl<TYPE, LIFO_ALLOCATOR, false > : public LIFO_ALLOCATOR
+		{
+		public:
+			
+			LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+				{ return *this; }
+
+			void alloc(size_t i_size)
+			{
+				m_elements = static_cast<TYPE*>(get_allocator().allocate(i_size * sizeof(TYPE)));
+			}
+
+			void free() DENSITY_NOEXCEPT
+			{
+				get_allocator().deallocate(m_elements);
+			}
+
+			TYPE * m_elements;
+		};
+
+		template <typename TYPE, typename LIFO_ALLOCATOR>
+			struct LifoArrayImpl<TYPE, LIFO_ALLOCATOR, true > : public LIFO_ALLOCATOR
+		{
+		public:
+			
+			LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+				{ return *this; }
+
+			void alloc(size_t i_size)
+			{
+				// the lifo block is already aligned like std::max_align_t
+				const size_t size_overhead = alignof(TYPE) - alignof(std::max_align_t);
+				m_block = get_allocator().allocate(size_overhead + i_size * sizeof(TYPE));
+				m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
+				DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
+			}
+
+			void free() DENSITY_NOEXCEPT
+			{
+				get_allocator().deallocate(m_block);
+			}
+
+			void * m_block;
+			TYPE * m_elements;
+		};
+	}
+
+	/** Simple array-like container class template suitable for LIFO memory management.
+		A lifo_array contains N elements of type TYPE, where N is the size of the array, and it
+		is given at construction time. Once the array has been constructed, no elements can be 
+		added or removed.
+		Elements in a lifo_array are constructed in positional order by the constructor and destroyed
+		in positional backward order by the destructor. */
 	template <typename TYPE, typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
-		class lifo_array : LIFO_ALLOCATOR
+		class lifo_array : detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>
 	{
 	public:
 
@@ -377,11 +497,14 @@ namespace density
 		using iterator = TYPE *;
 		using const_iterator = const TYPE *;
 		
+		/** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
+			@param i_size number of element of the array
+			@param i_construction_params construction parameters to use for every element of the array */
 		template <typename... CONSTRUCTION_PARAMS>
 			lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
+				: m_size(i_size)
 		{
-			m_elements = static_cast<TYPE*>( get_allocator().allocate(i_size * sizeof(TYPE)) );
-			m_size = i_size;
+			alloc(i_size);
 			size_t element_index = 0;
 			try
 			{
@@ -399,11 +522,12 @@ namespace density
 				{
 					it->TYPE::~TYPE();
 				}
-				get_allocator().deallocate(m_elements);
+				free();
 				throw;
 			}
 		}
 		
+		/** Destroys a lifo_array and all its elements. Elements are destroyed in reverse positional order. */
 		~lifo_array()
 		{
 			auto it = m_elements + m_size;
@@ -412,7 +536,7 @@ namespace density
 			{
 				it->TYPE::~TYPE();
 			}
-			get_allocator().deallocate(m_elements);
+			free();
 		}
 
 		size_t size() const DENSITY_NOEXCEPT
@@ -459,8 +583,7 @@ namespace density
 		}
 
 	private:
-		TYPE * m_elements;
-		size_t m_size;
+		const size_t m_size;
 	};
 
 } // namespace density

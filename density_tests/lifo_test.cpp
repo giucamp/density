@@ -10,6 +10,17 @@ namespace density
 {
 	namespace tests
 	{
+		size_t random_alignment(std::mt19937 & i_random)
+		{
+			size_t log2_max = 0;
+			while ((static_cast<size_t>(1) << log2_max) < alignof(std::max_align_t))
+			{
+				log2_max++;
+			}
+
+			return static_cast<size_t>(1) << std::uniform_int_distribution<size_t>(0, log2_max * 2)(i_random);
+		}
+
 		class LifoTestItem
 		{
 		public:
@@ -25,6 +36,7 @@ namespace density
 			LifoTestArray(const lifo_array<TYPE> & i_array)
 				: m_array(i_array)
 			{
+				DENSITY_TEST_ASSERT( is_address_aligned( i_array.data(), alignof(TYPE) ) );
 				m_vector.insert(m_vector.end(), i_array.begin(), i_array.end());
 			}
 
@@ -65,17 +77,45 @@ namespace density
 				check();
 				const auto old_size = m_buffer.mem_size();
 				const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
-				m_buffer.resize(new_size);
+
+				const bool custom_alignment = std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
+				const bool preserve = false; //  std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
+
 				m_vector.resize(new_size);
-				if (old_size < new_size)
+
+				if (custom_alignment)
+				{
+					const auto alignment = random_alignment(i_random);
+					m_buffer.resize(new_size, alignment);
+					DENSITY_TEST_ASSERT(is_address_aligned(m_buffer.data(), alignment));
+				}
+				else
+				{
+					m_buffer.resize(new_size);					
+				}				
+								
+				if (preserve)
+				{
+					if (old_size < new_size)
+					{
+						std::uniform_int_distribution<unsigned> rnd(0, 100);
+						std::generate(static_cast<unsigned char*>(m_buffer.data()) + old_size,
+							static_cast<unsigned char*>(m_buffer.data()) + new_size,
+							[&i_random, &rnd] { return static_cast<unsigned char>(rnd(i_random)); });
+						memcpy(m_vector.data() + old_size,
+							static_cast<unsigned char*>(m_buffer.data()) + old_size,
+							new_size - old_size);
+					}
+				}
+				else
 				{
 					std::uniform_int_distribution<unsigned> rnd(0, 100);
-					std::generate(static_cast<unsigned char*>(m_buffer.data()) + old_size,
+					std::generate(static_cast<unsigned char*>(m_buffer.data()),
 						static_cast<unsigned char*>(m_buffer.data()) + new_size,
-						[&i_random, &rnd] { return static_cast<unsigned char>(rnd(i_random) ); } );
-					memcpy(m_vector.data() + old_size,
-						static_cast<unsigned char*>(m_buffer.data()) + old_size,
-						new_size - old_size );
+						[&i_random, &rnd] { return static_cast<unsigned char>(rnd(i_random)); });
+					memcpy(m_vector.data(),
+						static_cast<unsigned char*>(m_buffer.data()),
+						new_size);
 				}
 				check();
 				return true; 
@@ -126,16 +166,31 @@ namespace density
 			}
 		};
 
-
 		void lifo_test_push(LifoTestContext & i_context);
 
 		void lifo_test_push_buffer(LifoTestContext & i_context)
 		{
 			std::uniform_int_distribution<unsigned> rnd(0, 100);
 			lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(i_context.m_random));
+			DENSITY_TEST_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
 			std::generate(
 				static_cast<unsigned char*>(buffer.data()), 
 				static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(), 
+				[&i_context, &rnd] { return static_cast<unsigned char>(rnd(i_context.m_random) % 128); });
+			i_context.push_test(buffer);
+			lifo_test_push(i_context);
+			i_context.pop_test();
+		}
+
+		void lifo_test_push_buffer_aligned(LifoTestContext & i_context)
+		{
+			const auto alignment = random_alignment(i_context.m_random);
+			std::uniform_int_distribution<unsigned> rnd(0, 100);
+			lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(i_context.m_random), alignment);
+			DENSITY_TEST_ASSERT(is_address_aligned(buffer.data(), alignment));
+			std::generate(
+				static_cast<unsigned char*>(buffer.data()),
+				static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
 				[&i_context, &rnd] { return static_cast<unsigned char>(rnd(i_context.m_random) % 128); });
 			i_context.push_test(buffer);
 			lifo_test_push(i_context);
@@ -163,6 +218,25 @@ namespace density
 			i_context.pop_test();
 		}
 
+		void lifo_test_push_wide_alignment(LifoTestContext & i_context)
+		{
+			union alignas(alignof(std::max_align_t) * 2) AlignedType
+			{
+				int m_value;
+				std::max_align_t m_unused[2];
+				bool operator == (const AlignedType & i_other) const
+					{ return m_value == i_other.m_value;}
+			};
+
+			std::uniform_int_distribution<int> rnd(-1000, 1000);
+			lifo_array<AlignedType> arr(std::uniform_int_distribution<size_t>(0, 7)(i_context.m_random));
+			std::generate(arr.begin(), arr.end(), [&i_context, &rnd] { return AlignedType{ rnd(i_context.m_random) }; });
+
+			i_context.push_test(arr);
+			lifo_test_push(i_context);
+			i_context.pop_test();
+		}
+
 		void lifo_test_push_double(LifoTestContext & i_context)
 		{
 			std::uniform_real_distribution<double> rnd(-1000., 1000.);
@@ -179,7 +253,8 @@ namespace density
 			if (i_context.m_curr_depth < i_context.m_max_depth)
 			{
 				using Func = void(*)(LifoTestContext & i_context);
-				Func tests[] = { lifo_test_push_buffer, lifo_test_push_char, lifo_test_push_int, lifo_test_push_double };
+				Func tests[] = { lifo_test_push_buffer, lifo_test_push_char, lifo_test_push_int, 
+					lifo_test_push_double, lifo_test_push_wide_alignment };
 
 				i_context.m_curr_depth++;
 				
