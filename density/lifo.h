@@ -84,9 +84,9 @@ namespace density
 					size_to_copy = new_actual_size;
 				}
 				// the following line may throw
-				auto const new_block = alloc_new_page(actual_size);
+				auto const new_block = alloc_new_page(new_actual_size);
 				memcpy(new_block, i_block, size_to_copy);
-				prev_last_page->deallocate(i_block);
+				prev_last_page->free(i_block);
 				return new_block;
 			}
 		}
