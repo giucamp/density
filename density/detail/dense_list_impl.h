@@ -267,12 +267,12 @@ namespace density
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element);
                 }
 
-				ControlBlock * end_of_types()
+				ControlBlock * end_of_control_blocks()
                 {
                     return m_end_of_control_blocks;
                 }
 
-				ControlBlock * commit()
+				ControlBlock * control_blocks()
                 {
                     return m_control_blocks;
                 }
@@ -352,7 +352,7 @@ namespace density
                             builder.add_by_copy(it.complete_type(), it.element());
                         }
 
-                        m_control_blocks = builder.commit();
+                        m_control_blocks = builder.control_blocks();
                     }
                     catch (...)
                     {
@@ -391,7 +391,7 @@ namespace density
 
                         RecursiveHelper<ELEMENT, TYPES...>::construct(builder, std::forward<TYPES>(i_args)...);
 
-                        o_dest_list.m_control_blocks = builder.commit();
+                        o_dest_list.m_control_blocks = builder.control_blocks();
                     }
                     catch (...)
                     {
@@ -481,21 +481,22 @@ namespace density
                 compute_buffer_size_and_alignment_for_insert(&buffer_size, &buffer_alignment, i_position, i_count_to_insert, i_source_type);
 
                 ListBuilder builder;
-                try
+				IteratorBaseImpl it = begin();
+				try
                 {
                     builder.init(*static_cast<ALLOCATOR*>(this), size() + i_count_to_insert, buffer_size, buffer_alignment);
 
                     size_t count_to_insert = i_count_to_insert;
                     auto const end_it = end();
-                    for (auto it = begin();;)
+                    for (;;)
                     {
                         if (it.control() == i_position && count_to_insert > 0)
                         {
-                            auto const end_of_types = builder.end_of_types();
+                            auto const end_of_control_blocks = builder.end_of_control_blocks();
                             i_constructor(builder, i_source_type);
                             if (count_to_insert == i_count_to_insert)
                             {
-								return_control_box = end_of_types;
+								return_control_box = end_of_control_blocks;
                             }
                             count_to_insert--;
                         }
@@ -512,15 +513,48 @@ namespace density
 
                     destroy_impl();
 
-                    m_control_blocks = builder.commit();
+                    m_control_blocks = builder.control_blocks();
+
+					return IteratorBaseImpl(return_control_box);
                 }
                 catch (...)
                 {
-                    builder.rollback(*static_cast<ALLOCATOR*>(this), buffer_size, buffer_alignment);
-                    throw;
-                }
+					/* we iterate this list exactly like we did in the loop interrupted by the exception,
+						but we stop at 'it', the iterator we were using */
+					size_t count_to_insert = i_count_to_insert;
+					auto const this_end_it = it;
+					IteratorBaseImpl this_it = begin();
 
-                return IteratorBaseImpl(return_control_box);
+					/* in the same loop we iterate over tmp, that is the list that we was creating. The 
+						elements that were moved from this list to tmp have to be moved back to this list. The elements
+						that was just constructed have to be destroyed. */
+					DenseListImpl tmp;
+					tmp.m_control_blocks = builder.control_blocks();
+					if (tmp.m_control_blocks != nullptr) // if the allocation fails builder.control_blocks() is null
+					{
+						auto tmp_it = tmp.begin();
+						auto tmp_end = builder.end_of_control_blocks();
+
+						for (; tmp_it != tmp_end; tmp_it.move_next())
+						{
+							if (this_it.control() == i_position && count_to_insert > 0)
+							{
+								tmp_it.complete_type().destroy(tmp_it.element());
+								count_to_insert--;
+							}
+							else
+							{
+								tmp_it.complete_type().move_construct_nothrow(this_it.element(), tmp_it.element());
+								this_it.move_next();
+							}
+						}
+
+						Header * const header = reinterpret_cast<Header*>(tmp.m_control_blocks) - 1;
+						aligned_free(*static_cast<ALLOCATOR*>(this), header, buffer_size, buffer_alignment);
+						tmp.m_control_blocks = nullptr;
+					}
+                    throw;
+                }               
             }
 
             IteratorBaseImpl erase_impl(const ControlBlock * i_from, const ControlBlock * i_to)
@@ -576,7 +610,7 @@ namespace density
 
                             if (!is_in_range)
                             {
-                                auto const new_element_info = builder.end_of_types();
+                                auto const new_element_info = builder.end_of_control_blocks();
 								builder.add_by_move(it.complete_type(), it.element());
 
                                 if (first_in_range)
@@ -590,12 +624,12 @@ namespace density
                         if (return_control_block == nullptr) // if no elements were copied after the erased range
                         {
                             DENSITY_ASSERT(i_to == m_control_blocks + prev_size);
-							return_control_block = builder.end_of_types();
+							return_control_block = builder.end_of_control_blocks();
                         }
 
                         destroy_impl();
 
-                        m_control_blocks = builder.commit();
+                        m_control_blocks = builder.control_blocks();
                     }
                     catch (...)
                     {

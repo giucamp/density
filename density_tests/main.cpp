@@ -33,8 +33,8 @@ int main()
 	using namespace testity;
 
 	#ifdef  _DEBUG
-		lifo_test();
 		list_test();
+		lifo_test();
 		paged_queue_test();
 		dense_queue_test();
 	#endif //  _DEBUG

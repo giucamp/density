@@ -40,7 +40,7 @@ namespace density
 
     */
 
-    /** This struct template checks the requirements on a RUNTIME_TYPE. Vioations are detected with static_assert. */
+    /** This struct template checks the requirements on a RUNTIME_TYPE. Violations are detected with static_assert. */
     template <typename RUNTIME_TYPE>
         struct RuntimeTypeConceptCheck
     {

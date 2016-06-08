@@ -27,6 +27,9 @@ namespace density
             TestObjectBase(std::mt19937 & i_random)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), std::uniform_int_distribution<size_t>()(i_random))) {}
 
+			TestObjectBase(size_t i_val)
+				: m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), i_val)) {}
+
             TestObjectBase(const TestObjectBase & i_source)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash))
             {

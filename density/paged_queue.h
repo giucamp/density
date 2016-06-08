@@ -148,7 +148,6 @@ namespace density
         }
 
         /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
-            \n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
             @param i_source object to be used as source for the construction of the new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).

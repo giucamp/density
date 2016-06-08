@@ -8,14 +8,44 @@
 
 namespace density
 {
-    /** A dense-list is a polymorphic sequence container optimized to be compact in both heap memory and inline storage.
-        Elements is a dense_list are allocated respecting their alignment requirements.
-        In a polymorphic container every element can have a different complete type, provided that this type is covariant to the type ELEMENT.
-        All the elements of a dense_list are arranged in the same memory block of the heap.
-        Insertions\removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate existing iterators.
-        The inline storage of dense_list is the same of a pointer. An empty dense_list does not use heap memory.
-        All the functions of dense_list gives at least the strong exception guarantee. */
-    template <typename ELEMENT, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+	/** \brief Class template that implements an heterogeneous sequence container optimized to be compact in both heap memory and inline storage.
+        Elements is a dense_list are allocated tightly in the same dynamic memory block, respecting their alignment requirements.
+        To be added to a dense_list, an element must have a type covariant to the template argument ELEMENT. If ELEMENT is void 
+		(the default value), any element can be added.
+        Unlike std::vector, dense_list does not provide any extra capacity management. As consequences, the complexity
+		of many methods is linear, in contrast with the constant amortized time of the equivalent methods of std::vector. Insertions
+		and removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate 
+		existing iterators
+        The inline storage of dense_list is the same of a pointer, provided that the template argument ALLOCATOR is an empty class 
+		and the compiler supports the empty base class optimization. An empty dense_list does not own a dynamic memory block.
+		\n\b Thread safeness: None. The user is responsible to avoid race conditions.
+		\n<b>Exception safeness</b>: Any function of dense_list is noexcept or provides the strong exception guarantee.
+            @param ELEMENT Base type of the elements of the list. The list enforces the compile-time
+                constraint that the type of each element is covariant to ELEMENT.
+                If ELEMENT is void, elements of any complete type can be added to the container. In this
+                case, the methods of dense_list (and its iterators) that returns a pointer to an element
+                will return a void* to a complete object, while the methods that returns a reference to
+                an element will return void. Use iterators and pointer semantic to write generic code
+                that works with any dense_list.
+                If ELEMENT decays to void but it is not a plain void, a compile time error is issued.
+                Note: if ELEMENT is to be a built-in type, a pointer, or a final type, then the complete
+                type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
+                this case a standard container (like std::vector) instead of std::dense_list is a better choice.
+                If ELEMENT is not void, it must be noexcept move constructible.
+            @param ALLOCATOR Allocator to be used to allocate the memory buffer. The list may rebind
+                this allocator to a different type, eventually unrelated to ELEMENT.
+            @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
+                This type must meet the requirements of RuntimeType.
+        dense_list provides only forward iteration. Only the first element is accessible in constant time (with
+        the functions: dense_list::front, dense_list::begin). The iterator provides access to both the ELEMENT (with
+        the function element) and the RUNTIME_TYPE (with the function type).
+        Limitations: when an element of COMPETE_ELEMENT is pushed to the dense_list, the current implementation needs
+            sometimes to downcast from ELEMENT to COMPETE_ELEMENT.
+                - If no virtual inheritance is involved, static_cast is used
+                - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
+                    a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
+                    time error is issued). */
+    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class dense_list final
     {
     private:
@@ -25,24 +55,22 @@ namespace density
 
     public:
 
-        using allocator_type = ALLOCATOR;
-        using difference_type = ptrdiff_t;
-        using size_type = size_t;
-        using value_type = ELEMENT;
-        using reference = ELEMENT &;
-        using const_reference = const ELEMENT &;
-        using pointer = typename std::allocator_traits<allocator_type>::pointer;
-        using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
-
-        /** Alias for the template arguments */
-        using runtime_type = RUNTIME_TYPE;
-
+		using allocator_type = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+		using runtime_type = RUNTIME_TYPE;
+		using value_type = ELEMENT;
+		using reference = typename std::add_lvalue_reference< ELEMENT >::type;
+		using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
+		using difference_type = ptrdiff_t;
+		using size_type = size_t;
+		class iterator;
+		class const_iterator;
+		
         /** Creates a dense_list containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_args elements to add to the list.
                 @return the new dense_list
             Example:
-                const auto list = dense_list<int>::make(1, 2, 3);
+                const auto list = dense_list<>::make(1, std::string("abc"), 2.5);
                 const auto list1 = dense_list<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
             inline static dense_list make(TYPES &&... i_args)
@@ -88,21 +116,20 @@ namespace density
         class iterator final
         {
         public:
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = ptrdiff_t;
-            using size_type = size_t;
-            using value_type = ELEMENT;
-            using reference = ELEMENT &;
-            using const_reference = const ELEMENT &;
-            using pointer = typename std::allocator_traits<allocator_type>::pointer;
-            using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
+			using iterator_category = std::forward_iterator_tag;
+			using difference_type = ptrdiff_t;
+			using size_type = size_t;
+			using value_type = ELEMENT;
+			using pointer = ELEMENT *;
+			using reference = typename dense_list::reference;
+			using const_reference = typename dense_list::const_reference;
 
             iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source) {  }
 
-            value_type & operator * () const DENSITY_NOEXCEPT { return *element(); }
-            value_type * operator -> () const DENSITY_NOEXCEPT { return element(); }
-            value_type * element() const DENSITY_NOEXCEPT
+			reference operator * () const DENSITY_NOEXCEPT { return *element(); }
+			pointer operator -> () const DENSITY_NOEXCEPT { return element(); }
+			pointer element() const DENSITY_NOEXCEPT
                 { return static_cast<value_type *>(m_impl.element()); }
 
             iterator & operator ++ () DENSITY_NOEXCEPT
@@ -149,24 +176,20 @@ namespace density
         class const_iterator final
         {
         public:
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = ptrdiff_t;
-            using size_type = size_t;
-            using value_type = const ELEMENT;
-            using reference = const ELEMENT &;
-            using const_reference = const ELEMENT &;
-            using pointer = typename std::allocator_traits<allocator_type>::pointer;
-            using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
-
-            const_iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
-                : m_impl(i_source) {  }
+			using iterator_category = std::forward_iterator_tag;
+			using difference_type = ptrdiff_t;
+			using size_type = size_t;
+			using value_type = const ELEMENT;
+			using pointer = const ELEMENT *;
+			using reference = typename dense_list::const_reference;
+			using const_reference = typename dense_list::const_reference;
 
             const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source.m_impl) {  }
 
-            value_type & operator * () const DENSITY_NOEXCEPT { return *element(); }
-            value_type * operator -> () const DENSITY_NOEXCEPT { return element(); }
-            value_type * element() const DENSITY_NOEXCEPT
+			reference operator * () const DENSITY_NOEXCEPT { return *element(); }
+			pointer operator -> () const DENSITY_NOEXCEPT { return element(); }
+			pointer element() const DENSITY_NOEXCEPT
                 { return static_cast<value_type *>(m_impl.element()); }
 
             const_iterator & operator ++ () DENSITY_NOEXCEPT
@@ -175,7 +198,7 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator++ (int) DENSITY_NOEXCEPT
+            const_iterator operator ++ (int) DENSITY_NOEXCEPT
             {
 				const_iterator copy(*this);
                 m_impl.move_next();
@@ -207,6 +230,9 @@ namespace density
 			friend class dense_list; // this allows dense_list to access m_impl
 			            
         private:
+			const_iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
+				: m_impl(i_source) {  }
+
             IteratorImpl m_impl;
         }; // class const_iterator
 
@@ -219,14 +245,59 @@ namespace density
         const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
         const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
 
+        /** Adds an element at the end of the list. This method causers always a reallocation of the list.
+            @param i_source object to be used as source for the construction of the new element.
+                - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+                - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+
+            \n\b Requires:
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
+
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
-            void push_back(const ELEMENT_COMPLETE_TYPE & i_source)
-                DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
+            void push_back(ELEMENT_COMPLETE_TYPE && i_source)
         {
-            m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
-                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                CopyConstruct(&i_source) );
+            static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT" );
+            push_back_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
+                typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
+
+
+
+
+			struct CopyConstruct
+			{
+				const ELEMENT * const m_source;
+
+				CopyConstruct(const ELEMENT * i_source)
+					: m_source(i_source) { }
+
+				void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
+				{
+					return i_builder.add_by_copy(i_element_type, m_source);
+				}
+			};
+
+			struct MoveConstruct
+			{
+				ELEMENT * const m_source;
+
+				MoveConstruct(ELEMENT * i_source)
+					: m_source(i_source) { }
+
+				void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
+				{
+					return i_builder.add_by_move(i_element_type, m_source);
+				}
+			};
 
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_front(const ELEMENT_COMPLETE_TYPE & i_source)
@@ -235,15 +306,6 @@ namespace density
             m_impl.insert_impl(m_impl.get_control_blocks(),
                 runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 CopyConstruct(&i_source) );
-        }
-
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_back(ELEMENT_COMPLETE_TYPE && i_source)
-                DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
-        {
-            m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
-                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                MoveConstruct(&i_source) );
         }
 
         template <typename ELEMENT_COMPLETE_TYPE>
@@ -342,32 +404,32 @@ namespace density
         bool operator != (const dense_list & i_source) const { return !equal_to(i_source); }
 
     private:
-
-        struct CopyConstruct
+		
+		// overload used if i_source is an r-value
+        template <typename ELEMENT_COMPLETE_TYPE>
+            void push_back_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
         {
-            const ELEMENT * const m_source;
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
 
-            CopyConstruct(const ELEMENT * i_source)
-                : m_source(i_source) { }
+			m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
+				runtime_type::template make<ElementCompleteType>(),
+				[&i_source](typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type) {
+					return i_builder.add_by_move(i_element_type, &i_source);
+			});
+        }
 
-            void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
-            {
-                return i_builder.add_by_copy(i_element_type, m_source);
-            }
-        };
-
-        struct MoveConstruct
+        // overload used if i_source is an l-value
+        template <typename ELEMENT_COMPLETE_TYPE>
+            void push_back_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
         {
-            ELEMENT * const m_source;
+			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
 
-            MoveConstruct(ELEMENT * i_source)
-                : m_source(i_source) { }
-
-            void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
-            {
-                return i_builder.add_by_move(i_element_type, m_source);
-            }
-        };
+			m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
+				runtime_type::template make<ElementCompleteType>(),
+				[&i_source](typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type) {
+					return i_builder.add_by_copy(i_element_type, &i_source);
+			});
+        }
 
     private:
         detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;

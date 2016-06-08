@@ -184,7 +184,6 @@ namespace density
 
 
         /** Adds an element at the end of the queue. If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
-            \n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
             @param i_source object to be used as source for the construction of the new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
@@ -393,7 +392,7 @@ namespace density
 
             /** Constructs an iterator which is not dereferenceable
                 \n\b Throws: nothing */
-            const_iterator() DENSITY_NOEXCEPT {}
+            const_iterator() DENSITY_NOEXCEPT { }
 
             /** Initializing constructor. Provided for internal use only, do not use. */
             const_iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_source) DENSITY_NOEXCEPT
