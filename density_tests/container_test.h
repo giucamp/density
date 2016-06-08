@@ -559,6 +559,8 @@ namespace density
 
                 // move assign tmp to dense_container
                 dense_container = std::move(tmp);
+				const auto size_4 = std::distance(dense_container.cbegin(), dense_container.cend());
+				DENSITY_TEST_ASSERT(size_1 == size_4);
             }, i_probability);
         }
 

@@ -48,8 +48,10 @@ namespace density
                 const auto times = std::uniform_int_distribution<unsigned>(0, 3)(i_random);
                 for (unsigned i = 0; i < times; i++)
                 {
+					// if the constructor of shadow_element throws, dense_container is left unchanged 
+					COMPLETE_ELEMENT shadow_element(i_construction_parameters...);
                     i_test.dense_container().push_back(COMPLETE_ELEMENT(i_construction_parameters...));
-                    i_test.shadow_container().push_back(COMPLETE_ELEMENT(i_construction_parameters...));
+                    i_test.shadow_container().push_back(shadow_element);
                 }
             }, i_probability);
         }

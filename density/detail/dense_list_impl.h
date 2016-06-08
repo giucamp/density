@@ -114,9 +114,11 @@ namespace density
 					i_source.check_invariants();
 				#endif	
 
-                destroy_impl();
-                copy_impl(i_source);
-                return *this;
+				// use a copy to provide the strong exception guarantee
+				auto copy(*this);
+				destroy_impl();                
+				move_impl(std::move(copy));
+				return *this;
             }
 
             ~DenseListImpl() DENSITY_NOEXCEPT
