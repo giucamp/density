@@ -196,15 +196,17 @@ namespace density
 			using namespace density;
 			using namespace std;
 
-			struct Widget { virtual void draw() = 0; };
-			struct TextWidget : Widget { virtual void draw() override {} };
-			struct ImageWidget : Widget { virtual void draw() override { } };
+			struct Widget { virtual void draw() { /* ... */ } };
+			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
+			struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
 			auto widgets = dense_list<Widget>::make(TextWidget(), ImageWidget());
 			for (auto & widget : widgets)
 			{
 				widget.draw();
 			}
+
+			widgets.push_back(TextWidget());
 		}
 
 		// end of code snippets included in the documentation

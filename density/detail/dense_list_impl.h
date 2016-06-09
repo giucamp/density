@@ -115,7 +115,7 @@ namespace density
 				#endif	
 
 				// use a copy to provide the strong exception guarantee
-				auto copy(*this);
+				auto copy(i_source);
 				destroy_impl();                
 				move_impl(std::move(copy));
 				return *this;
