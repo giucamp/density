@@ -50,7 +50,7 @@ namespace density
     {
     private:
 
-        using ListImpl = detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
+        using ListImpl = typename detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
         using IteratorImpl = typename ListImpl::IteratorBaseImpl;
 
     public:
@@ -74,8 +74,8 @@ namespace density
                 const auto list1 = dense_list<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
             inline static dense_list make(TYPES &&... i_args)
-        {
-            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the paraneter types must be covariant to ELEMENT" );
+        {			
+            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT" );
             dense_list new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
             return std::move(new_list);
@@ -93,7 +93,7 @@ namespace density
         template <typename... TYPES>
             inline static dense_list make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_args)
         {
-            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "Al the paraneter types must be covariant to ELEMENT");
+            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT");
             dense_list new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
             return std::move(new_list);
@@ -245,8 +245,8 @@ namespace density
         const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
         const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
 
-        /** Adds an element at the end of the list. This method causers always a reallocation of the list.
-            @param i_source object to be used as source for the construction of the new element.
+        /** Adds an element at the end of the list. This method causes always a reallocation of the list.
+            @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
@@ -265,91 +265,99 @@ namespace density
             void push_back(ELEMENT_COMPLETE_TYPE && i_source)
         {
             static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
-                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT" );
-            push_back_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void" );
+            insert_n_impl(m_impl.get_control_blocks() + m_impl.size(), 1,
+				std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
                 typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
 
+        /** Adds an element at the begin of the list. This method causes always a reallocation of the list.
+            @param i_source object to be used as source to construct of new element.
+                - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+                - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
+            \n\b Requires:
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
 
-
-			struct CopyConstruct
-			{
-				const ELEMENT * const m_source;
-
-				CopyConstruct(const ELEMENT * i_source)
-					: m_source(i_source) { }
-
-				void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
-				{
-					return i_builder.add_by_copy(i_element_type, m_source);
-				}
-			};
-
-			struct MoveConstruct
-			{
-				ELEMENT * const m_source;
-
-				MoveConstruct(ELEMENT * i_source)
-					: m_source(i_source) { }
-
-				void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
-				{
-					return i_builder.add_by_move(i_element_type, m_source);
-				}
-			};
-
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_front(const ELEMENT_COMPLETE_TYPE & i_source)
-                DENSITY_NOEXCEPT_IF(std::is_nothrow_copy_constructible<ELEMENT_COMPLETE_TYPE>::value)
-        {
-            m_impl.insert_impl(m_impl.get_control_blocks(),
-                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                CopyConstruct(&i_source) );
-        }
-
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_front(ELEMENT_COMPLETE_TYPE && i_source)
         {
-            m_impl.insert_impl(m_impl.get_control_blocks(),
-                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                MoveConstruct(&i_source) );
+            static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void" );
+            insert_n_impl(m_impl.get_control_blocks(), 1,
+				std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
+                typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
 
-        void pop_front()
-        {
-            auto const at = m_impl.get_control_blocks();
-            m_impl.erase_impl(at, at + 1);
-        }
+        /** Adds an element at the specified position of the list. This method causes always a reallocation of the list.
+            @param i_at position in which the new element should be inserted. It must be an iterator pointing to a valid element
+				of this list, or it can be equal to cend(). Note: a iterator is implicitly converted to a cons_iterator.
+			@param i_source object to be used as source to construct of new element.
+                - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+                - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+			@return an iterator that points to the newly inserted element.
+            \n\b Requires:
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
 
-        void pop_back()
-        {
-			auto const at = m_impl.get_control_blocks() + m_impl.get_size_not_empty();
-            m_impl.erase_impl(at - 1, at);
-        }
-
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
-            iterator insert(const_iterator i_position, const ELEMENT_COMPLETE_TYPE & i_source)
+			iterator insert(const const_iterator & i_at, ELEMENT_COMPLETE_TYPE && i_source)
         {
-            return m_impl.insert_impl(i_position.m_impl.control(),
-                runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                CopyConstruct(&i_source) );
+            static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void" );
+			return insert_n_impl(i_at.m_impl.control(), 1,
+				std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
+                typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
 
+        /** Adds new elements at the specified position of the list. This method causes always a reallocation of the list.
+            @param i_at position in which the new element should be inserted. It must be an iterator pointing to a valid element
+				of this list, or it can be equal to cend(). Note: a iterator is implicitly converted to a cons_iterator.
+			@param i_count number of element to insert. Any value is valid (including zero).
+			@param i_source object to be used as source to construct of new elements. Unlike the members functions to insert a
+				single element, in this overload of insert the sound always binds to an l-value.
+			@return an iterator that points to the newly inserted element.
+            \n\b Requires:
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                    (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                    base of ELEMENT_COMPLETE_TYPE).
+
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
-            iterator insert(const_iterator i_position, size_t i_count, const ELEMENT_COMPLETE_TYPE & i_source)
+			iterator insert(const const_iterator & i_at, size_type i_count, const ELEMENT_COMPLETE_TYPE & i_source)
         {
-            if (i_count > 0)
-            {
-                return m_impl.insert_n_impl(i_position.m_impl.control(), i_count,
-                    runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
-                    CopyConstruct(&i_source) );
-            }
-            else
-            {
-                // inserting 0 elements
-                return iterator(i_position.m_impl);
-            }
+            static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void" );
+			if (i_count > 0)
+			{
+				return insert_n_impl(i_at.m_impl.control(), i_count,
+					i_source, std::false_type::type());
+			}
+			else
+			{
+				// inserting 0 elements
+				return iterator(i_at.m_impl);
+			}
         }
 
         iterator erase(const_iterator i_position)
@@ -404,31 +412,65 @@ namespace density
         bool operator != (const dense_list & i_source) const { return !equal_to(i_source); }
 
     private:
-		
+
+		struct CopyConstruct
+		{
+			const ELEMENT * const m_source;
+
+			CopyConstruct(const ELEMENT * i_source)
+				: m_source(i_source) { }
+
+			void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
+			{
+				return i_builder.add_by_copy(i_element_type, m_source);
+			}
+		};
+
+		struct MoveConstruct
+		{
+			ELEMENT * const m_source;
+
+			MoveConstruct(ELEMENT * i_source)
+				: m_source(i_source) { }
+
+			void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
+			{
+				return i_builder.add_by_move(i_element_type, m_source);
+			}
+		};
+
 		// overload used if i_source is an r-value
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push_back_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
+		template <typename ELEMENT_COMPLETE_TYPE>
+			typename ListImpl::IteratorBaseImpl insert_n_impl(
+				const typename ListImpl::ControlBlock * i_position, 
+				size_t i_count_to_insert, 
+				ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
         {
 			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
 
-			m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
+			/* Note that the specialization of the function template insert_n_impl does not
+				depend on ELEMENT_COMPLETE_TYPE. In this way the same machine code will be used
+				for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
+			return m_impl.insert_n_impl(i_position, i_count_to_insert,
 				runtime_type::template make<ElementCompleteType>(),
-				[&i_source](typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type) {
-					return i_builder.add_by_move(i_element_type, &i_source);
-			});
+				MoveConstruct(&i_source) );
         }
 
-        // overload used if i_source is an l-value
+		// overload used if i_source is an l-value
         template <typename ELEMENT_COMPLETE_TYPE>
-            void push_back_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
+			typename ListImpl::IteratorBaseImpl insert_n_impl(
+				const typename ListImpl::ControlBlock * i_position,
+				size_t i_count_to_insert, 
+				ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
         {
 			using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
 
-			m_impl.insert_impl(m_impl.get_control_blocks() + m_impl.size(),
+			/* Note that the specialization of the function template insert_n_impl does not
+				depend on ELEMENT_COMPLETE_TYPE. In this way the same machine code will be used
+				for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
+			return m_impl.insert_n_impl(i_position, i_count_to_insert,
 				runtime_type::template make<ElementCompleteType>(),
-				[&i_source](typename ListImpl::ListBuilder & i_builder, const runtime_type & i_element_type) {
-					return i_builder.add_by_copy(i_element_type, &i_source);
-			});
+				CopyConstruct(&i_source) );
         }
 
     private:

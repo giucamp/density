@@ -463,14 +463,7 @@ namespace density
                 *o_buffer_size = buffer_size;
                 *o_buffer_alignment = buffer_alignment;
             }
-
-            template <typename CONSTRUCTOR>
-				IteratorBaseImpl insert_impl(const ControlBlock * i_position,
-					const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
-            {
-                return insert_n_impl(i_position, 1, i_source_type, std::forward<CONSTRUCTOR>(i_constructor));
-            }
-
+			
             template <typename CONSTRUCTOR>
 				IteratorBaseImpl insert_n_impl(const ControlBlock * i_position, size_t i_count_to_insert,
 					const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)

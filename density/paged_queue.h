@@ -148,7 +148,7 @@ namespace density
         }
 
         /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
-            @param i_source object to be used as source for the construction of the new element.
+            @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
@@ -167,7 +167,7 @@ namespace density
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
             static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
-                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT");
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
             push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
                 typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
@@ -191,7 +191,7 @@ namespace density
             void emplace(PARAMETERS && ... i_parameters)
         {
             static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
-                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT");
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
 
             return insert_back_impl(runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 [&i_parameters...](const runtime_type &, void * i_dest) {

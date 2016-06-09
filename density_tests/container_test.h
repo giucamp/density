@@ -383,6 +383,12 @@ namespace density
                 insert_at(m_deque.size(), i_element, 1);
             }
 
+			template <typename TYPE>
+                void push_front(const TYPE & i_element)
+            {
+                insert_at(0, i_element, 1);
+            }
+
             void erase_at(size_t i_at, size_t i_count = 1)
             {
                 try
