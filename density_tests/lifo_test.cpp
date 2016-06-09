@@ -72,7 +72,7 @@ namespace density
 				DENSITY_TEST_ASSERT(memcmp(m_buffer.data(), m_vector.data(), m_vector.size())==0);
 			}
 
-			virtual bool resize(std::mt19937 & i_random)
+			virtual bool resize(std::mt19937 & i_random) override
 			{ 
 				check();
 				const auto old_size = m_buffer.mem_size();

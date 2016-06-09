@@ -393,7 +393,7 @@ namespace density
             {
                 try
                 {
-                    DENSITY_TEST_ASSERT(m_deque.size() <= i_at + i_count);
+                    DENSITY_TEST_ASSERT(m_deque.size() >= i_at + i_count);
                     m_deque.erase(m_deque.begin() + i_at, m_deque.begin() + i_at + i_count);
                 }
                 catch (...)

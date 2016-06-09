@@ -504,7 +504,7 @@ namespace density
 			lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
 				: m_size(i_size)
 		{
-			alloc(i_size);
+			this->alloc(i_size);
 			size_t element_index = 0;
 			try
 			{
@@ -522,7 +522,7 @@ namespace density
 				{
 					it->TYPE::~TYPE();
 				}
-				free();
+				this->free();
 				throw;
 			}
 		}
@@ -536,7 +536,7 @@ namespace density
 			{
 				it->TYPE::~TYPE();
 			}
-			free();
+			this->free();
 		}
 
 		size_t size() const DENSITY_NOEXCEPT
@@ -583,6 +583,7 @@ namespace density
 		}
 
 	private:
+		using detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>::m_elements;
 		const size_t m_size;
 	};
 

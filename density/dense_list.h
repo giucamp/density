@@ -12,7 +12,7 @@ namespace density
         Elements is a dense_list are allocated tightly in the same dynamic memory block, respecting their alignment requirements.
         To be added to a dense_list, an element must have a type covariant to the template argument ELEMENT. If ELEMENT is void 
 		(the default value), any element can be added.
-        Unlike std::vector, dense_list does not provide any extra capacity management. As consequences, the complexity
+        Unlike std::vector, dense_list does not provide any extra capacity management. As a consequence, the complexity
 		of many methods is linear, in contrast with the constant amortized time of the equivalent methods of std::vector. Insertions
 		and removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate 
 		existing iterators
@@ -109,9 +109,6 @@ namespace density
         {
             return m_impl.empty();
         }
-
-        class iterator;
-        class const_iterator;
 
         class iterator final
         {
@@ -333,7 +330,7 @@ namespace density
 				single element, in this overload of insert the sound always binds to an l-value.
 			@return an iterator that points to the newly inserted element.
             \n\b Requires:
-                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - the type ELEMENT_COMPLETE_TYPE must copy constructible.
                 - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
                 - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
                     (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
@@ -360,11 +357,33 @@ namespace density
 			}
         }
 
+        /** Removes and destroys an element at the specified position of the list. This method causes always a reallocation of the list.
+            @param i_at position of the element to delete. It must be an iterator pointing to a valid element
+				of this list. It can't be equal to cend(). Note: a iterator is implicitly converted to a cons_iterator.
+			@return an iterator that points to the location of the erased element, or end() if the list becomes empty.
+			
+			Note: this function can throw because is causes a reallocation.
+
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         iterator erase(const_iterator i_position)
         {
-            return m_impl.erase_impl(i_position.m_impl.m_curr_type, i_position.m_impl.m_curr_type + 1);
+            return m_impl.erase_impl(i_position.m_impl.control(), i_position.m_impl.control() + 1);
         }
 
+        /** Removes and destroy a range of elements at the specified position of the list. This method causes always a reallocation of the list.
+            @param i_from position of the first element to delete. It must be an iterator pointing to a valid element
+				of this list. It can be equal to cend() only if i_to is equal to cend(). Note: a iterator is implicitly converted to a cons_iterator.
+			@param i_to position of the first element that is not deleted. It must be an iterator pointing to a valid element
+				of this list. It can be equal to cend(). Note: a iterator is implicitly converted to a cons_iterator.
+			@return an iterator that points to the location of the first erased element, or end() if the list becomes empty.
+			Note: this function can throw because is causes a reallocation.
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Complexity: linear (a reallocation is always required). */
         iterator erase(const_iterator i_from, const_iterator i_to)
         {
             auto from_type = i_from.m_impl.control();

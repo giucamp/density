@@ -17,14 +17,6 @@ namespace density
         {
 		private:
 
-			struct ControlBlock : RUNTIME_TYPE
-			{
-				ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) DENSITY_NOEXCEPT
-					: RUNTIME_TYPE(i_type), m_element(i_element) { }
-
-				void * const m_element;
-			};
-
 			#if DENSITY_DEBUG_INTERNAL
 				void check_invariants() const
 				{				
@@ -37,6 +29,14 @@ namespace density
 			#endif
 
         public:
+
+			struct ControlBlock : RUNTIME_TYPE
+			{
+				ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) DENSITY_NOEXCEPT
+					: RUNTIME_TYPE(i_type), m_element(i_element) { }
+
+				void * const m_element;
+			};
 
             size_t size() const DENSITY_NOEXCEPT
             {
@@ -517,7 +517,6 @@ namespace density
 					/* we iterate this list exactly like we did in the loop interrupted by the exception,
 						but we stop at 'it', the iterator we were using */
 					size_t count_to_insert = i_count_to_insert;
-					auto const this_end_it = it;
 					IteratorBaseImpl this_it = begin();
 
 					/* in the same loop we iterate over tmp, that is the list that we was creating. The 
@@ -578,59 +577,51 @@ namespace density
                     ControlBlock * return_control_block = nullptr;
 
                     ListBuilder builder;
-                    try
+                    builder.init(*static_cast<ALLOCATOR*>(this), prev_size - size_to_remove, buffer_size, buffer_alignment);
+
+                    const auto end_it = end();
+                    bool is_in_range = false;
+                    bool first_in_range = false;
+                    for (auto it = begin(); ; ++it)
                     {
-                        builder.init(*static_cast<ALLOCATOR*>(this), prev_size - size_to_remove, buffer_size, buffer_alignment);
-
-                        const auto end_it = end();
-                        bool is_in_range = false;
-                        bool first_in_range = false;
-                        for (auto it = begin(); ; ++it)
+                        if (it.control() == i_from)
                         {
-                            if (it.control() == i_from)
-                            {
-                                is_in_range = true;
-                                first_in_range = true;
-                            }
-                            if (it.control() == i_to)
-                            {
-                                is_in_range = false;
-                            }
-
-                            if (it == end_it)
-                            {
-                                DENSITY_ASSERT(!is_in_range);
-                                break;
-                            }
-
-                            if (!is_in_range)
-                            {
-                                auto const new_element_info = builder.end_of_control_blocks();
-								builder.add_by_move(it.complete_type(), it.element());
-
-                                if (first_in_range)
-                                {
-									return_control_block = new_element_info;
-                                    first_in_range = false;
-                                }
-                            }
+                            is_in_range = true;
+                            first_in_range = true;
+                        }
+                        if (it.control() == i_to)
+                        {
+                            is_in_range = false;
                         }
 
-                        if (return_control_block == nullptr) // if no elements were copied after the erased range
+                        if (it == end_it)
                         {
-                            DENSITY_ASSERT(i_to == m_control_blocks + prev_size);
-							return_control_block = builder.end_of_control_blocks();
+                            DENSITY_ASSERT(!is_in_range);
+                            break;
                         }
 
-                        destroy_impl();
+                        if (!is_in_range)
+                        {
+                            auto const new_element_info = builder.end_of_control_blocks();
+							builder.add_by_move(it.complete_type(), it.element());
 
-                        m_control_blocks = builder.control_blocks();
+                            if (first_in_range)
+                            {
+								return_control_block = new_element_info;
+                                first_in_range = false;
+                            }
+                        }
                     }
-                    catch (...)
+
+                    if (return_control_block == nullptr) // if no elements were copied after the erased range
                     {
-                        builder.rollback(*static_cast<ALLOCATOR*>(this), buffer_size, buffer_alignment);
-                        throw;
+                        DENSITY_ASSERT(i_to == m_control_blocks + prev_size);
+						return_control_block = builder.end_of_control_blocks();
                     }
+
+                    destroy_impl();
+
+                    m_control_blocks = builder.control_blocks();
                     return IteratorBaseImpl(return_control_block);
                 }
             }

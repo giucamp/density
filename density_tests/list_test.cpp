@@ -116,6 +116,40 @@ namespace density
 			}, probability);
         }
 
+		template <typename BASE_ELEMENT>
+            void add_test_case_erase( ContainerTest<TestDenseList<BASE_ELEMENT>> & i_test, double i_probability )
+        {
+			const double probability = i_probability / 2.;
+
+            i_test.add_test_case("erase", [&i_test](std::mt19937 & i_random) {
+                const auto times = std::uniform_int_distribution<unsigned>(0, 3)(i_random);
+                for (unsigned i = 0; i < times; i++)
+                {
+					if (!i_test.dense_container().empty())
+					{
+						const auto at_index = std::uniform_int_distribution<size_t>(0, i_test.shadow_container().size() - 1)(i_random);
+						i_test.dense_container().erase(std::next(i_test.dense_container().begin(), at_index));
+						i_test.shadow_container().erase_at(at_index);
+					}
+                }
+            }, probability);
+
+			i_test.add_test_case("erase_n", [&i_test](std::mt19937 & i_random) {
+				const auto times = std::uniform_int_distribution<unsigned>(0, 3)(i_random);
+				for (unsigned i = 0; i < times; i++)
+				{
+					if (!i_test.dense_container().empty())
+					{
+						const auto at_index = std::uniform_int_distribution<size_t>(0, i_test.shadow_container().size())(i_random);
+						const auto count = std::uniform_int_distribution<size_t>(at_index, i_test.shadow_container().size())(i_random) - at_index;
+						i_test.dense_container().erase(std::next(i_test.dense_container().begin(), at_index),
+							std::next(i_test.dense_container().begin(), (at_index + count)));
+						i_test.shadow_container().erase_at(at_index, count);
+					}
+				}
+			}, probability);
+        }
+
         void list_test_impl(std::mt19937 & i_random, const char * i_container_name)
 		{
 			NoLeakScope no_leak_scope;
@@ -123,18 +157,20 @@ namespace density
 			{
 				ContainerTest<TestDenseList<void>> test(i_container_name);
 				add_test_case_add_by_copy<TestObjectBase>(test, 1., i_random);				
-				const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random);
+				const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random); // this is a number used to initialize the instances of TestObjectBase
 				add_test_case_add_by_move<TestObjectBase>(test, 1., rand_size_t);
 				add_test_case_copy_and_assign(test, .1);
+				add_test_case_erase(test, .1);
 				test.run(i_random);
 			}
 
 			{
 				ContainerTest<TestDenseList<TestObjectBase>> test(i_container_name);
 				add_test_case_add_by_copy<TestObjectBase>(test, 1., i_random);
-				const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random);
+				const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random); // this is a number used to initialize the instances of TestObjectBase
 				add_test_case_add_by_move<TestObjectBase>(test, 1., rand_size_t);
 				add_test_case_copy_and_assign(test, .1);
+				add_test_case_erase(test, .1);
 				test.run(i_random);
 			}
 		}
@@ -143,6 +179,36 @@ namespace density
 
 	void list_test()
 	{
+		// code snippets included in the documentation
+
+		{
+			using namespace density;
+			using namespace std;
+			auto list = dense_list<>::make(3 + 5, string("abc"), 42.f);
+			list.push_front(wstring(L"ABC"));
+			for (auto it = list.begin(); it != list.end(); it++)
+			{
+				cout << it.complete_type().type_info().name() << endl;
+			}
+		}
+
+		{
+			using namespace density;
+			using namespace std;
+
+			struct Widget { virtual void draw() = 0; };
+			struct TextWidget : Widget { virtual void draw() override {} };
+			struct ImageWidget : Widget { virtual void draw() override { } };
+
+			auto widgets = dense_list<Widget>::make(TextWidget(), ImageWidget());
+			for (auto & widget : widgets)
+			{
+				widget.draw();
+			}
+		}
+
+		// end of code snippets included in the documentation
+
 		using namespace tests;
 
 		std::mt19937 random;

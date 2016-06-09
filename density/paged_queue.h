@@ -12,7 +12,46 @@
 
 namespace density
 {
-    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    /** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
+		paged_queue is a queue: elements can be added only at the end of the container, and only the first element 
+		can be removed.
+		A paged_queue allocates a set of pages from the provided page allocator. The \b head page is the
+		the least recently allocated page, while the \b tail page is the most recently allocated one.
+		paged_queue never reallocates or move its elements: new elements are allocated to the head page. 
+		When there is not enough space in the head page, a new page is allocated, which becomes the new head page.
+		After an element is removed, if the page that contained it becomes empty, the page is immediately deallocated.
+		An iterator is invalidated only when the pointed element is deleted (including when the queue is destroyed).
+
+		\n\b Thread safeness: None. The user is responsible to avoid race conditions.
+        \n<b>Exception safeness</b>: Any function of paged_queue is noexcept or provides the strong exception guarantee.
+            @param ELEMENT Base type of the elements of the queue. The queue enforces the compile-time
+                constraint that the type of each element is covariant to ELEMENT.
+                If ELEMENT is void, elements of any complete type can be added to the container. In this
+                case, the methods of paged_queue (and its iterators) that returns a pointer to an element
+                will return a void* to a complete object, while the methods that returns a reference to
+                an element will return void. Use iterators and pointer semantic to write generic code
+                that works with any paged_queue.
+                If ELEMENT decays to void but it is not a plain void, a compile time error is issued.
+                Note: if ELEMENT is to be a built-in type, a pointer, or a final type, then the complete
+                type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
+                this case a standard container (like std::queue) instead of paged_queue is a better choice.
+                If ELEMENT is not void, it must be noexcept move constructible.
+            @param ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
+                this allocator to a different type, eventually unrelated to ELEMENT.
+            @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
+                This type must meet the requirements of RuntimeType.
+        paged_queue provides only forward iteration. Only the first element is accessible in constant time (with
+        the functions: paged_queue::front, paged_queue::begin). The iterator provides access to both the ELEMENT (with
+        the function element) and the RUNTIME_TYPE (with the function type).
+        There is not constant time function that gives the number of elements in a paged_queue in constant time,
+        but std::distance will do (in linear time). Anyway paged_queue::empty work in constant time.
+        Limitations: when an element of COMPETE_ELEMENT is pushed to the queue, the current implementation needs
+            sometimes to downcast from ELEMENT to COMPETE_ELEMENT.
+                - If no virtual inheritance is involved, static_cast is used
+                - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
+                    a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
+                    time error is issued). */
+	template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class paged_queue final : private PAGE_ALLOCATOR
     {
         struct PageHeader;
