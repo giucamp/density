@@ -207,6 +207,7 @@
     <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
+    <ClCompile Include="..\function_queue_test.cpp" />
     <ClCompile Include="..\lifo_benchmarks.cpp" />
     <ClCompile Include="..\lifo_test.cpp" />
     <ClCompile Include="..\list_benchmarks.cpp" />

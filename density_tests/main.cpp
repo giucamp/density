@@ -16,6 +16,7 @@ namespace density
     void list_test();
     void paged_queue_test();
 	void lifo_test();
+	void function_queue_test();
 
     namespace tests
     {
@@ -34,6 +35,7 @@ int main()
 	list_benchmark();
 
 	#ifdef  _DEBUG
+		function_queue_test();
 		list_test();
 		lifo_test();
 		paged_queue_test();

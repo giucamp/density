@@ -55,6 +55,9 @@
     <ClCompile Include="..\list_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\function_queue_test.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">

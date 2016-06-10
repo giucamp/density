@@ -319,23 +319,8 @@ namespace density
                 check_invariants();
             #endif
 
-            m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-                i_operation(i_type, static_cast<ELEMENT*>(i_element));
-            });
-            if (m_first_page->m_queue.empty())
-            {
-                auto const next = m_first_page->m_next_page;
-                delete_page(m_first_page);
-                m_first_page = next;
-                if (next == nullptr)
-                {
-                    m_last_page = nullptr;
-                }
-            }
-
-            #if DENSITY_DEBUG
-                check_invariants();
-            #endif
+			using ReturnType = decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()));
+			return manual_consume_impl(i_operation, std::is_same<ReturnType, void>());
         }
 
 
@@ -866,6 +851,57 @@ namespace density
 
                 page = next;
             }
+        }
+
+		// overload used if the return type is to not void
+        template <typename OPERATION>
+            auto manual_consume_impl(OPERATION && i_operation, std::false_type)
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+                    -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
+        {
+			auto const result = m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+                return i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            });
+            if (m_first_page->m_queue.empty())
+            {
+                auto const next = m_first_page->m_next_page;
+                delete_page(m_first_page);
+                m_first_page = next;
+                if (next == nullptr)
+                {
+                    m_last_page = nullptr;
+                }
+            }
+			
+			#if DENSITY_DEBUG
+                check_invariants();
+            #endif
+
+			return std::move(result);
+        }
+
+		// overload used if the return type is to void
+        template <typename OPERATION>
+            void manual_consume_impl(OPERATION && i_operation, std::true_type)
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+        {
+			m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+                i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            });
+            if (m_first_page->m_queue.empty())
+            {
+                auto const next = m_first_page->m_next_page;
+                delete_page(m_first_page);
+                m_first_page = next;
+                if (next == nullptr)
+                {
+                    m_last_page = nullptr;
+                }
+            }
+
+			#if DENSITY_DEBUG
+                check_invariants();
+            #endif
         }
 
         #if DENSITY_DEBUG
