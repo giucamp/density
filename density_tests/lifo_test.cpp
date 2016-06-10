@@ -5,6 +5,9 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
 
 namespace density
 {
@@ -283,10 +286,57 @@ namespace density
 			lifo_test_push(context);
 		}
 
+		struct GraphNode
+		{
+
+		};
+
+		void dijkstra_path_find(const GraphNode * i_nodes, size_t i_node_count, size_t i_initial_node_index)
+		{
+			lifo_array<float> min_distance(i_node_count, std::numeric_limits<float>::max() );
+			min_distance[i_initial_node_index] = 0.f;
+
+			// ...
+
+			(void)i_nodes;
+		}
+
+		void string_io()
+		{
+			using namespace std;
+			vector<string> strings{ "string", "long string", "very long string", "much longer string!!!!!!" };
+			uint32_t len = 0;
+
+			#ifndef _MSC_VER
+				auto file = tmpfile();
+			#else
+				FILE * file = nullptr;
+				tmpfile_s(&file);
+			#endif
+			for (const auto & str : strings)
+			{
+				len = static_cast<uint32_t>( str.length() + 1);
+				fwrite(&len, sizeof(len), 1, file);
+				fwrite(str.c_str(), 1, len, file);
+			}
+
+			rewind(file);
+			lifo_buffer<> buff(8);
+			while (fread(&len, sizeof(len), 1, file) == 1)
+			{
+				buff.resize(len);
+				fread(buff.data(), len, 1, file);
+				cout << static_cast<char*>(buff.data()) << endl;
+			}
+
+			fclose(file);
+		}
+
 	} // namespace tests
 
 	void lifo_test()
 	{
+		tests::string_io();
 		std::mt19937 random;
 		tests::lifo_test();
 	}

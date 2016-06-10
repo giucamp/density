@@ -200,7 +200,7 @@ namespace density
 			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
 			struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
-			auto widgets = dense_list<Widget>::make(TextWidget(), ImageWidget());
+			auto widgets = dense_list<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
 			for (auto & widget : widgets)
 			{
 				widget.draw();

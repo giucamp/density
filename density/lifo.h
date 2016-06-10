@@ -485,7 +485,7 @@ namespace density
 		Elements in a lifo_array are constructed in positional order by the constructor and destroyed
 		in positional backward order by the destructor. */
 	template <typename TYPE, typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
-		class lifo_array : detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>
+		class lifo_array final : detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>
 	{
 	public:
 
