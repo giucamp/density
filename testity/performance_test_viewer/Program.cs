@@ -25,7 +25,7 @@ namespace performance_test_viewer
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new PerformanceTestViewer());
+            Application.Run(new btnSaveScreenshot());
         }
     }
 }

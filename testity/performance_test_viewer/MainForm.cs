@@ -17,12 +17,12 @@ using System.IO;
 
 namespace performance_test_viewer
 {
-    public partial class PerformanceTestViewer : Form
+    public partial class btnSaveScreenshot : Form
     {
         TestGroupView m_plot;
         List<TestGroup> test_groups = new List<TestGroup>();
 
-        public PerformanceTestViewer()
+        public btnSaveScreenshot()
         {
             InitializeComponent();
 
@@ -74,11 +74,42 @@ namespace performance_test_viewer
                 comboTestGroup.Items.AddRange(test_groups.ToArray());
 
                 comboTestGroup.SelectedItem = test_groups[test_groups.Count - 1];
+
+                m_fileDiag.InitialDirectory = Path.GetDirectoryName(txtFile.Text);
             }
             catch (Exception)
             {
                 panel.Visible = false;
             }
+        }
+
+        SaveFileDialog m_fileDiag = new SaveFileDialog();
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            m_fileDiag.Filter = "JPeg Image|*.jpg|Bitmap Image|*.bmp|Gif Image|*.gif";
+            var result = m_fileDiag.ShowDialog(this);            
+            if (result == DialogResult.OK)
+            {
+                System.Threading.Thread.Sleep(800);
+                System.Drawing.Imaging.ImageFormat format = System.Drawing.Imaging.ImageFormat.Gif;
+                switch (m_fileDiag.FilterIndex)
+                {
+                    case 1:
+                        format = System.Drawing.Imaging.ImageFormat.Jpeg;
+                        break;
+
+                    case 2:
+                        format = System.Drawing.Imaging.ImageFormat.Bmp;
+                        break;
+
+                    case 3:
+                        format = System.Drawing.Imaging.ImageFormat.Gif;
+                        break;
+                }
+
+                m_plot.SaveScreenshot(m_fileDiag.FileName, format);
+            }            
         }
     }
 }

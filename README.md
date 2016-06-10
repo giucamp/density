@@ -8,14 +8,14 @@ What's Density
 
 Density is a C++11 header-only library that provides heterogeneous containers and lifo memory management. The key ideas are:
 - allocating objects of heterogeneous type linearly and tightly in memory: this is beneficial for construction time, access memory locality, and global memory footprint.
-- superseding the *fixed-then-dynamic storage* pattern: that is, when you need to store N elements, you dedicate a fast-to-allocate fixed-sized storage big M. Then, when using it, if N > M, you allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need. density provides a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
+- superseding the *fixed-then-dynamic storage* pattern, that is: when you need to store N elements, you dedicate a fast-to-allocate fixed-sized storage big M. Then, when using it, if N > M, you allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need. density provides a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
 - providing at least the strong exception guarantee for every single function. Exceptions are the easiest, safest and fastest way of handling errors, and applications should have a reliable behavior even in case of exception.
 
 dense_list<>
 ============
 
 Heterogeneous containers are very frequent in production code. Using just the standard library, the best way to model a polymorphic container is probably a vector of smart pointers.
-density provides dense_list as an alternative, a container whose elements can be of different type:
+density provides [dense_list](http://peggysansonetti.it/tech/density/html/classdensity_1_1dense__list.html) as an alternative, a container whose elements can be of different type:
 
 			struct Widget { virtual void draw() { /* ... */ } };
 			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
@@ -65,8 +65,8 @@ density provides two similar containrser for queue:
     template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
             class paged_queue final;
 The difference between the two is the memory management: 
-- dense_queue uses a monolithic memory block, handling a capacity just like a vector does, and reallocating the whole block when it runs out of space. The memory block is managed like a ring buffer, so that insertions don't require to move all the existing elements.
-- paged_queue uses a page-based memory management: it allocates fixed-size pages and, when it runs out of space, it just need to allocate a new page, without moving any existing element (like dense_queue does). Furthermore, page-based memory management very powerful: it allows fast allocation and deallocations, thread-local and unsynchronized unused page stores. Every page internally is handled like a ring-buffer. Iterators are invalidated only when the pointed element is erased.
+- [dense_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1dense__queue.html) uses a monolithic memory block, handling a capacity just like a vector does, and reallocating the whole block when it runs out of space. The memory block is managed like a ring buffer, so that insertions don't require to move all the existing elements.
+- [paged_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1paged__queue.html) uses a page-based memory management: it allocates fixed-size pages and, when it runs out of space, it just need to allocate a new page, without moving any existing element (like dense_queue does). Furthermore, page-based memory management very powerful: it allows fast allocation and deallocations, thread-local and unsynchronized unused page stores. Every page internally is handled like a ring-buffer. Iterators are invalidated only when the pointed element is erased.
 Both dense_queue and paged_queue provides forward iteration only: no constant-time access by index is possible. dense_queue is recommended for small queues, while paged_queue is best suited to middle and large sizes.
 A first application of dense_queue and paged_queue is built-in in density:
 
@@ -147,5 +147,9 @@ A lifo_buffer is not a container, it is more low-level. It provides a dynamic ra
    		fclose(file);
    	}
 Like lifo_array, lifo_buffer instances must be LIFO consistent, otherwise the behavior of the program is undefined.
+
+[Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
+
+giu.campana@gmail.com
 
 > Written with [StackEdit](https://stackedit.io/).

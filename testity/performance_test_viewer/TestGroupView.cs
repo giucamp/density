@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Data;
 using System.Linq;
 using System.Text;
@@ -47,6 +48,20 @@ namespace performance_test_viewer
             if (legendPanel.Controls.Count > 0)
             {
                 splitContainer1.SplitterDistance = ClientSize.Width - legendPanel.Controls[0].Width;
+            }
+        }
+
+        public void SaveScreenshot(string i_fileName, System.Drawing.Imaging.ImageFormat i_format)
+        {
+            Rectangle bounds = this.Bounds;
+            bounds = this.RectangleToScreen(bounds);
+            using (Bitmap bitmap = new Bitmap(bounds.Width, bounds.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bitmap))
+                {
+                    g.CopyFromScreen(new Point(bounds.Left, bounds.Top), Point.Empty, bounds.Size);
+                }
+                bitmap.Save(i_fileName, i_format);
             }
         }
 
