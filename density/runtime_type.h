@@ -40,7 +40,7 @@ namespace density
 
     */
 
-    /** This struct template checks the requirements on a RUNTIME_TYPE. Violations are detected with static_assert. */
+    /* This struct template checks the requirements on a RUNTIME_TYPE. Violations are detected with static_assert. */
     template <typename RUNTIME_TYPE>
         struct RuntimeTypeConceptCheck
     {
@@ -86,7 +86,7 @@ namespace density
         }
 
 
-        /** DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - down cast from a base class to a derived, assuming
+        /* DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - down cast from a base class to a derived, assuming
             that the cast is legal. A static_cast is used if it is possible. Otherwise, if a virtual base is
             involved, dynamic_cast is used. */
         template <typename DERIVED, typename BASE> static sfinae_true<decltype(
@@ -116,7 +116,7 @@ namespace density
             return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))() );
         }
 
-        /** This struct template represent a list of features associated to a runtime_type.
+        /* This struct template represent a list of features associated to a runtime_type.
 
             struct FeatureX
             {
@@ -241,7 +241,7 @@ namespace density
         template <typename TYPE, typename BASE>
             const uintptr_t FeatureMoveConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature allow to invoke a function object. The template parameter has the same semantic as std::function. */
+        /* This feature allow to invoke a function object. The template parameter has the same semantic as std::function. */
         template <typename> struct FeatureInvoke;
         template <typename RET, typename... PARAMS>
             struct FeatureInvoke<RET(PARAMS...)>
@@ -262,7 +262,7 @@ namespace density
             template <typename TYPE, typename BASE>
                 const uintptr_t FeatureInvoke<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature allow to invoke and destroy a function object. The template parameter has the same semantic as std::function. */
+        /* This feature allow to invoke and destroy a function object. The template parameter has the same semantic as std::function. */
         template <typename> struct FeatureInvokeDestroy;
         template <typename RET, typename... PARAMS>
             struct FeatureInvokeDestroy<RET(PARAMS...)>
@@ -319,8 +319,8 @@ namespace density
             static const size_t size = sizeof...(FEATURES);
         };
 
-        /** (1) FeatureConcat< FeatureList<FEATURES_1...>, FeatureList<FEATURES_2...> >::type
-            (2) FeatureConcat< FeatureList<FEATURES_1...>, FEATURE_2 >::type
+        /* (1) FeatureConcat< FeatureList<FEATURES_1...>, FeatureList<FEATURES_2...> >::type
+           (2) FeatureConcat< FeatureList<FEATURES_1...>, FEATURE_2 >::type
         */
         template <typename...> struct FeatureConcat;
         template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
@@ -334,7 +334,7 @@ namespace density
             using type = FeatureList<FIRST_FEATURES..., SECOND_FEATURE>;
         };
 
-        /** FeatureTable<TYPE, FeatureList<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
+        /* FeatureTable<TYPE, FeatureList<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
         template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
         template <typename BASE, typename TYPE, typename... FEATURES>
             struct FeatureTable< BASE, TYPE, FeatureList<FEATURES...> >
@@ -361,7 +361,7 @@ namespace density
                 START_INDEX : IndexOfFeature<START_INDEX + 1, TARGET_FEATURE, FeatureList<OTHER_FEATURES...> >::value;
         };
 
-        /** AutoGetFeatures<TYPE>::type */
+        /* AutoGetFeatures<TYPE>::type */
         template <typename TYPE,
             bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_same<void, TYPE>::value,
             bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_same<void, TYPE>::value

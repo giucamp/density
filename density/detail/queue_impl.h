@@ -54,10 +54,10 @@ namespace density
             /** Minimum alignment of a memory buffer */
             static const size_t s_minimum_buffer_alignment = alignof(Control);
 
-            /** Iterator class, similar to an stl iterator */
+            /* Iterator class, similar to an stl iterator */
             struct IteratorImpl
             {
-                /** Construct a IteratorImpl with undefined content. */
+                /* Construct a IteratorImpl with undefined content. */
                 IteratorImpl() DENSITY_NOEXCEPT {}
 
                 IteratorImpl(Control * i_curr_control) DENSITY_NOEXCEPT

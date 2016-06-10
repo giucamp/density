@@ -18,7 +18,7 @@ namespace density
     {
         using namespace testity;
 
-        /** This class is used to test density containers. It owns an object which allocates memory with TestAllocator. In this
+        /* This class is used to test density containers. It owns an object which allocates memory with TestAllocator. In this
             way a TestObjectBase which is not correctly destroyed, will cause a memory leak that will be detected during unit tests. */
         class TestObjectBase
         {
@@ -85,14 +85,14 @@ namespace density
             std::shared_ptr<size_t> m_hash;
             int m_check_word = 3232;
         };
-
-        /** Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
+		
+		/* Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
         inline size_t hash_func(const TestObjectBase & i_object)
         {
             return i_object.hash();
         }
 
-        /** Copyable class deriving from CopyableTestObject. */
+        /* Copyable class deriving from CopyableTestObject. */
         class CopyableTestObject : public TestObjectBase
         {
         public:
@@ -127,7 +127,7 @@ namespace density
                 { return TestObjectBase::operator != (i_other); }
         };
 
-        /** Movable class deriving from CopyableTestObject. */
+        /* Movable class deriving from CopyableTestObject. */
         class MovableTestObject : public TestObjectBase
         {
         public:
@@ -152,7 +152,7 @@ namespace density
                 { return TestObjectBase::operator != (i_other); }
         };
 
-        /** AlignedRandomStorage  */
+        /* AlignedRandomStorage  */
         template <size_t SIZE, size_t ALIGNMENT>
             struct alignas(ALIGNMENT) AlignedRandomStorage
         {
