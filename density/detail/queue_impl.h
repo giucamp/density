@@ -177,7 +177,7 @@ namespace density
                     bool result = try_push(*control,
                         typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(source_element));
                     DENSITY_ASSERT(result);
-                    DENSITY_UNUSED(result);
+                    (void)result;
 
                     control->destroy(source_element);
                     control->Control::~Control();
@@ -211,7 +211,7 @@ namespace density
                         bool result = try_push(type,
                             typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
                         DENSITY_ASSERT(result);
-                        DENSITY_UNUSED(result);
+                        (void)result;
                     }
                 }
                 catch(...)
@@ -382,21 +382,21 @@ namespace density
             void * buffer() DENSITY_NOEXCEPT { return m_buffer_start; }
 
             /** Returns the size of the memory buffer assigned to the queue */
-            MemSize mem_capacity() const DENSITY_NOEXCEPT
+            size_t mem_capacity() const DENSITY_NOEXCEPT
             {
-                return MemSize(address_diff(m_buffer_end, m_buffer_start));
+                return address_diff(m_buffer_end, m_buffer_start);
             }
 
             /** Returns how much of the memory buffer is used. */
-            MemSize mem_size() const DENSITY_NOEXCEPT
+            size_t mem_size() const DENSITY_NOEXCEPT
             {
                 if (m_head <= m_tail)
                 {
-                    return MemSize( address_diff(m_tail, m_head) );
+                    return address_diff(m_tail, m_head);
                 }
                 else
                 {
-                    return MemSize(address_diff(m_buffer_end, m_head) + address_diff(m_tail, m_buffer_start));
+                    return address_diff(m_buffer_end, m_head) + address_diff(m_tail, m_buffer_start);
                 }
             }
 

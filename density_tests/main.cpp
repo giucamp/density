@@ -20,8 +20,8 @@ namespace density
 
     namespace tests
     {
-		testity::PerformanceTestGroup make_list_benchmarks();
-		testity::PerformanceTestGroup make_function_queue_benchmarks();
+		void add_list_benchmarks(testity::TestTree & i_tree);
+		void add_function_queue_benchmarks(testity::TestTree & i_tree);
 		testity::PerformanceTestGroup make_lifo_array_benchmarks();
     }
 }
@@ -31,9 +31,7 @@ int main()
     using namespace density;
 	using namespace density::tests;
 	using namespace testity;
-
-	list_benchmark();
-
+	
 	#ifdef  _DEBUG
 		lifo_test();
 		function_queue_test();
@@ -44,9 +42,9 @@ int main()
 
     testity::TestTree test_tree("");
 
-	//test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
-	//test_tree["/density/function_queue_test"].add_performance_test(make_function_queue_benchmarks());
-	test_tree["/density/list_test"].add_performance_test(make_list_benchmarks());
+	test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
+	add_function_queue_benchmarks(test_tree["/density/function_queue_test"]);
+	add_list_benchmarks(test_tree["/density/list_test"]);
 	
     testity::Session test_session;
     auto results = test_session.run(test_tree, std::cout);

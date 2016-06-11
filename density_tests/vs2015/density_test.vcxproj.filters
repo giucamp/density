@@ -111,5 +111,8 @@
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\pointer_artithmetic.h">
+      <Filter>density</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

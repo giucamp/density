@@ -87,7 +87,7 @@ namespace density
 			void set_queue_custom_check(CONTAINER_TEST & i_container_test)
 		{
 			i_container_test.set_custom_check([&i_container_test] {
-				const bool mem_size_is_zero = i_container_test.dense_container().mem_size().value() == 0;
+				const bool mem_size_is_zero = i_container_test.dense_container().mem_size() == 0;
 				DENSITY_TEST_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
 		}
 
@@ -200,7 +200,7 @@ namespace density
 
             // this must use the rvalue overload, so queue must be empty after the call
             queue_of_queues.push(std::move(queue));
-            DENSITY_TEST_ASSERT(queue.mem_size().value() == 0);
+            DENSITY_TEST_ASSERT(queue.mem_size() == 0);
             DENSITY_TEST_ASSERT(queue.empty());
 
             // try with a non-copyable type (std::unique_ptr)

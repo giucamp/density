@@ -73,8 +73,8 @@ namespace performance_test_viewer
                 return;
 
             float clientHeight = ClientSize.Height;
-            Pen pen = new Pen(Color.FromArgb(20, 20, 20));
-            pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            Pen pen = new Pen(Color.FromArgb(0, 0, 10));
+            //pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
             for (int row = 0; row < m_group.get_cardinality_num(); row++)
             {
                 long cardinality = m_group.get_cardinality(row);

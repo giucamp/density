@@ -148,7 +148,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_capacity() const DENSITY_NOEXCEPT
+        size_t mem_capacity() const DENSITY_NOEXCEPT
         {
             return m_queue.mem_capacity();
         }
@@ -160,7 +160,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const DENSITY_NOEXCEPT
         {
             return m_queue.mem_size();
         }
@@ -170,7 +170,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_free() const DENSITY_NOEXCEPT
+		size_t mem_free() const DENSITY_NOEXCEPT
         {
             return m_queue.mem_free();
         }

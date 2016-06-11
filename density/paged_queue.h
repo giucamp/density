@@ -78,7 +78,7 @@ namespace density
         paged_queue()
             : m_first_page(nullptr), m_last_page(nullptr)
         {
-            #if DENSITY_DEBUG
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
@@ -263,7 +263,7 @@ namespace density
         {
             DENSITY_ASSERT(!empty());
 
-            #if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -279,7 +279,7 @@ namespace density
                 }
             }
 
-            #if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
@@ -315,7 +315,7 @@ namespace density
         {
             DENSITY_ASSERT(!empty());
 
-            #if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -594,7 +594,7 @@ namespace density
             m_first_page = nullptr;
             m_last_page = nullptr;
 
-            #if DENSITY_DEBUG
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
@@ -631,9 +631,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_capacity() const DENSITY_NOEXCEPT
+        size_t mem_capacity() const DENSITY_NOEXCEPT
         {
-            MemSize result(0);
+			size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_capacity();
@@ -648,9 +648,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_size() const DENSITY_NOEXCEPT
+		size_t mem_size() const DENSITY_NOEXCEPT
         {
-            MemSize result(0);
+			size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_size();
@@ -663,9 +663,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_free() const DENSITY_NOEXCEPT
+		size_t mem_free() const DENSITY_NOEXCEPT
         {
-            MemSize result(0);
+			size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_free();
@@ -736,7 +736,7 @@ namespace density
         template <typename CONSTRUCTOR>
             void insert_back_impl(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
         {
-            #if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -773,19 +773,19 @@ namespace density
                     delete_page(page_to_delete);
                 }
                 throw;
-                #if DENSITY_DEBUG
+				#if DENSITY_DEBUG_INTERNAL
                     check_invariants();
                 #endif
             }
 
-            #if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
 
         DENSITY_NO_INLINE void make_space(size_t i_required_size, size_t i_required_alignment)
         {
-            #if DENSITY_DEBUG
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -821,7 +821,7 @@ namespace density
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());
 
-            size_t actual_page_size = i_page->m_queue.mem_capacity().value();
+            size_t actual_page_size = i_page->m_queue.mem_capacity();
             DENSITY_ASSERT(actual_page_size >= sizeof(PageHeader));
             actual_page_size += sizeof(PageHeader);
             DENSITY_ASSERT(actual_page_size >= PAGE_ALLOCATOR::page_size);
@@ -838,7 +838,7 @@ namespace density
 
         void delete_all() DENSITY_NOEXCEPT
         {
-            #if DENSITY_DEBUG
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -873,7 +873,7 @@ namespace density
                 }
             }
 			
-			#if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -899,12 +899,12 @@ namespace density
                 }
             }
 
-			#if DENSITY_DEBUG
+			#if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
 
-        #if DENSITY_DEBUG
+        #if DENSITY_DEBUG_INTERNAL
             void check_invariants() const
             {
                 DENSITY_ASSERT( (m_first_page == nullptr) == (m_last_page == nullptr) );

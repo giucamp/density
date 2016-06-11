@@ -90,15 +90,16 @@ namespace performance_test_viewer
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(432, 11);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(76, 13);
+            this.label2.Size = new System.Drawing.Size(79, 13);
             this.label2.TabIndex = 4;
-            this.label2.Text = "Session / Test";
+            this.label2.Text = "Testity - Viewer";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(883, 31);
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.button1.Location = new System.Drawing.Point(883, 13);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(110, 19);
+            this.button1.Size = new System.Drawing.Size(110, 38);
             this.button1.TabIndex = 5;
             this.button1.Text = "Save Screenshot";
             this.button1.UseVisualStyleBackColor = true;
@@ -116,7 +117,7 @@ namespace performance_test_viewer
             this.Controls.Add(this.comboTestGroup);
             this.Controls.Add(this.panel);
             this.Name = "btnSaveScreenshot";
-            this.Text = "PerformanceTestViewer";
+            this.Text = "Testity - Viewer";
             this.ResumeLayout(false);
             this.PerformLayout();
 

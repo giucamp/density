@@ -75,7 +75,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
         dense_queue(size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
         {
-            DENSITY_ASSERT(i_initial_alignment == 0 || MemSize(i_initial_alignment).is_valid_alignment() );
+            DENSITY_ASSERT(i_initial_alignment == 0 || is_power_of_2(i_initial_alignment));
             alloc(detail::size_max(i_initial_reserved_bytes, s_initial_mem_reserve),
                 detail::size_max(i_initial_alignment, s_initial_mem_alignment));
         }
@@ -142,7 +142,7 @@ namespace density
         {
             try // to do: would a RAII approach be better than explicit try-catch?
             {
-                alloc(i_source.m_impl.mem_capacity().value(), i_source.m_impl.element_max_alignment());
+                alloc(i_source.m_impl.mem_capacity(), i_source.m_impl.element_max_alignment());
                 m_impl.copy_elements_from(i_source.m_impl);
             }
             catch (...)
@@ -519,7 +519,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_capacity() const DENSITY_NOEXCEPT
+        size_t mem_capacity() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_capacity();
         }
@@ -531,7 +531,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_size();
         }
@@ -541,7 +541,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        MemSize mem_free() const DENSITY_NOEXCEPT
+        size_t mem_free() const DENSITY_NOEXCEPT
         {
             return m_impl.mem_capacity() - m_impl.mem_size();
         }
@@ -584,12 +584,12 @@ namespace density
 
         void free() DENSITY_NOEXCEPT
         {
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity().value());
+            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
         }
 
         void mem_realloc_impl(size_t i_mem_size)
         {
-            DENSITY_ASSERT(i_mem_size > m_impl.mem_capacity().value());
+            DENSITY_ASSERT(i_mem_size > m_impl.mem_capacity());
 
             Impl new_impl(AllocatorUtils::aligned_allocate(get_allocator_ref(), i_mem_size, m_impl.element_max_alignment(), 0), i_mem_size);
             try
@@ -598,12 +598,12 @@ namespace density
             }
             catch (...)
             {
-                AllocatorUtils::aligned_deallocate(get_allocator_ref(), new_impl.buffer(), new_impl.mem_capacity().value());
+                AllocatorUtils::aligned_deallocate(get_allocator_ref(), new_impl.buffer(), new_impl.mem_capacity());
                 throw;
             }
 
             // from now on, nothing can throw
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity().value());
+            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
             m_impl = std::move(new_impl);
         }
 
@@ -638,7 +638,7 @@ namespace density
             while(!m_impl.try_push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor)))
             {
                 mem_realloc_impl( detail::size_max(
-                    m_impl.mem_capacity().value() * 2,
+                    m_impl.mem_capacity() * 2,
                     i_source_type.size() * 16 + i_source_type.alignment() ) );
             }
         }
