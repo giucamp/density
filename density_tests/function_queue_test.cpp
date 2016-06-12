@@ -6,35 +6,39 @@
 
 #include "../density/dense_function_queue.h"
 #include "../density/paged_function_queue.h"
-#include <random>
-#include <iostream>
+#include "../testity/testing_utils.h"
 
 namespace density
 {
-    void function_queue_test()
-    {
-        // code snippets included in the documentation
+	namespace tests
+	{
+		template <typename FUNC_QUEUE>
+			void function_queue_test(FUNC_QUEUE & i_queue)
+		{
+			size_t count = 0;
+			for (int i = 0; i < 1000; i++)
+			{
+				i_queue.push([&count, i] {
+					DENSITY_TEST_ASSERT(count == i);
+					count++;
+				});
+			}
 
-        {
-            dense_function_queue<void()> queue_1;
-            queue_1.push([]() { std::cout << "hello!" << std::endl; });
-            queue_1.consume_front();
+			while (!i_queue.empty())
+			{
+				i_queue.consume_front();
+			}
 
-            dense_function_queue<int(double, double)> queue_2;
-            queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
-            std::cout << queue_2.consume_front(40., 2.) << std::endl;
-        }
+			DENSITY_TEST_ASSERT(count == 1000);
+		}
+	}
 
-        {
-            paged_function_queue<void()> queue_1;
-            queue_1.push([]() { std::cout << "hello!" << std::endl; });
-            queue_1.consume_front();
+	void function_queue_test()
+	{
+		dense_function_queue<void()> den_queue;
+		tests::function_queue_test(den_queue);
 
-            paged_function_queue<int(double, double)> queue_2;
-            queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
-            std::cout << queue_2.consume_front(40., 2.) << std::endl;
-        }
-
-        // end of code snippets included in the documentation
-    }
+		paged_function_queue<void()> paged_queue;
+		tests::function_queue_test(paged_queue);
+	}
 }
