@@ -15,37 +15,41 @@ namespace density
     void list_benchmark();
     void list_test();
     void paged_queue_test();
-	void lifo_test();
-	void function_queue_test();
+    void lifo_test();
+    void function_queue_test();
 
     namespace tests
     {
-		void add_list_benchmarks(testity::TestTree & i_tree);
-		void add_function_queue_benchmarks(testity::TestTree & i_tree);
-		testity::PerformanceTestGroup make_lifo_array_benchmarks();
+        void add_list_benchmarks(testity::TestTree & i_tree);
+        void add_function_queue_benchmarks(testity::TestTree & i_tree);
+        testity::PerformanceTestGroup make_lifo_array_benchmarks();
     }
 }
+
+namespace function_queue_sample	    { void run(); }
+namespace runtime_type_sample		{ void run(); }
+namespace lifo_sample				{ void run(); }
 
 int main()
 {
     using namespace density;
-	using namespace density::tests;
-	using namespace testity;
-	
-	#ifdef  _DEBUG
-		lifo_test();
-		function_queue_test();
-		list_test();
-		paged_queue_test();
-		dense_queue_test();
-	#endif //  _DEBUG
+    using namespace density::tests;
+    using namespace testity;
+
+    //#ifdef  _DEBUG
+        lifo_test();
+        function_queue_test();
+        list_test();
+        paged_queue_test();
+        dense_queue_test();
+    //#endif //  _DEBUG
 
     testity::TestTree test_tree("");
 
-	test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
-	add_function_queue_benchmarks(test_tree["/density/function_queue_test"]);
-	add_list_benchmarks(test_tree["/density/list_test"]);
-	
+    test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
+    add_function_queue_benchmarks(test_tree["/density/function_queue_test"]);
+    add_list_benchmarks(test_tree["/density/list_test"]);
+
     testity::Session test_session;
     auto results = test_session.run(test_tree, std::cout);
     results.save_to("perf.txt");
@@ -54,6 +58,10 @@ int main()
 
     list_test();
     list_benchmark();*/
+
+	function_queue_sample::run();
+	lifo_sample::run();
+	runtime_type_sample::run();
 
     return 0;
 }

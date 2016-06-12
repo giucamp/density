@@ -122,7 +122,7 @@ namespace testity
 
     using Duration = std::chrono::nanoseconds;
 
-	class Session;
+    class Session;
 
     class Results
     {
@@ -155,7 +155,7 @@ namespace testity
         };
         std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
         const TestTree & m_test_tree;
-		const Session & m_session;
+        const Session & m_session;
         Environment m_environment;
     };
 
@@ -163,11 +163,11 @@ namespace testity
     {
     public:
 
-		Results run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const;
+        Results run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const;
 
-		bool deterministic() const { return m_deterministic; }
-		bool random_shuffle() const { return m_random_shuffle; }
-		size_t repetitions() const { return m_repetitions; }
+        bool deterministic() const { return m_deterministic; }
+        bool random_shuffle() const { return m_random_shuffle; }
+        size_t repetitions() const { return m_repetitions; }
 
     private:
 

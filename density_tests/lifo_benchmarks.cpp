@@ -13,35 +13,35 @@
 
 namespace density
 {
-	namespace tests
-	{
-		using namespace testity;
+    namespace tests
+    {
+        using namespace testity;
 
-		struct Virtual
-		{
-			virtual ~Virtual() {}
-		};
+        struct Virtual
+        {
+            virtual ~Virtual() {}
+        };
 
-		PerformanceTestGroup make_lifo_array_benchmarks()
-		{
-			PerformanceTestGroup group("create array", "density version: " + std::to_string(DENSITY_VERSION));
+        PerformanceTestGroup make_lifo_array_benchmarks()
+        {
+            PerformanceTestGroup group("create array", "density version: " + std::to_string(DENSITY_VERSION));
 
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				lifo_array< Virtual > array(i_cardinality);
-			}, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                lifo_array< Virtual > array(i_cardinality);
+            }, __LINE__);
 
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				std::vector< Virtual > vector(i_cardinality);
-			}, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                std::vector< Virtual > vector(i_cardinality);
+            }, __LINE__);
 
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				Virtual * cpp98_array = new Virtual[i_cardinality];
-				delete[] cpp98_array;
-			}, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                Virtual * cpp98_array = new Virtual[i_cardinality];
+                delete[] cpp98_array;
+            }, __LINE__);
 
-			return group;
-		}
+            return group;
+        }
 
-	} // namespace tests
+    } // namespace tests
 
 } // namespace density

@@ -83,13 +83,13 @@ namespace density
             }, i_probability);
         }
 
-		template <typename CONTAINER_TEST>
-			void set_queue_custom_check(CONTAINER_TEST & i_container_test)
-		{
-			i_container_test.set_custom_check([&i_container_test] {
-				const bool mem_size_is_zero = i_container_test.dense_container().mem_size() == 0;
-				DENSITY_TEST_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
-		}
+        template <typename CONTAINER_TEST>
+            void set_queue_custom_check(CONTAINER_TEST & i_container_test)
+        {
+            i_container_test.set_custom_check([&i_container_test] {
+                const bool mem_size_is_zero = i_container_test.dense_container().mem_size() == 0;
+                DENSITY_TEST_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
+        }
 
         template <template <class> class QUEUE>
             void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
@@ -98,7 +98,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<TestObjectBase>> test(i_container_name);
-				set_queue_custom_check(test);
+                set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
                 add_test_case_consume_until_empty(test, .01);
@@ -108,7 +108,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<CopyableTestObject>> test(i_container_name);
-				set_queue_custom_check(test);
+                set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
@@ -122,7 +122,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<ComplexTypeBase>> test(i_container_name);
-				set_queue_custom_check(test);
+                set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<ComplexTypeBase>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_B>(test, 1., i_random);
@@ -135,7 +135,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<ComplexType_A>> test(i_container_name);
-				set_queue_custom_check(test);
+                set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<ComplexType_A>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<ComplexType_C>(test, 1., i_random);
                 add_test_case_pop_n_times(test, 1.);
@@ -146,7 +146,7 @@ namespace density
 
             {
                 ContainerTest<QUEUE<void>> test(i_container_name);
-				set_queue_custom_check(test);
+                set_queue_custom_check(test);
                 add_test_case_push_by_copy_n_times<CopyableTestObject>(test, 1., i_random);
                 add_test_case_push_by_copy_n_times<int>(test, 1., 42);
                 add_test_case_push_by_copy_n_times<double>(test, 1., 42.);

@@ -37,14 +37,14 @@ namespace density
             // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
             static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
 
-			struct Control : RUNTIME_TYPE
-			{
-				Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
-					: RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
+            struct Control : RUNTIME_TYPE
+            {
+                Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
+                    : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
 
-				void * const m_element;
-				Control * const m_next;
-			};
+                void * const m_element;
+                Control * const m_next;
+            };
 
         public:
 
@@ -281,58 +281,58 @@ namespace density
             {
                 DENSITY_ASSERT(m_buffer_start != nullptr);
                 DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
-				DENSITY_ASSERT(i_source_type.alignment() > 0 && is_power_of_2(i_source_type.alignment()));
-				
-				const auto element_size = i_source_type.size();
-				const auto element_aligment = i_source_type.alignment();
-				const auto element_aligment_mask = element_aligment - 1;
-				Control * const curr_control = m_tail;
+                DENSITY_ASSERT(i_source_type.alignment() > 0 && is_power_of_2(i_source_type.alignment()));
 
-				/* first try to allocate the element and the next control doing only bound and overflow
-					checking once. Note: both size and alignment of elements are constrained to be <=
-					std::numeric_limits < std::numeric_limits<uintptr_t>::max() / 4. */
-				uintptr_t original_tail = reinterpret_cast<uintptr_t>(curr_control + 1);
-				uintptr_t new_tail = original_tail;
+                const auto element_size = i_source_type.size();
+                const auto element_aligment = i_source_type.alignment();
+                const auto element_aligment_mask = element_aligment - 1;
+                Control * const curr_control = m_tail;
 
-				// allocate element
-				new_tail += element_aligment_mask;
-				new_tail &= ~element_aligment_mask;
-				void * element = reinterpret_cast<void *>(new_tail);
-				new_tail += element_size;
+                /* first try to allocate the element and the next control doing only bound and overflow
+                    checking once. Note: both size and alignment of elements are constrained to be <=
+                    std::numeric_limits < std::numeric_limits<uintptr_t>::max() / 4. */
+                uintptr_t original_tail = reinterpret_cast<uintptr_t>(curr_control + 1);
+                uintptr_t new_tail = original_tail;
 
-				// allocate next control
-				new_tail += (std::alignment_of<Control>::value - 1);
-				new_tail &= ~(std::alignment_of<Control>::value - 1);
-				void * next_control = reinterpret_cast<void *>(new_tail);
-				new_tail += sizeof(Control);
+                // allocate element
+                new_tail += element_aligment_mask;
+                new_tail &= ~element_aligment_mask;
+                void * element = reinterpret_cast<void *>(new_tail);
+                new_tail += element_size;
 
-				const auto u_buffer_end = reinterpret_cast<uintptr_t>(m_buffer_end);
-				const auto u_head = reinterpret_cast<uintptr_t>(m_head);
-				uintptr_t upper_limit = u_buffer_end;
-				if (m_head >= m_tail)
-				{
-					upper_limit = u_head;
-				}
-				if (new_tail >= upper_limit || new_tail < original_tail)
-				{
-					// handle: wrapping to the end of the buffer, allocation failure, pointer arithmetic overflow
-					void * tail = curr_control + 1;
-					const auto & res = double_push(tail, element_size, element_aligment);
-					element = res.m_element;
-					next_control = res.m_next_control;
-					if (element == nullptr || next_control == nullptr)
-					{
-						return false;
-					}
-				}
+                // allocate next control
+                new_tail += (std::alignment_of<Control>::value - 1);
+                new_tail &= ~(std::alignment_of<Control>::value - 1);
+                void * next_control = reinterpret_cast<void *>(new_tail);
+                new_tail += sizeof(Control);
 
-				#if DENSITY_DEBUG_INTERNAL
-					void * dbg_new_tail = curr_control + 1;
-					void * dbg_element = single_push(dbg_new_tail, i_source_type.size(), element_aligment);
-					void * dbg_next_control = single_push(dbg_new_tail, sizeof(Control), alignof(Control) );
-					DENSITY_ASSERT_INTERNAL(dbg_element == element && dbg_next_control == next_control);
-				#endif
-				
+                const auto u_buffer_end = reinterpret_cast<uintptr_t>(m_buffer_end);
+                const auto u_head = reinterpret_cast<uintptr_t>(m_head);
+                uintptr_t upper_limit = u_buffer_end;
+                if (m_head >= m_tail)
+                {
+                    upper_limit = u_head;
+                }
+                if (new_tail >= upper_limit || new_tail < original_tail)
+                {
+                    // handle: wrapping to the end of the buffer, allocation failure, pointer arithmetic overflow
+                    void * tail = curr_control + 1;
+                    const auto & res = double_push(tail, element_size, element_aligment);
+                    element = res.m_element;
+                    next_control = res.m_next_control;
+                    if (element == nullptr || next_control == nullptr)
+                    {
+                        return false;
+                    }
+                }
+
+                #if DENSITY_DEBUG_INTERNAL
+                    void * dbg_new_tail = curr_control + 1;
+                    void * dbg_element = single_push(dbg_new_tail, i_source_type.size(), element_aligment);
+                    void * dbg_next_control = single_push(dbg_new_tail, sizeof(Control), alignof(Control) );
+                    DENSITY_ASSERT_INTERNAL(dbg_element == element && dbg_next_control == next_control);
+                #endif
+
                 void * new_element = i_constructor(i_source_type, element);
 
                 // from now on, no exception can be raised
@@ -421,7 +421,7 @@ namespace density
             size_t element_max_alignment() const DENSITY_NOEXCEPT { return m_element_max_alignment; }
 
         private:
-			
+
             template <typename OPERATION>
                 auto manual_consume(OPERATION && i_operation, std::false_type)
                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
@@ -454,7 +454,7 @@ namespace density
                This function is used to push the Control and the element. If the required size with the
                required alignment does not fit in the queue the return value is nullptr.
                Preconditions: *io_tail can't be null, or the behavior is undefined. */
-			DENSITY_STRONG_INLINE void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
+            DENSITY_STRONG_INLINE void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
             {
                 DENSITY_ASSERT(io_tail != nullptr);
 
@@ -480,13 +480,13 @@ namespace density
                 return start_of_block;
             }
 
-			/* Allocates two objects on the queue. The return value is the address of the new object. */			
-			struct DoublePushResult { void * m_element, *m_next_control; };
-			DENSITY_NO_INLINE DoublePushResult double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
-			{
-				return { single_push(io_tail, i_element_size, i_element_alignment),
-					single_push(io_tail, sizeof(Control), alignof(Control)) };
-			}
+            /* Allocates two objects on the queue. The return value is the address of the new object. */
+            struct DoublePushResult { void * m_element, *m_next_control; };
+            DENSITY_NO_INLINE DoublePushResult double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
+            {
+                return { single_push(io_tail, i_element_size, i_element_alignment),
+                    single_push(io_tail, sizeof(Control), alignof(Control)) };
+            }
 
 
         private: // data members

@@ -27,8 +27,8 @@ namespace density
             TestObjectBase(std::mt19937 & i_random)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), std::uniform_int_distribution<size_t>()(i_random))) {}
 
-			TestObjectBase(size_t i_val)
-				: m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), i_val)) {}
+            TestObjectBase(size_t i_val)
+                : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), i_val)) {}
 
             TestObjectBase(const TestObjectBase & i_source)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash))
@@ -58,10 +58,10 @@ namespace density
                 return *this;
             }
 
-			~TestObjectBase()
-			{
-				m_check_word = 1239873;
-			}
+            ~TestObjectBase()
+            {
+                m_check_word = 1239873;
+            }
 
             bool operator == (const TestObjectBase & i_other) const
             {
@@ -85,8 +85,8 @@ namespace density
             std::shared_ptr<size_t> m_hash;
             int m_check_word = 3232;
         };
-		
-		/* Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
+
+        /* Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
         inline size_t hash_func(const TestObjectBase & i_object)
         {
             return i_object.hash();
@@ -314,7 +314,7 @@ namespace density
                 const auto container_is_empty = i_container.empty();
                 DENSITY_TEST_ASSERT(container_is_empty == m_deque.empty());
                 DENSITY_TEST_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
-                
+
                 const auto end_it1 = i_container.end();
                 for (auto it = i_container.begin(); it != end_it1; it++)
                 {
@@ -330,7 +330,7 @@ namespace density
                 {
                     auto hasher = it.complete_type().template get_feature<detail::FeatureHash>();
                     const auto & type_info = it.complete_type().type_info();
-					const auto & deq_entry = m_deque[index];
+                    const auto & deq_entry = m_deque[index];
                     const auto hash = hasher(it.element());
                     DENSITY_TEST_ASSERT(type_info == *deq_entry.m_type_info
                         && hash == deq_entry.m_hash );
@@ -383,7 +383,7 @@ namespace density
                 insert_at(m_deque.size(), i_element, 1);
             }
 
-			template <typename TYPE>
+            template <typename TYPE>
                 void push_front(const TYPE & i_element)
             {
                 insert_at(0, i_element, 1);
@@ -489,16 +489,16 @@ namespace density
                 compare();
             }
 
-			void set_custom_check(const std::function<void()> & i_custom_check)
-			{
-				m_custom_check = i_custom_check;
-			}
+            void set_custom_check(const std::function<void()> & i_custom_check)
+            {
+                m_custom_check = i_custom_check;
+            }
 
             // check for equality m_dense_container and shadow_container()
             void compare()
             {
-				if (m_custom_check)
-					m_custom_check();
+                if (m_custom_check)
+                    m_custom_check();
                 m_shadow_container.compare_all(m_dense_container);
             }
 
@@ -523,7 +523,7 @@ namespace density
             DENSE_CONTAINER m_dense_container;
             ShadowContainer<DENSE_CONTAINER> m_shadow_container;
             std::string m_name;
-			std::function<void()> m_custom_check;
+            std::function<void()> m_custom_check;
 
             struct TestCase
             {
@@ -565,8 +565,8 @@ namespace density
 
                 // move assign tmp to dense_container
                 dense_container = std::move(tmp);
-				const auto size_4 = std::distance(dense_container.cbegin(), dense_container.cend());
-				DENSITY_TEST_ASSERT(size_1 == size_4);
+                const auto size_4 = std::distance(dense_container.cbegin(), dense_container.cend());
+                DENSITY_TEST_ASSERT(size_1 == size_4);
             }, i_probability);
         }
 

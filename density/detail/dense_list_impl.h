@@ -15,34 +15,34 @@ namespace density
         template < typename ALLOCATOR, typename RUNTIME_TYPE >
             class DenseListImpl : private ALLOCATOR
         {
-		private:
+        private:
 
-			#if DENSITY_DEBUG_INTERNAL
-				void check_invariants() const
-				{				
-					if (m_control_blocks != nullptr)
-					{
-						Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
-						DENSITY_ASSERT_INTERNAL(header->m_count > 0);
-					}
-				}
-			#endif
+            #if DENSITY_DEBUG_INTERNAL
+                void check_invariants() const
+                {
+                    if (m_control_blocks != nullptr)
+                    {
+                        Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
+                        DENSITY_ASSERT_INTERNAL(header->m_count > 0);
+                    }
+                }
+            #endif
 
         public:
 
-			struct ControlBlock : RUNTIME_TYPE
-			{
-				ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) DENSITY_NOEXCEPT
-					: RUNTIME_TYPE(i_type), m_element(i_element) { }
+            struct ControlBlock : RUNTIME_TYPE
+            {
+                ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) DENSITY_NOEXCEPT
+                    : RUNTIME_TYPE(i_type), m_element(i_element) { }
 
-				void * const m_element;
-			};
+                void * const m_element;
+            };
 
             size_t size() const DENSITY_NOEXCEPT
             {
-				#if DENSITY_DEBUG_INTERNAL
-					check_invariants();
-				#endif		
+                #if DENSITY_DEBUG_INTERNAL
+                    check_invariants();
+                #endif
 
                 if (m_control_blocks != nullptr)
                 {
@@ -57,17 +57,17 @@ namespace density
 
             bool empty() const DENSITY_NOEXCEPT
             {
-				#if DENSITY_DEBUG_INTERNAL
-					check_invariants();
-				#endif		
+                #if DENSITY_DEBUG_INTERNAL
+                    check_invariants();
+                #endif
                 return m_control_blocks == nullptr;
             }
 
             void clear() DENSITY_NOEXCEPT
-            {	
-				#if DENSITY_DEBUG_INTERNAL
-					check_invariants();
-				#endif	
+            {
+                #if DENSITY_DEBUG_INTERNAL
+                    check_invariants();
+                #endif
                 destroy_impl();
                 m_control_blocks = nullptr;
             }
@@ -78,21 +78,21 @@ namespace density
 
             DenseListImpl(DenseListImpl && i_source) DENSITY_NOEXCEPT
             {
-				#if DENSITY_DEBUG_INTERNAL
-					i_source.check_invariants();
-				#endif	
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
                 move_impl(std::move(i_source));
             }
 
             DenseListImpl & operator = (DenseListImpl && i_source) DENSITY_NOEXCEPT
             {
-				DENSITY_ASSERT(this != &i_source); // self assignment not supported
+                DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
-				#if DENSITY_DEBUG_INTERNAL
-					this->check_invariants();
-					i_source.check_invariants();
-				#endif	
-                
+                #if DENSITY_DEBUG_INTERNAL
+                    this->check_invariants();
+                    i_source.check_invariants();
+                #endif
+
                 destroy_impl();
                 move_impl(std::move(i_source));
                 return *this;
@@ -100,9 +100,9 @@ namespace density
 
             DenseListImpl(const DenseListImpl & i_source)
             {
-				#if DENSITY_DEBUG_INTERNAL
-					i_source.check_invariants();
-				#endif	
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
                 copy_impl(i_source);
             }
 
@@ -110,22 +110,22 @@ namespace density
             {
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
-				#if DENSITY_DEBUG_INTERNAL
-					i_source.check_invariants();
-				#endif	
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
 
-				// use a copy to provide the strong exception guarantee
-				auto copy(i_source);
-				destroy_impl();                
-				move_impl(std::move(copy));
-				return *this;
+                // use a copy to provide the strong exception guarantee
+                auto copy(i_source);
+                destroy_impl();
+                move_impl(std::move(copy));
+                return *this;
             }
 
             ~DenseListImpl() DENSITY_NOEXCEPT
             {
-				#if DENSITY_DEBUG_INTERNAL
-					check_invariants();
-				#endif	
+                #if DENSITY_DEBUG_INTERNAL
+                    check_invariants();
+                #endif
 
                 destroy_impl();
             }
@@ -136,11 +136,11 @@ namespace density
 
                 IteratorBaseImpl(const ControlBlock * i_curr_control_block) DENSITY_NOEXCEPT
                     : m_curr_control_block(i_curr_control_block)
-						{ }
+                        { }
 
                 void move_next() DENSITY_NOEXCEPT
                 {
-					m_curr_control_block++;
+                    m_curr_control_block++;
                 }
 
                 void * element() const DENSITY_NOEXCEPT
@@ -148,15 +148,15 @@ namespace density
                     return m_curr_control_block->m_element;
                 }
 
-				const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
-				{
-					return *m_curr_control_block;
-				}
+                const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
+                {
+                    return *m_curr_control_block;
+                }
 
-				const ControlBlock * control() const DENSITY_NOEXCEPT
-				{
-					return m_curr_control_block;
-				}
+                const ControlBlock * control() const DENSITY_NOEXCEPT
+                {
+                    return m_curr_control_block;
+                }
 
                 bool operator == (const IteratorBaseImpl & i_other) const DENSITY_NOEXCEPT
                 {
@@ -170,20 +170,20 @@ namespace density
 
                 void operator ++ () DENSITY_NOEXCEPT
                 {
-					m_curr_control_block++;
+                    m_curr_control_block++;
                 }
 
-			private:
+            private:
                 const ControlBlock * m_curr_control_block;
 
             }; // class IteratorBaseImpl
 
             IteratorBaseImpl begin() const DENSITY_NOEXCEPT { return IteratorBaseImpl(m_control_blocks); }
             IteratorBaseImpl end() const DENSITY_NOEXCEPT { return IteratorBaseImpl(m_control_blocks + size()); }
-			
+
             size_t get_size_not_empty() const DENSITY_NOEXCEPT
             {
-				return (reinterpret_cast<Header*>(m_control_blocks) - 1)->m_count;
+                return (reinterpret_cast<Header*>(m_control_blocks) - 1)->m_count;
             }
 
             struct Header
@@ -209,52 +209,52 @@ namespace density
                     m_end_of_control_blocks = m_control_blocks = reinterpret_cast<ControlBlock*>(header + 1);
                     m_end_of_elements = m_elements = m_control_blocks + i_count;
 
-					#if DENSITY_DEBUG_INTERNAL
-						m_dbg_end_of_buffer = address_add(m_control_blocks, i_buffer_size);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        m_dbg_end_of_buffer = address_add(m_control_blocks, i_buffer_size);
+                    #endif
                 }
 
                 /* Adds a (type-info, element) pair to the list. The new element is copy-constructed.
-					Note: ELEMENT is not the complete type of the element, as the
-					list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
+                    Note: ELEMENT is not the complete type of the element, as the
+                    list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
                 void * add_by_copy(const RUNTIME_TYPE & i_element_info, const void * i_source)
                 {
                     // copy-construct the element first (this may throw)
                     void * complete_new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
-					#if DENSITY_DEBUG_INTERNAL
-						dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
+                    #endif
                     const auto element_base = i_element_info.copy_construct(complete_new_element, i_source);
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
                     // construct the typeinfo - if this would throw, the element just constructed would not be destroyed. A static_assert guarantees the noexcept-ness.
-					#if DENSITY_DEBUG_INTERNAL
-						dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
+                    #endif
                     DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base));
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
                 }
 
                 /* Adds a (element-info, element) pair to the list. The new element is move-constructed.
-					Note: ELEMENT is not the complete type of the element, as the
-					list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
+                    Note: ELEMENT is not the complete type of the element, as the
+                    list allows polymorphic types. The use of the RUNTIME_TYPE avoid slicing or partial constructions. */
                 void * add_by_move(const RUNTIME_TYPE & i_element_info, void * i_source)
                 {
                     // copy-construct the element first (this may throw)
                     void * complete_new_element = address_upper_align(m_end_of_elements, i_element_info.alignment());
-					#if DENSITY_DEBUG_INTERNAL
-						dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
+                    #endif
                     const auto element_base = i_element_info.move_construct_nothrow(complete_new_element, i_source);
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
                     // construct the typeinfo - if this would throw, the element just constructed would not be destroyed. A static_assert guarantees the noexcept-ness.
-					#if DENSITY_DEBUG_INTERNAL
-						dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
+                    #endif
                     DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base));
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
@@ -263,18 +263,18 @@ namespace density
                 void add_only_control_block(const RUNTIME_TYPE & i_element_info, void * i_element) DENSITY_NOEXCEPT
                 {
                     DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element));
-					#if DENSITY_DEBUG_INTERNAL
-						dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
+                    #endif
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element);
                 }
 
-				ControlBlock * end_of_control_blocks()
+                ControlBlock * end_of_control_blocks()
                 {
                     return m_end_of_control_blocks;
                 }
 
-				ControlBlock * control_blocks()
+                ControlBlock * control_blocks()
                 {
                     return m_control_blocks;
                 }
@@ -295,26 +295,26 @@ namespace density
                     }
                 }
 
-				#if DENSITY_DEBUG_INTERNAL
-					void dbg_check_range(const void * i_start, const void * i_end) DENSITY_NOEXCEPT
-					{
-						DENSITY_ASSERT_INTERNAL(i_start >= m_control_blocks && i_end <= m_dbg_end_of_buffer);
-					}
-				#endif
+                #if DENSITY_DEBUG_INTERNAL
+                    void dbg_check_range(const void * i_start, const void * i_end) DENSITY_NOEXCEPT
+                    {
+                        DENSITY_ASSERT_INTERNAL(i_start >= m_control_blocks && i_end <= m_dbg_end_of_buffer);
+                    }
+                #endif
 
                 ControlBlock * m_control_blocks;
                 void * m_elements;
-				ControlBlock * m_end_of_control_blocks;
+                ControlBlock * m_end_of_control_blocks;
                 void * m_end_of_elements;
-				#if DENSITY_DEBUG_INTERNAL
-					void * m_dbg_end_of_buffer;
-				#endif
+                #if DENSITY_DEBUG_INTERNAL
+                    void * m_dbg_end_of_buffer;
+                #endif
             };
 
-			ControlBlock * & edit_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
+            ControlBlock * & edit_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
 
-			ControlBlock * get_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
-			const ControlBlock * get_control_blocks() const DENSITY_NOEXCEPT { return m_control_blocks; }
+            ControlBlock * get_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
+            const ControlBlock * get_control_blocks() const DENSITY_NOEXCEPT { return m_control_blocks; }
 
             void destroy_impl() DENSITY_NOEXCEPT
             {
@@ -326,10 +326,10 @@ namespace density
                     for (auto it = begin(); it != end_it; ++it)
                     {
                         auto control_block = it.control();
-						dense_size += control_block->size();
-						dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
-						control_block->destroy(it.element());
-						control_block->ControlBlock::~ControlBlock();
+                        dense_size += control_block->size();
+                        dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
+                        control_block->destroy(it.element());
+                        control_block->ControlBlock::~ControlBlock();
                     }
 
                     Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
@@ -375,7 +375,7 @@ namespace density
             }
 
             template <typename ELEMENT, typename... TYPES>
-				static void make_impl(DenseListImpl & o_dest_list, TYPES &&... i_args)
+                static void make_impl(DenseListImpl & o_dest_list, TYPES &&... i_args)
             {
                 DENSITY_ASSERT(o_dest_list.m_control_blocks == nullptr); // precondition
 
@@ -383,7 +383,7 @@ namespace density
                 size_t const buffer_alignment = detail::size_max(RecursiveHelper<ELEMENT, TYPES...>::s_element_alignment, std::alignment_of<ControlBlock>::value);
                 size_t const element_count = RecursiveHelper<ELEMENT, TYPES...>::s_element_count;
 
-				bool not_empty = element_count != 0; // this avoids 'warning C4127: conditional expression is constant' on msvc
+                bool not_empty = element_count != 0; // this avoids 'warning C4127: conditional expression is constant' on msvc
                 if (not_empty)
                 {
                     ListBuilder builder;
@@ -402,12 +402,12 @@ namespace density
                     }
                 }
 
-				#if DENSITY_DEBUG_INTERNAL
-					size_t dbg_buffer_size = 0, dbg_buffer_alignment = 0;
-					o_dest_list.compute_buffer_size_and_alignment(&dbg_buffer_size, &dbg_buffer_alignment);
-					DENSITY_ASSERT_INTERNAL(dbg_buffer_size == buffer_size);
-					DENSITY_ASSERT_INTERNAL(dbg_buffer_alignment == buffer_alignment);
-				#endif
+                #if DENSITY_DEBUG_INTERNAL
+                    size_t dbg_buffer_size = 0, dbg_buffer_alignment = 0;
+                    o_dest_list.compute_buffer_size_and_alignment(&dbg_buffer_size, &dbg_buffer_alignment);
+                    DENSITY_ASSERT_INTERNAL(dbg_buffer_size == buffer_size);
+                    DENSITY_ASSERT_INTERNAL(dbg_buffer_alignment == buffer_alignment);
+                #endif
             }
 
             void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const DENSITY_NOEXCEPT
@@ -419,7 +419,7 @@ namespace density
                 {
                     const size_t curr_size = it.complete_type().size();
                     const size_t curr_alignment = it.complete_type().alignment();
-					DENSITY_ASSERT(curr_size > 0 && is_power_of_2(curr_alignment));
+                    DENSITY_ASSERT(curr_size > 0 && is_power_of_2(curr_alignment));
                     buffer_size = (buffer_size + (curr_alignment - 1)) & ~(curr_alignment - 1);
                     buffer_size += curr_size;
 
@@ -463,21 +463,21 @@ namespace density
                 *o_buffer_size = buffer_size;
                 *o_buffer_alignment = buffer_alignment;
             }
-			
+
             template <typename CONSTRUCTOR>
-				IteratorBaseImpl insert_n_impl(const ControlBlock * i_position, size_t i_count_to_insert,
-					const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+                IteratorBaseImpl insert_n_impl(const ControlBlock * i_position, size_t i_count_to_insert,
+                    const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
             {
                 DENSITY_ASSERT(i_count_to_insert > 0);
 
                 const ControlBlock * return_control_box = nullptr;
-                
+
                 size_t buffer_size = 0, buffer_alignment = 0;
                 compute_buffer_size_and_alignment_for_insert(&buffer_size, &buffer_alignment, i_position, i_count_to_insert, i_source_type);
 
                 ListBuilder builder;
-				IteratorBaseImpl it = begin();
-				try
+                IteratorBaseImpl it = begin();
+                try
                 {
                     builder.init(*static_cast<ALLOCATOR*>(this), size() + i_count_to_insert, buffer_size, buffer_alignment);
 
@@ -491,7 +491,7 @@ namespace density
                             i_constructor(builder, i_source_type);
                             if (count_to_insert == i_count_to_insert)
                             {
-								return_control_box = end_of_control_blocks;
+                                return_control_box = end_of_control_blocks;
                             }
                             count_to_insert--;
                         }
@@ -510,45 +510,45 @@ namespace density
 
                     m_control_blocks = builder.control_blocks();
 
-					return IteratorBaseImpl(return_control_box);
+                    return IteratorBaseImpl(return_control_box);
                 }
                 catch (...)
                 {
-					/* we iterate this list exactly like we did in the loop interrupted by the exception,
-						but we stop at 'it', the iterator we were using */
-					size_t count_to_insert = i_count_to_insert;
-					IteratorBaseImpl this_it = begin();
+                    /* we iterate this list exactly like we did in the loop interrupted by the exception,
+                        but we stop at 'it', the iterator we were using */
+                    size_t count_to_insert = i_count_to_insert;
+                    IteratorBaseImpl this_it = begin();
 
-					/* in the same loop we iterate over tmp, that is the list that we was creating. The 
-						elements that were moved from this list to tmp have to be moved back to this list. The elements
-						that was just constructed have to be destroyed. */
-					DenseListImpl tmp;
-					tmp.m_control_blocks = builder.control_blocks();
-					if (tmp.m_control_blocks != nullptr) // if the allocation fails builder.control_blocks() is null
-					{
-						auto tmp_it = tmp.begin();
-						auto tmp_end = builder.end_of_control_blocks();
+                    /* in the same loop we iterate over tmp, that is the list that we was creating. The
+                        elements that were moved from this list to tmp have to be moved back to this list. The elements
+                        that was just constructed have to be destroyed. */
+                    DenseListImpl tmp;
+                    tmp.m_control_blocks = builder.control_blocks();
+                    if (tmp.m_control_blocks != nullptr) // if the allocation fails builder.control_blocks() is null
+                    {
+                        auto tmp_it = tmp.begin();
+                        auto tmp_end = builder.end_of_control_blocks();
 
-						for (; tmp_it != tmp_end; tmp_it.move_next())
-						{
-							if (this_it.control() == i_position && count_to_insert > 0)
-							{
-								tmp_it.complete_type().destroy(tmp_it.element());
-								count_to_insert--;
-							}
-							else
-							{
-								tmp_it.complete_type().move_construct_nothrow(this_it.element(), tmp_it.element());
-								this_it.move_next();
-							}
-						}
+                        for (; tmp_it != tmp_end; tmp_it.move_next())
+                        {
+                            if (this_it.control() == i_position && count_to_insert > 0)
+                            {
+                                tmp_it.complete_type().destroy(tmp_it.element());
+                                count_to_insert--;
+                            }
+                            else
+                            {
+                                tmp_it.complete_type().move_construct_nothrow(this_it.element(), tmp_it.element());
+                                this_it.move_next();
+                            }
+                        }
 
-						Header * const header = reinterpret_cast<Header*>(tmp.m_control_blocks) - 1;
-						aligned_free(*static_cast<ALLOCATOR*>(this), header, buffer_size, buffer_alignment);
-						tmp.m_control_blocks = nullptr;
-					}
+                        Header * const header = reinterpret_cast<Header*>(tmp.m_control_blocks) - 1;
+                        aligned_free(*static_cast<ALLOCATOR*>(this), header, buffer_size, buffer_alignment);
+                        tmp.m_control_blocks = nullptr;
+                    }
                     throw;
-                }               
+                }
             }
 
             IteratorBaseImpl erase_impl(const ControlBlock * i_from, const ControlBlock * i_to)
@@ -603,11 +603,11 @@ namespace density
                         if (!is_in_range)
                         {
                             auto const new_element_info = builder.end_of_control_blocks();
-							builder.add_by_move(it.complete_type(), it.element());
+                            builder.add_by_move(it.complete_type(), it.element());
 
                             if (first_in_range)
                             {
-								return_control_block = new_element_info;
+                                return_control_block = new_element_info;
                                 first_in_range = false;
                             }
                         }
@@ -616,7 +616,7 @@ namespace density
                     if (return_control_block == nullptr) // if no elements were copied after the erased range
                     {
                         DENSITY_ASSERT(i_to == m_control_blocks + prev_size);
-						return_control_block = builder.end_of_control_blocks();
+                        return_control_block = builder.end_of_control_blocks();
                     }
 
                     destroy_impl();
@@ -668,21 +668,21 @@ namespace density
                 static const size_t s_buffer_size = PREV_ELEMENTS_SIZE;
             };
             template <size_t PREV_ELEMENTS_SIZE, typename FIRST_TYPE, typename... OTHER_TYPES>
-				struct RecursiveSize<PREV_ELEMENTS_SIZE, FIRST_TYPE, OTHER_TYPES...>
+                struct RecursiveSize<PREV_ELEMENTS_SIZE, FIRST_TYPE, OTHER_TYPES...>
             {
                 static const size_t s_aligned_prev_size = (PREV_ELEMENTS_SIZE + (std::alignment_of<FIRST_TYPE>::value - 1)) & ~(std::alignment_of<FIRST_TYPE>::value - 1);
                 static const size_t s_buffer_size = RecursiveSize<s_aligned_prev_size + sizeof(FIRST_TYPE), OTHER_TYPES...>::s_buffer_size;
             };
 
             template <typename ELEMENT, typename... TYPES>
-				struct RecursiveHelper
+                struct RecursiveHelper
             {
                 static const size_t s_element_count = 0;
                 static const size_t s_element_alignment = 1;
                 static void construct(ListBuilder &, TYPES &&...) { }
             };
             template <typename ELEMENT, typename FIRST_TYPE, typename... OTHER_TYPES>
-				struct RecursiveHelper<ELEMENT, FIRST_TYPE, OTHER_TYPES...>
+                struct RecursiveHelper<ELEMENT, FIRST_TYPE, OTHER_TYPES...>
             {
                 static_assert(std::alignment_of<FIRST_TYPE>::value > 0 && (std::alignment_of<FIRST_TYPE>::value & (std::alignment_of<FIRST_TYPE>::value - 1)) == 0,
                     "the alignment must be a non-zero integer power of 2");
@@ -695,11 +695,11 @@ namespace density
                     // DENSITY_NOEXCEPT_IF( new (nullptr) FIRST_TYPE(std::forward<FIRST_TYPE>(std::declval<FIRST_TYPE>())) )
                 {
                     void * new_element_complete = address_upper_align(i_builder.m_end_of_elements, std::alignment_of<FIRST_TYPE>::value);
-					ELEMENT * new_element = new (new_element_complete) FIRST_TYPE(std::forward<FIRST_TYPE>(i_source));
+                    ELEMENT * new_element = new (new_element_complete) FIRST_TYPE(std::forward<FIRST_TYPE>(i_source));
                     i_builder.m_end_of_elements = address_add(new_element, sizeof(FIRST_TYPE));
-					#if DENSITY_DEBUG_INTERNAL
-						i_builder.dbg_check_range(new_element, i_builder.m_end_of_elements);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        i_builder.dbg_check_range(new_element, i_builder.m_end_of_elements);
+                    #endif
 
                     i_builder.add_only_control_block(RUNTIME_TYPE::template make<FIRST_TYPE>(), new_element);
 
@@ -707,7 +707,7 @@ namespace density
                 }
             };
 
-			ControlBlock * m_control_blocks;
+            ControlBlock * m_control_blocks;
         };
 
     } // namespace detail

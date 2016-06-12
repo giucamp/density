@@ -64,6 +64,12 @@
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp">
       <Filter>samples</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\density_samples\lifo_sample.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\density_samples\function_queue_sample.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">

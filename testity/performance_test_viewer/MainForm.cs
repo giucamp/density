@@ -107,7 +107,7 @@ namespace performance_test_viewer
 
             }
 
-            var result = m_fileDiag.ShowDialog(this);            
+            var result = m_fileDiag.ShowDialog(this);
             if (result == DialogResult.OK)
             {
                 m_lastPath = Path.GetDirectoryName(m_fileDiag.FileName);
@@ -129,7 +129,7 @@ namespace performance_test_viewer
                 }
 
                 m_plot.SaveScreenshot(m_fileDiag.FileName, format);
-            }            
+            }
         }
     }
 }

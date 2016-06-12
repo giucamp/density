@@ -13,16 +13,16 @@
 namespace density
 {
     /** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
-		paged_queue is a queue: elements can be added only at the end of the container, and only the first element 
-		can be removed.
-		A paged_queue allocates a set of pages from the provided page allocator. The \b head page is the
-		the least recently allocated page, while the \b tail page is the most recently allocated one.
-		paged_queue never reallocates or move its elements: new elements are allocated to the head page. 
-		When there is not enough space in the head page, a new page is allocated, which becomes the new head page.
-		After an element is removed, if the page that contained it becomes empty, the page is immediately deallocated.
-		An iterator is invalidated only when the pointed element is deleted (including when the queue is destroyed).
+        paged_queue is a queue: elements can be added only at the end of the container, and only the first element
+        can be removed.
+        A paged_queue allocates a set of pages from the provided page allocator. The \b head page is the
+        the least recently allocated page, while the \b tail page is the most recently allocated one.
+        paged_queue never reallocates or move its elements: new elements are allocated to the head page.
+        When there is not enough space in the head page, a new page is allocated, which becomes the new head page.
+        After an element is removed, if the page that contained it becomes empty, the page is immediately deallocated.
+        An iterator is invalidated only when the pointed element is deleted (including when the queue is destroyed).
 
-		\n\b Thread safeness: None. The user is responsible to avoid race conditions.
+        \n\b Thread safeness: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of paged_queue is noexcept or provides the strong exception guarantee.
             @param ELEMENT Base type of the elements of the queue. The queue enforces the compile-time
                 constraint that the type of each element is covariant to ELEMENT.
@@ -51,7 +51,7 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-	template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class paged_queue final : private PAGE_ALLOCATOR
     {
         struct PageHeader;
@@ -263,7 +263,7 @@ namespace density
         {
             DENSITY_ASSERT(!empty());
 
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -279,7 +279,7 @@ namespace density
                 }
             }
 
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
@@ -315,12 +315,12 @@ namespace density
         {
             DENSITY_ASSERT(!empty());
 
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
-			using ReturnType = decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()));
-			return manual_consume_impl(i_operation, std::is_same<ReturnType, void>());
+            using ReturnType = decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()));
+            return manual_consume_impl(i_operation, std::is_same<ReturnType, void>());
         }
 
 
@@ -633,7 +633,7 @@ namespace density
             \n\b Complexity: constant */
         size_t mem_capacity() const DENSITY_NOEXCEPT
         {
-			size_t result(0);
+            size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_capacity();
@@ -648,9 +648,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-		size_t mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const DENSITY_NOEXCEPT
         {
-			size_t result(0);
+            size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_size();
@@ -663,9 +663,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-		size_t mem_free() const DENSITY_NOEXCEPT
+        size_t mem_free() const DENSITY_NOEXCEPT
         {
-			size_t result(0);
+            size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
             {
                 result += page->m_queue.mem_free();
@@ -736,7 +736,7 @@ namespace density
         template <typename CONSTRUCTOR>
             void insert_back_impl(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
         {
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
@@ -773,12 +773,12 @@ namespace density
                     delete_page(page_to_delete);
                 }
                 throw;
-				#if DENSITY_DEBUG_INTERNAL
+                #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
                 #endif
             }
 
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }
@@ -853,13 +853,13 @@ namespace density
             }
         }
 
-		// overload used if the return type is to not void
+        // overload used if the return type is to not void
         template <typename OPERATION>
             auto manual_consume_impl(OPERATION && i_operation, std::false_type)
                 DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
                     -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
         {
-			auto const result = m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+            auto const result = m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
                 return i_operation(i_type, static_cast<ELEMENT*>(i_element));
             });
             if (m_first_page->m_queue.empty())
@@ -872,20 +872,20 @@ namespace density
                     m_last_page = nullptr;
                 }
             }
-			
-			#if DENSITY_DEBUG_INTERNAL
+
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
 
-			return std::move(result);
+            return std::move(result);
         }
 
-		// overload used if the return type is to void
+        // overload used if the return type is to void
         template <typename OPERATION>
             void manual_consume_impl(OPERATION && i_operation, std::true_type)
                 DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
-			m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+            m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
                 i_operation(i_type, static_cast<ELEMENT*>(i_element));
             });
             if (m_first_page->m_queue.empty())
@@ -899,7 +899,7 @@ namespace density
                 }
             }
 
-			#if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
             #endif
         }

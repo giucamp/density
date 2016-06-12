@@ -4,15 +4,14 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-
 #include "environment.h"
 #include <sstream>
 #include <vector>
 
 #if defined( _WIN32 ) && ! defined( __clang__ )
-	#define WIN32_WMI 1
+    #define WIN32_WMI 1
 #else
-	#define WIN32_WMI 0
+    #define WIN32_WMI 0
 #endif
 
 #if WIN32_WMI
@@ -24,7 +23,7 @@
 
 namespace testity
 {
-	#if WIN32_WMI
+    #if WIN32_WMI
 
         #define TESTITY_COM_CALL(call)        { if(FAILED((call))) throw std::exception("Com call failed: " #call); }
 
@@ -169,40 +168,40 @@ namespace testity
     Environment::Environment()
         : m_startup_clock(std::chrono::system_clock::now())
     {
-		// detect the compiler
-		std::ostringstream compiler;
-		#ifdef _MSC_VER
-				compiler << "MSC - " << _MSC_VER;
-		#elif __clang__
-				compiler << "Clang - " << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
-		#else
-				compiler << "unknown";
-		#endif
-		m_compiler = compiler.str();
-		
-		#if WIN32_WMI
-			WMIServices wmi;
-			
-			// query system info
-	        auto proc_prop = wmi.get_properties(L"SELECT * FROM Win32_Processor", { L"Caption", L"Name", L"L2CacheSize" } );
-			m_system_info = proc_prop[0] + " - " + proc_prop[1] + " - L2Cache(KiB) " + proc_prop[2];
-			MEMORYSTATUSEX memory_status;
-			ZeroMemory(&memory_status, sizeof(memory_status));
-			memory_status.dwLength = sizeof(memory_status);
-			if (GlobalMemoryStatusEx(&memory_status))
-			{
-				std::ostringstream memory_size;
-				memory_size << ", System memory: " << memory_status.ullTotalPhys / (1024. * 1024.) << " GiB";
-				m_system_info += memory_size.str();
-			}
+        // detect the compiler
+        std::ostringstream compiler;
+        #ifdef _MSC_VER
+                compiler << "MSC - " << _MSC_VER;
+        #elif __clang__
+                compiler << "Clang - " << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
+        #else
+                compiler << "unknown";
+        #endif
+        m_compiler = compiler.str();
 
-			// query os name
-			auto os_prop = wmi.get_properties(L"SELECT * FROM Win32_OperatingSystem", { L"Caption" });
-			m_operating_sytem = os_prop[0];
-		#else
-			m_operating_sytem = "unknown";
-			m_system_info = "unknown";
-		#endif
+        #if WIN32_WMI
+            WMIServices wmi;
+
+            // query system info
+            auto proc_prop = wmi.get_properties(L"SELECT * FROM Win32_Processor", { L"Caption", L"Name", L"L2CacheSize" } );
+            m_system_info = proc_prop[0] + " - " + proc_prop[1] + " - L2Cache(KiB) " + proc_prop[2];
+            MEMORYSTATUSEX memory_status;
+            ZeroMemory(&memory_status, sizeof(memory_status));
+            memory_status.dwLength = sizeof(memory_status);
+            if (GlobalMemoryStatusEx(&memory_status))
+            {
+                std::ostringstream memory_size;
+                memory_size << ", System memory: " << memory_status.ullTotalPhys / (1024. * 1024.) << " GiB";
+                m_system_info += memory_size.str();
+            }
+
+            // query os name
+            auto os_prop = wmi.get_properties(L"SELECT * FROM Win32_OperatingSystem", { L"Caption" });
+            m_operating_sytem = os_prop[0];
+        #else
+            m_operating_sytem = "unknown";
+            m_system_info = "unknown";
+        #endif
     }
 
 } // namespace testity

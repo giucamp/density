@@ -202,9 +202,9 @@ namespace testity
             i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
             i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;
             i_ostream << "SIZEOF_POINTER:" << m_environment.sizeof_pointer() << std::endl;
-			i_ostream << "DETERMINISTIC:" << (m_session.deterministic() ? "yes" : "no") << std::endl;
-			i_ostream << "RANDOM_SHUFFLE:" << (m_session.random_shuffle() ? "yes (with std::mt19937)" : "no") << std::endl;
-			
+            i_ostream << "DETERMINISTIC:" << (m_session.deterministic() ? "yes" : "no") << std::endl;
+            i_ostream << "RANDOM_SHUFFLE:" << (m_session.random_shuffle() ? "yes (with std::mt19937)" : "no") << std::endl;
+
             const auto date_time = std::chrono::system_clock::to_time_t(m_environment.startup_clock());
             #ifdef _MSC_VER
                 tm local_tm;

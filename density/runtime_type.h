@@ -138,7 +138,7 @@ namespace density
             {
                 static_assert(sizeof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
                     "Type with size >= 1/4 of the address space are not supported");
-				// constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
+                // constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
                 static const uintptr_t value = sizeof(TYPE);
             };
         };
@@ -152,8 +152,8 @@ namespace density
             {
                 static_assert(alignof(TYPE) < std::numeric_limits<uintptr_t>::max() / 4,
                     "Type with alignment >= 1/4 of the address space are not supported" );
-				// constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
-				static const uintptr_t value = alignof(TYPE);
+                // constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
+                static const uintptr_t value = alignof(TYPE);
             };
         };
 
@@ -443,9 +443,9 @@ namespace density
 
     } // namespace detail
 
-	/** Class template that performs type-erasure.
-			@param BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
-	*/
+    /** Class template that performs type-erasure.
+            @param BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
+    */
     template <typename BASE = void, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
         class runtime_type
     {
@@ -471,10 +471,10 @@ namespace density
             return get_feature<detail::FeatureAlignment>();
         }
 
-		void * default_construct(void * i_dest) const
-		{
-			return get_feature<detail::FeatureDefaultConstruct>()(i_dest);
-		}
+        void * default_construct(void * i_dest) const
+        {
+            return get_feature<detail::FeatureDefaultConstruct>()(i_dest);
+        }
 
         void * copy_construct(void * i_dest, const void * i_source) const
         {

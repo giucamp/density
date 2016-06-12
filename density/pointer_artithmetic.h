@@ -1,3 +1,9 @@
+
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #pragma once
 #include "density_common.h"
 
@@ -11,22 +17,22 @@
 
 namespace density
 {
-	class Overflow : public std::exception
+    class Overflow : public std::exception
     {
     public:
         using std::exception::exception;
     };
 
-	namespace detail
-	{
-		inline void handle_pointer_overflow(bool i_overflow)
-		{
-			if (i_overflow)
-			{
-				throw Overflow("pointer overflow");
-			}
-		}
-	}
+    namespace detail
+    {
+        inline void handle_pointer_overflow(bool i_overflow)
+        {
+            if (i_overflow)
+            {
+                throw Overflow("pointer overflow");
+            }
+        }
+    }
 
     template <typename UINT>
         class BasicMemSize

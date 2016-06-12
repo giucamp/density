@@ -48,15 +48,15 @@ namespace performance_test_viewer
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
             // splitContainer1
-            // 
+            //
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
             this.splitContainer1.Name = "splitContainer1";
-            // 
+            //
             // splitContainer1.Panel1
-            // 
+            //
             this.splitContainer1.Panel1.Controls.Add(this.label2);
             this.splitContainer1.Panel1.Controls.Add(this.label1);
             this.splitContainer1.Panel1.Controls.Add(this.plotPanel);
@@ -64,17 +64,17 @@ namespace performance_test_viewer
             this.splitContainer1.Panel1.Controls.Add(this.lblCardMin);
             this.splitContainer1.Panel1.Controls.Add(this.lblTimeMin);
             this.splitContainer1.Panel1.Controls.Add(this.lblTimeMax);
-            // 
+            //
             // splitContainer1.Panel2
-            // 
+            //
             this.splitContainer1.Panel2.Controls.Add(this.legendPanel);
             this.splitContainer1.Size = new System.Drawing.Size(547, 441);
             this.splitContainer1.SplitterDistance = 450;
             this.splitContainer1.TabIndex = 0;
-            // 
+            //
             // label2
-            // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(224, 410);
@@ -82,9 +82,9 @@ namespace performance_test_viewer
             this.label2.Size = new System.Drawing.Size(62, 13);
             this.label2.TabIndex = 6;
             this.label2.Text = "i_cardinality";
-            // 
+            //
             // label1
-            // 
+            //
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(16, 183);
             this.label1.Name = "label1";
@@ -92,19 +92,19 @@ namespace performance_test_viewer
             this.label1.TabIndex = 5;
             this.label1.Text = "Time\r\n(micro-\r\nseconds)";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
+            //
             // plotPanel
-            // 
-            this.plotPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.plotPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.plotPanel.Location = new System.Drawing.Point(72, 17);
             this.plotPanel.Name = "plotPanel";
             this.plotPanel.Size = new System.Drawing.Size(364, 390);
             this.plotPanel.TabIndex = 4;
-            // 
+            //
             // lblCardMax
-            // 
+            //
             this.lblCardMax.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCardMax.Location = new System.Drawing.Point(346, 410);
             this.lblCardMax.Name = "lblCardMax";
@@ -112,18 +112,18 @@ namespace performance_test_viewer
             this.lblCardMax.TabIndex = 3;
             this.lblCardMax.Text = "CardTime";
             this.lblCardMax.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            // 
+            //
             // lblCardMin
-            // 
+            //
             this.lblCardMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblCardMin.Location = new System.Drawing.Point(74, 410);
             this.lblCardMin.Name = "lblCardMin";
             this.lblCardMin.Size = new System.Drawing.Size(77, 13);
             this.lblCardMin.TabIndex = 2;
             this.lblCardMin.Text = "CardTime";
-            // 
+            //
             // lblTimeMin
-            // 
+            //
             this.lblTimeMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblTimeMin.Location = new System.Drawing.Point(17, 388);
             this.lblTimeMin.Name = "lblTimeMin";
@@ -131,27 +131,27 @@ namespace performance_test_viewer
             this.lblTimeMin.TabIndex = 1;
             this.lblTimeMin.Text = "MinTime";
             this.lblTimeMin.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
+            //
             // lblTimeMax
-            // 
+            //
             this.lblTimeMax.Location = new System.Drawing.Point(14, 16);
             this.lblTimeMax.Name = "lblTimeMax";
             this.lblTimeMax.Size = new System.Drawing.Size(61, 19);
             this.lblTimeMax.TabIndex = 0;
             this.lblTimeMax.Text = "MaxTime";
             this.lblTimeMax.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
+            //
             // legendPanel
-            // 
+            //
             this.legendPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.legendPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.legendPanel.Location = new System.Drawing.Point(0, 0);
             this.legendPanel.Name = "legendPanel";
             this.legendPanel.Size = new System.Drawing.Size(93, 441);
             this.legendPanel.TabIndex = 0;
-            // 
+            //
             // TestGroupView
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(255)))));
