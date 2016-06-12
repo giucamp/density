@@ -343,7 +343,7 @@ namespace density
 	{
 	public:
 
-		lifo_buffer(size_t i_mem_size)
+		lifo_buffer(size_t i_mem_size = 0)
 		{
 			m_buffer = m_block = get_allocator().allocate(i_mem_size);
 			m_mem_size = i_mem_size;

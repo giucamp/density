@@ -157,7 +157,7 @@ namespace density
             };
         };
 
-        /* This feature computes the hash of an object*/
+        /* This feature computes the hash of an object */
         struct FeatureHash
         {
             using type = size_t (*) (const void * i_source);
@@ -189,6 +189,28 @@ namespace density
         };
         template <typename BASE, typename TYPE>
             const uintptr_t FeatureRTTI::Impl<BASE,TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
+
+        /* This feature stores a pointer to the default constructor in the table of the type */
+        struct FeatureDefaultConstruct
+        {
+            using type = void * (*) (void * i_complete_dest);
+
+            template <typename BASE, typename TYPE> struct Impl
+            {
+                /* Default-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
+                    @param i_complete_dest pointer to the storage in which the TYPE must be constructed.
+                    @return pointer to a subobjct (of type BASE) of the new object. */
+                static void * invoke(void * i_complete_dest)
+                {
+                    BASE * const base_result = new(i_complete_dest) TYPE();
+                    return base_result;
+                }
+
+                static const uintptr_t value;
+            };
+        };
+        template <typename TYPE, typename BASE>
+            const uintptr_t FeatureDefaultConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /* This feature stores a pointer to the copy constructor in the table of the type */
         struct FeatureCopyConstruct
@@ -421,7 +443,10 @@ namespace density
 
     } // namespace detail
 
-    template <typename BASE, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
+	/** Class template that performs type-erasure.
+			@param BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
+	*/
+    template <typename BASE = void, typename FEATURE_LIST = typename detail::AutoGetFeatures<BASE>::type >
         class runtime_type
     {
     public:
@@ -445,6 +470,11 @@ namespace density
         {
             return get_feature<detail::FeatureAlignment>();
         }
+
+		void * default_construct(void * i_dest) const
+		{
+			return get_feature<detail::FeatureDefaultConstruct>()(i_dest);
+		}
 
         void * copy_construct(void * i_dest, const void * i_source) const
         {

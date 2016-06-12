@@ -67,17 +67,17 @@ namespace density
 		
         /** Creates a dense_list containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
-                @param i_args elements to add to the list.
+                @param i_elements elements to add to the list.
                 @return the new dense_list
             Example:
                 const auto list = dense_list<>::make(1, std::string("abc"), 2.5);
                 const auto list1 = dense_list<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static dense_list make(TYPES &&... i_args)
+            inline static dense_list make(TYPES &&... i_elements)
         {			
-            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT" );
+            static_assert(detail::AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT" );
             dense_list new_list;
-            ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
+            ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_elements)...);
             return std::move(new_list);
         }
 
@@ -91,11 +91,11 @@ namespace density
                 const auto list = dense_list<int>::make_with_alloc(my_alloc, 1, 2, 3);
                 const auto list1 = dense_list<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static dense_list make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_args)
+            inline static dense_list make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_elements)
         {
-            static_assert(AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT");
+            static_assert(detail::AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT");
             dense_list new_list;
-            ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_args)...);
+            ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_elements)...);
             return std::move(new_list);
         }
 

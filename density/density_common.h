@@ -21,14 +21,6 @@
 	#define DENSITY_DEBUG_INTERNAL			0
 #endif
 
-#define DENSITY_POINTER_OVERFLOW_SAFE        1
-
-#if DENSITY_POINTER_OVERFLOW_SAFE
-    #define DENSITY_OVERFLOW_IF(bool_expr)            ::density::detail::handle_pointer_overflow((bool_expr))
-#else
-    #define DENSITY_OVERFLOW_IF(bool_expr)
-#endif
-
 #if DENSITY_DEBUG
 	#define DENSITY_ASSERT(bool_expr)              if(!(bool_expr)) { __debugbreak(); }
 	#define DENSITY_ASSERT_INTERNAL(bool_expr)     if(!(bool_expr)) { __debugbreak(); }
@@ -429,40 +421,124 @@ namespace density
 		void * result = reinterpret_cast<void*>(ptr);
 		ptr += i_size;		
 
-		#if DENSITY_POINTER_OVERFLOW_SAFE
-            if (ptr < original_ptr)
-            {
-				io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
-            }
-        #endif
+		if (ptr < original_ptr)
+        {
+			io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
+        }
 
         io_curr_ptr = reinterpret_cast<void*>(ptr);
         return result;
     }
 
-    /** Finds the aligned placement for a block with the size and alignment of the template parameter TYPE, , such that it is
-            >= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
-        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After
-            the function exits, *io_top_pointer will point to the first address after the new block.
-        @param i_size size (in bytes) of the block to allocate
-        @param i_alignment alignment (in bytes) of the block to allocate (must be a positive power of 2).
-        @return address of the new block. */
-    template <typename TYPE>
-        inline TYPE * linear_alloc(void * * io_top_pointer)
-    {
-        return static_cast<TYPE *>(io_top_pointer, sizeof(TYPE), alignof(TYPE) );
-    }
+	namespace detail
+	{
+		template <typename BASE_CLASS, typename... TYPES>
+			struct AllCovariant
+		{
+			static const bool value = true;
+		};
 
-    template <typename BASE_CLASS, typename... TYPES>
-        struct AllCovariant
-    {
-        static const bool value = true;
-    };
-    template <typename BASE_CLASS, typename FIRST_TYPE, typename... OTHER_TYPES>
-        struct AllCovariant<BASE_CLASS, FIRST_TYPE, OTHER_TYPES...>
-    {
-        static const bool value = std::is_convertible<FIRST_TYPE*, BASE_CLASS*>::value &&
-            AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
-    };
+		template <typename BASE_CLASS, typename FIRST_TYPE, typename... OTHER_TYPES>
+			struct AllCovariant<BASE_CLASS, FIRST_TYPE, OTHER_TYPES...>
+		{
+			static const bool value = std::is_convertible<FIRST_TYPE*, BASE_CLASS*>::value &&
+				AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
+		};
+	}
+
+	/*! \page wid_list_iter_bench Widget list benchmarks
+
+	These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: dense_list seems to perform better, but it's hard to tell how much.
+
+	ptr_vector is a std::vector of std::unique_ptr's, den_list is a dense_list<Widget>. They are created before the test runs, with this code:
+
+	\code{.cpp}
+		static auto ptr_vector = []() {			
+			vector<unique_ptr<Widget>> res;
+			for (size_t i = 0; i < 3000; i++)
+			{
+				switch (i % 3)
+				{
+					case 0: res.push_back(make_unique<Widget>()); break;
+					case 1: res.push_back(make_unique<TextWidget>()); break;
+					case 2: res.push_back(make_unique<ImageWidget>()); break;
+					default: break;
+				}
+			}
+			return res;
+		}();
+
+		static auto den_list = []() {
+			dense_list<Widget> list;
+			for (size_t i = 0; i < 3000; i++)
+			{
+				switch (i % 3)
+				{
+					case 0: list.push_back(Widget()); break;
+					case 1: list.push_back(TextWidget()); break;
+					case 2: list.push_back(ImageWidget()); break;
+					default: break;
+				}
+			}
+			return list;
+		}();
+	\endcode
+
+	\section list_iter_bench_sec1 Call a virtual function on every widget
+
+	For every widget a virtual function is called. Widget are defined with this code:
+	\code{.cpp}
+		struct Widget { int var[8]; virtual void f() { memset(var, 0, sizeof(var) ); } };
+		struct TextWidget : Widget { int var[3]; void f() { memset(var, 0, sizeof(var)); }  };
+		struct ImageWidget : Widget { int var[8]; void f() { memset(var, 0, sizeof(var)); } };
+	\endcode
+	\image html iterate_dense_list_and_call_virtual_func.png width=10cm
+
+	\section list_iter_bench_sec2 Set some viriables on every widget
+
+	For every widget some variable is set. Widget are defined with this code:
+	\code{.cpp}
+		struct Widget { int a, b, c, d, e, f, g, h; };
+		struct TextWidget : Widget { char str[8]; };
+		struct ImageWidget : Widget { float a, b, c; };
+	\endcode
+	\image html iterate_dense_list_and_set_variables.png width=10cm
+
+	/*! \page func_queue_bench Function queue benchmarks
+
+	These tests create a queue, fill it with many lambda functions, and then call and remove every function. These tests have been performed on a program built with Visual Studio 2015 (update 2).
+	5 snippets doing that are compared:
+	- using a std::vector of std::function's
+	- using a std::vector of std::function's with an initial reserve. In general one does not know the maximum size of the queue, so this may be considered a 'cheat'
+	- using a std::queue (which uses a std::deque)
+	- using a \ref density::dense_function_queue< RET_VAL(PARAMS...)> "dense_function_queue"
+	- using a \ref density::paged_function_queue< RET_VAL(PARAMS...)> "paged_function_queue"
+
+	\section func_queue_bench_sec1 No capture
+	In the first test there is no captured state (function object are small).
+	\image html push___consume__no_capture.png width=10cm
+
+	\section func_queue_bench_sec2 Capture of 46 bytes
+	In the second test the capture state has the biggest size possible with std::function still not allocating heap memory.
+	\image html push___consume__middle_capture__46_bytes_.png width=10cm
+
+	\section func_queue_bench_sec3 Capture of 64 bytes
+	In the third test the capture state is bigger than the inline storage of std::function.
+	\image html push___consume__big_capture__64_bytes_.png width=10cm
+
+	\page lifo_array_bench Automatic variable-length array benchmarks
+
+	This test just creates an automatic dynamic sized array. The class virtual is defined by this code:
+	\code{.cpp}
+	struct Virtual
+	{
+	virtual ~Virtual() {}
+	};
+	\endcode
+	\image html create_array.png width=10cm
+	*/
+	/*! \page runtime_type_sample runtime_type sample
+	\include runtime_type_sample.cpp
+	*/
 
 } // namespace density

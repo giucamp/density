@@ -13,6 +13,9 @@
     <Filter Include="density\detail">
       <UniqueIdentifier>{69cd13f2-5223-44de-89a9-b1c409fc7d9a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="samples">
+      <UniqueIdentifier>{19c7d4d9-1c1f-43bd-b78f-6338b7d9b7a0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\function_queue_benchmarks.cpp">
@@ -57,6 +60,9 @@
     </ClCompile>
     <ClCompile Include="..\function_queue_test.cpp">
       <Filter>density_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp">
+      <Filter>samples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,14 @@
 #pragma once
 #include "density_common.h"
 
+#define DENSITY_POINTER_OVERFLOW_SAFE        1
+
+#if DENSITY_POINTER_OVERFLOW_SAFE
+    #define DENSITY_OVERFLOW_IF(bool_expr)            ::density::detail::handle_pointer_overflow((bool_expr))
+#else
+    #define DENSITY_OVERFLOW_IF(bool_expr)
+#endif
+
 namespace density
 {
 	class Overflow : public std::exception

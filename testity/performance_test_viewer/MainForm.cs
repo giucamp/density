@@ -75,7 +75,7 @@ namespace performance_test_viewer
 
                 comboTestGroup.SelectedItem = test_groups[test_groups.Count - 1];
 
-                m_fileDiag.InitialDirectory = Path.GetDirectoryName(txtFile.Text);
+                m_lastPath = Path.GetDirectoryName(txtFile.Text);
             }
             catch (Exception)
             {
@@ -84,13 +84,33 @@ namespace performance_test_viewer
         }
 
         SaveFileDialog m_fileDiag = new SaveFileDialog();
+        string m_lastPath = "";
 
         private void button1_Click(object sender, EventArgs e)
         {
             m_fileDiag.Filter = "JPeg Image|*.jpg|Bitmap Image|*.bmp|Gif Image|*.gif";
+            m_fileDiag.FilterIndex = 2;
+
+            try
+            {
+                char[] name = m_plot.Group.test_name.ToCharArray();
+                for (int i = 0; i < name.Length; i++)
+                {
+                    if( !char.IsLetterOrDigit(name[i]) )
+                        name[i] = '_';
+                }
+                m_fileDiag.FileName = new string(name);
+                m_fileDiag.InitialDirectory = m_lastPath;
+            }
+            catch(Exception)
+            {
+
+            }
+
             var result = m_fileDiag.ShowDialog(this);            
             if (result == DialogResult.OK)
             {
+                m_lastPath = Path.GetDirectoryName(m_fileDiag.FileName);
                 System.Threading.Thread.Sleep(800);
                 System.Drawing.Imaging.ImageFormat format = System.Drawing.Imaging.ImageFormat.Gif;
                 switch (m_fileDiag.FilterIndex)

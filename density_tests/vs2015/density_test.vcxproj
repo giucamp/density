@@ -207,6 +207,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
     <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
