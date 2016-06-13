@@ -70,6 +70,9 @@
     <ClCompile Include="..\..\density_samples\function_queue_sample.cpp">
       <Filter>samples</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">

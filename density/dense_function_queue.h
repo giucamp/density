@@ -54,6 +54,12 @@ namespace density
 
         using value_type = RET_VAL(PARAMS...);
 
+		using features = detail::FeatureList<
+			density::detail::FeatureSize, density::detail::FeatureAlignment,
+			density::detail::FeatureCopyConstruct, density::detail::FeatureMoveConstruct,
+			density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type>, typename detail::FeatureInvokeDestroy<value_type> >;
+		using underlying_queue = dense_queue<void, std::allocator<char>, runtime_type<void, features > >;
+
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
@@ -100,7 +106,7 @@ namespace density
             \n\b Complexity: constant. */
         RET_VAL consume_front(PARAMS... i_params)
         {
-            return m_queue.manual_consume([&i_params...](const runtime_type<void, Features > & i_complete_type, void * i_element) {
+            return m_queue.manual_consume([&i_params...](const runtime_type<void, features > & i_complete_type, void * i_element) {
                 return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
             } );
         }
@@ -174,12 +180,17 @@ namespace density
             return m_queue.mem_free();
         }
 
+		typename underlying_queue::iterator begin() DENSITY_NOEXCEPT { return m_queue.begin(); }
+		typename underlying_queue::iterator end() DENSITY_NOEXCEPT { return m_queue.end(); }
+
+		typename underlying_queue::const_iterator cbegin() DENSITY_NOEXCEPT { return m_queue.cbegin(); }
+		typename underlying_queue::const_iterator cend() DENSITY_NOEXCEPT { return m_queue.cend(); }
+
+		typename underlying_queue::const_iterator begin() const DENSITY_NOEXCEPT { return m_queue.cbegin(); }
+		typename underlying_queue::const_iterator end() const DENSITY_NOEXCEPT { return m_queue.cend(); }
+
     private:
-        using Features = detail::FeatureList<
-            density::detail::FeatureSize, density::detail::FeatureAlignment,
-            density::detail::FeatureCopyConstruct, density::detail::FeatureMoveConstruct,
-            density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type>, typename detail::FeatureInvokeDestroy<value_type> >;
-        dense_queue<void, std::allocator<char>, runtime_type<void, Features > > m_queue;
+		underlying_queue m_queue;
     };
 
 } // namespace density

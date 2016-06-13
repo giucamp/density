@@ -451,9 +451,11 @@ namespace density
     {
     public:
 
-        runtime_type() = delete;
+        runtime_type() = default;
         runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
         runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;
+		runtime_type & operator = (runtime_type &&) DENSITY_NOEXCEPT = default;
+		runtime_type & operator = (const runtime_type &) DENSITY_NOEXCEPT = default;
 
         template <typename TYPE>
             static runtime_type make()

@@ -26,6 +26,7 @@ namespace density
     }
 }
 
+namespace producer_consumer_sample { void run(); }
 namespace function_queue_sample	    { void run(); }
 namespace runtime_type_sample		{ void run(); }
 namespace lifo_sample				{ void run(); }
@@ -36,7 +37,9 @@ int main()
     using namespace density::tests;
     using namespace testity;
 
+	producer_consumer_sample::run();
 	function_queue_test();
+	function_queue_sample::run();
 
     //#ifdef  _DEBUG
 		
@@ -63,7 +66,7 @@ int main()
     list_test();
     list_benchmark();*/
 
-	function_queue_sample::run();
+	
 	lifo_sample::run();
 	runtime_type_sample::run();
 

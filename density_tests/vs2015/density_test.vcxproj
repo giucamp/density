@@ -209,6 +209,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\density_samples\function_queue_sample.cpp" />
     <ClCompile Include="..\..\density_samples\lifo_sample.cpp" />
+    <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
     <ClCompile Include="..\..\testity\environment.cpp" />
     <ClCompile Include="..\..\testity\testing_utils.cpp" />

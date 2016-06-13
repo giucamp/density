@@ -6,14 +6,15 @@
 
 #include "../density/dense_function_queue.h"
 #include "../density/paged_function_queue.h"
-#include <iostream>
+#include "../density/lifo.h"
 #include <string>
 #include <functional> // for std::bind
+#include <iostream>
 
 namespace function_queue_sample
 {
 	using namespace density;
-
+	
 	void run()
 	{
 		{
