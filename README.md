@@ -154,21 +154,17 @@ Like lifo_array, lifo_buffer instances must be LIFO consistent, otherwise the be
 
 Benchmarks
 ----------
-[Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
-
-Benchmarks
-----------
-[Function queue](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)
-[Widget list](http://peggysansonetti.it/tech/density/html/wid_list_iter_bench.html) 	
-[Automatic variable-length array](http://peggysansonetti.it/tech/density/html/lifo_array_bench.html)	
+- [Function queue](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)
+- [Widget list](http://peggysansonetti.it/tech/density/html/wid_list_iter_bench.html) 	
+- [Automatic variable-length array](http://peggysansonetti.it/tech/density/html/lifo_array_bench.html)	
  
 
 Samples
 -------
-[A producer-consumer sample](http://peggysansonetti.it/tech/density/html/producer_consumer_sample.html)
- [A sample with runtime_type](http://peggysansonetti.it/tech/density/html/runtime_type_sample.html)	
- [A lifo sample](http://peggysansonetti.it/tech/density/html/lifo_sample.html)	
- [A sample with function queues](http://peggysansonetti.it/tech/density/html/function_queue_sample.html)
+- [A producer-consumer sample](http://peggysansonetti.it/tech/density/html/producer_consumer_sample.html)
+- [A sample with runtime_type](http://peggysansonetti.it/tech/density/html/runtime_type_sample.html)	
+- [A lifo sample](http://peggysansonetti.it/tech/density/html/lifo_sample.html)	
+- [A sample with function queues](http://peggysansonetti.it/tech/density/html/function_queue_sample.html)
 
 Future development
 ------------------
@@ -176,6 +172,8 @@ Future development
 - Currently an element of an heterogeneous dense container (using the builtin runtime_type), has a space overhead of 3 pointers. One of these pointers is the layout of the runtime_type, while the other two are. In the next releases this overhead will probably be reduced.
 - There is no easy way to move elements away from a function queues and heterogeneous. It is possible, using a lifo_buffer for temporary storage (see the producer-consumer sample), but it takes more coding than it should, and it's not automatically exception safe. Future versions will probably introduce a lifo_object that will do this job. 
 - Future version of density may provide an anti-slicing mechanism, to detect at compile_time copy-constructing or copy-assigning using as source elements of heterogeneous dense containers with reference to partial types.
+
+[Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
 
 giu.campana@gmail.com
 
