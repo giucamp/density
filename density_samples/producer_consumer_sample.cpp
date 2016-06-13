@@ -87,7 +87,7 @@ namespace producer_consumer_sample
 					m_commands.pop();
 				}
 
-				// execute and destroy the command
+				// execute and destroy the command. Note: this code is not exception safe
 				auto function = function_type.template get_feature<typename detail::FeatureInvoke<void(size_t)>>();
 				function(buffer.data(), i_thread_index);
 				function_type.destroy(buffer.data());
