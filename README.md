@@ -86,7 +86,8 @@ These two containers acts like queues of std::function objects, but are based on
 			std::cout << "a + b = " << queue_2.consume_front(40., 2.) << std::endl;
 
 Lifo data structures
---------------------
+====================
+
 The first time a thread use a lifo data structure, density associates to it a *data stack*, that is an allocator in which only the most recently allocated block can be reallocated\deallocated. This LIFO constraint allows a straightforward and fast memory management. The data stack is a paged data structure (just like paged_list): pages are allocated when needed, and released soon when they become unused. 
 The data stack can be used with the class thread_lifo_allocator. 
 
@@ -169,9 +170,9 @@ Samples
 Future development
 ------------------
 
-- Currently an element of an heterogeneous dense container (using the builtin runtime_type), has a space overhead of 3 pointers. One of these pointers is the layout of the runtime_type, while the other two are. In the next releases this overhead will probably be reduced.
-- There is no easy way to move elements away from a function queues and heterogeneous. It is possible, using a lifo_buffer for temporary storage (see the producer-consumer sample), but it takes more coding than it should, and it's not automatically exception safe. Future versions will probably introduce a lifo_object that will do this job. 
-- Future version of density may provide an anti-slicing mechanism, to detect at compile_time copy-constructing or copy-assigning using as source elements of heterogeneous dense containers with reference to partial types.
+- Currently an element of an heterogeneous dense container (using the builtin runtime_type) has a space overhead of 3 pointers. One of these pointers is the layout of the runtime_type, while the other two are. In the next releases this overhead will probably be reduced.
+- There is no easy way to move elements away from heterogeneous containers. It is possible, using a lifo_buffer for temporary storage (see the producer-consumer sample), but it takes more coding than it should, and it's not automatically exception safe. Future versions will probably introduce a lifo_object that will do this job. 
+- Future version of density may provide an anti-slicing mechanism, to detect at compile_time copy-constructions or copy-assignments using as source a partial-type reference to an element of an heterogeneous dense containers.
 
 [Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
 
