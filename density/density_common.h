@@ -504,6 +504,33 @@ namespace density
     \endcode
     \image html iterate_dense_list_and_set_variables.png width=10cm
 	
+	\page any_bench Comparison benchmarks with boost::any
+	This test just instances an homogeneous queue and fill it with int's
+	\image html queue_push.png width=10cm
+	
+	This test iterates an homogeneous container and get the std::type_info for every element. The containers are created by this code:
+	
+	\code{.cpp}
+		static auto any_vector = []() {
+			vector<boost::any> res;
+			for (size_t i = 0; i < 3000; i++)
+			{
+				res.push_back(static_cast<int>(i));
+			}
+			return res;
+		}();
+
+		static auto den_list = []() {
+			dense_list<void> res;
+			for (size_t i = 0; i < 3000; i++)
+			{
+				res.push_back(static_cast<int>(i));
+			}
+			return res;
+		}();
+	\endcode
+	\image html iterate_an_heterogeneous_list_and_print_type_name.png width=10cm
+
 	\page func_queue_bench Function queue benchmarks
 
     These tests create a queue, fill it with many lambda functions, and then call and remove every function. These tests have been performed on a program built with Visual Studio 2015 (update 2).

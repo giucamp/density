@@ -29,7 +29,7 @@ As alternative, density provides [dense_list](http://peggysansonetti.it/tech/den
 				widget.draw();
 			}
 			
-This snippet creates and draws a list of 3 widgets. The first template argument (in this case Widget) is the *element base type*. Trying to add a type not covariant to Widget will cause the failure of a static cast.
+This snippet creates and draws a list of 3 widgets. The first template argument (in this case Widget) is the *element base type*. Trying to add a type not covariant to Widget will cause the failure of a static assert.
 Elements can be added/removed to/from a dense_list in any time just like a std::vector:
 
     widgets.push_back(TextWidget());
@@ -47,7 +47,7 @@ If the element base type is void (the default), then any type can be added to th
 		cout << it.complete_type().type_info().name() << endl;
 	} 
 			
-This snippet creates a list with 3 elements, and then adds another one at the beginning. Then the type of every element is written on std::cout. With a dense_list<void> range loops cannot be used, because the indirection of the iterator returns void. The iterator.element() returns a void pointer to the complete element.
+This snippet creates a list with 3 elements, and then adds another one at the beginning. Then the type of every element is written on std::cout. With a dense_list<void> range loops cannot be used, because the indirection of the iterator returns void. The expression iterator.element() returns a void pointer to the complete element.
 In the last snippet the function complete_type() of the iterartor is used. It returns a density::runtime_type, an object which is used as "type eraser": it is able to construct, destroy, copy, move, retrieve size and alignment of a type. The function type_info() of runtime_type returns the [std::type_info](http://en.cppreference.com/w/cpp/types/type_info) associated to the type. With the latter the user can discover the actual complete type of every element, and may match the type in a switch-like construct. Unfortunately this is almost everything you can do with the type_info. Even the names of the type, printed in the last snippet, are compiler dependent and unreliable.
 If you need to include additional information about the complete type of the elements, you can: density containers allow to customize the type used to do type-erasure. Here is the declaration of dense_list:
 
@@ -79,7 +79,6 @@ These two containers acts like queues of std::function objects, but are based on
 			queue_1.push(std::bind(print_func, "hello "));
 			queue_1.push([print_func]() { print_func("world!"); });
 			queue_1.push([]() { std::cout << std::endl; });
-			queue_1.consume_front();
 			while (!queue_1.empty())
 				queue_1.consume_front();
 
@@ -159,6 +158,7 @@ Benchmarks
 ----------
 - [Function queue](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)
 - [Widget list](http://peggysansonetti.it/tech/density/html/wid_list_iter_bench.html) 	
+- [Comparaison benchmarks with boost::any](http://peggysansonetti.it/tech/density/html/any_bench.html)
 - [Automatic variable-length array](http://peggysansonetti.it/tech/density/html/lifo_array_bench.html)	
  
 
@@ -172,7 +172,7 @@ Samples
 Future development
 ------------------
 
-- Currently an element of an heterogeneous dense container (using the builtin runtime_type) has a space overhead of 3 pointers. One of these pointers is the layout of the runtime_type, while the other two are. In the next releases this overhead will probably be reduced.
+- Currently an element of an heterogeneous dense container (using the builtin runtime_type) has a space overhead of 3 pointers. One of these pointers is the layout of the runtime_type In the next releases this overhead will probably be reduced.
 - There is no easy way to move elements away from heterogeneous containers. It is possible, using a lifo_buffer for temporary storage (see the producer-consumer sample), but it takes more coding than it should, and it's not automatically exception safe. Future versions will probably introduce a lifo_object that will do this job. 
 - Future version of density may provide an anti-slicing mechanism, to detect at compile_time copy-constructions or copy-assignments using as source a partial-type reference to an element of an heterogeneous dense containers.
 
