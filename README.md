@@ -34,6 +34,7 @@ Elements can be added/removed to/from a dense_list in any time just like a std::
 
     widgets.push_back(TextWidget());
 
+All the elements in a dense_list are allocated linearly in the same memory block.
 dense_list does not handle unused capacity, so insertions and removals always cause a reallocation and have linear complexity, in contrast to the constant amortized time of many vector functions of std::vector. 
 dense_list is recommended over a vector of smart pointers when the container is never or not-so-often modified, and when a compact memory layout is desired. A dense_list has the same inline storage of a raw pointer (unless you explicitly specify an allocator with a state). This is in contrast with common implementations of std::vector, that are big as 3 pointers. Finally a dense_list does not allocate memory when empty. 
 
@@ -68,6 +69,7 @@ The difference between the two is the memory management:
 - [dense_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1dense__queue.html) uses a monolithic memory block, handling a capacity just like a vector does, and reallocating the whole block when it runs out of space. The memory block is managed like a ring buffer, so that insertions don't require to move all the existing elements.
 - [paged_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1paged__queue.html) uses a page-based memory management: it allocates fixed-size pages and, when it runs out of space, it just need to allocate a new page, without moving any existing element (like dense_queue does). Page-based memory management is very powerful: it allows fast allocation and deallocations, and thread-local and unsynchronized unused page depots. Every page of a paged_queue is handled internally like a ring-buffer. Iterators are invalidated only when the pointed element is erased.
 Both dense_queue and paged_queue provide forward iteration only: no constant-time access by index is possible. dense_queue is recommended for small queues, while paged_queue is best suited to middle and large sizes.
+
 An example of application of dense_queue and paged_queue is built-in in density: [dense_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1dense__function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html) and [paged_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1paged__function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html).
 These two containers acts like queues of std::function objects, but are based on dense_queue and paged_queue:
 
