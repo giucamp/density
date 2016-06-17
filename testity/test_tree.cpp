@@ -212,7 +212,21 @@ namespace testity
             #else
                 const auto local_tm = *std::localtime(&date_time);
             #endif
-            i_ostream << "DATE_TIME:" << std::put_time(&local_tm, "%d-%m-%Y %H:%M:%S") << std::endl;
+            #ifndef __GNUC__
+                i_ostream << "DATE_TIME:" << std::put_time(&local_tm, "%d-%m-%Y %H:%M:%S") << std::endl;
+            #else
+                // gcc 4.9 is missing the support for std::put_time
+                const size_t temp_time_str_len = 64;
+                char temp_time_str[temp_time_str_len];
+                if( std::strftime(temp_time_str, temp_time_str_len, "%d-%m-%Y %H:%M:%S", &local_tm) > 0 )
+                {
+                    i_ostream << "DATE_TIME:" << temp_time_str << std::endl;
+                }
+                else
+                {
+                    i_ostream << "DATE_TIME:" << "!std::strftime failed" << std::endl;
+                }
+            #endif
 
             i_ostream << "CARDINALITY_START:" << performance_test_group.cardinality_start() << std::endl;
             i_ostream << "CARDINALITY_STEP:" << performance_test_group.cardinality_step() << std::endl;

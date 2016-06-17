@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
+#include <vector>
 
 #define DENSITY_TEST_ASSERT(i_bool_expr)        if(!(i_bool_expr)) {__debugbreak();}
 

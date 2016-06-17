@@ -68,6 +68,6 @@ int main()
 	function_queue_sample::run();
 	lifo_sample::run();
 	runtime_type_sample::run();
-	
+
     return 0;
 }

@@ -10,9 +10,19 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <functional> // for std::bind
 #include <iostream>
 #include <atomic>
+#ifdef __GNUC__
+    #ifdef __MINGW32__
+        /* MinGw does not have support for C++11 threading classes. Using the implementation provided by
+            https://github.com/meganz/mingw-std-threads (it is not distributed with this project) */
+        #include <mingw.thread.h>
+        #include <mingw.mutex.h>
+        #include <mingw.condition_variable.h>
+    #endif // __MINGW32__
+#endif // __GNUC__
 
 namespace producer_consumer_sample
 {
@@ -95,7 +105,7 @@ namespace producer_consumer_sample
 		}
 
 	private:
-		vector<std::thread> m_worker_threads;
+		vector<thread> m_worker_threads;
 		mutex m_mutex;
 		queue_function<void(size_t)> m_commands;
 		condition_variable m_condition_variable;

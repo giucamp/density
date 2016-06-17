@@ -8,7 +8,7 @@
 #include <sstream>
 #include <vector>
 
-#if defined( _WIN32 ) && ! defined( __clang__ )
+#if defined( _WIN32 ) && !defined( __clang__ ) && !defined( __MINGW32__ )
     #define WIN32_WMI 1
 #else
     #define WIN32_WMI 0
