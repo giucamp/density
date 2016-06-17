@@ -80,11 +80,11 @@ namespace density
 			the base type. If the base type is void any type can be erased. \n
 			The value of the feature (a static const uintptr_t) in Impl stores a value that is required for
 			the feature to do its job on a type: in many cases it is a pointer to a function that do a copy-costruction
-			(like in the case of CopyConstruct), or destruction (in the case of FeatureDestroy). Anyway it
+			(like in the case of CopyConstruct), or destruction (in the case of Destroy). Anyway it
 			may store a value, if it is small enough to fit in a uintptr_t (like for examlpe in case of Size, or 
 			Alignment). \n
 			The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
-			casts the value of the feature to this type befor returning it. 
+			casts the value of the feature to this type before returning it. 
 			\snippet misc_samples.cpp FeatureList example 1 */
 		template <typename... FEATURES> struct FeatureList
 		{
@@ -434,7 +434,7 @@ namespace density
 
 		/** This feature stores a pointer to the destructor of a type.
 				@param i_base_dest pointer to the object to be destroyed. */
-		struct FeatureDestroy
+		struct Destroy
 		{
 			using type = void(*)(void * i_dest);
 
@@ -449,7 +449,7 @@ namespace density
 			};
 		};
 		template <typename TYPE, typename BASE>
-		const uintptr_t FeatureDestroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+		const uintptr_t Destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
 	} // namespace type_features
 
@@ -463,21 +463,21 @@ namespace density
 
 		template <typename TYPE> struct GetDefaultFeatures<TYPE, false, false >
 		{
-			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::FeatureDestroy>;
+			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::Destroy>;
 		};
 		template <typename TYPE> struct GetDefaultFeatures<TYPE, true, false >
 		{
-			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::FeatureDestroy,
+			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::Destroy,
 				type_features::CopyConstruct>;
 		};
 		template <typename TYPE> struct GetDefaultFeatures<TYPE, false, true >
 		{
-			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::FeatureDestroy,
+			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::Destroy,
 				type_features::MoveConstruct>;
 		};
 		template <typename TYPE> struct GetDefaultFeatures<TYPE, true, true >
 		{
-			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::FeatureDestroy,
+			using type = type_features::FeatureList<type_features::Size, type_features::Alignment, type_features::RTTI, type_features::Destroy,
 				type_features::MoveConstruct, type_features::CopyConstruct>;
 		};		
 
@@ -486,13 +486,34 @@ namespace density
 	namespace type_features
 	{
 
-		template <typename TYPE>
-			using default_type_features_t = typename detail::GetDefaultFeatures<TYPE>::type;
+		/** \class default_type_features
+			This type alias template gives a FeatureList for a given type.
+				@tparam BASE_TYPE type to use to select the features to include. \n
+
+
+			- The result FeatureList always includes: Size, Alignment, RTTI, Destroy.\n
+			- If BASE_TYPE is copy-constructible, CopyConstruct is included
+			- If BASE_TYPE is nothrow move-constructible, MoveConstruct is included
+			
+			Note: A FeatureList does not depend on a type. The template argument is used only to decide which features to include.
+		*/
+		#ifndef DOXYGEN_DOC_GENERATION
+			template <typename BASE_TYPE>
+				using default_type_features = typename detail::GetDefaultFeatures<BASE_TYPE>;
+		#else
+		template <typename BASE_TYPE>
+			struct default_type_features
+			{
+				using type = default_type_features_t<BASE_TYPE>;
+			};
+		#endif
+		template <typename BASE_TYPE>
+			using default_type_features_t = typename default_type_features<BASE_TYPE>::type;
 			
 	} // namespace type_features
 
     /** Class template that performs type-erasure.
-            @param BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
+            @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
     */
     template <typename BASE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<BASE> >
         class runtime_type
@@ -538,7 +559,7 @@ namespace density
 
         void destroy(void * i_dest) const noexcept
         {
-            get_feature<type_features::FeatureDestroy>()(i_dest);
+            get_feature<type_features::Destroy>()(i_dest);
         }
 
         const std::type_info & type_info() const noexcept
