@@ -16,7 +16,7 @@ namespace density
 			void function_queue_test(FUNC_QUEUE & i_queue)
 		{
 			size_t count = 0;
-			for (int i = 0; i < 1000; i++)
+			for (size_t i = 0; i < 1000; i++)
 			{
 				i_queue.push([&count, i] {
 					DENSITY_TEST_ASSERT(count == i);

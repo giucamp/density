@@ -44,12 +44,15 @@ namespace density
     template <typename RUNTIME_TYPE>
         struct RuntimeTypeConceptCheck
     {
-        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().~RUNTIME_TYPE()),
+		static_assert(std::is_nothrow_default_constructible<RUNTIME_TYPE>::value,
+			"The copy constructor of RUNTIME_TYPE must be declared as noexcept");
+
+		static_assert(std::is_nothrow_copy_constructible<RUNTIME_TYPE>::value,
+			"The copy constructor of RUNTIME_TYPE must be declared as noexcept");
+
+        static_assert( std::is_nothrow_destructible<RUNTIME_TYPE>::value,
             "The destructor of RUNTIME_TYPE must be noexcept"); // note: destructors are noexcept by default
-
-        static_assert(noexcept(RUNTIME_TYPE(std::declval<const RUNTIME_TYPE>())),
-            "The copy constructor of RUNTIME_TYPE must be declared as noexcept");
-
+		
         static_assert(noexcept(std::declval<const RUNTIME_TYPE>().size()),
             "RUNTIME_TYPE::size must be declared as noexcept");
 
@@ -60,8 +63,8 @@ namespace density
 	namespace type_features
 	{
 		/** This template is a typelist. Every type of this list is a feature that can be used by a runtime_type.
+			The composition of features forms a complete type erasure.
 			A Feature is a struct that performs a part of type erasure on a type, and has this form:
-			
 			\code
 			struct FeatureX
 			{
@@ -72,8 +75,16 @@ namespace density
 				};
 			};
 			\endcode
-			
-			The composition of features forms a complete type erasure.
+			A feature is a struct (or class) that doesn't depend on the type to erase. The inner type Impl
+			depends on the type to erase, and on the base type. All the types to erase are covariant to
+			the base type. If the base type is void any type can be erased. \n
+			The value of the feature (a static const uintptr_t) in Impl stores a value that is required for
+			the feature to do its job on a type: in many cases it is a pointer to a function that do a copy-costruction
+			(like in the case of FeatureCopyConstruct), or destruction (in the case of FeatureDestroy). Anyway it
+			may store a value, if it is small enough to fit in a uintptr_t (like for examlpe in case of FeatureSize, or 
+			FeatureAlignment). \n
+			The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
+			casts the value of the feature to this type befor returning it. 
 			\snippet misc_samples.cpp FeatureList example 1 */
 		template <typename... FEATURES> struct FeatureList
 		{
@@ -91,12 +102,12 @@ namespace density
 		*/
 		template <typename...> struct FeatureConcat;
 		template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
-		struct FeatureConcat<FeatureList<FIRST_FEATURES...>, FeatureList<SECOND_FEATURES...>>
+			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, FeatureList<SECOND_FEATURES...>>
 		{
 			using type = FeatureList<FIRST_FEATURES..., SECOND_FEATURES...>;
 		};
 		template <typename... FIRST_FEATURES, typename SECOND_FEATURE>
-		struct FeatureConcat<FeatureList<FIRST_FEATURES...>, SECOND_FEATURE>
+			struct FeatureConcat<FeatureList<FIRST_FEATURES...>, SECOND_FEATURE>
 		{
 			using type = FeatureList<FIRST_FEATURES..., SECOND_FEATURE>;
 		};
@@ -225,8 +236,7 @@ namespace density
 
 	namespace type_features
 	{
-
-		/* This feature stores the size in the table of the type */
+		/** This feature stores the size in the table of the type */
 		struct FeatureSize
 		{
 			using type = uintptr_t;
@@ -240,7 +250,7 @@ namespace density
 			};
 		};
 
-		/* This feature stores the alignment in the table of the type */
+		/** This feature stores the alignment in the table of the type */
 		struct FeatureAlignment
 		{
 			using type = uintptr_t;
@@ -254,7 +264,11 @@ namespace density
 			};
 		};
 
-		/* This feature computes the hash of an object */
+		/** This feature computes the hash of an object
+			- If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
+				should be defined in the namespace that contains TYPE (it will use ADL). If such function exits,
+				its return type must be size_t.
+			- Otherwise std::hash<TYPE> is used to compute the hash */
 		struct FeatureHash
 		{
 			using type = size_t(*) (const void * i_source);
@@ -274,7 +288,7 @@ namespace density
 		template <typename BASE, typename TYPE>
 		const uintptr_t FeatureHash::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-		/* This feature stores a pointer to the std::type_info in the table of the type */
+		/** This feature stores a pointer to a std::type_info associated to a type in the table of the type */
 		struct FeatureRTTI
 		{
 			using type = const std::type_info*;
@@ -287,16 +301,16 @@ namespace density
 		template <typename BASE, typename TYPE>
 			const uintptr_t FeatureRTTI::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
 
-		/* This feature stores a pointer to the default constructor in the table of the type */
+		/** This feature stores a pointer to the default constructor in the table of the type.
+				@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
+				@return pointer to a subobject (of type BASE) of the new object.
+		*/
 		struct FeatureDefaultConstruct
 		{
 			using type = void * (*) (void * i_complete_dest);
 
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				/* Default-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
-					@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
-					@return pointer to a subobjct (of type BASE) of the new object. */
 				static void * invoke(void * i_complete_dest)
 				{
 					BASE * const base_result = new(i_complete_dest) TYPE();
@@ -309,18 +323,19 @@ namespace density
 		template <typename TYPE, typename BASE>
 		const uintptr_t FeatureDefaultConstruct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-		/* This feature stores a pointer to the copy constructor in the table of the type */
+		/** This feature stores a pointer to the copy constructor in the table of the type.
+			The effect of the function is copy-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
+				@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
+				@param i_base_source pointer to a subobject (of type BASE) of an object whose complete
+					type is TYPE, that is to be used as source of the copy.
+				@return pointer to a subobject (of type BASE) of the new object.
+		*/
 		struct FeatureCopyConstruct
 		{
 			using type = void * (*) (void * i_complete_dest, const void * i_base_source);
 
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				/* Copy-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
-					@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
-					@param i_base_source pointer to a subobjct (of type BASE) of an object whose complete
-						type is TYPE, that is to be used as source of the copy.
-					@return pointer to a subobjct (of type BASE) of the new object. */
 				static void * invoke(void * i_complete_dest, const void * i_base_source)
 				{
 					auto const base_source = static_cast<const BASE*>(i_base_source);
@@ -344,9 +359,9 @@ namespace density
 			{
 				/* Move-constructs an object of type TYPE, and returns a pointer (of type BASE) to it.
 					@param i_complete_dest pointer to the storage in which the TYPE must be constructed.
-					@param i_base_source pointer to a subobjct (of type BASE) of an object whose complete
+					@param i_base_source pointer to a subobject (of type BASE) of an object whose complete
 						type is TYPE, that is to be used as source of the move.
-					@return pointer to a subobjct (of type BASE) of the new object. */
+					@return pointer to a subobject (of type BASE) of the new object. */
 				static void * invoke(void * i_complete_dest, void * i_base_source) noexcept
 				{
 					BASE * base_source = static_cast<BASE*>(i_base_source);
@@ -513,6 +528,7 @@ namespace density
             return *get_feature<type_features::FeatureRTTI>();
         }
 
+		/** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails */
         template <typename FEATURE>
             typename FEATURE::type get_feature() const noexcept
         {
