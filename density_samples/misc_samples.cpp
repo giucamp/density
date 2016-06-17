@@ -12,16 +12,16 @@ namespace density
 
 			{
 				//! [FeatureList example 1]
-	using MyFeatures = FeatureList<FeatureDefaultConstruct, FeatureSize, FeatureAlignment>;
+	using MyFeatures = FeatureList<DefaultConstruct, Size, Alignment>;
 				//! [FeatureList example 1]
 				MyFeatures unused; (void)unused;
 			}
 
 			{
 				//! [FeatureConcat example 1]
-	using MyPartialFeatures = FeatureList<FeatureDefaultConstruct, FeatureSize>;
-	using MyFeatures = FeatureConcat<MyPartialFeatures, FeatureAlignment>::type;
-	using MyFeatures1 = FeatureConcat<MyPartialFeatures, FeatureList<FeatureAlignment> >::type;
+	using MyPartialFeatures = FeatureList<DefaultConstruct, Size>;
+	using MyFeatures = FeatureConcat<MyPartialFeatures, Alignment>::type;
+	using MyFeatures1 = FeatureConcat<MyPartialFeatures, FeatureList<Alignment> >::type;
 	static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "???");
 				//! [FeatureConcat example 1]
 			}

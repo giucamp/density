@@ -53,8 +53,8 @@ namespace density
 
         using value_type = RET_VAL(PARAMS...);
 		using features = type_features::FeatureList<
-			type_features::FeatureSize, type_features::FeatureAlignment,
-			type_features::FeatureCopyConstruct, type_features::FeatureMoveConstruct,
+			type_features::Size, type_features::Alignment,
+			type_features::CopyConstruct, type_features::MoveConstruct,
 			type_features::FeatureDestroy, typename type_features::FeatureInvoke<value_type>, typename type_features::FeatureInvokeDestroy<value_type> >;
 		using underlying_queue = queue_any<void, page_allocator<std::allocator<char>>, runtime_type<void, features > >;
 

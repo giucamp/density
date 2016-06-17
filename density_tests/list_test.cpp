@@ -15,10 +15,10 @@ namespace density
     namespace tests
     {
 
-        /* TestDenseList<TYPE> - array_any that uses TestAllocator and adds type_features::FeatureHash to the automatic runtime type */
+        /* TestDenseList<TYPE> - array_any that uses TestAllocator and adds type_features::Hash to the automatic runtime type */
         template <typename TYPE>
             using TestDenseList = array_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
-                typename type_features::FeatureConcat< typename type_features::AutoGetFeatures<TYPE>::type, type_features::FeatureHash >::type> >;
+                typename type_features::FeatureConcat< typename type_features::default_type_features_t<TYPE>, type_features::Hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>
             void add_test_case_add_by_copy(
