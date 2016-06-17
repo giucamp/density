@@ -62,9 +62,9 @@ namespace density
 
 	namespace type_features
 	{
-		/** This template is a typelist. Every type of this list is a feature that can be used by a runtime_type.
-			The composition of features forms a complete type erasure.
-			A Feature is a struct that performs a part of type erasure on a type, and has this form:
+		/** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
+			A feature_list is a composition of features that forms a complete type erasure.
+			A feature is a struct that performs a part of type erasure on a type, and has this form:
 			\code
 			struct FeatureX
 			{
@@ -75,34 +75,49 @@ namespace density
 				};
 			};
 			\endcode
-			A feature is a struct (or class) that doesn't depend on the type to erase. The inner type Impl
+			A feature is a struct (or class) that doesn't depend on the type to erase. In constrast the inner type Impl
 			depends on the type to erase, and on the base type. All the types to erase are covariant to
 			the base type. If the base type is void any type can be erased. \n
 			The value of the feature (a static const uintptr_t) in Impl stores a value that is required for
-			the feature to do its job on a type: in many cases it is a pointer to a function that do a copy-costruction
-			(like in the case of copy_construct), or destruction (in the case of destroy). Anyway it
-			may store a value, if it is small enough to fit in a uintptr_t (like for examlpe in case of size, or 
-			alignment). \n
+			to do the job on a type: in many cases it is a pointer to a function (like in the case of 
+			type_features::copy_construct or type_features::destroy). Anyway it
+			may store a value, if it is small enough to fit in a uintptr_t (like in case of type_features::size, or 
+			type_features::alignment). \n
 			The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
 			casts the value of the feature to this type before returning it. 
 			\snippet misc_samples.cpp feature_list example 1 */
 		template <typename... FEATURES> struct feature_list
 		{
+			/** Constant that gives the number of features */
 			static const size_t size = sizeof...(FEATURES);
 		};
 
-		/** This template concatenates two feature_list. The first template parameter must be a feature_list. The second
-			template argument can be a feature_list or a feature. feature_concat::type is an alias for a feature_list
-			that contains the concatenation al the features in the template arguments.
+		/** This template concatenates two feature_list, or a feature_list and a feature.
+			@tparam FIRST feature_list to prepend
+			@tparam SECOND feature_list or feature to append
+			
+			The inner member type is an alias for the concatenations of all features in the tempate arguments. 
+			The order of the features is preserved. 
+			
+			The alias feature_concat_t can be used instead of feature_concat<...>::type:
+
+			@code
+			template <typename FIRST, typename SECOND>
+				using feature_concat_t = typename feature_concat<FIRST, SECOND>::type;
+			@endcode
+
+			Example:
 
 			\snippet misc_samples.cpp feature_concat example 1
-
-			(1) feature_concat< feature_list<FEATURES_1...>, feature_list<FEATURES_2...> >::type
-			(2) feature_concat< feature_list<FEATURES_1...>, FEATURE_2 >::type
 		*/
-		template <typename...> struct feature_concat;
-		template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
-			struct feature_concat<feature_list<FIRST_FEATURES...>, feature_list<SECOND_FEATURES...>>
+		#ifndef DOXYGEN_DOC_GENERATION
+			template <typename...> struct feature_concat;
+			template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
+				struct feature_concat<feature_list<FIRST_FEATURES...>, feature_list<SECOND_FEATURES...>>
+		#else
+			template <typename FIRST, typename SECOND>
+				struct feature_concat
+		#endif	
 		{
 			using type = feature_list<FIRST_FEATURES..., SECOND_FEATURES...>;
 		};
@@ -138,8 +153,7 @@ namespace density
 		{
 			return std::hash<TYPE>()(i_object);
 		}
-		template <typename TYPE>
-		inline size_t invoke_hash(const TYPE & i_object)
+		template <typename TYPE> inline size_t invoke_hash(const TYPE & i_object)
 		{
 			return invoke_hash_func_impl(i_object, decltype(has_hash_func_impl<TYPE>(0))());
 		}
@@ -364,7 +378,6 @@ namespace density
 
 			template <typename BASE, typename TYPE> struct Impl
 			{
-				/*  */
 				static void * invoke(void * i_complete_dest, void * i_base_source) noexcept
 				{
 					BASE * base_source = static_cast<BASE*>(i_base_source);
@@ -380,8 +393,7 @@ namespace density
 
 		/** This feature allows to invoke a function object. The template parameter must be a callable type.
 				@tparam CALLABLE signature of the object function
-			
-			
+						
 			Example: 
 			\snippet misc_samples.cpp type_features::invoke example 1
 		*/
@@ -453,7 +465,7 @@ namespace density
 		};
 		template <typename RET, typename... PARAMS>
 		template <typename TYPE, typename BASE>
-		const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke_and_destroy);
+			const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke_and_destroy);
 
 		/** This feature stores a pointer to the destructor of a type.
 				@param i_base_dest pointer to the object to be destroyed. */
@@ -472,7 +484,7 @@ namespace density
 			};
 		};
 		template <typename TYPE, typename BASE>
-		const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+			const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
 	} // namespace type_features
 
@@ -517,6 +529,13 @@ namespace density
 			- The result feature_list always includes: size, alignment, rtti, destroy.\n
 			- If BASE_TYPE is copy-constructible, copy_construct is included
 			- If BASE_TYPE is nothrow move-constructible, move_construct is included
+
+			default_type_features_t is an alias for default_type_features<...>::type
+
+			@code
+			template <typename BASE_TYPE>
+				using default_type_features_t = typename default_type_features<BASE_TYPE>::type;
+			@endcode
 			
 			Note: A feature_list does not depend on a type. The template argument is used only to decide which features to include.
 		*/

@@ -21,8 +21,8 @@ namespace misc_samples
 		{
 			//! [feature_concat example 1]
 	using MyPartialFeatures = feature_list<default_construct, size>;
-	using MyFeatures = feature_concat<MyPartialFeatures, alignment>::type;
-	using MyFeatures1 = feature_concat<MyPartialFeatures, feature_list<alignment> >::type;
+	using MyFeatures = feature_concat_t<MyPartialFeatures, alignment>;
+	using MyFeatures1 = feature_concat_t<MyPartialFeatures, feature_list<alignment> >;
 	static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "");
 			//! [feature_concat example 1]
 		}
