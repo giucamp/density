@@ -432,11 +432,11 @@ namespace density
 
     private:
 
-        struct CopyConstruct
+        struct copy_construct
         {
             const ELEMENT * const m_source;
 
-            CopyConstruct(const ELEMENT * i_source)
+            copy_construct(const ELEMENT * i_source)
                 : m_source(i_source) { }
 
             void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type)
@@ -445,11 +445,11 @@ namespace density
             }
         };
 
-        struct MoveConstruct
+        struct move_construct
         {
             ELEMENT * const m_source;
 
-            MoveConstruct(ELEMENT * i_source)
+            move_construct(ELEMENT * i_source)
                 : m_source(i_source) { }
 
             void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
@@ -472,7 +472,7 @@ namespace density
                 for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
             return m_impl.insert_n_impl(i_position, i_count_to_insert,
                 runtime_type::template make<ElementCompleteType>(),
-                MoveConstruct(&i_source) );
+                move_construct(&i_source) );
         }
 
         // overload used if i_source is an l-value
@@ -489,7 +489,7 @@ namespace density
                 for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
             return m_impl.insert_n_impl(i_position, i_count_to_insert,
                 runtime_type::template make<ElementCompleteType>(),
-                CopyConstruct(&i_source) );
+                copy_construct(&i_source) );
         }
 
     private:

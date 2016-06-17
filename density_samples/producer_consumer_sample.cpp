@@ -88,7 +88,7 @@ namespace producer_consumer_sample
 				}
 
 				// execute and destroy the command. Note: this code is not exception safe
-				auto function = function_type.template get_feature<typename type_features::FeatureInvoke<void(size_t)>>();
+				auto function = function_type.template get_feature<typename type_features::invoke<void(size_t)>>();
 				function(buffer.data(), i_thread_index);
 				function_type.destroy(buffer.data());
 			}

@@ -18,15 +18,15 @@ namespace density
 {
     namespace tests
     {
-        /* TestDenseQueue<TYPE> - small_queue_any that uses TestAllocator and adds Hash to the automatic runtime type */
+        /* TestDenseQueue<TYPE> - small_queue_any that uses TestAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
             using TestDenseQueue = small_queue_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
-                typename type_features::FeatureConcat< typename type_features::default_type_features_t<TYPE>, type_features::Hash >::type> >;
+                typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
-        /* TestPagedQueue<TYPE> - queue_any that uses TestAllocator and adds Hash to the automatic runtime type */
+        /* TestPagedQueue<TYPE> - queue_any that uses TestAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
             using TestPagedQueue = queue_any<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
-                typename type_features::FeatureConcat< typename type_features::default_type_features_t<TYPE>, type_features::Hash >::type> >;
+                typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
             void add_test_case_push_by_copy_n_times(
@@ -74,7 +74,7 @@ namespace density
                     i_test.dense_container().manual_consume(
                         [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
                     {
-                        i_type.template get_feature<type_features::Hash>()(i_element);
+                        i_type.template get_feature<type_features::hash>()(i_element);
                         i_type.destroy(i_element);
                     } );
                     i_test.shadow_container().pop_front();

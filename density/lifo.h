@@ -28,7 +28,7 @@ namespace density
     {
     public:
 
-        /** Alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+        /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
         static const size_t s_alignment = alignof(std::max_align_t);
 
         lifo_allocator() = default;
@@ -296,7 +296,7 @@ namespace density
     {
     public:
 
-        /** Alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+        /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
         static const size_t s_alignment = lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::s_alignment;
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined.

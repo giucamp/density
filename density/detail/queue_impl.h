@@ -175,7 +175,7 @@ namespace density
 
                     // to do: a slightly optimized nofail_push may be used here
                     bool result = try_push(*control,
-                        typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(source_element));
+                        typename detail::QueueImpl<RUNTIME_TYPE>::move_construct(source_element));
                     DENSITY_ASSERT(result);
                     (void)result;
 
@@ -209,7 +209,7 @@ namespace density
 
                         // to do: a slightly optimized nofail_push may be used here
                         bool result = try_push(type,
-                            typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(source_element));
+                            typename detail::QueueImpl<RUNTIME_TYPE>::copy_construct(source_element));
                         DENSITY_ASSERT(result);
                         (void)result;
                     }
@@ -237,11 +237,11 @@ namespace density
                 return IteratorImpl(m_tail);
             }
 
-            struct CopyConstruct
+            struct copy_construct
             {
                 const void * const m_source;
 
-                CopyConstruct(const void * i_source) DENSITY_NOEXCEPT
+                copy_construct(const void * i_source) DENSITY_NOEXCEPT
                     : m_source(i_source) { }
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
@@ -250,11 +250,11 @@ namespace density
                 }
             };
 
-            struct MoveConstruct
+            struct move_construct
             {
                 void * const m_source;
 
-                MoveConstruct(void * i_source) DENSITY_NOEXCEPT
+                move_construct(void * i_source) DENSITY_NOEXCEPT
                     : m_source(i_source) { }
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) DENSITY_NOEXCEPT

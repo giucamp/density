@@ -54,10 +54,10 @@ namespace density
 
         using value_type = RET_VAL(PARAMS...);
 
-		using features = type_features::FeatureList<
-			type_features::Size, type_features::Alignment,
-			type_features::CopyConstruct, type_features::MoveConstruct,
-			type_features::Destroy, typename type_features::FeatureInvoke<value_type>, typename type_features::FeatureInvokeDestroy<value_type> >;
+		using features = type_features::feature_list<
+			type_features::size, type_features::alignment,
+			type_features::copy_construct, type_features::move_construct,
+			type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
 		using underlying_queue = small_queue_any<void, std::allocator<char>, runtime_type<void, features > >;
 
         /** Adds a new function at the end of queue.
@@ -91,7 +91,7 @@ namespace density
         RET_VAL invoke_front(PARAMS... i_params) const
         {
             auto first = m_queue.begin();
-            return first.complete_type().template get_feature<typename detail::FeatureInvoke<value_type>>()(first.element(), i_params...);
+            return first.complete_type().template get_feature<typename detail::invoke<value_type>>()(first.element(), i_params...);
         }
 
         /** Invokes the first function object of the queue and then deletes it from the queue.
@@ -107,7 +107,7 @@ namespace density
         RET_VAL consume_front(PARAMS... i_params)
         {
             return m_queue.manual_consume([&i_params...](const runtime_type<void, features > & i_complete_type, void * i_element) {
-                return i_complete_type.template get_feature<typename type_features::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
+                return i_complete_type.template get_feature<typename type_features::invoke_destroy<value_type>>()(i_element, i_params...);
             } );
         }
 

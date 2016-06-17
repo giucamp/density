@@ -244,13 +244,13 @@ namespace density
         void push_by_copy(const RUNTIME_TYPE & i_type, const ELEMENT * i_source)
         {
             insert_back_impl(i_type,
-                typename detail::QueueImpl<RUNTIME_TYPE>::CopyConstruct(i_source));
+                typename detail::QueueImpl<RUNTIME_TYPE>::copy_construct(i_source));
         }
 
         void push_by_move(const RUNTIME_TYPE & i_type, ELEMENT * i_source) DENSITY_NOEXCEPT
         {
             insert_back_impl(i_type,
-                typename detail::QueueImpl<RUNTIME_TYPE>::MoveConstruct(i_source));
+                typename detail::QueueImpl<RUNTIME_TYPE>::move_construct(i_source));
         }
 
         /** Deletes the first element of the queue (the oldest one).
