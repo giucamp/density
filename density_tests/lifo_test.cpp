@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <cstring>
 
 namespace density
 {
@@ -75,7 +76,7 @@ namespace density
             void check() const override
             {
                 DENSITY_TEST_ASSERT(m_buffer.mem_size() == m_vector.size());
-                DENSITY_TEST_ASSERT(memcmp(m_buffer.data(), m_vector.data(), m_vector.size())==0);
+                DENSITY_TEST_ASSERT(std::memcmp(m_buffer.data(), m_vector.data(), m_vector.size())==0);
             }
 
             virtual bool resize(std::mt19937 & i_random) override
@@ -142,12 +143,12 @@ namespace density
             template <typename TYPE>
                 void push_test(const lifo_array<TYPE> & i_array)
             {
-                m_tests.push_back(std::make_unique<LifoTestArray<TYPE>>(i_array));
+                m_tests.emplace_back( new LifoTestArray<TYPE>(i_array) );
             }
 
             void push_test(lifo_buffer<> & i_buffer)
             {
-                m_tests.push_back(std::make_unique<LifoTestBuffer>(i_buffer));
+                m_tests.emplace_back( new LifoTestBuffer(i_buffer) );
             }
 
             void pop_test()
@@ -288,7 +289,7 @@ namespace density
 
             lifo_test_push(context);
         }
-		
+
     } // namespace tests
 
     void lifo_test()

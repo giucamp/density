@@ -9,8 +9,9 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <assert.h>
 
-#define DENSITY_TEST_ASSERT(i_bool_expr)        if(!(i_bool_expr)) {__debugbreak();}
+#define DENSITY_TEST_ASSERT(i_bool_expr)        assert(i_bool_expr)
 
 namespace testity
 {

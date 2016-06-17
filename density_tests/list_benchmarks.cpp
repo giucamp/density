@@ -33,9 +33,9 @@ namespace density
                 {
                     switch (i % 3)
                     {
-                        case 0: res.push_back(make_unique<Widget>()); break;
-                        case 1: res.push_back(make_unique<TextWidget>()); break;
-                        case 2: res.push_back(make_unique<ImageWidget>()); break;
+                        case 0: res.emplace_back(new Widget()); break;
+                        case 1: res.emplace_back(new TextWidget()); break;
+                        case 2: res.emplace_back(new ImageWidget()); break;
                         default: break;
                     }
                 }
@@ -100,9 +100,9 @@ namespace density
                 {
                     switch (i % 3)
                     {
-                    case 0: res.push_back(make_unique<Widget>()); break;
-                    case 1: res.push_back(make_unique<TextWidget>()); break;
-                    case 2: res.push_back(make_unique<ImageWidget>()); break;
+                    case 0: res.emplace_back(new Widget()); break;
+                    case 1: res.emplace_back(new TextWidget()); break;
+                    case 2: res.emplace_back(new ImageWidget()); break;
                     default: break;
                     }
                 }

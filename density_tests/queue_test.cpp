@@ -205,8 +205,8 @@ namespace density
 
             // try with a non-copyable type (std::unique_ptr)
             small_queue_any<std::unique_ptr<int>> queue_of_uncopyable;
-            queue_of_uncopyable.push(std::make_unique<int>(10));
-            queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::make_unique<int>(10));
+            queue_of_uncopyable.push(std::unique_ptr<int>(new int(10)));
+            queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::unique_ptr<int>(new int (10)));
             DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
             queue_of_uncopyable.pop();
             DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);

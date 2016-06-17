@@ -19,8 +19,6 @@ namespace density
 {
     class Overflow : public std::exception
     {
-    public:
-        using std::exception::exception;
     };
 
     namespace detail
@@ -29,7 +27,7 @@ namespace density
         {
             if (i_overflow)
             {
-                throw Overflow("pointer overflow");
+                throw Overflow();
             }
         }
     }

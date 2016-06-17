@@ -291,9 +291,18 @@ namespace density
 
             /* Exception thrown as result to an exception occurred during the update of the shadow container.
                 Handlers for of this exception can't check the tested container against the shadow container. */
-            struct BasicGuaranteeException : TestException
+            class BasicGuaranteeException : TestException
             {
-                using TestException::TestException;
+            public:
+
+                BasicGuaranteeException(std::string i_what)
+                    : m_what(std::move(i_what)) {}
+
+                const char* what() const noexcept override
+                    { return m_what.c_str(); }
+
+            private:
+                std::string m_what;
             };
 
             ShadowContainer() {}
@@ -303,7 +312,7 @@ namespace density
                 const auto end_it = i_container.end();
                 for (const auto it = i_container.begin(); it != end_it; it++ )
                 {
-                    auto hasher = it->curr_type().get_feature<hash>();
+                    auto hasher = it->curr_type().template get_feature<type_features::hash>();
                     const auto & type_info = it->complete_type().type_info().type_info();
                     m_deque.push_back(Element(type_info, hasher(it->element()) ));
                 }
