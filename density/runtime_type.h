@@ -616,6 +616,7 @@ namespace density
     {
     public:
 
+		/** Construct an empty runtime_type not associated with any type. Trying to use any feature of a  */
         runtime_type() = default;
         runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
         runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;

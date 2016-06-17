@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="density" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug Win32">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="DebugClang x64">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="ReleaseClang x64">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="ReleaseClang Win32">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="Debug x64">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="Release x64">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="Release Win32">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+			<Target title="DebugClang Win32">
+				<Option output="density_test" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../../../boost_1_60_0" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++11" />
+		</Compiler>
+		<Unit filename="../../density/array_any.h" />
+		<Unit filename="../../density/density_common.h" />
+		<Unit filename="../../density/detail/dense_list_impl.h" />
+		<Unit filename="../../density/detail/queue_impl.h" />
+		<Unit filename="../../density/lifo.h" />
+		<Unit filename="../../density/page_allocator.h" />
+		<Unit filename="../../density/pointer_artithmetic.h" />
+		<Unit filename="../../density/queue_any.h" />
+		<Unit filename="../../density/queue_function.h" />
+		<Unit filename="../../density/runtime_type.h" />
+		<Unit filename="../../density/small_queue_any.h" />
+		<Unit filename="../../density/small_queue_function.h" />
+		<Unit filename="../../density/void_allocator.h" />
+		<Unit filename="../../density_samples/function_queue_sample.cpp" />
+		<Unit filename="../../density_samples/lifo_sample.cpp" />
+		<Unit filename="../../density_samples/misc_samples.cpp" />
+		<Unit filename="../../density_samples/producer_consumer_sample.cpp" />
+		<Unit filename="../../density_samples/runtime_type_sample.cpp" />
+		<Unit filename="../../testity/correctness_test_context.h" />
+		<Unit filename="../../testity/environment.cpp" />
+		<Unit filename="../../testity/environment.h" />
+		<Unit filename="../../testity/test_tree.cpp" />
+		<Unit filename="../../testity/test_tree.h" />
+		<Unit filename="../../testity/testing_utils.cpp" />
+		<Unit filename="../../testity/testing_utils.h" />
+		<Unit filename="../container_test.h" />
+		<Unit filename="../function_queue_benchmarks.cpp" />
+		<Unit filename="../function_queue_test.cpp" />
+		<Unit filename="../lifo_benchmarks.cpp" />
+		<Unit filename="../lifo_test.cpp" />
+		<Unit filename="../list_benchmarks.cpp" />
+		<Unit filename="../list_test.cpp" />
+		<Unit filename="../main.cpp" />
+		<Unit filename="../paged_queue_test.cpp" />
+		<Unit filename="../pointer_arithmetic_test.cpp" />
+		<Unit filename="../queue_benchmarks.cpp" />
+		<Unit filename="../queue_test.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

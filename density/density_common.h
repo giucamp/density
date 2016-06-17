@@ -10,6 +10,7 @@
 #include <ostream>
 #include <limits>
 #include <cstddef>
+#include <memory>
 
 #define DENSITY_VERSION            0x0006
 
@@ -503,13 +504,13 @@ namespace density
         struct ImageWidget : Widget { float a, b, c; };
     \endcode
     \image html iterate_dense_list_and_set_variables.png width=10cm
-	
+
 	\page any_bench Comparison benchmarks with boost::any
 	This test just instances an homogeneous queue and fill it with int's
 	\image html queue_push.png width=10cm
-	
+
 	This test iterates an homogeneous container and get the std::type_info for every element. The containers are created by this code:
-	
+
 	\code{.cpp}
 		static auto any_vector = []() {
 			vector<boost::any> res;

@@ -63,7 +63,7 @@ namespace producer_consumer_sample
 		{
 			// this buffer is used to store temporary the command to be executed
 			lifo_buffer<> buffer;
-			
+
 			queue_function<void(size_t)>::underlying_queue::runtime_type function_type;
 			for (;;)
 			{
@@ -82,7 +82,7 @@ namespace producer_consumer_sample
 					function_type = command_it.complete_type();
 					buffer.resize(function_type.size(), function_type.alignment());
 					function_type.move_construct_nothrow(buffer.data(), command_it.element());
-					
+
 					// remove the moved command from the queue
 					m_commands.pop();
 				}
@@ -95,7 +95,7 @@ namespace producer_consumer_sample
 		}
 
 	private:
-		vector<thread> m_worker_threads;
+		vector<std::thread> m_worker_threads;
 		mutex m_mutex;
 		queue_function<void(size_t)> m_commands;
 		condition_variable m_condition_variable;
@@ -118,7 +118,7 @@ namespace producer_consumer_sample
 
 		void notify_whats_doing(size_t i_thread_index, int i_operation)
 		{
-			unique_lock<mutex> lock(m_mutex);			
+			unique_lock<mutex> lock(m_mutex);
 			m_doing[i_thread_index] = i_operation;
 		}
 

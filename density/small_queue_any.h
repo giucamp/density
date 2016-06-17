@@ -92,8 +92,8 @@ namespace density
         small_queue_any(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
             : allocator_type(i_allocator)
         {
-            alloc(detail::size_max(i_initial_reserved_bytes, QueueImp::s_initial_mem_reserve),
-                detail::size_max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
+            alloc(detail::size_max(i_initial_reserved_bytes, detail::QueueImpl<RUNTIME_TYPE>::s_initial_mem_reserve),
+                detail::size_max(i_initial_alignment, detail::QueueImpl<RUNTIME_TYPE>::s_minimum_buffer_alignment));
         }
 
         /** Move constructs the queue, transferring the content from another queue.

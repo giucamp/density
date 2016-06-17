@@ -415,7 +415,7 @@ namespace density
 				const auto end_1 = cend();
 				for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
 				{
-					auto const equal_comparer = it_1.complete_type().get_feature<type_features::equals>();
+					auto const equal_comparer = it_1.complete_type().template get_feature<type_features::equals>();
 					if (it_1.complete_type() != it_2.complete_type() ||
 						!equal_comparer(it_1.element(), it_2.element()))
 					{

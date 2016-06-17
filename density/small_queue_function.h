@@ -91,7 +91,7 @@ namespace density
         RET_VAL invoke_front(PARAMS... i_params) const
         {
             auto first = m_queue.begin();
-            return first.complete_type().template get_feature<typename detail::invoke<value_type>>()(first.element(), i_params...);
+            return first.complete_type().template get_feature<typename type_features::invoke<value_type>>()(first.element(), i_params...);
         }
 
         /** Invokes the first function object of the queue and then deletes it from the queue.

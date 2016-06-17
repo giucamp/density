@@ -363,13 +363,24 @@ namespace density
         }
 
         lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size)
-            : LIFO_ALLOCATOR(i_allocator), lifo_buffer(i_mem_size)
+            : LIFO_ALLOCATOR(i_allocator)
         {
+                        m_buffer = m_block = get_allocator().allocate(i_mem_size);
+            m_mem_size = i_mem_size;
         }
 
         lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size, size_t i_alignment)
-            : LIFO_ALLOCATOR(i_allocator), lifo_buffer(i_mem_size, i_alignment)
+            : LIFO_ALLOCATOR(i_allocator)
         {
+                        // the lifo block is already aligned like std::max_align_t
+            auto actual_block_size = i_mem_size;
+            if (i_alignment > alignof(std::max_align_t))
+            {
+                actual_block_size += i_alignment - alignof(std::max_align_t);
+            }
+            m_block = get_allocator().allocate(actual_block_size);
+            m_buffer = address_upper_align(m_block, i_alignment);
+            m_mem_size = i_mem_size;
         }
 
         lifo_buffer(const lifo_buffer &) = delete;
@@ -532,7 +543,7 @@ namespace density
 			@param i_begin points to the first source value
             @param i_end points to the first value that is not copied in the array. */
         template <typename INPUT_ITERATOR>
-            lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end, 
+            lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
 					typename std::iterator_traits<INPUT_ITERATOR>::iterator_category = typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
                 : m_size(std::distance(i_begin, i_end))
         {

@@ -7,6 +7,8 @@
 #include "../density/lifo.h"
 #include <iostream>
 #include <string>
+#include <algorithm>
+#include <cstring>
 
 namespace lifo_sample
 {
@@ -16,14 +18,14 @@ namespace lifo_sample
 	void print_reverse_words(const char * i_string, size_t i_length)
 	{
 		// find the end of the word
-		auto end_of_word = static_cast<const char*>(memchr(i_string, ' ', i_length));
+		auto end_of_word = static_cast<const char*>(std::memchr(i_string, ' ', i_length));
 		if (end_of_word == nullptr)
 			end_of_word = i_string + i_length;
 
 		// use a variable length automatic array to manipulate the string
 		lifo_array<char> word(i_string, end_of_word);
 		std::reverse(word.begin(), word.end());
-		
+
 		std::cout.write(word.data(), word.size());
 		std::cout << ' ';
 
