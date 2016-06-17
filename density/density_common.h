@@ -448,9 +448,9 @@ namespace density
 
     /*! \page wid_list_iter_bench Widget list benchmarks
 
-    These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: dense_list seems to perform better, but it's hard to tell how much.
+    These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: array_any seems to perform better, but it's hard to tell how much.
 
-    ptr_vector is a std::vector of std::unique_ptr's, den_list is a dense_list<Widget>. They are created before the test runs, with this code:
+    ptr_vector is a std::vector of std::unique_ptr's, den_list is a array_any<Widget>. They are created before the test runs, with this code:
 
     \code{.cpp}
         static auto ptr_vector = []() {
@@ -469,7 +469,7 @@ namespace density
         }();
 
         static auto den_list = []() {
-            dense_list<Widget> list;
+            array_any<Widget> list;
             for (size_t i = 0; i < 3000; i++)
             {
                 switch (i % 3)
@@ -521,7 +521,7 @@ namespace density
 		}();
 
 		static auto den_list = []() {
-			dense_list<void> res;
+			array_any<void> res;
 			for (size_t i = 0; i < 3000; i++)
 			{
 				res.push_back(static_cast<int>(i));
@@ -538,8 +538,8 @@ namespace density
     - using a std::vector of std::function's
     - using a std::vector of std::function's with an initial reserve. In general one does not know the maximum size of the queue, so this may be considered a 'cheat'
     - using a std::queue (which uses a std::deque)
-    - using a \ref density::dense_function_queue< RET_VAL(PARAMS...)> "dense_function_queue"
-    - using a \ref density::paged_function_queue< RET_VAL(PARAMS...)> "paged_function_queue"
+    - using a \ref density::small_queue_function< RET_VAL(PARAMS...)> "small_queue_function"
+    - using a \ref density::queue_function< RET_VAL(PARAMS...)> "queue_function"
 
     \section func_queue_bench_sec1 No capture
     In the first test there is no captured state (function object are small).

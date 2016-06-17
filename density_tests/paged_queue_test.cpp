@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/paged_queue.h"
+#include "../density/queue_any.h"
 #include "../testity/testing_utils.h"
 #include <iostream>
 #include <random>
@@ -17,7 +17,7 @@ namespace density
         {
             (void)i_random;
 
-            paged_queue<int> queue;
+            queue_any<int> queue;
             std::vector<int> ints;
 
             for (int i = 0; i < 1000; i++)
@@ -27,7 +27,7 @@ namespace density
 
             for (int i = 0; i < 1000; i++)
             {
-                queue.manual_consume([] (const paged_queue<int>::runtime_type &, int * val) {
+                queue.manual_consume([] (const queue_any<int>::runtime_type &, int * val) {
                     std::cout << *val << std::endl;
                 });
             }

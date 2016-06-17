@@ -5,11 +5,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "paged_queue.h"
+#include "small_queue_any.h"
 
 namespace density
 {
-    template < typename FUNCTION > class paged_function_queue;
+    template < typename FUNCTION > class small_queue_function;
 
     /** \brief Queue of callable objects (or function object).
         Every element in the queue is a type-erased callable object (like a std::function). Elements that can be added to
@@ -18,45 +18,47 @@ namespace density
             - classes overloading the function call operator
             - the result a std::bind
 
-        This container is similar to a std::deque of std::function objects, but has more specialized storage strategy:
-        the state of all the callable object is stored tightly and linearly in the memory.
+        This container is similar to a std::vector of std::function objects, but has more specialized storage strategy:
+        the state of all the callable object is stored directly in the memory block handled by the container.
 
         The template argument FUNCTION is the function type used as signature for the function object contained in the queue.
         For example:
 
         \code{.cpp}
-            paged_function_queue<void()> queue_1;
+            small_queue_function<void()> queue_1;
             queue_1.push([]() { std::cout << "hello!" << std::endl; });
             queue_1.consume_front();
 
-            paged_function_queue<int(double, double)> queue_2;
+            small_queue_function<int(double, double)> queue_2;
             queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
             std::cout << queue_2.consume_front(40., 2.) << std::endl;
         \endcode
-
-        dense_function_queue internally uses a void paged_queue (a queue that can contain elements of any type).
-        paged_function_queue never moves or reallocates its elements, and has both better performances and better behavior
-        respect to dense_function_queue when the number of elements is not small.
+        small_queue_function internally uses a void small_queue_any (a queue that can contain elements of any type).
+        A small_queue_function allocates one monolithic memory buffer with the provided allocator, and sub-allocates
+        inplace its elements. This buffer is eventually reallocated to accomplish push and emplace requests.
+        The memory management of this container is similar to an std::vector: since all the elements are
+        stored in the same memory block, when a reallocation is performed, all the elements have to be moved.
 
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of paged_function_queue is noexcept or provides the strong exception guarantee.
+        \n<b>Exception safeness</b>: Any function of small_queue_function is noexcept or provides the strong exception guarantee.
 
-        There is not constant time function that gives the number of elements in a dense_queue in constant time,
-        but std::distance will do (in linear time). Anyway dense_queue::mem_size, dense_queue::mem_capacity and
-        dense_queue::empty work in constant time.
-        Insertion is allowed only at the end (with the methods dense_queue::push or dense_queue::emplace).
-        Removal is allowed only at the begin (with the methods dense_queue::pop or dense_queue::consume). */
+        There is not constant time function that gives the number of elements in a small_queue_function in constant time,
+        but std::distance will do (in linear time). Anyway small_queue_function::mem_size, small_queue_function::mem_capacity and
+        small_queue_function::empty work in constant time.
+        Insertion is allowed only at the end (with the methods small_queue_function::push).
+        Removal is allowed only at the begin (with the methods small_queue_function::pop or small_queue_function::consume_front). */
     template < typename RET_VAL, typename... PARAMS >
-        class paged_function_queue<RET_VAL (PARAMS...)> final
+        class small_queue_function<RET_VAL (PARAMS...)> final
     {
     public:
 
         using value_type = RET_VAL(PARAMS...);
-		using features = detail::FeatureList<
-			density::detail::FeatureSize, density::detail::FeatureAlignment,
-			density::detail::FeatureCopyConstruct, density::detail::FeatureMoveConstruct,
-			density::detail::FeatureDestroy, typename detail::FeatureInvoke<value_type>, typename detail::FeatureInvokeDestroy<value_type> >;
-		using underlying_queue = paged_queue<void, page_allocator<std::allocator<char>>, runtime_type<void, features > >;
+
+		using features = type_features::FeatureList<
+			type_features::FeatureSize, type_features::FeatureAlignment,
+			type_features::FeatureCopyConstruct, type_features::FeatureMoveConstruct,
+			type_features::FeatureDestroy, typename type_features::FeatureInvoke<value_type>, typename type_features::FeatureInvokeDestroy<value_type> >;
+		using underlying_queue = small_queue_any<void, std::allocator<char>, runtime_type<void, features > >;
 
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.
@@ -105,7 +107,7 @@ namespace density
         RET_VAL consume_front(PARAMS... i_params)
         {
             return m_queue.manual_consume([&i_params...](const runtime_type<void, features > & i_complete_type, void * i_element) {
-                return i_complete_type.template get_feature<typename detail::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
+                return i_complete_type.template get_feature<typename type_features::FeatureInvokeDestroy<value_type>>()(i_element, i_params...);
             } );
         }
 
@@ -158,7 +160,7 @@ namespace density
 
         /** Returns the used size in bytes. This size is dependant, in an implementation defined way, to the count, the type and
             the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is recommended
-            to use the function dense_function_queue::empty to check if the queue is empty.
+            to use the function small_queue_function::empty to check if the queue is empty.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
@@ -168,7 +170,7 @@ namespace density
             return m_queue.mem_size();
         }
 
-        /** Returns the free size in bytes. This is equivalent to dense_function_queue::mem_capacity decreased by dense_function_queue::mem_size.
+        /** Returns the free size in bytes. This is equivalent to small_queue_function::mem_capacity decreased by small_queue_function::mem_size.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
@@ -188,7 +190,7 @@ namespace density
 		typename underlying_queue::const_iterator end() const DENSITY_NOEXCEPT { return m_queue.cend(); }
 
     private:
-	underlying_queue m_queue;
+		underlying_queue m_queue;
     };
 
 } // namespace density

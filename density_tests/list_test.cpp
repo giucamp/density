@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_list.h"
+#include "../density/array_any.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
 #include <algorithm>
@@ -15,10 +15,10 @@ namespace density
     namespace tests
     {
 
-        /* TestDenseList<TYPE> - dense_list that uses TestAllocator and adds detail::FeatureHash to the automatic runtime type */
+        /* TestDenseList<TYPE> - array_any that uses TestAllocator and adds type_features::FeatureHash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseList = dense_list<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
-                typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
+            using TestDenseList = array_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+                typename type_features::FeatureConcat< typename type_features::AutoGetFeatures<TYPE>::type, type_features::FeatureHash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>
             void add_test_case_add_by_copy(
@@ -183,7 +183,7 @@ namespace density
         {
             using namespace density;
             using namespace std;
-            auto list = dense_list<>::make(3 + 5, string("abc"), 42.f);
+            auto list = array_any<>::make(3 + 5, string("abc"), 42.f);
             list.push_front(wstring(L"ABC"));
             for (auto it = list.begin(); it != list.end(); it++)
             {
@@ -199,7 +199,7 @@ namespace density
             struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
             struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
-            auto widgets = dense_list<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
+            auto widgets = array_any<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
             for (auto & widget : widgets)
             {
                 widget.draw();
@@ -213,11 +213,11 @@ namespace density
         using namespace tests;
 
         std::mt19937 random;
-        list_test_impl(random, "dense_list");
+        list_test_impl(random, "array_any");
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            list_test_impl(random, "dense_list");
+            list_test_impl(random, "array_any");
         });
     }
 

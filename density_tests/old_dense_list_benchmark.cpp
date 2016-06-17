@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_list.h"
+#include "../density/array_any.h"
 #include "../testity/testing_utils.h"
 #include <vector>
 #include <memory>
@@ -55,7 +55,7 @@ namespace density
         {
         public:
 
-            using List = dense_list< TestObjectBase, std::allocator<TestObjectBase> >;
+            using List = array_any< TestObjectBase, std::allocator<TestObjectBase> >;
 
             TestContainerList()
             {

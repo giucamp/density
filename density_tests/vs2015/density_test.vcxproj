@@ -217,6 +217,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\density_samples\function_queue_sample.cpp" />
     <ClCompile Include="..\..\density_samples\lifo_sample.cpp" />
+    <ClCompile Include="..\..\density_samples\misc_samples.cpp" />
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
     <ClCompile Include="..\..\testity\environment.cpp" />
@@ -237,15 +238,15 @@
     <ClCompile Include="..\queue_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\dense_function_queue.h" />
-    <ClInclude Include="..\..\density\dense_list.h" />
-    <ClInclude Include="..\..\density\dense_queue.h" />
+    <ClInclude Include="..\..\density\small_queue_function.h" />
+    <ClInclude Include="..\..\density\array_any.h" />
+    <ClInclude Include="..\..\density\small_queue_any.h" />
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\detail\dense_list_impl.h" />
     <ClInclude Include="..\..\density\detail\queue_impl.h" />
     <ClInclude Include="..\..\density\lifo.h" />
-    <ClInclude Include="..\..\density\paged_function_queue.h" />
-    <ClInclude Include="..\..\density\paged_queue.h" />
+    <ClInclude Include="..\..\density\queue_function.h" />
+    <ClInclude Include="..\..\density\queue_any.h" />
     <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />

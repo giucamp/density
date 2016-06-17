@@ -76,13 +76,13 @@
     <ClCompile Include="..\queue_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\density_samples\misc_samples.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
       <Filter>density_tests</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\dense_queue.h">
-      <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\density_common.h">
       <Filter>density</Filter>
@@ -90,16 +90,7 @@
     <ClInclude Include="..\..\density\page_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\paged_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\paged_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\runtime_type.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\dense_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\queue_impl.h">
@@ -117,9 +108,6 @@
     <ClInclude Include="..\..\testity\environment.h">
       <Filter>testity</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\dense_list.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\dense_list_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
@@ -130,6 +118,21 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\pointer_artithmetic.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\array_any.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\small_queue_any.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\queue_function.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\small_queue_function.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\queue_any.h">
       <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>

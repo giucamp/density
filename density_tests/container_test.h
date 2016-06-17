@@ -86,7 +86,7 @@ namespace density
             int m_check_word = 3232;
         };
 
-        /* Returns the hash of a TestObjectBase. This function is compliant with detail::FeatureHash */
+        /* Returns the hash of a TestObjectBase. This function is compliant with FeatureHash */
         inline size_t hash_func(const TestObjectBase & i_object)
         {
             return i_object.hash();
@@ -183,7 +183,7 @@ namespace density
             const int m_check_word_1 = 7865;
         };
 
-        /** Returns the hash of an AlignedRandomStorage. This function is compliant with detail::FeatureHash */
+        /** Returns the hash of an AlignedRandomStorage. This function is compliant with FeatureHash */
         template <size_t SIZE, size_t ALIGNMENT>
             inline size_t hash_func(const AlignedRandomStorage<SIZE, ALIGNMENT> & i_object)
         {
@@ -266,7 +266,7 @@ namespace density
             size_t m_hash;
         };
 
-        /** Returns the hash of an ComplexTypeBase. This function is compliant with detail::FeatureHash */
+        /** Returns the hash of an ComplexTypeBase. This function is compliant with FeatureHash */
         inline size_t hash_func(const ComplexTypeBase & i_object)
         {
             return i_object.hash();
@@ -303,7 +303,7 @@ namespace density
                 const auto end_it = i_container.end();
                 for (const auto it = i_container.begin(); it != end_it; it++ )
                 {
-                    auto hasher = it->curr_type().get_feature<detail::FeatureHash>();
+                    auto hasher = it->curr_type().get_feature<FeatureHash>();
                     const auto & type_info = it->complete_type().type_info().type_info();
                     m_deque.push_back(Element(type_info, hasher(it->element()) ));
                 }
@@ -328,7 +328,7 @@ namespace density
                 const auto end_it = i_container.end();
                 for (auto it = i_container.begin(); it != end_it; it++)
                 {
-                    auto hasher = it.complete_type().template get_feature<detail::FeatureHash>();
+                    auto hasher = it.complete_type().template get_feature<type_features::FeatureHash>();
                     const auto & type_info = it.complete_type().type_info();
                     const auto & deq_entry = m_deque[index];
                     const auto hash = hasher(it.element());
@@ -344,7 +344,7 @@ namespace density
             {
                 DENSITY_TEST_ASSERT(i_at < m_deque.size());
                 DENSITY_TEST_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
-                const auto element_hash = i_type.template get_feature<detail::FeatureHash>()(i_element);
+                const auto element_hash = i_type.template get_feature<type_features::FeatureHash>()(i_element);
                 DENSITY_TEST_ASSERT(element_hash == m_deque[i_at].m_hash);
             }
 
@@ -367,7 +367,7 @@ namespace density
                 {
                     using runtime_type = typename DENSE_CONTAINER::runtime_type;
                     const auto type = runtime_type::template make<TYPE>();
-                    Element new_element{ &type.type_info(), type.template get_feature<detail::FeatureHash>()(
+                    Element new_element{ &type.type_info(), type.template get_feature<type_features::FeatureHash>()(
                         static_cast<const typename DENSE_CONTAINER::value_type*>(&i_element) ) };
                     m_deque.insert(m_deque.begin() + i_at, i_count, new_element);
                 }

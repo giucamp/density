@@ -9,44 +9,44 @@
 namespace density
 {
     /** \brief Class template that implements an heterogeneous sequence container optimized to be compact in both heap memory and inline storage.
-        Elements is a dense_list are allocated tightly in the same dynamic memory block, respecting their alignment requirements.
-        To be added to a dense_list, an element must have a type covariant to the template argument ELEMENT. If ELEMENT is void
+        Elements is a array_any are allocated tightly in the same dynamic memory block, respecting their alignment requirements.
+        To be added to a array_any, an element must have a type covariant to the template argument ELEMENT. If ELEMENT is void
         (the default value), any element can be added.
-        Unlike std::vector, dense_list does not provide any extra capacity management. As a consequence, the complexity
+        Unlike std::vector, array_any does not provide any extra capacity management. As a consequence, the complexity
         of many methods is linear, in contrast with the constant amortized time of the equivalent methods of std::vector. Insertions
         and removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate
         existing iterators
-        The inline storage of dense_list is the same of a pointer, provided that the template argument ALLOCATOR is an empty class
-        and the compiler supports the empty base class optimization. An empty dense_list does not own a dynamic memory block.
+        The inline storage of array_any is the same of a pointer, provided that the template argument ALLOCATOR is an empty class
+        and the compiler supports the empty base class optimization. An empty array_any does not own a dynamic memory block.
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of dense_list is noexcept or provides the strong exception guarantee.
+        \n<b>Exception safeness</b>: Any function of array_any is noexcept or provides the strong exception guarantee.
             @param ELEMENT Base type of the elements of the list. The list enforces the compile-time
                 constraint that the type of each element is covariant to ELEMENT.
                 If ELEMENT is void, elements of any complete type can be added to the container. In this
-                case, the methods of dense_list (and its iterators) that returns a pointer to an element
+                case, the methods of array_any (and its iterators) that returns a pointer to an element
                 will return a void* to a complete object, while the methods that returns a reference to
                 an element will return void. Use iterators and pointer semantic to write generic code
-                that works with any dense_list.
+                that works with any array_any.
                 If ELEMENT decays to void but it is not a plain void, a compile time error is issued.
                 Note: if ELEMENT is to be a built-in type, a pointer, or a final type, then the complete
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
-                this case a standard container (like std::vector) instead of std::dense_list is a better choice.
+                this case a standard container (like std::vector) instead of std::array_any is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
             @param ALLOCATOR Allocator to be used to allocate the memory buffer. The list may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
-        dense_list provides only forward iteration. Only the first element is accessible in constant time (with
-        the functions: dense_list::front, dense_list::begin). The iterator provides access to both the ELEMENT (with
+        array_any provides only forward iteration. Only the first element is accessible in constant time (with
+        the functions: array_any::front, array_any::begin). The iterator provides access to both the ELEMENT (with
         the function element) and the RUNTIME_TYPE (with the function type).
-        Limitations: when an element of COMPETE_ELEMENT is pushed to the dense_list, the current implementation needs
+        Limitations: when an element of COMPETE_ELEMENT is pushed to the array_any, the current implementation needs
             sometimes to downcast from ELEMENT to COMPETE_ELEMENT.
                 - If no virtual inheritance is involved, static_cast is used
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
     template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class dense_list final
+        class array_any final
     {
     private:
 
@@ -65,36 +65,36 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Creates a dense_list containing all the elements specified in the parameter list.
+        /** Creates a array_any containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_elements elements to add to the list.
-                @return the new dense_list
+                @return the new array_any
             Example:
-                const auto list = dense_list<>::make(1, std::string("abc"), 2.5);
-                const auto list1 = dense_list<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
+                const auto list = array_any<>::make(1, std::string("abc"), 2.5);
+                const auto list1 = array_any<ListImpl>::make(Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static dense_list make(TYPES &&... i_elements)
+            inline static array_any make(TYPES &&... i_elements)
         {
             static_assert(detail::AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT" );
-            dense_list new_list;
+            array_any new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_elements)...);
             return std::move(new_list);
         }
 
-        /** Creates a dense_list containing all the elements specified in the parameter list. The allocator of the new dense_list is copy-constructed from the provided one.
+        /** Creates a array_any containing all the elements specified in the parameter list. The allocator of the new array_any is copy-constructed from the provided one.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_args elements to add to the list.
-                @return the new dense_list
+                @return the new array_any
             Example:
                 MyAlloc<int> my_alloc;
                 MyAlloc<ListImpl> my_alloc1;
-                const auto list = dense_list<int>::make_with_alloc(my_alloc, 1, 2, 3);
-                const auto list1 = dense_list<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
+                const auto list = array_any<int>::make_with_alloc(my_alloc, 1, 2, 3);
+                const auto list1 = array_any<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static dense_list make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_elements)
+            inline static array_any make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_elements)
         {
             static_assert(detail::AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT");
-            dense_list new_list;
+            array_any new_list;
             ListImpl::template make_impl<ELEMENT>(new_list.m_impl, std::forward<TYPES>(i_elements)...);
             return std::move(new_list);
         }
@@ -118,8 +118,8 @@ namespace density
             using size_type = size_t;
             using value_type = ELEMENT;
             using pointer = ELEMENT *;
-            using reference = typename dense_list::reference;
-            using const_reference = typename dense_list::const_reference;
+            using reference = typename array_any::reference;
+            using const_reference = typename array_any::const_reference;
 
             iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source) {  }
@@ -178,8 +178,8 @@ namespace density
             using size_type = size_t;
             using value_type = const ELEMENT;
             using pointer = const ELEMENT *;
-            using reference = typename dense_list::const_reference;
-            using const_reference = typename dense_list::const_reference;
+            using reference = typename array_any::const_reference;
+            using const_reference = typename array_any::const_reference;
 
             const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
                 : m_impl(i_source.m_impl) {  }
@@ -224,7 +224,7 @@ namespace density
 
             const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT { return m_impl.complete_type(); }
 
-            friend class dense_list; // this allows dense_list to access m_impl
+            friend class array_any; // this allows array_any to access m_impl
 
         private:
             const_iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
@@ -399,7 +399,7 @@ namespace density
             }
         }
 
-        void swap(dense_list & i_other) DENSITY_NOEXCEPT
+        void swap(array_any & i_other) DENSITY_NOEXCEPT
         {
             std::swap(m_impl.edit_control_blocks(), m_impl.i_other.edit_control_blocks());
         }
@@ -407,7 +407,7 @@ namespace density
                     /////////////////////////
 
         /* to do, & WARNING!: this function is slicing-comparing. Fix or delete. */
-        bool equal_to(const dense_list & i_source) const
+        bool equal_to(const array_any & i_source) const
         {
             if (m_impl.size() != i_source.size())
             {
@@ -427,8 +427,8 @@ namespace density
             }
         }
 
-        bool operator == (const dense_list & i_source) const { return equal_to(i_source); }
-        bool operator != (const dense_list & i_source) const { return !equal_to(i_source); }
+        bool operator == (const array_any & i_source) const { return equal_to(i_source); }
+        bool operator != (const array_any & i_source) const { return !equal_to(i_source); }
 
     private:
 
@@ -494,12 +494,12 @@ namespace density
 
     private:
         detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
-    }; // class dense_list;
+    }; // class array_any;
 
     template <typename ELEMENT, typename... TYPES>
-        inline dense_list<ELEMENT> make_dense_list(TYPES &&... i_args)
+        inline array_any<ELEMENT> make_dense_list(TYPES &&... i_args)
     {
-        return dense_list<ELEMENT>::make(std::forward<TYPES>(i_args)...);
+        return array_any<ELEMENT>::make(std::forward<TYPES>(i_args)...);
     }
 
 } // namespace density

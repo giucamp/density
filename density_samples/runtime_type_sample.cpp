@@ -29,8 +29,8 @@ namespace runtime_type_sample
         virtual void draw() override { std::cout << "Hi there! I'm a ImageWidget: " << x + y + z << std::endl; }
     };
 
-    using Features = detail::FeatureList<detail::FeatureDefaultConstruct, detail::FeatureDestroy,
-        detail::FeatureSize, detail::FeatureAlignment, detail::FeatureRTTI>;
+    using Features = type_features::FeatureList<type_features::FeatureDefaultConstruct, type_features::FeatureDestroy,
+		type_features::FeatureSize, type_features::FeatureAlignment, type_features::FeatureRTTI>;
 
     runtime_type<Widget, Features> select_widget_type()
     {

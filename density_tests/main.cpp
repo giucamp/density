@@ -38,6 +38,14 @@ int main()
     using namespace density::tests;
     using namespace testity;
 
+	#ifdef  _DEBUG
+		dense_queue_test();
+		list_test();
+		lifo_test();
+		function_queue_test();
+		paged_queue_test();
+	#endif //  _DEBUG
+
     testity::TestTree test_tree("");
 
     test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
@@ -57,16 +65,6 @@ int main()
 	function_queue_sample::run();
 	lifo_sample::run();
 	runtime_type_sample::run();
-
-	//#ifdef  _DEBUG
-
-	dense_queue_test();
-	list_test();
-	lifo_test();
-	function_queue_test();
-	paged_queue_test();
-
-	//#endif //  _DEBUG
 
     return 0;
 }

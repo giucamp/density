@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_list.h"
+#include "../density/array_any.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
 #include <vector>
@@ -33,7 +33,7 @@ namespace density
 
         namespace DenseListTest
         {
-            using TestDenseListString = dense_list< TestString, TestAllocator<TestString> >;
+            using TestDenseListString = array_any< TestString, TestAllocator<TestString> >;
 
             void dense_list_test_insert(TestDenseListString i_list, size_t i_at, size_t i_count)
             {
@@ -115,7 +115,7 @@ namespace density
                 NoLeakScope leak_detector;
 
                 const auto list = TestDenseListString::make();
-                static_assert(sizeof(list) == sizeof(void*) * 1, "If the allocator is stateless dense_list is documented to be big as one pointers");
+                static_assert(sizeof(list) == sizeof(void*) * 1, "If the allocator is stateless array_any is documented to be big as one pointers");
                 DENSITY_TEST_ASSERT(list.begin() == list.end());
                 DENSITY_TEST_ASSERT(list.size() == 0);
                 DENSITY_TEST_ASSERT(list == TestDenseListString());
@@ -194,7 +194,7 @@ namespace density
             template <typename BASE_CLASS>
                 void typed_alignment_test()
             {
-                using List = dense_list< BASE_CLASS, TestAllocator<BASE_CLASS> >;
+                using List = array_any< BASE_CLASS, TestAllocator<BASE_CLASS> >;
 
                 std::vector<List> lists = {
                     List::make(),
@@ -281,18 +281,18 @@ namespace density
             {
                 #if !defined(_MSC_VER) || _MSC_VER >= 1900 // disable for Visual Studio 2013 and below
                     NoLeakScope leak_detector;
-                    using List = dense_list< Moveable, TestAllocator<Moveable> >;
+                    using List = array_any< Moveable, TestAllocator<Moveable> >;
                     List::make(Moveable(1), Moveable(2));
                 #endif
             }
 
             template <typename ELEMENT, typename ACTION_ON_STD_LIST, typename ACTION_ON_DENSE_LIST>
                 void test_operation_with_exceptions(
-                    const dense_list< ELEMENT, TestAllocator<ELEMENT> > & i_dense_list,
+                    const array_any< ELEMENT, TestAllocator<ELEMENT> > & i_dense_list,
                     ACTION_ON_DENSE_LIST i_action_on_dense_list, ACTION_ON_STD_LIST i_action_std_list )
             {
                 // dense_list_copy = i_dense_list
-                dense_list< ELEMENT, TestAllocator<ELEMENT> > dense_list_copy;
+                array_any< ELEMENT, TestAllocator<ELEMENT> > dense_list_copy;
                 for (const auto & el : i_dense_list)
                 {
                     const typename ELEMENT::UnderlyingClass & elu = el;
@@ -478,7 +478,7 @@ namespace density
                 void test_with_exceptions_typed()
             {
                 using Element = ELEMENT;
-                using List = dense_list< Element, TestAllocator<Element> >;
+                using List = array_any< Element, TestAllocator<Element> >;
 
                 auto list = List::make(Element(), Element(), Element());
                 TestWithExceptionsOnList<std::is_copy_constructible<typename List::value_type>::value, List>::do_it(list);
@@ -492,7 +492,7 @@ namespace density
 
             void test_void_dense_list()
             {
-                /*auto void_list = dense_list<void>::template make(1,2,3);
+                /*auto void_list = array_any<void>::template make(1,2,3);
                 int sum = 0;
                 for (auto it = void_list.begin(); it != void_list.end(); it++)
                 {

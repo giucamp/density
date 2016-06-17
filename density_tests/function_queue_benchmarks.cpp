@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_function_queue.h"
-#include "../density/paged_function_queue.h"
+#include "../density/small_queue_function.h"
+#include "../density/queue_function.h"
 #include "../testity/test_tree.h"
 #include <functional>
 #include <deque>
@@ -22,18 +22,18 @@ namespace density
         {
             PerformanceTestGroup group("push & consume, no capture", "density version: " + std::to_string(DENSITY_VERSION));
 
-            // paged_function_queue
+            // queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                paged_function_queue< void() > queue;
+                queue_function< void() > queue;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([]() { volatile int dummy = 1; (void)dummy; });
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.consume_front();
             }, __LINE__);
 
-            // dense_function_queue
+            // small_queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                dense_function_queue< void() > queue;
+                small_queue_function< void() > queue;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([]() { volatile int dummy = 1; (void)dummy; });
                 for (size_t index = 0; index < i_cardinality; index++)
@@ -75,9 +75,9 @@ namespace density
         {
             PerformanceTestGroup group("push & consume, middle capture (46 bytes)", "density version: " + std::to_string(DENSITY_VERSION));
 
-            // paged_function_queue
+            // queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                paged_function_queue< void() > queue;
+                queue_function< void() > queue;
                 struct { volatile char chars[46] = "just a string"; } str;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([str]() { volatile int dummy = 1; (void)dummy; });
@@ -85,9 +85,9 @@ namespace density
                     queue.consume_front();
             }, __LINE__);
 
-            // dense_function_queue
+            // small_queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                dense_function_queue< void() > queue;
+                small_queue_function< void() > queue;
                 struct { volatile char chars[46] = "just a string"; } str;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([str]() { volatile int dummy = 1; (void)dummy; });
@@ -133,9 +133,9 @@ namespace density
         {
             PerformanceTestGroup group("push & consume, big capture (64 bytes)", "density version: " + std::to_string(DENSITY_VERSION));
 
-            // paged_function_queue
+            // queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                paged_function_queue< void() > queue;
+                queue_function< void() > queue;
                 struct { volatile char chars[64] = "just a string"; } str;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([str]() { volatile int dummy = 1; (void)dummy; });
@@ -143,9 +143,9 @@ namespace density
                     queue.consume_front();
             }, __LINE__);
 
-            // dense_function_queue
+            // small_queue_function
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                dense_function_queue< void() > queue;
+                small_queue_function< void() > queue;
                 struct { volatile char chars[64] = "just a string"; } str;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push([str]() { volatile int dummy = 1; (void)dummy; });

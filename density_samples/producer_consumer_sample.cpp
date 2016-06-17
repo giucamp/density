@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_function_queue.h"
-#include "../density/paged_function_queue.h"
+#include "../density/small_queue_function.h"
+#include "../density/queue_function.h"
 #include "../density/lifo.h"
 #include <string>
 #include <thread>
@@ -64,7 +64,7 @@ namespace producer_consumer_sample
 			// this buffer is used to store temporary the command to be executed
 			lifo_buffer<> buffer;
 			
-			paged_function_queue<void(size_t)>::underlying_queue::runtime_type function_type;
+			queue_function<void(size_t)>::underlying_queue::runtime_type function_type;
 			for (;;)
 			{
 				{
@@ -88,7 +88,7 @@ namespace producer_consumer_sample
 				}
 
 				// execute and destroy the command. Note: this code is not exception safe
-				auto function = function_type.template get_feature<typename detail::FeatureInvoke<void(size_t)>>();
+				auto function = function_type.template get_feature<typename type_features::FeatureInvoke<void(size_t)>>();
 				function(buffer.data(), i_thread_index);
 				function_type.destroy(buffer.data());
 			}
@@ -97,7 +97,7 @@ namespace producer_consumer_sample
 	private:
 		vector<thread> m_worker_threads;
 		mutex m_mutex;
-		paged_function_queue<void(size_t)> m_commands;
+		queue_function<void(size_t)> m_commands;
 		condition_variable m_condition_variable;
 		bool m_termination_requested = false;
 	};

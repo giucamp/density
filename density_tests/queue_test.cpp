@@ -8,8 +8,8 @@
     #pragma warning(disable:4503) // '__LINE__Var': decorated name length exceeded, name was truncated
 #endif
 
-#include "../density/dense_queue.h"
-#include "../density/paged_queue.h"
+#include "../density/small_queue_any.h"
+#include "../density/queue_any.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
 #include <algorithm>
@@ -18,15 +18,15 @@ namespace density
 {
     namespace tests
     {
-        /* TestDenseQueue<TYPE> - dense_queue that uses TestAllocator and adds detail::FeatureHash to the automatic runtime type */
+        /* TestDenseQueue<TYPE> - small_queue_any that uses TestAllocator and adds FeatureHash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseQueue = dense_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
-                typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
+            using TestDenseQueue = small_queue_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+                typename type_features::FeatureConcat< typename type_features::AutoGetFeatures<TYPE>::type, type_features::FeatureHash >::type> >;
 
-        /* TestPagedQueue<TYPE> - paged_queue that uses TestAllocator and adds detail::FeatureHash to the automatic runtime type */
+        /* TestPagedQueue<TYPE> - queue_any that uses TestAllocator and adds FeatureHash to the automatic runtime type */
         template <typename TYPE>
-            using TestPagedQueue = paged_queue<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
-                typename detail::FeatureConcat< typename detail::AutoGetFeatures<TYPE>::type, detail::FeatureHash >::type> >;
+            using TestPagedQueue = queue_any<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
+                typename type_features::FeatureConcat< typename type_features::AutoGetFeatures<TYPE>::type, type_features::FeatureHash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
             void add_test_case_push_by_copy_n_times(
@@ -74,7 +74,7 @@ namespace density
                     i_test.dense_container().manual_consume(
                         [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
                     {
-                        i_type.template get_feature<detail::FeatureHash>()(i_element);
+                        i_type.template get_feature<type_features::FeatureHash>()(i_element);
                         i_type.destroy(i_element);
                     } );
                     i_test.shadow_container().pop_front();
@@ -161,7 +161,7 @@ namespace density
         void dense_queue_leak_basic_tests()
         {
             NoLeakScope no_leaks;
-            using Queue = dense_queue<int, TestAllocator<int>>;
+            using Queue = small_queue_any<int, TestAllocator<int>>;
             Queue queue;
             for (int i = 0; i < 1000; i++)
             {
@@ -179,15 +179,15 @@ namespace density
 
         void dense_queue_basic_tests()
         {
-            dense_queue< dense_queue<int> > queue_of_queues;
-            dense_queue<int> queue;
+            small_queue_any< small_queue_any<int> > queue_of_queues;
+            small_queue_any<int> queue;
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);
             }
             for (int i = 0; i < 57; i++)
             {
-                queue.manual_consume([i](const dense_queue<int>::runtime_type & i_type, int * i_element)
+                queue.manual_consume([i](const small_queue_any<int>::runtime_type & i_type, int * i_element)
                 {
                     DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
                 });
@@ -204,7 +204,7 @@ namespace density
             DENSITY_TEST_ASSERT(queue.empty());
 
             // try with a non-copyable type (std::unique_ptr)
-            dense_queue<std::unique_ptr<int>> queue_of_uncopyable;
+            small_queue_any<std::unique_ptr<int>> queue_of_uncopyable;
             queue_of_uncopyable.push(std::make_unique<int>(10));
             queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::make_unique<int>(10));
             DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
@@ -229,7 +229,7 @@ namespace density
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            queue_test_impl<TestDenseQueue>(random, "dense_queue");
+            queue_test_impl<TestDenseQueue>(random, "small_queue_any");
         });
     }
 
@@ -239,7 +239,7 @@ namespace density
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            queue_test_impl<TestPagedQueue>(random, "paged_queue");
+            queue_test_impl<TestPagedQueue>(random, "queue_any");
         });
     }
 

@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/dense_list.h"
+#include "../density/array_any.h"
 #include "../testity/test_tree.h"
 #include <functional>
 #include <boost\any.hpp>
@@ -43,7 +43,7 @@ namespace density
             }();
 
             static auto den_list = []() {
-                dense_list<Widget> list;
+                array_any<Widget> list;
                 for (size_t i = 0; i < 3000; i++)
                 {
                     switch (i % 3)
@@ -110,7 +110,7 @@ namespace density
             }();
 
             static auto den_list = []() {
-                dense_list<Widget> list;
+                array_any<Widget> list;
                 for (size_t i = 0; i < 3000; i++)
                 {
                     switch (i % 3)
@@ -163,7 +163,7 @@ namespace density
 			}();
 
 			static auto den_list = []() {
-				dense_list<void> res;
+				array_any<void> res;
 				for (size_t i = 0; i < 3000; i++)
 				{
 					res.push_back(static_cast<int>(i));

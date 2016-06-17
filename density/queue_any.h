@@ -5,57 +5,63 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <vector>
+#include "density_common.h"
+#include "page_allocator.h"
 #include "detail\queue_impl.h"
-#include <memory>
 
 namespace density
 {
     /** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
-        A dense_queue allocates one monolithic memory buffer with the provided allocator, and sub-allocates
-        inplace its elements. This buffer is eventually reallocated to accomplish push and emplace requests.
-        The memory management of this container is similar to an std::vector: since all the elements are
-        stored in the same memory block, when a reallocation is performed, all the elements have to be moved.
+        queue_any is a queue: elements can be added only at the end of the container, and only the first element
+        can be removed.
+        A queue_any allocates a set of pages from the provided page allocator. The \b head page is the
+        the least recently allocated page, while the \b tail page is the most recently allocated one.
+        queue_any never reallocates or move its elements: new elements are allocated to the head page.
+        When there is not enough space in the head page, a new page is allocated, which becomes the new head page.
+        After an element is removed, if the page that contained it becomes empty, the page is immediately deallocated.
+        An iterator is invalidated only when the pointed element is deleted (including when the queue is destroyed).
+
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of dense_queue is noexcept or provides the strong exception guarantee.
+        \n<b>Exception safeness</b>: Any function of queue_any is noexcept or provides the strong exception guarantee.
             @param ELEMENT Base type of the elements of the queue. The queue enforces the compile-time
                 constraint that the type of each element is covariant to ELEMENT.
                 If ELEMENT is void, elements of any complete type can be added to the container. In this
-                case, the methods of dense_queue (and its iterators) that returns a pointer to an element
+                case, the methods of queue_any (and its iterators) that returns a pointer to an element
                 will return a void* to a complete object, while the methods that returns a reference to
                 an element will return void. Use iterators and pointer semantic to write generic code
-                that works with any dense_queue.
+                that works with any queue_any.
                 If ELEMENT decays to void but it is not a plain void, a compile time error is issued.
                 Note: if ELEMENT is to be a built-in type, a pointer, or a final type, then the complete
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
-                this case a standard container (like std::queue) instead of std::dense_queue is a better choice.
+                this case a standard container (like std::queue) instead of queue_any is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
             @param ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
-        dense_queue provides only forward iteration. Only the first element is accessible in constant time (with
-        the functions: dense_queue::front, dense_queue::begin). The iterator provides access to both the ELEMENT (with
+        queue_any provides only forward iteration. Only the first element is accessible in constant time (with
+        the functions: queue_any::front, queue_any::begin). The iterator provides access to both the ELEMENT (with
         the function element) and the RUNTIME_TYPE (with the function type).
-        There is not constant time function that gives the number of elements in a dense_queue in constant time,
-        but std::distance will do (in linear time). Anyway dense_queue::mem_size, dense_queue::mem_capacity and
-        dense_queue::empty work in constant time.
-        Insertion is allowed only at the end (with the methods dense_queue::push or dense_queue::emplace).
-        Removal is allowed only at the begin (with the methods dense_queue::pop or dense_queue::consume).
+        There is not constant time function that gives the number of elements in a queue_any in constant time,
+        but std::distance will do (in linear time). Anyway queue_any::empty work in constant time.
         Limitations: when an element of COMPETE_ELEMENT is pushed to the queue, the current implementation needs
             sometimes to downcast from ELEMENT to COMPETE_ELEMENT.
                 - If no virtual inheritance is involved, static_cast is used
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class dense_queue final : private std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>
+    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class queue_any final : private PAGE_ALLOCATOR
     {
+        struct PageHeader;
+
     public:
 
-        static_assert( std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT,void>::value : true,
-            "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )" );
+        static_assert(std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT, void>::value : true,
+            "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )");
 
-        using allocator_type = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+        using allocator_type = PAGE_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -65,35 +71,27 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Default and reserving constructor. It is unspecified whether the default constructor allocates a memory block (that is, if a
-            default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
-                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
-                @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
-            \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
-
+        /** Default and reserving constructor. It is unspecified whether the default constructor allocates any page (that is, if a
+            default-constructed queue consumes memory). The page allocator inside the queue is default-constructed.
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
-        dense_queue(size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
+        queue_any()
+            : m_first_page(nullptr), m_last_page(nullptr)
         {
-            DENSITY_ASSERT(i_initial_alignment == 0 || is_power_of_2(i_initial_alignment));
-            alloc(detail::size_max(i_initial_reserved_bytes, s_initial_mem_reserve),
-                detail::size_max(i_initial_alignment, s_initial_mem_alignment));
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
         }
 
-        /** Constructs a queue. It is unspecified whether the default constructor allocates a memory block (that is, if a
+        /** Constructs a queue. It is unspecified whether the default constructor allocates any page (that is, if a
             default-constructed queue consumes heap memory). The allocator inside the queue is default-constructed.
                 @param i_allocator source to use to copy-construct the allocator
-                @param i_initial_reserved_bytes initial capacity to reserve. Any value is legal, but the queue may reserve a bigger capacity.
-                @param i_initial_alignment alignment of the initial buffer. Zero or any integer power of 2 is admitted, but the queue may use a stricter alignment.
-            \pre i_initial_alignment must be zero or a power of 2, otherwise the behavior is undefined
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
-        dense_queue(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
-            : allocator_type(i_allocator)
+        queue_any(const allocator_type & i_allocator)
+            : allocator_type(i_allocator), m_first_page(nullptr), m_last_page(nullptr)
         {
-            alloc(detail::size_max(i_initial_reserved_bytes, QueueImp::s_initial_mem_reserve),
-                detail::size_max(i_initial_alignment, QueueImp::s_minimum_buffer_alignment));
         }
 
         /** Move constructs the queue, transferring the content from another queue.
@@ -102,12 +100,14 @@ namespace density
             \n\b Requires: the move-constructor of the allocator must be noexcept
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        dense_queue(dense_queue && i_source) DENSITY_NOEXCEPT
+        queue_any(queue_any && i_source) DENSITY_NOEXCEPT
             : allocator_type(std::move(static_cast<allocator_type&>(i_source))),
-              m_impl(std::move(i_source.m_impl))
+            m_first_page(i_source.m_first_page), m_last_page(i_source.m_last_page)
         {
             static_assert(DENSITY_NOEXCEPT_IF( allocator_type(std::move(std::declval<allocator_type>()))),
                 "The move constructor of the allocator is required to be noexcept");
+            i_source.m_first_page = nullptr;
+            i_source.m_last_page = nullptr;
         }
 
         /** Move assignment. The content of this queue is cleared, then the content of the source is transferred to this queue.
@@ -120,16 +120,18 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: linear in the size of destination (its content must be destroyed). */
-        dense_queue & operator = (dense_queue && i_source) DENSITY_NOEXCEPT
+        queue_any & operator = (queue_any && i_source) DENSITY_NOEXCEPT
         {
             static_assert(DENSITY_NOEXCEPT_IF(std::declval<allocator_type>() = std::move(std::declval<allocator_type>())),
                 "The move assignment of the allocator is required to be noexcept");
 
             DENSITY_ASSERT(this != &i_source);
-            m_impl.delete_all();
-            free();
+            delete_all();
             static_cast<allocator_type&>(*this) = std::move( static_cast<allocator_type&>(i_source) );
-            m_impl = std::move(i_source.m_impl);
+            m_first_page = i_source.m_first_page;
+            m_last_page = i_source.m_last_page;
+            i_source.m_first_page = nullptr;
+            i_source.m_last_page = nullptr;
             return *this;
         }
 
@@ -137,17 +139,20 @@ namespace density
             \n\b Throws: anything that the allocator or the copy-constructor of the element throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: linear in the size of the source. */
-        dense_queue(const dense_queue & i_source)
-            : allocator_type(static_cast<const allocator_type&>(i_source))
+        queue_any(const queue_any & i_source)
+            : allocator_type(static_cast<const allocator_type&>(i_source)), m_first_page(nullptr), m_last_page(nullptr)
         {
-            try // to do: would a RAII approach be better than explicit try-catch?
+            try
             {
-                alloc(i_source.m_impl.mem_capacity(), i_source.m_impl.element_max_alignment());
-                m_impl.copy_elements_from(i_source.m_impl);
+                for (auto it = i_source.begin(); it != i_source.end(); it++) // this loop may be optimized
+                {
+                    push_by_copy(it.complete_type(), it.element());
+                }
             }
             catch (...)
             {
-                free();
+                /* If an exception is thrown inside a constructor, the destructor is not called. */
+                clear();
                 throw;
             }
         }
@@ -162,10 +167,10 @@ namespace density
 
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: linear in the size of the source. */
-        dense_queue & operator = (const dense_queue & i_source)
+        queue_any & operator = (const queue_any & i_source)
         {
             DENSITY_ASSERT(this != &i_source);
-            dense_queue tmp(i_source); // the copy may throw, with this queue still being unmodified
+            queue_any tmp(i_source); // the copy may throw, with this queue still being unmodified
             // from now on nothing can throw
             *this = std::move(tmp);
             return *this;
@@ -176,14 +181,12 @@ namespace density
             \n<b>Effects on iterators</b>: all iterators are invalidated.
             \n\b Throws: nothing
             \n\b Complexity: linear in the size of this queue. */
-        ~dense_queue()
+        ~queue_any()
         {
-            m_impl.delete_all();
-            free();
+            delete_all();
         }
 
-
-        /** Adds an element at the end of the queue. If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
+        /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
             @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
@@ -195,20 +198,20 @@ namespace density
                     (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
                     base of ELEMENT_COMPLETE_TYPE).
 
-            \n<b> Effects on iterators </b>: all the iterators are invalidated
-            \n\b Throws: unspecified
+            \n<b> Effects on iterators </b>: no iterator is invalidated
+            \n\b Throws: anything that the constructor of the new element throws
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-            \n\b Complexity: constant amortized (a reallocation may be required). */
+            \n\b Complexity: constant */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
-            static_assert( std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
-                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void" );
+            static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
             push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
                 typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
         }
 
-        /** Adds an element at the end of the queue, constructing it inplace. If the new element doesn't fit in the reserved memory buffer, a reallocation is performed.
+        /** Adds an element at the end of the queue, constructing it inplace. The operation may require the allocation of a new page.
             \n Note: the template argument ELEMENT_COMPLETE_TYPE must be explicit (it can't be deduced from the parameter).
                 @i_parameters construction params for the new element
 
@@ -219,15 +222,16 @@ namespace density
                     (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
                     base of ELEMENT_COMPLETE_TYPE).
 
-            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n<b> Effects on iterators </b>: no iterator is invalidated
             \n\b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-            \n\b Complexity: constant amortized (a reallocation may be required). */
+            \n\b Complexity: constant */
         template <typename ELEMENT_COMPLETE_TYPE, typename... PARAMETERS>
             void emplace(PARAMETERS && ... i_parameters)
         {
             static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
                 "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
+
             return insert_back_impl(runtime_type::template make<ELEMENT_COMPLETE_TYPE>(),
                 [&i_parameters...](const runtime_type &, void * i_dest) {
                     void * const result = new(i_dest) ELEMENT_COMPLETE_TYPE(std::forward<PARAMETERS>(i_parameters)...);
@@ -235,6 +239,8 @@ namespace density
             });
         }
 
+        /**
+        */
         void push_by_copy(const RUNTIME_TYPE & i_type, const ELEMENT * i_source)
         {
             insert_back_impl(i_type,
@@ -255,8 +261,29 @@ namespace density
             \n\b Complexity: constant */
         void pop() DENSITY_NOEXCEPT
         {
-            m_impl.pop();
+            DENSITY_ASSERT(!empty());
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            m_first_page->m_queue.pop();
+            if (m_first_page->m_queue.empty())
+            {
+                auto const next = m_first_page->m_next_page;
+                delete_page(m_first_page);
+                m_first_page = next;
+                if (next == nullptr)
+                {
+                    m_last_page = nullptr;
+                }
+            }
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
         }
+
 
         /** Calls the specified function object on the first element (the oldest one), and then
             removes it from the queue without calling its destructor.
@@ -286,24 +313,16 @@ namespace density
                 DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
                     -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
         {
-            return m_impl.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
-                return i_operation(i_type, static_cast<ELEMENT*>(i_element));
-            });
+            DENSITY_ASSERT(!empty());
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            using ReturnType = decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()));
+            return manual_consume_impl(i_operation, std::is_same<ReturnType, void>());
         }
 
-        /** Reserve the specified space in the queue, reallocating it if necessary.
-                @param i_mem_size space to reserve, in bytes
-
-            \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-            \n\b Complexity: linear in case of reallocation, constant otherwise */
-        void mem_reserve(size_t i_mem_size)
-        {
-            if (i_mem_size > m_impl.mem_capacity())
-            {
-                mem_realloc_impl(i_mem_size);
-            }
-        }
 
                     // iterators
 
@@ -315,16 +334,17 @@ namespace density
             using size_type = size_t;
             using value_type = ELEMENT;
             using pointer = ELEMENT *;
-            using reference = typename dense_queue::reference;
-            using const_reference = typename dense_queue::const_reference;
+            using reference = typename queue_any::reference;
+            using const_reference = typename queue_any::const_reference;
 
             /** Constructs an iterator which is not dereferenceable
                 \n\b Throws: nothing */
-            iterator() DENSITY_NOEXCEPT {}
+            iterator() DENSITY_NOEXCEPT
+                : m_impl(nullptr), m_curr_page(nullptr) { }
 
             /** Initializing constructor. Provided for internal use only, do not use. */
-            iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_source) DENSITY_NOEXCEPT
-                : m_impl(i_source) {  }
+            iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) DENSITY_NOEXCEPT
+                : m_impl(i_impl), m_curr_page(i_curr_page) { }
 
             /** Returns a reference to the subobject of type ELEMENT of current element. If ELEMENT is void this function is useless, because the return type is void. */
             reference operator * () const DENSITY_NOEXCEPT { return detail::DeferenceVoidPtr<value_type>::apply(m_impl.element()); }
@@ -344,14 +364,25 @@ namespace density
 
             iterator & operator ++ () DENSITY_NOEXCEPT
             {
+                DENSITY_ASSERT(m_impl != m_curr_page->m_queue.end());
+
                 ++m_impl;
+                if (m_impl == m_curr_page->m_queue.end())
+                {
+                    m_curr_page = m_curr_page->m_next_page;
+                    if (m_curr_page != nullptr)
+                    {
+                        m_impl = m_curr_page->m_queue.begin();
+                    }
+                }
+
                 return *this;
             }
 
             iterator operator++ (int) DENSITY_NOEXCEPT
             {
-                const iterator copy(*this);
-                ++m_impl;
+                const auto copy(*this);
+                ++*this;
                 return copy;
             }
 
@@ -377,6 +408,7 @@ namespace density
 
         private:
             typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl m_impl;
+            PageHeader * m_curr_page;
         }; // class iterator
 
         class const_iterator final
@@ -387,16 +419,17 @@ namespace density
             using size_type = size_t;
             using value_type = const ELEMENT;
             using pointer = const ELEMENT *;
-            using reference = typename dense_queue::const_reference;
-            using const_reference = typename dense_queue::const_reference;
+            using reference = typename queue_any::const_reference;
+            using const_reference = typename queue_any::const_reference;
 
             /** Constructs an iterator which is not dereferenceable
                 \n\b Throws: nothing */
-            const_iterator() DENSITY_NOEXCEPT { }
+            const_iterator() DENSITY_NOEXCEPT
+                : m_impl(nullptr), m_curr_page(nullptr) {}
 
             /** Initializing constructor. Provided for internal use only, do not use. */
-            const_iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_source) DENSITY_NOEXCEPT
-                : m_impl(i_source) {  }
+            const_iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) DENSITY_NOEXCEPT
+                : m_impl(i_impl), m_curr_page(i_curr_page) { }
 
             /** Copy-like constructor from an iterator. Makes an exact copy of the iterator.
                 \n\b Throws: nothing
@@ -432,13 +465,21 @@ namespace density
             const_iterator & operator ++ () DENSITY_NOEXCEPT
             {
                 ++m_impl;
+                if (m_impl == m_curr_page->m_queue.end())
+                {
+                    m_curr_page = m_curr_page->m_next_page;
+                    if (m_curr_page != nullptr)
+                    {
+                        m_impl = m_curr_page->m_queue.begin();
+                    }
+                }
                 return *this;
             }
 
             const_iterator operator ++ (int) DENSITY_NOEXCEPT
             {
-                const const_iterator copy(*this);
-                ++m_impl;
+                const auto copy(*this);
+                ++*this;
                 return copy;
             }
 
@@ -464,28 +505,98 @@ namespace density
 
         private:
             typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl m_impl;
+            PageHeader * m_curr_page;
         }; // class const_iterator
 
-        iterator begin() DENSITY_NOEXCEPT { return iterator(m_impl.begin()); }
-        iterator end() DENSITY_NOEXCEPT { return iterator(m_impl.end()); }
+        iterator begin() DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return iterator(m_first_page->m_queue.begin(), m_first_page);
+            }
+            else
+            {
+                return iterator();
+            }
+        }
 
-        const_iterator begin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
-        const_iterator end() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
+        const_iterator begin() const DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return const_iterator(m_first_page->m_queue.begin(), m_first_page);
+            }
+            else
+            {
+                return const_iterator();
+            }
+        }
 
-        const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
-        const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
+        const_iterator cbegin() const DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return const_iterator(m_first_page->m_queue.begin(), m_first_page);
+            }
+            else
+            {
+                return const_iterator();
+            }
+        }
+
+        iterator end() DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return iterator(m_last_page->m_queue.end(), m_last_page);
+            }
+            else
+            {
+                return iterator();
+            }
+        }
+
+        const_iterator end() const DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return const_iterator(m_last_page->m_queue.end(), m_last_page);
+            }
+            else
+            {
+                return const_iterator();
+            }
+        }
+
+        const_iterator cend() const DENSITY_NOEXCEPT
+        {
+            if (m_first_page != nullptr)
+            {
+                return const_iterator(m_last_page->m_queue.end(), m_last_page);
+            }
+            else
+            {
+                return const_iterator();
+            }
+        }
 
         /** Returns true if this queue contains no elements.
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        bool empty() const DENSITY_NOEXCEPT { return m_impl.empty(); }
+        bool empty() const DENSITY_NOEXCEPT { return m_first_page == nullptr; }
 
         /** Deletes all the elements from this queue.
             \n\b Throws: nothing
             \n\b Complexity: linear */
         void clear() DENSITY_NOEXCEPT
         {
-            m_impl.delete_all();
+            delete_all();
+            m_first_page = nullptr;
+            m_last_page = nullptr;
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
         }
 
         /** Returns a reference to the first element of this queue. If ELEMENT is void,
@@ -497,7 +608,7 @@ namespace density
         reference front() DENSITY_NOEXCEPT
         {
             DENSITY_ASSERT(!empty());
-            const auto it = m_impl.begin();
+            const auto it = m_first_page->m_queue.begin();
             return detail::DeferenceVoidPtr<ELEMENT>::apply(it.element());
         }
 
@@ -510,40 +621,56 @@ namespace density
         const_reference front() const DENSITY_NOEXCEPT
         {
             DENSITY_ASSERT(!empty());
-            const auto it = m_impl.begin();
+            const auto it = m_first_page->m_queue.begin();
             return detail::DeferenceVoidPtr<ELEMENT>::apply(it.element());
         }
 
-        /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
+        /** Returns the capacity in bytes of this queue, that is the total usable spacer in the allocated pages.
+            \n Note: the capacity is not the memory consumed by the queue, as there is a constant overhead per-page.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
         size_t mem_capacity() const DENSITY_NOEXCEPT
         {
-            return m_impl.mem_capacity();
+            size_t result(0);
+            for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
+            {
+                result += page->m_queue.mem_capacity();
+            }
+            return result;
         }
 
         /** Returns the used size in bytes. This size is dependant, in an implementation defined way, to the count, the type and
-            the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is recommended
-            to use the function dense_queue::empty to check if the queue is empty.
+            the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is highly
+            recommended to use the function queue_any::empty to check if the queue is empty.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
         size_t mem_size() const DENSITY_NOEXCEPT
         {
-            return m_impl.mem_size();
+            size_t result(0);
+            for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
+            {
+                result += page->m_queue.mem_size();
+            }
+            return result;
         }
 
-        /** Returns the free size in bytes. This is equivalent to dense_queue::mem_capacity decreased by dense_queue::mem_size.
+        /** Returns the free size in bytes. This is equivalent to queue_any::mem_capacity decreased by queue_any::mem_size.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
         size_t mem_free() const DENSITY_NOEXCEPT
         {
-            return m_impl.mem_capacity() - m_impl.mem_size();
+            size_t result(0);
+            for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
+            {
+                result += page->m_queue.mem_free();
+            }
+            return result;
         }
 
         /** Returns a copy of the allocator instance owned by the queue.
@@ -572,40 +699,14 @@ namespace density
 
     private:
 
-        static const size_t s_initial_mem_reserve = 1024 > detail::QueueImpl<RUNTIME_TYPE>::s_minimum_buffer_size ? 1024 : detail::QueueImpl<RUNTIME_TYPE>::s_minimum_buffer_size;
-        static const size_t s_initial_mem_alignment = detail::QueueImpl<RUNTIME_TYPE>::s_minimum_buffer_alignment;
-
-        using Impl = typename detail::QueueImpl<RUNTIME_TYPE>;
-
-        void alloc(size_t i_size, size_t i_alignment)
+        struct PageHeader
         {
-            m_impl = Impl(AllocatorUtils::aligned_allocate(get_allocator_ref(), i_size, i_alignment, 0), i_size);
-        }
+            detail::QueueImpl<RUNTIME_TYPE> m_queue;
+            PageHeader * m_next_page;
 
-        void free() DENSITY_NOEXCEPT
-        {
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
-        }
-
-        void mem_realloc_impl(size_t i_mem_size)
-        {
-            DENSITY_ASSERT(i_mem_size > m_impl.mem_capacity());
-
-            Impl new_impl(AllocatorUtils::aligned_allocate(get_allocator_ref(), i_mem_size, m_impl.element_max_alignment(), 0), i_mem_size);
-            try
-            {
-                new_impl.move_elements_from(m_impl);
-            }
-            catch (...)
-            {
-                AllocatorUtils::aligned_deallocate(get_allocator_ref(), new_impl.buffer(), new_impl.mem_capacity());
-                throw;
-            }
-
-            // from now on, nothing can throw
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
-            m_impl = std::move(new_impl);
-        }
+            PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
+                : m_queue(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
+        };
 
         // overload used if i_source is an r-value
         template <typename ELEMENT_COMPLETE_TYPE>
@@ -635,16 +736,190 @@ namespace density
         template <typename CONSTRUCTOR>
             void insert_back_impl(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
         {
-            while(!m_impl.try_push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor)))
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            try
             {
-                mem_realloc_impl( detail::size_max(
-                    m_impl.mem_capacity() * 2,
-                    i_source_type.size() * 16 + i_source_type.alignment() ) );
+                while (m_last_page == nullptr || !m_last_page->m_queue.try_push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor)))
+                {
+                    make_space(i_source_type.size(), i_source_type.alignment());
+                }
+            }
+            catch (...)
+            {
+                /* if a new page is allocated and the constructor of the element throws, the queue is left
+                    with an empty page (the last). This is a violation of the class invariants, so it must
+                    be fixed in the exception flow. */
+                if (m_last_page != nullptr && m_last_page->m_queue.empty())
+                {
+                    auto const page_to_delete = m_last_page;
+
+                    if (m_first_page == page_to_delete)
+                    {
+                        m_last_page = m_first_page = nullptr;
+                    }
+                    else
+                    {
+                        // we have to find the previous page
+                        auto page = m_first_page;
+                        for (; page->m_next_page != page_to_delete; page = page->m_next_page)
+                        {
+                        }
+                        page->m_next_page = nullptr;
+                        m_last_page = page;
+                    }
+                    delete_page(page_to_delete);
+                }
+                throw;
+                #if DENSITY_DEBUG_INTERNAL
+                    check_invariants();
+                #endif
+            }
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+        }
+
+        DENSITY_NO_INLINE void make_space(size_t i_required_size, size_t i_required_alignment)
+        {
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            const size_t min_page_size = detail::size_max(i_required_alignment, alignof(PageHeader)) + i_required_size + sizeof(PageHeader);
+
+            PageHeader * alloc;
+            size_t actual_page_size;
+            if (min_page_size <= PAGE_ALLOCATOR::page_size)
+            {
+                actual_page_size = PAGE_ALLOCATOR::page_size;
+                alloc = static_cast<PageHeader*>( get_allocator_ref().allocate_page() );
+            }
+            else
+            {
+                actual_page_size = min_page_size;
+                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate(actual_page_size));
+            }
+
+            auto new_page = new(alloc) PageHeader(alloc + 1, actual_page_size - sizeof(PageHeader));
+            if (m_last_page != nullptr)
+            {
+                m_last_page->m_next_page = new_page;
+            }
+            else
+            {
+                m_first_page = new_page;
+            }
+            m_last_page = new_page;
+        }
+
+        void delete_page(PageHeader * i_page) DENSITY_NOEXCEPT
+        {
+            // assuming that the destructor of an empty QueueImpl is trivial
+            DENSITY_ASSERT(i_page->m_queue.empty());
+
+            size_t actual_page_size = i_page->m_queue.mem_capacity();
+            DENSITY_ASSERT(actual_page_size >= sizeof(PageHeader));
+            actual_page_size += sizeof(PageHeader);
+            DENSITY_ASSERT(actual_page_size >= PAGE_ALLOCATOR::page_size);
+            if (actual_page_size <= PAGE_ALLOCATOR::page_size)
+            {
+                get_allocator_ref().deallocate_page(i_page);
+            }
+            else
+            {
+                char * block = reinterpret_cast<char*>(i_page);
+                get_allocator_ref().deallocate(block, actual_page_size);
             }
         }
 
+        void delete_all() DENSITY_NOEXCEPT
+        {
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            for (PageHeader * page = m_first_page; page != nullptr;)
+            {
+                const auto next = page->m_next_page;
+                page->m_queue.delete_all();
+
+                delete_page(page);
+
+                page = next;
+            }
+        }
+
+        // overload used if the return type is to not void
+        template <typename OPERATION>
+            auto manual_consume_impl(OPERATION && i_operation, std::false_type)
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+                    -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
+        {
+            auto const result = m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+                return i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            });
+            if (m_first_page->m_queue.empty())
+            {
+                auto const next = m_first_page->m_next_page;
+                delete_page(m_first_page);
+                m_first_page = next;
+                if (next == nullptr)
+                {
+                    m_last_page = nullptr;
+                }
+            }
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+
+            return std::move(result);
+        }
+
+        // overload used if the return type is to void
+        template <typename OPERATION>
+            void manual_consume_impl(OPERATION && i_operation, std::true_type)
+                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+        {
+            m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
+                i_operation(i_type, static_cast<ELEMENT*>(i_element));
+            });
+            if (m_first_page->m_queue.empty())
+            {
+                auto const next = m_first_page->m_next_page;
+                delete_page(m_first_page);
+                m_first_page = next;
+                if (next == nullptr)
+                {
+                    m_last_page = nullptr;
+                }
+            }
+
+            #if DENSITY_DEBUG_INTERNAL
+                check_invariants();
+            #endif
+        }
+
+        #if DENSITY_DEBUG_INTERNAL
+            void check_invariants() const
+            {
+                DENSITY_ASSERT( (m_first_page == nullptr) == (m_last_page == nullptr) );
+
+                for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
+                {
+                    DENSITY_ASSERT(!page->m_queue.empty());
+                    DENSITY_ASSERT( (page->m_next_page == nullptr) == (page == m_last_page) );
+                }
+            }
+        #endif
+
     private:
-        detail::QueueImpl<RUNTIME_TYPE> m_impl; /* m_impl manages the memory buffer, but dense_queue owns it */
-    }; // class template dense_queue
+        PageHeader * m_first_page, * m_last_page;
+    }; // class queue_any
 
 } // namespace density
+
