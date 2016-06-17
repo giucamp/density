@@ -229,8 +229,6 @@
     <ClCompile Include="..\lifo_test.cpp" />
     <ClCompile Include="..\list_benchmarks.cpp" />
     <ClCompile Include="..\list_test.cpp" />
-    <ClCompile Include="..\old_dense_list_benchmark.cpp" />
-    <ClCompile Include="..\old_dense_list_test.cpp" />
     <ClCompile Include="..\function_queue_benchmarks.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\paged_queue_test.cpp" />

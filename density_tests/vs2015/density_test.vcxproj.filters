@@ -40,12 +40,6 @@
     <ClCompile Include="..\..\testity\environment.cpp">
       <Filter>testity</Filter>
     </ClCompile>
-    <ClCompile Include="..\old_dense_list_benchmark.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\old_dense_list_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\list_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
