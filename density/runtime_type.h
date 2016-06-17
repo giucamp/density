@@ -486,6 +486,60 @@ namespace density
 		template <typename TYPE, typename BASE>
 			const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
+		/** This feature stores a pointer to a function that compares two object of the type-erased type.
+				@param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
+					type is TYPE, that is to be used as first operand.
+					@param i_second_base_object pointer to a subobject (of type BASE) of an object whose complete
+					type is TYPE, that is to be used as second operand.
+				@return whether the objects compares equal. */
+		struct equals
+		{
+			using type = bool (*) (const void * i_first_base_object, const void * i_second_base_object);
+
+			template <typename BASE, typename TYPE> struct Impl
+			{
+				static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
+				{
+					auto const base_first = static_cast<const BASE*>(i_first_base_object);
+					auto const base_second = static_cast<const BASE*>(i_second_base_object);
+					auto const complete_first = static_cast<const TYPE*>(base_first);
+					auto const complete_second = static_cast<const TYPE*>(base_second);
+					return *complete_first == *complete_second;
+				}
+
+				static const uintptr_t value;
+			};
+		};
+		template <typename TYPE, typename BASE>
+			const uintptr_t equals::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+		/** This feature stores a pointer to a function that compares two object of the type-erased type.
+				@param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
+					type is TYPE, that is to be used as first operand.
+					@param i_second_base_object pointer to a subobject (of type BASE) of an object whose complete
+					type is TYPE, that is to be used as second operand.
+				@return whether the first object compares less than the first object. */
+		struct less
+		{
+			using type = bool (*) (const void * i_first_base_object, const void * i_second_base_object);
+
+			template <typename BASE, typename TYPE> struct Impl
+			{
+				static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
+				{
+					auto const base_first = static_cast<const BASE*>(i_first_base_object);
+					auto const base_second = static_cast<const BASE*>(i_second_base_object);
+					auto const complete_first = static_cast<const TYPE*>(base_first);
+					auto const complete_second = static_cast<const TYPE*>(base_second);
+					return *complete_first < *complete_second;
+				}
+
+				static const uintptr_t value;
+			};
+		};
+		template <typename TYPE, typename BASE>
+			const uintptr_t less::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
 	} // namespace type_features
 
 	namespace detail
@@ -617,6 +671,16 @@ namespace density
             static_assert(feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
             return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
         }
+
+		bool operator == (const runtime_type & i_other) const noexcept
+		{
+			return m_table == i_other.m_table;
+		}
+
+		bool operator != (const runtime_type & i_other) const noexcept
+		{
+			return m_table != i_other.m_table;
+		}
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }

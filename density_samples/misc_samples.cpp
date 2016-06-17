@@ -8,11 +8,10 @@ namespace misc_samples
 {
 	void run()
 	{
-		using namespace density;
-		using namespace type_features;
-
 		{
 			//! [feature_list example 1]
+	using namespace density;
+	using namespace type_features;
 	using MyFeatures = feature_list<default_construct, size, alignment>;
 			//! [feature_list example 1]
 			MyFeatures unused; (void)unused;
@@ -20,6 +19,8 @@ namespace misc_samples
 
 		{
 			//! [feature_concat example 1]
+	using namespace density;
+	using namespace type_features;
 	using MyPartialFeatures = feature_list<default_construct, size>;
 	using MyFeatures = feature_concat_t<MyPartialFeatures, alignment>;
 	using MyFeatures1 = feature_concat_t<MyPartialFeatures, feature_list<alignment> >;
@@ -29,6 +30,10 @@ namespace misc_samples
 
 		{
 			//! [type_features::invoke example 1]
+
+	using namespace density;
+	using namespace type_features;
+
 	// This feature allows to call a function object passing a std::string
 	using MyInvoke = invoke<void(std::string)>;
 

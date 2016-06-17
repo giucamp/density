@@ -33,7 +33,10 @@ namespace density
 
         namespace DenseListTest
         {
-            using TestDenseListString = array_any< TestString, TestAllocator<TestString> >;
+			using namespace type_features;
+			using Features = feature_concat_t< default_type_features_t<TestString>, equals >;
+            using TestDenseListString = array_any< TestString, TestAllocator<TestString>, 
+				runtime_type<TestString, Features > >;
 
             void dense_list_test_insert(TestDenseListString i_list, size_t i_at, size_t i_count)
             {

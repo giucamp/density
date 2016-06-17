@@ -404,31 +404,29 @@ namespace density
             std::swap(m_impl.edit_control_blocks(), m_impl.i_other.edit_control_blocks());
         }
 
-                    /////////////////////////
+        bool operator == (const array_any & i_source) const
+		{
+			if (m_impl.size() != i_source.size())
+			{
+				return false;
+			}
+			else
+			{
+				const auto end_1 = cend();
+				for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
+				{
+					auto const equal_comparer = it_1.complete_type().get_feature<type_features::equals>();
+					if (it_1.complete_type() != it_2.complete_type() ||
+						!equal_comparer(it_1.element(), it_2.element()))
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+		}
 
-        /* to do, & WARNING!: this function is slicing-comparing. Fix or delete. */
-        bool equal_to(const array_any & i_source) const
-        {
-            if (m_impl.size() != i_source.size())
-            {
-                return false;
-            }
-            else
-            {
-                const auto end_1 = cend();
-                for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
-                {
-                    if (*it_1 != *it_2)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-
-        bool operator == (const array_any & i_source) const { return equal_to(i_source); }
-        bool operator != (const array_any & i_source) const { return !equal_to(i_source); }
+        bool operator != (const array_any & i_source) const { return !operator == (i_source); }
 
     private:
 
