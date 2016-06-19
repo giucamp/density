@@ -100,12 +100,12 @@ namespace density
         }
 
 
-        size_t size() const DENSITY_NOEXCEPT
+        size_t size() const noexcept
         {
             return m_impl.size();
         }
 
-        bool empty() const DENSITY_NOEXCEPT
+        bool empty() const noexcept
         {
             return m_impl.empty();
         }
@@ -121,48 +121,48 @@ namespace density
             using reference = typename array_any::reference;
             using const_reference = typename array_any::const_reference;
 
-            iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
+            iterator(const IteratorImpl & i_source) noexcept
                 : m_impl(i_source) {  }
 
-            reference operator * () const DENSITY_NOEXCEPT { return *element(); }
-            pointer operator -> () const DENSITY_NOEXCEPT { return element(); }
-            pointer element() const DENSITY_NOEXCEPT
+            reference operator * () const noexcept { return *element(); }
+            pointer operator -> () const noexcept { return element(); }
+            pointer element() const noexcept
                 { return static_cast<value_type *>(m_impl.element()); }
 
-            iterator & operator ++ () DENSITY_NOEXCEPT
+            iterator & operator ++ () noexcept
             {
                 m_impl.move_next();
                 return *this;
             }
 
-            iterator operator++ (int) DENSITY_NOEXCEPT
+            iterator operator++ (int) noexcept
             {
                 iterator copy(*this);
                 m_impl.move_next();
                 return copy;
             }
 
-            bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const const_iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const const_iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT { return m_impl.complete_type(); }
+            const RUNTIME_TYPE & complete_type() const noexcept { return m_impl.complete_type(); }
 
             friend class const_iterator; // this allows const_iterator to access m_impl
 
@@ -181,66 +181,66 @@ namespace density
             using reference = typename array_any::const_reference;
             using const_reference = typename array_any::const_reference;
 
-            const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
+            const_iterator(const iterator & i_source) noexcept
                 : m_impl(i_source.m_impl) {  }
 
-            reference operator * () const DENSITY_NOEXCEPT { return *element(); }
-            pointer operator -> () const DENSITY_NOEXCEPT { return element(); }
-            pointer element() const DENSITY_NOEXCEPT
+            reference operator * () const noexcept { return *element(); }
+            pointer operator -> () const noexcept { return element(); }
+            pointer element() const noexcept
                 { return static_cast<value_type *>(m_impl.element()); }
 
-            const_iterator & operator ++ () DENSITY_NOEXCEPT
+            const_iterator & operator ++ () noexcept
             {
                 m_impl.move_next();
                 return *this;
             }
 
-            const_iterator operator ++ (int) DENSITY_NOEXCEPT
+            const_iterator operator ++ (int) noexcept
             {
                 const_iterator copy(*this);
                 m_impl.move_next();
                 return copy;
             }
 
-            bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const const_iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const const_iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT { return m_impl.complete_type(); }
+            const RUNTIME_TYPE & complete_type() const noexcept { return m_impl.complete_type(); }
 
             friend class array_any; // this allows array_any to access m_impl
 
         private:
-            const_iterator(const IteratorImpl & i_source) DENSITY_NOEXCEPT
+            const_iterator(const IteratorImpl & i_source) noexcept
                 : m_impl(i_source) {  }
 
             IteratorImpl m_impl;
         }; // class const_iterator
 
-        iterator begin() DENSITY_NOEXCEPT { return iterator(m_impl.begin()); }
-        iterator end() DENSITY_NOEXCEPT { return iterator(m_impl.end()); }
+        iterator begin() noexcept { return iterator(m_impl.begin()); }
+        iterator end() noexcept { return iterator(m_impl.end()); }
 
-        const_iterator begin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
-        const_iterator end() const DENSITY_NOEXCEPT{ return const_iterator(m_impl.end()); }
+        const_iterator begin() const noexcept { return const_iterator(m_impl.begin()); }
+        const_iterator end() const noexcept{ return const_iterator(m_impl.end()); }
 
-        const_iterator cbegin() const DENSITY_NOEXCEPT { return const_iterator(m_impl.begin()); }
-        const_iterator cend() const DENSITY_NOEXCEPT { return const_iterator(m_impl.end()); }
+        const_iterator cbegin() const noexcept { return const_iterator(m_impl.begin()); }
+        const_iterator cend() const noexcept { return const_iterator(m_impl.end()); }
 
         /** Adds an element at the end of the list. This method causes always a reallocation of the list.
             @param i_source object to be used as source to construct of new element.
@@ -399,7 +399,7 @@ namespace density
             }
         }
 
-        void swap(array_any & i_other) DENSITY_NOEXCEPT
+        void swap(array_any & i_other) noexcept
         {
             std::swap(m_impl.edit_control_blocks(), m_impl.i_other.edit_control_blocks());
         }
@@ -450,7 +450,7 @@ namespace density
             move_construct(ELEMENT * i_source)
                 : m_source(i_source) { }
 
-            void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) DENSITY_NOEXCEPT
+            void * operator () (typename ListImpl::ListBuilder & i_builder, const RUNTIME_TYPE & i_element_type) noexcept
             {
                 return i_builder.add_by_move(i_element_type, m_source);
             }

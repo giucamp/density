@@ -39,7 +39,7 @@ namespace density
 
             struct Control : RUNTIME_TYPE
             {
-                Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) DENSITY_NOEXCEPT
+                Control(const RUNTIME_TYPE & i_type, void * i_element, Control * i_next) noexcept
                     : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
 
                 void * const m_element;
@@ -58,37 +58,37 @@ namespace density
             struct IteratorImpl
             {
                 /* Construct a IteratorImpl with undefined content. */
-                IteratorImpl() DENSITY_NOEXCEPT {}
+                IteratorImpl() noexcept {}
 
-                IteratorImpl(Control * i_curr_control) DENSITY_NOEXCEPT
+                IteratorImpl(Control * i_curr_control) noexcept
                     : m_curr_control(i_curr_control) { }
 
-                void operator ++ () DENSITY_NOEXCEPT
+                void operator ++ () noexcept
                 {
                     m_curr_control = m_curr_control->m_next;
                 }
 
-                bool operator == (const IteratorImpl & i_source) const DENSITY_NOEXCEPT
+                bool operator == (const IteratorImpl & i_source) const noexcept
                 {
                     return m_curr_control == i_source.m_curr_control;
                 }
 
-                bool operator != (const IteratorImpl & i_source) const DENSITY_NOEXCEPT
+                bool operator != (const IteratorImpl & i_source) const noexcept
                 {
                     return m_curr_control != i_source.m_curr_control;
                 }
 
-                void * element() const DENSITY_NOEXCEPT
+                void * element() const noexcept
                 {
                     return m_curr_control->m_element;
                 }
 
-                const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
+                const RUNTIME_TYPE & complete_type() const noexcept
                 {
                     return *m_curr_control;
                 }
 
-                Control * control() const DENSITY_NOEXCEPT
+                Control * control() const noexcept
                 {
                     return m_curr_control;
                 }
@@ -98,7 +98,7 @@ namespace density
             };
 
             /** Construct a null-QueueImpl. */
-            QueueImpl() DENSITY_NOEXCEPT
+            QueueImpl() noexcept
                 : m_head(nullptr), m_tail(nullptr), m_element_max_alignment(alignof(Control)),
                   m_buffer_start(nullptr), m_buffer_end(nullptr)
             {
@@ -110,7 +110,7 @@ namespace density
                  * the whole memory buffer must be readable and writable.
                  * i_buffer_byte_capacity must be >= s_minimum_buffer_size
                  * i_buffer_alignment must be >= s_minimum_buffer_alignment */
-            QueueImpl(void * i_buffer_address, size_t i_buffer_byte_capacity, size_t i_buffer_alignment = s_minimum_buffer_alignment) DENSITY_NOEXCEPT
+            QueueImpl(void * i_buffer_address, size_t i_buffer_byte_capacity, size_t i_buffer_alignment = s_minimum_buffer_alignment) noexcept
             {
                 DENSITY_ASSERT(i_buffer_address != nullptr &&
                     i_buffer_byte_capacity >= s_minimum_buffer_size &&
@@ -126,7 +126,7 @@ namespace density
             }
 
             /** Move construct a QueueImpl. The source becomes a null-QueueImpl. */
-            QueueImpl(QueueImpl && i_source) DENSITY_NOEXCEPT
+            QueueImpl(QueueImpl && i_source) noexcept
                 : m_head(i_source.m_head), m_tail(i_source.m_tail), m_element_max_alignment(i_source.m_element_max_alignment),
                   m_buffer_start(i_source.m_buffer_start), m_buffer_end(i_source.m_buffer_end)
             {
@@ -136,7 +136,7 @@ namespace density
             }
 
             /** Move assigns a QueueImpl. The source becomes a null-QueueImpl. */
-            QueueImpl & operator = (QueueImpl && i_source) DENSITY_NOEXCEPT
+            QueueImpl & operator = (QueueImpl && i_source) noexcept
             {
                 m_head = i_source.m_head;
                 m_tail = i_source.m_tail;
@@ -162,7 +162,7 @@ namespace density
                 be enough.
                 Precondition: this queue must be empty, and must have enough space to contain all the element of the source.
                 This function never throws. */
-            void move_elements_from(QueueImpl & i_source) DENSITY_NOEXCEPT
+            void move_elements_from(QueueImpl & i_source) noexcept
             {
                 DENSITY_ASSERT(empty());
                 auto it = i_source.begin();
@@ -179,7 +179,7 @@ namespace density
                     DENSITY_ASSERT(result);
                     (void)result;
 
-                    control->destroy(source_element);
+                    control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(source_element) );
                     control->Control::~Control();
                 }
                 // set the source as empty
@@ -222,17 +222,17 @@ namespace density
             }
 
             /** Returns whether the queue is empty. Same to begin()==end() */
-            bool empty() const DENSITY_NOEXCEPT
+            bool empty() const noexcept
             {
                 return m_head == m_tail;
             }
 
-            IteratorImpl begin() const DENSITY_NOEXCEPT
+            IteratorImpl begin() const noexcept
             {
                 return IteratorImpl(m_head);
             }
 
-            IteratorImpl end() const DENSITY_NOEXCEPT
+            IteratorImpl end() const noexcept
             {
                 return IteratorImpl(m_tail);
             }
@@ -241,7 +241,7 @@ namespace density
             {
                 const void * const m_source;
 
-                copy_construct(const void * i_source) DENSITY_NOEXCEPT
+                copy_construct(const void * i_source) noexcept
                     : m_source(i_source) { }
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
@@ -254,12 +254,12 @@ namespace density
             {
                 void * const m_source;
 
-                move_construct(void * i_source) DENSITY_NOEXCEPT
+                move_construct(void * i_source) noexcept
                     : m_source(i_source) { }
 
-                void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) DENSITY_NOEXCEPT
+                void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) noexcept
                 {
-                    return i_element_type.move_construct_nothrow(i_dest, static_cast<typename RUNTIME_TYPE::base_type*>(m_source));
+                    return i_element_type.move_construct(i_dest, static_cast<typename RUNTIME_TYPE::base_type*>(m_source));
                 }
             };
 
@@ -277,7 +277,7 @@ namespace density
             template <typename CONSTRUCTOR>
                 bool try_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
                     /* This function may throw as consequences of a pointer overflow. It would be better to make the function just return false.
-                        DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF(i_constructor(std::declval<const RUNTIME_TYPE>(), std::declval<void*>()))) */
+                        noexcept(noexcept(i_constructor(std::declval<const RUNTIME_TYPE>(), std::declval<void*>()))) */
             {
                 DENSITY_ASSERT(m_buffer_start != nullptr);
                 DENSITY_ASSERT(m_tail + 1 <= m_buffer_end);
@@ -355,7 +355,7 @@ namespace density
             */
             template <typename OPERATION>
                 auto manual_consume(OPERATION && i_operation)
-                    DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+                    noexcept(noexcept((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
                         -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
                 using ReturnType = decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()));
@@ -366,29 +366,29 @@ namespace density
                 \pre The queue must be non-empty (otherwise the behavior is undefined).
                 \n\b Throws: nothing
                 \n\b Complexity: constant */
-            void pop() DENSITY_NOEXCEPT
+            void pop() noexcept
             {
                 DENSITY_ASSERT(!empty()); // the queue must not be empty
 
                 Control * first_control = m_head;
                 void * const element_ptr = first_control->m_element;
                 m_head = first_control->m_next;
-                first_control->destroy(element_ptr);
+                first_control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(element_ptr) );
                 first_control->Control::~Control();
             }
 
             /** Returns a pointer to the beginning of the memory buffer. Note: this is not like a data() method, as
                 the data does not start here (it starts where m_head points to). */
-            void * buffer() DENSITY_NOEXCEPT { return m_buffer_start; }
+            void * buffer() noexcept { return m_buffer_start; }
 
             /** Returns the size of the memory buffer assigned to the queue */
-            size_t mem_capacity() const DENSITY_NOEXCEPT
+            size_t mem_capacity() const noexcept
             {
                 return address_diff(m_buffer_end, m_buffer_start);
             }
 
             /** Returns how much of the memory buffer is used. */
-            size_t mem_size() const DENSITY_NOEXCEPT
+            size_t mem_size() const noexcept
             {
                 if (m_head <= m_tail)
                 {
@@ -402,7 +402,7 @@ namespace density
 
             /** Deletes all the element from the queue. After this call the memory buffer is still
                 associated to the queue, but it is empty. */
-            void delete_all() DENSITY_NOEXCEPT
+            void delete_all() noexcept
             {
                 IteratorImpl const it_end = end();
                 for (IteratorImpl it = begin(); it != it_end; )
@@ -411,20 +411,20 @@ namespace density
                     auto const element = it.element(); // get_complete_type(it.control());
                     ++it;
 
-                    control->destroy(element);
+                    control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(element) );
                     control->Control::~Control();
                 }
                 // restart from m_buffer_start, with an empty queue
                 m_tail = m_head = static_cast<Control*>(address_upper_align(m_buffer_start, alignof(Control)));
             }
 
-            size_t element_max_alignment() const DENSITY_NOEXCEPT { return m_element_max_alignment; }
+            size_t element_max_alignment() const noexcept { return m_element_max_alignment; }
 
         private:
 
             template <typename OPERATION>
                 auto manual_consume(OPERATION && i_operation, std::false_type)
-                   DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+                   noexcept(noexcept((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
                     -> decltype(i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))
             {
                 DENSITY_ASSERT(!empty()); // the queue must not be empty
@@ -439,7 +439,7 @@ namespace density
 
             template <typename OPERATION>
                 void manual_consume(OPERATION && i_operation, std::true_type)
-                   DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
+                   noexcept(noexcept((i_operation(std::declval<RUNTIME_TYPE>(), std::declval<void*>()))))
             {
                 DENSITY_ASSERT(!empty()); // the queue must not be empty
 
@@ -454,7 +454,7 @@ namespace density
                This function is used to push the Control and the element. If the required size with the
                required alignment does not fit in the queue the return value is nullptr.
                Preconditions: *io_tail can't be null, or the behavior is undefined. */
-            DENSITY_STRONG_INLINE void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const DENSITY_NOEXCEPT
+            DENSITY_STRONG_INLINE void * single_push(void * & io_tail, size_t i_size, size_t i_alignment) const noexcept
             {
                 DENSITY_ASSERT(io_tail != nullptr);
 
@@ -482,7 +482,7 @@ namespace density
 
             /* Allocates two objects on the queue. The return value is the address of the new object. */
             struct DoublePushResult { void * m_element, *m_next_control; };
-            DENSITY_NO_INLINE DoublePushResult double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const DENSITY_NOEXCEPT
+            DENSITY_NO_INLINE DoublePushResult double_push(void * & io_tail, size_t i_element_size, size_t i_element_alignment ) const noexcept
             {
                 return { single_push(io_tail, i_element_size, i_element_alignment),
                     single_push(io_tail, sizeof(Control), alignof(Control)) };

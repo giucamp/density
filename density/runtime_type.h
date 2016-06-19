@@ -33,7 +33,7 @@ namespace density
                 void * copy_construct(void * i_dest_element, const void * i_source_element) const;
 
                 // optional
-                void * move_construct_nothrow(void * i_dest_element, void * i_source_element) const noexcept;
+                void * move_construct(void * i_dest_element, void * i_source_element) const noexcept;
 
                 void destroy(void * i_element) const noexcept;
         };
@@ -219,7 +219,7 @@ namespace density
 		template <typename COMPLETE_TYPE, bool CAN = std::is_copy_constructible<COMPLETE_TYPE>::value> struct CopyConstructImpl;
 		template <typename COMPLETE_TYPE> struct CopyConstructImpl<COMPLETE_TYPE, true>
 		{
-			static void * invoke(void * i_first, void * i_second) DENSITY_NOEXCEPT
+			static void * invoke(void * i_first, void * i_second) noexcept
 			{
 				return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
 			}
@@ -236,7 +236,7 @@ namespace density
 		template <typename COMPLETE_TYPE, bool CAN = std::is_nothrow_move_constructible<COMPLETE_TYPE>::value > struct MoveConstructImpl;
 		template <typename COMPLETE_TYPE> struct MoveConstructImpl<COMPLETE_TYPE, true>
 		{
-			static void * invoke(void * i_first, void * i_second) DENSITY_NOEXCEPT
+			static void * invoke(void * i_first, void * i_second) noexcept
 			{
 				return new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
 			}
@@ -609,7 +609,16 @@ namespace density
 	} // namespace type_features
 
     /** Class template that performs type-erasure.
+		An instance of runtime_type binds at runtime to a terget type:
             @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
+
+		\n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable: for every feature in in FEATURE_LIST 
+			there is an entry in this vtable. Most entries are pointer to functions. Anyway, some features (notably 
+			type_features::size and type_features::alignment) store a simpe value.
+
+		
+		In this example a std::string is creadted and destroyed using a tuntime_type.
+		\snippet misc_samples.cpp runtime_type example 1
     */
     template <typename BASE_TYPE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<BASE_TYPE> >
         class runtime_type
@@ -625,7 +634,7 @@ namespace density
 		/** Creates a runtime_type associated with the specified type. The latter is the target type.
 				@tparam TYPE target type that is type-erased by the returned runtime_type. */
 		template <typename TYPE>
-            static runtime_type make() DENSITY_NOEXCEPT
+            static runtime_type make() noexcept
         {
             return runtime_type(detail::FeatureTable<BASE_TYPE, TYPE, FEATURE_LIST>::s_table);
         }
@@ -635,25 +644,44 @@ namespace density
         runtime_type() = default;
 
 		/** Move-constructs a runtime_type */
-        runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
+        runtime_type(runtime_type && ) noexcept = default;
         
 		/** Copy-constructs a runtime_type */
-		runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;
+		runtime_type(const runtime_type &) noexcept = default;
 		
 		/** Move-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
-		runtime_type & operator = (runtime_type &&) DENSITY_NOEXCEPT = default;
+		runtime_type & operator = (runtime_type &&) noexcept = default;
 		
 		/** Copy-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
-		runtime_type & operator = (const runtime_type &) DENSITY_NOEXCEPT = default;
+		runtime_type & operator = (const runtime_type &) noexcept = default;
 
-		/** Returns the size (in bytes) of the target type, as sizeof() does. */
-        size_t size() const DENSITY_NOEXCEPT
+		/** Returns the size (in bytes) of the target type, which is always > 0. \n 
+			The effect of this function is the same of this code:
+				@code
+					return sizeof(TARGET_TYPE);
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make).
+
+			\n\b Requires: the feature type_features::size must be included in the FEATURE_LIST
+
+			\n\b Throws: nothing */
+        size_t size() const noexcept
         {
             return get_feature<type_features::size>();
         }
 
-		/** Returns the alignment (in bytes) of the target type, as alignof() operator does. */
-        size_t alignment() const DENSITY_NOEXCEPT
+		/** Returns the alignment (in bytes) of the target type, which is always an integer power of 2. \n
+			
+			The effect of this function is the same of this code:
+				@code
+					return alignof(TARGET_TYPE);
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make).
+		
+			\n\b Requires: the feature type_features::alignment must be included in the FEATURE_LIST
+
+			\n\b Throws: nothing */
+        size_t alignment() const noexcept
         {
             return get_feature<type_features::alignment>();
         }
@@ -670,10 +698,16 @@ namespace density
 			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
 				assume that the value of this pointer is the same of i_dest. 
 			
+			\n\b Requires: the feature type_features::default_construct must be included in the FEATURE_LIST
+
 			\n\b Throws: anything that the default constructor of the target type throws. */
 		BASE_TYPE * default_construct(void * i_dest) const
         {
-			DENSITY_ASSERT( is_address_aligned( i_dest, alignment() ) );
+			#if DENSITY_DEBUG
+				check_alignment(i_dest, std::conditional_t<
+					detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
+						std::true_type, std::false_type >() );
+			#endif
             return static_cast<BASE_TYPE*>( get_feature<type_features::default_construct>()(i_dest) );
         }
 
@@ -689,6 +723,8 @@ namespace density
 			@param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
 			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
 				assume that the value of this pointer is the same of i_dest. 
+
+			\n\b Requires: the feature type_features::copy_construct must be included in the FEATURE_LIST
 				
 			\n\b Throws: anything that the copy constructor of the target type throws. */
 		BASE_TYPE * copy_construct(void * i_dest, const BASE_TYPE * i_source) const
@@ -708,24 +744,52 @@ namespace density
 			@param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
 			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
 				assume that the value of this pointer is the same of i_dest. 
+
+			\n\b Requires: the feature type_features::move_construct must be included in the FEATURE_LIST
 				
-			\n\b Throws: nothing. This library requires noexcept move constructors. */
-		BASE_TYPE * move_construct_nothrow(void * i_dest, BASE_TYPE * i_source) const DENSITY_NOEXCEPT
+			\n\b Throws: nothing. Move constructors are required to be noexcept. */
+		BASE_TYPE * move_construct(void * i_dest, BASE_TYPE * i_source) const noexcept
         {
             return static_cast<BASE_TYPE*>(get_feature<type_features::move_construct>()(i_dest, i_source));
         }
 
-        void destroy(void * i_dest) const noexcept
+		/** Destroys an object of the target type through a pointer to the subobject BASE_TYPE.
+
+			The effect of this function is the same of this code:
+				@code
+					dynamic_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
+			
+			\n\b Requires: the feature type_features::destroy must be included in the FEATURE_LIST
+
+			\n\b Throws: nothing. Destructors are required to be noexcept. */
+        void destroy(BASE_TYPE * i_dest) const noexcept
         {
             get_feature<type_features::destroy>()(i_dest);
         }
 
+		/** Returns the std::type_info associated to the target type.
+
+			The effect of this function is the same of this code:
+				@code
+					return typeid(TARGET_TYPE);
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
+			
+			\n\b Requires: the feature type_features::rtti must be included in the FEATURE_LIST
+
+			\n\b Throws: nothing. */
         const std::type_info & type_info() const noexcept
         {
             return *get_feature<type_features::rtti>();
         }
 
-		/** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails */
+		/** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails.
+			This function grant access to features that are not part of the interface of runtime_type.
+			\n\b Requires: the feature FEATURE must be included in the FEATURE_LIST
+
+			\n\b Throws: nothing. */
         template <typename FEATURE>
             typename FEATURE::type get_feature() const noexcept
         {
@@ -734,11 +798,21 @@ namespace density
             return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
         }
 
+		/** Returns true whether this two runtime_type have the same target type.
+		
+			\n\b Requires: nothing
+
+			\n\b Throws: nothing. */
 		bool operator == (const runtime_type & i_other) const noexcept
 		{
 			return m_table == i_other.m_table;
 		}
 
+		/** Returns true whether this two runtime_type have different target types.
+		
+			\n\b Requires: nothing
+
+			\n\b Throws: nothing. */
 		bool operator != (const runtime_type & i_other) const noexcept
 		{
 			return m_table != i_other.m_table;
@@ -746,6 +820,21 @@ namespace density
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
+
+		#if DENSITY_DEBUG
+		
+			// the feature alignment is included in FEATURE_LIST
+			void check_alignment(void * i_buff, std::true_type) const noexcept
+			{
+				DENSITY_ASSERT(is_address_aligned(i_buff, alignment()));
+			}
+
+			// the feature alignment is not included in FEATURE_LIST, the alignment can't be checked
+			void check_alignment(void * , std::false_type) const noexcept
+			{
+			}
+
+		#endif
 
     private:
         void * const * m_table;

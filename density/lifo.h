@@ -126,7 +126,7 @@ namespace density
                 @param i_block The memory block to deallocate
             \pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
             \n\b Throws: nothing. */
-        void deallocate(void * i_block) DENSITY_NOEXCEPT
+        void deallocate(void * i_block) noexcept
         {
             auto const last_page = m_last_page;
             last_page->free(i_block);
@@ -138,7 +138,7 @@ namespace density
 
         /** Deallocates any living block.
             \n\b Throws: nothing. */
-        void deallocate_all() DENSITY_NOEXCEPT
+        void deallocate_all() noexcept
         {
             auto const empty_page = get_empty_page();
             while (m_last_page != empty_page)
@@ -147,12 +147,12 @@ namespace density
             }
         }
 
-        UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() DENSITY_NOEXCEPT
+        UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() noexcept
         {
             return *this;
         }
 
-        const UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() const DENSITY_NOEXCEPT
+        const UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() const noexcept
         {
             return *this;
         }
@@ -180,7 +180,7 @@ namespace density
             return new_block;
         }
 
-        void pop_page() DENSITY_NOEXCEPT
+        void pop_page() noexcept
         {
             auto const last_page = m_last_page;
             auto const prev_page = last_page->prev_page();
@@ -193,13 +193,13 @@ namespace density
         {
         public:
 
-            PageHeader(PageHeader * const i_prev_page, void * i_start_address, void * i_end_address) DENSITY_NOEXCEPT
+            PageHeader(PageHeader * const i_prev_page, void * i_start_address, void * i_end_address) noexcept
                 : m_end_address(i_end_address), m_curr_address(i_start_address),
                   m_prev_page(i_prev_page), m_start_address(i_start_address)
             {
             }
 
-            void * allocate(size_t i_size) DENSITY_NOEXCEPT
+            void * allocate(size_t i_size) noexcept
             {
                 const auto start_of_block = m_curr_address;
                 const auto end_of_block = address_add(start_of_block, i_size);
@@ -215,7 +215,7 @@ namespace density
                 }
             }
 
-            bool reallocate(void * i_block, size_t i_new_size) DENSITY_NOEXCEPT
+            bool reallocate(void * i_block, size_t i_new_size) noexcept
             {
                 const auto start_of_block = i_block;
                 const auto end_of_block = address_add(i_block, i_new_size);
@@ -230,29 +230,29 @@ namespace density
                 }
             }
 
-            size_t size_of_most_recent_block(void * i_block) const DENSITY_NOEXCEPT
+            size_t size_of_most_recent_block(void * i_block) const noexcept
             {
                 return address_diff(m_curr_address, i_block);
             }
 
-            void free(void * i_block) DENSITY_NOEXCEPT
+            void free(void * i_block) noexcept
             {
                 m_curr_address = i_block;
             }
 
-            bool owns(void * i_address) const DENSITY_NOEXCEPT
+            bool owns(void * i_address) const noexcept
             {
                 return i_address >= m_start_address && i_address < m_end_address;
             }
 
-            bool is_empty() const DENSITY_NOEXCEPT
+            bool is_empty() const noexcept
             {
                 return m_curr_address == m_start_address;
             }
 
-            PageHeader * prev_page() const DENSITY_NOEXCEPT { return m_prev_page; }
+            PageHeader * prev_page() const noexcept { return m_prev_page; }
 
-            size_t capacity() const DENSITY_NOEXCEPT { return address_diff(m_end_address, m_start_address); }
+            size_t capacity() const noexcept { return address_diff(m_end_address, m_start_address); }
 
         private:
             void * const m_end_address;
@@ -267,12 +267,12 @@ namespace density
             return &s_empty;
         }
 
-        bool operator == (const lifo_allocator & i_other) const DENSITY_NOEXCEPT
+        bool operator == (const lifo_allocator & i_other) const noexcept
         {
             return this == &i_other;
         }
 
-        bool operator != (const lifo_allocator & i_other) const DENSITY_NOEXCEPT
+        bool operator != (const lifo_allocator & i_other) const noexcept
         {
             return this != &i_other;
         }
@@ -326,7 +326,7 @@ namespace density
                 @param i_block The memory block to deallocate
             \pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
             \n\b Throws: nothing. */
-        void deallocate(void * i_block) DENSITY_NOEXCEPT
+        void deallocate(void * i_block) noexcept
         {
 			get_allocator().deallocate(i_block);
         }
@@ -417,22 +417,22 @@ namespace density
             m_mem_size = i_new_mem_size;
         }
 
-        void * data() const DENSITY_NOEXCEPT
+        void * data() const noexcept
         {
             return m_buffer;
         }
 
-        size_t mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const noexcept
         {
             return m_mem_size;
         }
 
-        LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+        LIFO_ALLOCATOR & get_allocator() noexcept
         {
             return *this;
         }
 
-        const LIFO_ALLOCATOR & get_allocator() const DENSITY_NOEXCEPT
+        const LIFO_ALLOCATOR & get_allocator() const noexcept
         {
             return *this;
         }
@@ -453,7 +453,7 @@ namespace density
         {
         public:
 
-            LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+            LIFO_ALLOCATOR & get_allocator() noexcept
                 { return *this; }
 
             void alloc(size_t i_size)
@@ -461,7 +461,7 @@ namespace density
                 m_elements = static_cast<TYPE*>(get_allocator().allocate(i_size * sizeof(TYPE)));
             }
 
-            void free() DENSITY_NOEXCEPT
+            void free() noexcept
             {
                 get_allocator().deallocate(m_elements);
             }
@@ -474,7 +474,7 @@ namespace density
         {
         public:
 
-            LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+            LIFO_ALLOCATOR & get_allocator() noexcept
                 { return *this; }
 
             void alloc(size_t i_size)
@@ -486,7 +486,7 @@ namespace density
                 DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
             }
 
-            void free() DENSITY_NOEXCEPT
+            void free() noexcept
             {
                 get_allocator().deallocate(m_block);
             }
@@ -590,45 +590,45 @@ namespace density
             this->free();
         }
 
-        size_t size() const DENSITY_NOEXCEPT
+        size_t size() const noexcept
         {
             return m_size;
         }
 
-        TYPE & operator [] (size_t i_index) DENSITY_NOEXCEPT
+        TYPE & operator [] (size_t i_index) noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
         }
 
-        const TYPE & operator [] (size_t i_index) const DENSITY_NOEXCEPT
+        const TYPE & operator [] (size_t i_index) const noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
         }
 
-        pointer data() DENSITY_NOEXCEPT                    { return m_elements; }
+        pointer data() noexcept                    { return m_elements; }
 
-        const_pointer data() const DENSITY_NOEXCEPT        { return m_elements; }
+        const_pointer data() const noexcept        { return m_elements; }
 
-        iterator begin() DENSITY_NOEXCEPT                { return m_elements; }
+        iterator begin() noexcept                { return m_elements; }
 
-        iterator end() DENSITY_NOEXCEPT                    { return m_elements + m_size; }
+        iterator end() noexcept                    { return m_elements + m_size; }
 
-        const_iterator cbegin() const DENSITY_NOEXCEPT    { return m_elements; }
+        const_iterator cbegin() const noexcept    { return m_elements; }
 
-        const_iterator cend() const DENSITY_NOEXCEPT    { return m_elements + m_size; }
+        const_iterator cend() const noexcept    { return m_elements + m_size; }
 
-        const_iterator begin() const DENSITY_NOEXCEPT    { return m_elements; }
+        const_iterator begin() const noexcept    { return m_elements; }
 
-        const_iterator end() const DENSITY_NOEXCEPT        { return m_elements + m_size; }
+        const_iterator end() const noexcept        { return m_elements + m_size; }
 
-        LIFO_ALLOCATOR & get_allocator() DENSITY_NOEXCEPT
+        LIFO_ALLOCATOR & get_allocator() noexcept
         {
             return *this;
         }
 
-        const LIFO_ALLOCATOR & get_allocator() const DENSITY_NOEXCEPT
+        const LIFO_ALLOCATOR & get_allocator() const noexcept
         {
             return *this;
         }

@@ -42,33 +42,33 @@ namespace density
 
         static_assert( std::is_integral<UINT>::value && std::is_unsigned<UINT>::value, "UINT must be an unsigned integer" );
 
-        BasicMemSize() DENSITY_NOEXCEPT : m_value(0) { }
+        BasicMemSize() noexcept : m_value(0) { }
 
-        explicit BasicMemSize(UINT i_value) DENSITY_NOEXCEPT : m_value(i_value) { }
+        explicit BasicMemSize(UINT i_value) noexcept : m_value(i_value) { }
 
-        bool operator == (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
-        bool operator != (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
-        bool operator > (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
-        bool operator >= (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
-        bool operator < (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
-        bool operator <= (const BasicMemSize & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
+        bool operator == (const BasicMemSize & i_source) const noexcept { return m_value == i_source.m_value; }
+        bool operator != (const BasicMemSize & i_source) const noexcept { return m_value != i_source.m_value; }
+        bool operator > (const BasicMemSize & i_source) const noexcept { return m_value > i_source.m_value; }
+        bool operator >= (const BasicMemSize & i_source) const noexcept { return m_value >= i_source.m_value; }
+        bool operator < (const BasicMemSize & i_source) const noexcept { return m_value < i_source.m_value; }
+        bool operator <= (const BasicMemSize & i_source) const noexcept { return m_value <= i_source.m_value; }
 
                 // arithmetic operations
 
-        BasicMemSize operator + (const BasicMemSize & i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator + (const BasicMemSize & i_source) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             const UINT result = m_value + i_source.m_value;
             DENSITY_OVERFLOW_IF(result < m_value);
             return BasicMemSize(result);
         }
 
-        BasicMemSize operator - (const BasicMemSize & i_source) const    DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator - (const BasicMemSize & i_source) const    noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
             return BasicMemSize(m_value - i_source.m_value);
         }
 
-        BasicMemSize operator * (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator * (UINT i_source) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
                 using the approach of umull_overflow5, as most times the operands will be small. */
@@ -80,7 +80,7 @@ namespace density
             return BasicMemSize<UINT>(result);
         }
 
-        BasicMemSize operator / (UINT i_source) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator / (UINT i_source) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_source != 0);
             DENSITY_OVERFLOW_IF( (m_value % i_source) != 0);
@@ -90,20 +90,20 @@ namespace density
 
                 // compound assignment
 
-        BasicMemSize operator += (const BasicMemSize & i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator += (const BasicMemSize & i_source) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             const UINT result = m_value + i_source.m_value;
             DENSITY_OVERFLOW_IF(result < m_value);
             m_value = result;
             return *this;
         }
-        BasicMemSize operator -= (const BasicMemSize & i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator -= (const BasicMemSize & i_source) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_OVERFLOW_IF(m_value < i_source.m_value);
             m_value -= i_source.m_value;
             return *this;
         }
-        BasicMemSize operator *= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator *= (UINT i_source) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             /* see http://stackoverflow.com/questions/1815367/multiplication-of-large-numbers-how-to-catch-overflow
                 using the approach of umull_overflow5, as most times the operands will be small. */
@@ -115,7 +115,7 @@ namespace density
             return *this;
         }
 
-        BasicMemSize operator /= (UINT i_source) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize operator /= (UINT i_source) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_source != 0);
             DENSITY_OVERFLOW_IF((m_value % i_source) != 0);
@@ -123,9 +123,9 @@ namespace density
             return *this;
         }
 
-        UINT value() const DENSITY_NOEXCEPT { return m_value; }
+        UINT value() const noexcept { return m_value; }
 
-        bool is_valid_alignment() const DENSITY_NOEXCEPT
+        bool is_valid_alignment() const noexcept
         {
             return m_value > 0 && (m_value & (m_value - 1)) == 0;
         }
@@ -145,13 +145,13 @@ namespace density
 
     public:
 
-        BasicArithmeticPointer() DENSITY_NOEXCEPT
+        BasicArithmeticPointer() noexcept
             : m_value(0) {}
 
-        explicit BasicArithmeticPointer(nullptr_t) DENSITY_NOEXCEPT
+        explicit BasicArithmeticPointer(nullptr_t) noexcept
             : m_value(0) {}
 
-        explicit BasicArithmeticPointer(void * i_value) DENSITY_NOEXCEPT_IF((std::is_same<UINT_REPRESENTATION, uintptr_t>::value))
+        explicit BasicArithmeticPointer(void * i_value) noexcept((std::is_same<UINT_REPRESENTATION, uintptr_t>::value))
             : m_value(reinterpret_cast<UINT_REPRESENTATION>(i_value))
         {
             auto const is_safe = std::is_same<UINT_REPRESENTATION, uintptr_t>::value;
@@ -161,34 +161,34 @@ namespace density
             }
         }
 
-        BasicArithmeticPointer & operator = (nullptr_t) DENSITY_NOEXCEPT
+        BasicArithmeticPointer & operator = (nullptr_t) noexcept
         {
             m_value = 0;
             return *this;
         }
 
-        bool operator == (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value == i_source.m_value; }
-        bool operator != (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value != i_source.m_value; }
-        bool operator > (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value > i_source.m_value; }
-        bool operator >= (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value >= i_source.m_value; }
-        bool operator < (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value < i_source.m_value; }
-        bool operator <= (const BasicArithmeticPointer & i_source) const DENSITY_NOEXCEPT { return m_value <= i_source.m_value; }
+        bool operator == (const BasicArithmeticPointer & i_source) const noexcept { return m_value == i_source.m_value; }
+        bool operator != (const BasicArithmeticPointer & i_source) const noexcept { return m_value != i_source.m_value; }
+        bool operator > (const BasicArithmeticPointer & i_source) const noexcept { return m_value > i_source.m_value; }
+        bool operator >= (const BasicArithmeticPointer & i_source) const noexcept { return m_value >= i_source.m_value; }
+        bool operator < (const BasicArithmeticPointer & i_source) const noexcept { return m_value < i_source.m_value; }
+        bool operator <= (const BasicArithmeticPointer & i_source) const noexcept { return m_value <= i_source.m_value; }
 
-        BasicArithmeticPointer operator + (BasicMemSize<UINT_REPRESENTATION> i_value) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicArithmeticPointer operator + (BasicMemSize<UINT_REPRESENTATION> i_value) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             auto result = *this;
             result += i_value;
             return result;
         }
 
-        BasicArithmeticPointer operator - (BasicMemSize<UINT_REPRESENTATION> i_value) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicArithmeticPointer operator - (BasicMemSize<UINT_REPRESENTATION> i_value) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             auto result = *this;
             result -= i_value;
             return result;
         }
 
-        BasicArithmeticPointer & operator += (BasicMemSize<UINT_REPRESENTATION> i_value) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicArithmeticPointer & operator += (BasicMemSize<UINT_REPRESENTATION> i_value) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             auto const result = m_value + i_value.value();
             DENSITY_OVERFLOW_IF(result < m_value);
@@ -196,7 +196,7 @@ namespace density
             return *this;
         }
 
-        BasicArithmeticPointer & operator -= (BasicMemSize<UINT_REPRESENTATION> i_value) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicArithmeticPointer & operator -= (BasicMemSize<UINT_REPRESENTATION> i_value) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             auto const result = m_value - i_value.value();
             DENSITY_OVERFLOW_IF(result > m_value);
@@ -204,23 +204,23 @@ namespace density
             return *this;
         }
 
-        BasicMemSize<UINT_REPRESENTATION> operator - (BasicArithmeticPointer i_pointer) const DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicMemSize<UINT_REPRESENTATION> operator - (BasicArithmeticPointer i_pointer) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_OVERFLOW_IF(m_value < i_pointer.m_value);
             return BasicMemSize<UINT_REPRESENTATION>(m_value - i_pointer.m_value);
         }
 
-        void * value() const DENSITY_NOEXCEPT
+        void * value() const noexcept
         {
             return reinterpret_cast<void*>(m_value);
         }
 
-        bool is_null() const DENSITY_NOEXCEPT
+        bool is_null() const noexcept
         {
             return m_value == 0;
         }
 
-        BasicArithmeticPointer lower_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const DENSITY_NOEXCEPT
+        BasicArithmeticPointer lower_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const noexcept
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment());
 
@@ -230,7 +230,7 @@ namespace density
                 m_value & (~alignment_mask) ) );
         }
 
-        BasicArithmeticPointer upper_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const DENSITY_NOEXCEPT(!DENSITY_POINTER_OVERFLOW_SAFE)
+        BasicArithmeticPointer upper_align(BasicMemSize<UINT_REPRESENTATION> i_alignment) const noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment());
 
@@ -242,7 +242,7 @@ namespace density
 
         BasicArithmeticPointer linear_alloc(
             BasicMemSize<UINT_REPRESENTATION> i_size,
-            BasicMemSize<UINT_REPRESENTATION> i_alignment) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+            BasicMemSize<UINT_REPRESENTATION> i_alignment) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment());
 
@@ -254,7 +254,7 @@ namespace density
         BasicArithmeticPointer linear_alloc(
             BasicMemSize<UINT_REPRESENTATION> i_size,
             BasicMemSize<UINT_REPRESENTATION> i_alignment,
-            BasicArithmeticPointer i_end_address) DENSITY_NOEXCEPT_IF(!DENSITY_POINTER_OVERFLOW_SAFE)
+            BasicArithmeticPointer i_end_address) noexcept(!DENSITY_POINTER_OVERFLOW_SAFE)
         {
             DENSITY_ASSERT(i_alignment.is_valid_alignment() && m_value <= i_end_address.m_value );
 

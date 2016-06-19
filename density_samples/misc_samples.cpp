@@ -50,6 +50,30 @@ namespace misc_samples
 	my_array.begin().complete_type().get_feature<MyInvoke>()(my_array.begin().element(), "hello!");
 			//! [type_features::invoke example 1]
 		}
+
+		{
+			//! [runtime_type example 1]
+
+	using namespace density;
+	using namespace type_features;
+
+	using MyRTType = runtime_type<void, feature_list<default_construct, destroy, size> >;
+
+	MyRTType type = MyRTType::make<std::string>();
+
+	void * buff = malloc(type.size());
+	
+	type.default_construct(buff);
+
+	// now buff points to a valid std::string
+	*static_cast<std::string*>(buff) = "hello world!";
+
+	type.destroy(buff);
+
+	free(buff);
+
+			//! [runtime_type example 1]
+		}
 	}
 } // namespace misc_samples
 	

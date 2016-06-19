@@ -32,13 +32,13 @@ namespace density
 
             struct ControlBlock : RUNTIME_TYPE
             {
-                ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) DENSITY_NOEXCEPT
+                ControlBlock(const RUNTIME_TYPE & i_type, void * i_element) noexcept
                     : RUNTIME_TYPE(i_type), m_element(i_element) { }
 
                 void * const m_element;
             };
 
-            size_t size() const DENSITY_NOEXCEPT
+            size_t size() const noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
@@ -55,7 +55,7 @@ namespace density
                 }
             }
 
-            bool empty() const DENSITY_NOEXCEPT
+            bool empty() const noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
@@ -63,7 +63,7 @@ namespace density
                 return m_control_blocks == nullptr;
             }
 
-            void clear() DENSITY_NOEXCEPT
+            void clear() noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
@@ -72,11 +72,11 @@ namespace density
                 m_control_blocks = nullptr;
             }
 
-            DenseListImpl() DENSITY_NOEXCEPT
+            DenseListImpl() noexcept
                 : m_control_blocks(nullptr)
                     { }
 
-            DenseListImpl(DenseListImpl && i_source) DENSITY_NOEXCEPT
+            DenseListImpl(DenseListImpl && i_source) noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -84,7 +84,7 @@ namespace density
                 move_impl(std::move(i_source));
             }
 
-            DenseListImpl & operator = (DenseListImpl && i_source) DENSITY_NOEXCEPT
+            DenseListImpl & operator = (DenseListImpl && i_source) noexcept
             {
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
@@ -121,7 +121,7 @@ namespace density
                 return *this;
             }
 
-            ~DenseListImpl() DENSITY_NOEXCEPT
+            ~DenseListImpl() noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
@@ -132,43 +132,43 @@ namespace density
 
             struct IteratorBaseImpl
             {
-                IteratorBaseImpl() DENSITY_NOEXCEPT { }
+                IteratorBaseImpl() noexcept { }
 
-                IteratorBaseImpl(const ControlBlock * i_curr_control_block) DENSITY_NOEXCEPT
+                IteratorBaseImpl(const ControlBlock * i_curr_control_block) noexcept
                     : m_curr_control_block(i_curr_control_block)
                         { }
 
-                void move_next() DENSITY_NOEXCEPT
+                void move_next() noexcept
                 {
                     m_curr_control_block++;
                 }
 
-                void * element() const DENSITY_NOEXCEPT
+                void * element() const noexcept
                 {
                     return m_curr_control_block->m_element;
                 }
 
-                const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
+                const RUNTIME_TYPE & complete_type() const noexcept
                 {
                     return *m_curr_control_block;
                 }
 
-                const ControlBlock * control() const DENSITY_NOEXCEPT
+                const ControlBlock * control() const noexcept
                 {
                     return m_curr_control_block;
                 }
 
-                bool operator == (const IteratorBaseImpl & i_other) const DENSITY_NOEXCEPT
+                bool operator == (const IteratorBaseImpl & i_other) const noexcept
                 {
                     return m_curr_control_block == i_other.m_curr_control_block;
                 }
 
-                bool operator != (const IteratorBaseImpl & i_other) const DENSITY_NOEXCEPT
+                bool operator != (const IteratorBaseImpl & i_other) const noexcept
                 {
                     return m_curr_control_block != i_other.m_curr_control_block;
                 }
 
-                void operator ++ () DENSITY_NOEXCEPT
+                void operator ++ () noexcept
                 {
                     m_curr_control_block++;
                 }
@@ -178,10 +178,10 @@ namespace density
 
             }; // class IteratorBaseImpl
 
-            IteratorBaseImpl begin() const DENSITY_NOEXCEPT { return IteratorBaseImpl(m_control_blocks); }
-            IteratorBaseImpl end() const DENSITY_NOEXCEPT { return IteratorBaseImpl(m_control_blocks + size()); }
+            IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks); }
+            IteratorBaseImpl end() const noexcept { return IteratorBaseImpl(m_control_blocks + size()); }
 
-            size_t get_size_not_empty() const DENSITY_NOEXCEPT
+            size_t get_size_not_empty() const noexcept
             {
                 return (reinterpret_cast<Header*>(m_control_blocks) - 1)->m_count;
             }
@@ -193,7 +193,7 @@ namespace density
 
             struct ListBuilder
             {
-                ListBuilder() DENSITY_NOEXCEPT
+                ListBuilder() noexcept
                     : m_control_blocks(nullptr)
                 {
                 }
@@ -233,8 +233,10 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
                     #endif
-                    DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base));
-                    new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
+
+					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)), 
+						"All the constructors of RUNTIME_TYPE are required not be noexcept");
+					new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
                 }
 
@@ -248,7 +250,7 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
-                    const auto element_base = i_element_info.move_construct_nothrow(complete_new_element, 
+                    const auto element_base = i_element_info.move_construct(complete_new_element, 
 						static_cast<typename RUNTIME_TYPE::base_type*>(i_source));
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
@@ -257,14 +259,18 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
                     #endif
-                    DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base));
+
+					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)),
+						"All the constructors of RUNTIME_TYPE are required not be noexcept");
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
                 }
 
-                void add_only_control_block(const RUNTIME_TYPE & i_element_info, void * i_element) DENSITY_NOEXCEPT
+                void add_only_control_block(const RUNTIME_TYPE & i_element_info, void * i_element) noexcept
                 {
-                    DENSITY_ASSERT_NOEXCEPT(new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element));
+					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element)),
+						"All the constructors of RUNTIME_TYPE are required not be noexcept");
+
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
                     #endif
@@ -281,7 +287,7 @@ namespace density
                     return m_control_blocks;
                 }
 
-                void rollback(ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) DENSITY_NOEXCEPT
+                void rollback(ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) noexcept
                 {
                     if (m_control_blocks != nullptr)
                     {
@@ -289,7 +295,7 @@ namespace density
                         for (ControlBlock * element_info = m_control_blocks; element_info < m_end_of_control_blocks; element_info++)
                         {
                             element = address_upper_align(element, element_info->alignment());
-                            element_info->destroy(element);
+                            element_info->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(element));
                             element = address_add(element, element_info->size());
                             element_info->~ControlBlock();
                         }
@@ -298,7 +304,7 @@ namespace density
                 }
 
                 #if DENSITY_DEBUG_INTERNAL
-                    void dbg_check_range(const void * i_start, const void * i_end) DENSITY_NOEXCEPT
+                    void dbg_check_range(const void * i_start, const void * i_end) noexcept
                     {
                         DENSITY_ASSERT_INTERNAL(i_start >= m_control_blocks && i_end <= m_dbg_end_of_buffer);
                     }
@@ -313,12 +319,12 @@ namespace density
                 #endif
             };
 
-            ControlBlock * & edit_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
+            ControlBlock * & edit_control_blocks() noexcept { return m_control_blocks; }
 
-            ControlBlock * get_control_blocks() DENSITY_NOEXCEPT { return m_control_blocks; }
-            const ControlBlock * get_control_blocks() const DENSITY_NOEXCEPT { return m_control_blocks; }
+            ControlBlock * get_control_blocks() noexcept { return m_control_blocks; }
+            const ControlBlock * get_control_blocks() const noexcept { return m_control_blocks; }
 
-            void destroy_impl() DENSITY_NOEXCEPT
+            void destroy_impl() noexcept
             {
                 if (m_control_blocks != nullptr)
                 {
@@ -330,7 +336,7 @@ namespace density
                         auto control_block = it.control();
                         dense_size += control_block->size();
                         dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
-                        control_block->destroy(it.element());
+                        control_block->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(it.element()));
                         control_block->ControlBlock::~ControlBlock();
                     }
 
@@ -370,7 +376,7 @@ namespace density
                 }
             }
 
-            void move_impl(DenseListImpl && i_source) DENSITY_NOEXCEPT
+            void move_impl(DenseListImpl && i_source) noexcept
             {
                 m_control_blocks = i_source.m_control_blocks;
                 i_source.m_control_blocks = nullptr;
@@ -412,7 +418,7 @@ namespace density
                 #endif
             }
 
-            void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const DENSITY_NOEXCEPT
+            void compute_buffer_size_and_alignment(size_t * o_buffer_size, size_t * o_buffer_alignment) const noexcept
             {
                 size_t buffer_size = size() * sizeof(ControlBlock);
                 size_t buffer_alignment = std::alignment_of<ControlBlock>::value;
@@ -433,7 +439,7 @@ namespace density
             }
 
             void compute_buffer_size_and_alignment_for_insert(size_t * o_buffer_size, size_t * o_buffer_alignment,
-                const ControlBlock * i_insert_at, size_t i_new_element_count, const RUNTIME_TYPE & i_new_type) const DENSITY_NOEXCEPT
+                const ControlBlock * i_insert_at, size_t i_new_element_count, const RUNTIME_TYPE & i_new_type) const noexcept
             {
                 DENSITY_ASSERT(i_new_type.size() > 0 && is_power_of_2(i_new_type.alignment())); // the size must be non-zero, the alignment must be a non-zero power of 2
 
@@ -535,12 +541,12 @@ namespace density
                         {
                             if (this_it.control() == i_position && count_to_insert > 0)
                             {
-                                tmp_it.complete_type().destroy(tmp_it.element());
+                                tmp_it.complete_type().destroy(static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
                                 count_to_insert--;
                             }
                             else
                             {
-                                tmp_it.complete_type().move_construct_nothrow(this_it.element(), 
+                                tmp_it.complete_type().move_construct(this_it.element(), 
 									static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
                                 this_it.move_next();
                             }
@@ -630,7 +636,7 @@ namespace density
             }
 
             void compute_buffer_size_and_alignment_for_erase(size_t * o_buffer_size, size_t * o_buffer_alignment,
-                const ControlBlock * i_remove_from, const ControlBlock * i_remove_to) const DENSITY_NOEXCEPT
+                const ControlBlock * i_remove_from, const ControlBlock * i_remove_to) const noexcept
             {
                 DENSITY_ASSERT(i_remove_to >= i_remove_from);
                 const size_t size_to_remove = i_remove_to - i_remove_from;
@@ -695,7 +701,7 @@ namespace density
                     std::alignment_of<FIRST_TYPE>::value : RecursiveHelper<ELEMENT, OTHER_TYPES...>::s_element_alignment;
 
                 inline static void construct(ListBuilder & i_builder, FIRST_TYPE && i_source, OTHER_TYPES && ... i_other_arguments)
-                    // DENSITY_NOEXCEPT_IF( new (nullptr) FIRST_TYPE(std::forward<FIRST_TYPE>(std::declval<FIRST_TYPE>())) )
+                    // noexcept( new (nullptr) FIRST_TYPE(std::forward<FIRST_TYPE>(std::declval<FIRST_TYPE>())) )
                 {
                     void * new_element_complete = address_upper_align(i_builder.m_end_of_elements, std::alignment_of<FIRST_TYPE>::value);
                     ELEMENT * new_element = new (new_element_complete) FIRST_TYPE(std::forward<FIRST_TYPE>(i_source));

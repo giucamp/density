@@ -177,7 +177,7 @@ namespace density
 					for (const boost::any & any : any_vector)
 					{
 						volatile auto type = &any.type();
-						(type);
+						(void)type;
 					}
 				}
 			}, __LINE__);
@@ -189,7 +189,7 @@ namespace density
 					for (auto it = den_list.begin(); it != end; it++)
 					{
 						volatile auto type = &it.complete_type().type_info();
-						(type);
+						(void)type;
 					}
 				}
 			}, __LINE__);

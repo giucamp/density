@@ -114,7 +114,7 @@ namespace density
             \n\b Throws: nothing
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: constant */
-        void pop() DENSITY_NOEXCEPT
+        void pop() noexcept
         {
             m_queue.pop();
         }
@@ -124,13 +124,13 @@ namespace density
             \n\b Throws: nothing
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
             \n\b Complexity: linear. */
-        void clear() DENSITY_NOEXCEPT
+        void clear() noexcept
         {
             m_queue.clear();
         }
 
         /** Returns whether this container is empty */
-        bool empty() DENSITY_NOEXCEPT
+        bool empty() noexcept
         {
             return m_queue.empty();
         }
@@ -151,7 +151,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_capacity() const DENSITY_NOEXCEPT
+        size_t mem_capacity() const noexcept
         {
             return m_queue.mem_capacity();
         }
@@ -163,7 +163,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const noexcept
         {
             return m_queue.mem_size();
         }
@@ -173,19 +173,19 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_free() const DENSITY_NOEXCEPT
+        size_t mem_free() const noexcept
         {
             return m_queue.mem_free();
         }
 
-		typename underlying_queue::iterator begin() DENSITY_NOEXCEPT { return m_queue.begin(); }
-		typename underlying_queue::iterator end() DENSITY_NOEXCEPT { return m_queue.end(); }
+		typename underlying_queue::iterator begin() noexcept { return m_queue.begin(); }
+		typename underlying_queue::iterator end() noexcept { return m_queue.end(); }
 
-		typename underlying_queue::const_iterator cbegin() DENSITY_NOEXCEPT { return m_queue.cbegin(); }
-		typename underlying_queue::const_iterator cend() DENSITY_NOEXCEPT { return m_queue.cend(); }
+		typename underlying_queue::const_iterator cbegin() noexcept { return m_queue.cbegin(); }
+		typename underlying_queue::const_iterator cend() noexcept { return m_queue.cend(); }
 
-		typename underlying_queue::const_iterator begin() const DENSITY_NOEXCEPT { return m_queue.cbegin(); }
-		typename underlying_queue::const_iterator end() const DENSITY_NOEXCEPT { return m_queue.cend(); }
+		typename underlying_queue::const_iterator begin() const noexcept { return m_queue.cbegin(); }
+		typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
 
     private:
 	underlying_queue m_queue;

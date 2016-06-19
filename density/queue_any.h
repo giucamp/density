@@ -100,11 +100,11 @@ namespace density
             \n\b Requires: the move-constructor of the allocator must be noexcept
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        queue_any(queue_any && i_source) DENSITY_NOEXCEPT
+        queue_any(queue_any && i_source) noexcept
             : allocator_type(std::move(static_cast<allocator_type&>(i_source))),
             m_first_page(i_source.m_first_page), m_last_page(i_source.m_last_page)
         {
-            static_assert(DENSITY_NOEXCEPT_IF( allocator_type(std::move(std::declval<allocator_type>()))),
+            static_assert(noexcept( allocator_type(std::move(std::declval<allocator_type>()))),
                 "The move constructor of the allocator is required to be noexcept");
             i_source.m_first_page = nullptr;
             i_source.m_last_page = nullptr;
@@ -120,9 +120,9 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: linear in the size of destination (its content must be destroyed). */
-        queue_any & operator = (queue_any && i_source) DENSITY_NOEXCEPT
+        queue_any & operator = (queue_any && i_source) noexcept
         {
-            static_assert(DENSITY_NOEXCEPT_IF(std::declval<allocator_type>() = std::move(std::declval<allocator_type>())),
+            static_assert(noexcept(std::declval<allocator_type>() = std::move(std::declval<allocator_type>())),
                 "The move assignment of the allocator is required to be noexcept");
 
             DENSITY_ASSERT(this != &i_source);
@@ -247,7 +247,7 @@ namespace density
                 typename detail::QueueImpl<RUNTIME_TYPE>::copy_construct(i_source));
         }
 
-        void push_by_move(const RUNTIME_TYPE & i_type, ELEMENT * i_source) DENSITY_NOEXCEPT
+        void push_by_move(const RUNTIME_TYPE & i_type, ELEMENT * i_source) noexcept
         {
             insert_back_impl(i_type,
                 typename detail::QueueImpl<RUNTIME_TYPE>::move_construct(i_source));
@@ -259,7 +259,7 @@ namespace density
             \n\b Effects on iterators: only iterators and references to the first element are invalidated
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        void pop() DENSITY_NOEXCEPT
+        void pop() noexcept
         {
             DENSITY_ASSERT(!empty());
 
@@ -310,7 +310,7 @@ namespace density
             \n\b Complexity: constant */
         template <typename OPERATION>
             auto manual_consume(OPERATION && i_operation)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+                noexcept(noexcept((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
                     -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
         {
             DENSITY_ASSERT(!empty());
@@ -339,30 +339,30 @@ namespace density
 
             /** Constructs an iterator which is not dereferenceable
                 \n\b Throws: nothing */
-            iterator() DENSITY_NOEXCEPT
+            iterator() noexcept
                 : m_impl(nullptr), m_curr_page(nullptr) { }
 
             /** Initializing constructor. Provided for internal use only, do not use. */
-            iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) DENSITY_NOEXCEPT
+            iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) noexcept
                 : m_impl(i_impl), m_curr_page(i_curr_page) { }
 
             /** Returns a reference to the subobject of type ELEMENT of current element. If ELEMENT is void this function is useless, because the return type is void. */
-            reference operator * () const DENSITY_NOEXCEPT { return detail::DeferenceVoidPtr<value_type>::apply(m_impl.element()); }
+            reference operator * () const noexcept { return detail::DeferenceVoidPtr<value_type>::apply(m_impl.element()); }
 
             /** Returns a pointer to the subobject of type ELEMENT of current element. If ELEMENT is void this function is useless, because the return type is void *. */
-            pointer operator -> () const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
+            pointer operator -> () const noexcept { return static_cast<value_type *>(m_impl.element()); }
 
             /** Returns a pointer to the subobject of type ELEMENT of current element. If ELEMENT is void, then the return type is void *. */
-            pointer element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
+            pointer element() const noexcept { return static_cast<value_type *>(m_impl.element()); }
 
             /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return m_impl.complete_type();
             }
 
-            iterator & operator ++ () DENSITY_NOEXCEPT
+            iterator & operator ++ () noexcept
             {
                 DENSITY_ASSERT(m_impl != m_curr_page->m_queue.end());
 
@@ -379,29 +379,29 @@ namespace density
                 return *this;
             }
 
-            iterator operator++ (int) DENSITY_NOEXCEPT
+            iterator operator++ (int) noexcept
             {
                 const auto copy(*this);
                 ++*this;
                 return copy;
             }
 
-            bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const const_iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const const_iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
@@ -424,45 +424,45 @@ namespace density
 
             /** Constructs an iterator which is not dereferenceable
                 \n\b Throws: nothing */
-            const_iterator() DENSITY_NOEXCEPT
+            const_iterator() noexcept
                 : m_impl(nullptr), m_curr_page(nullptr) {}
 
             /** Initializing constructor. Provided for internal use only, do not use. */
-            const_iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) DENSITY_NOEXCEPT
+            const_iterator(const typename detail::QueueImpl<RUNTIME_TYPE>::IteratorImpl & i_impl, PageHeader * i_curr_page ) noexcept
                 : m_impl(i_impl), m_curr_page(i_curr_page) { }
 
             /** Copy-like constructor from an iterator. Makes an exact copy of the iterator.
                 \n\b Throws: nothing
                 \n\b Complexity: constant */
-            const_iterator(const iterator & i_source) DENSITY_NOEXCEPT
+            const_iterator(const iterator & i_source) noexcept
                 : m_impl(i_source.m_impl) {  }
 
             /** Copy-like assignment from an iterator. Makes an exact copy of the iterator.
                 \n\b Throws: nothing
                 \n\b Complexity: constant */
-            const_iterator & operator = (const iterator & i_source) DENSITY_NOEXCEPT
+            const_iterator & operator = (const iterator & i_source) noexcept
             {
                 m_impl = i_source.m_impl;
                 return *this;
             }
 
             /** Returns a const reference to the subobject of type ELEMENT of current element. If ELEMENT is void this function is useless, because the return type is const void. */
-            reference operator * () const DENSITY_NOEXCEPT { return detail::DeferenceVoidPtr<value_type>::apply(m_impl.element()); }
+            reference operator * () const noexcept { return detail::DeferenceVoidPtr<value_type>::apply(m_impl.element()); }
 
             /** Returns a const pointer to the subobject of type ELEMENT of current element. If ELEMENT is void this function is useless, because the return type is const void *. */
-            pointer operator -> () const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
+            pointer operator -> () const noexcept { return static_cast<value_type *>(m_impl.element()); }
 
             /** Returns a const pointer to the subobject of type ELEMENT of current element. If ELEMENT is void, then the return type is const void *. */
-            pointer element() const DENSITY_NOEXCEPT { return static_cast<value_type *>(m_impl.element()); }
+            pointer element() const noexcept { return static_cast<value_type *>(m_impl.element()); }
 
             /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const RUNTIME_TYPE & complete_type() const DENSITY_NOEXCEPT
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return m_impl.complete_type();
             }
 
-            const_iterator & operator ++ () DENSITY_NOEXCEPT
+            const_iterator & operator ++ () noexcept
             {
                 ++m_impl;
                 if (m_impl == m_curr_page->m_queue.end())
@@ -476,29 +476,29 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator ++ (int) DENSITY_NOEXCEPT
+            const_iterator operator ++ (int) noexcept
             {
                 const auto copy(*this);
                 ++*this;
                 return copy;
             }
 
-            bool operator == (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
 
-            bool operator == (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator == (const const_iterator & i_other) const noexcept
             {
                 return m_impl == i_other.m_impl;
             }
 
-            bool operator != (const const_iterator & i_other) const DENSITY_NOEXCEPT
+            bool operator != (const const_iterator & i_other) const noexcept
             {
                 return m_impl != i_other.m_impl;
             }
@@ -508,7 +508,7 @@ namespace density
             PageHeader * m_curr_page;
         }; // class const_iterator
 
-        iterator begin() DENSITY_NOEXCEPT
+        iterator begin() noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -520,7 +520,7 @@ namespace density
             }
         }
 
-        const_iterator begin() const DENSITY_NOEXCEPT
+        const_iterator begin() const noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -532,7 +532,7 @@ namespace density
             }
         }
 
-        const_iterator cbegin() const DENSITY_NOEXCEPT
+        const_iterator cbegin() const noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -544,7 +544,7 @@ namespace density
             }
         }
 
-        iterator end() DENSITY_NOEXCEPT
+        iterator end() noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -556,7 +556,7 @@ namespace density
             }
         }
 
-        const_iterator end() const DENSITY_NOEXCEPT
+        const_iterator end() const noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -568,7 +568,7 @@ namespace density
             }
         }
 
-        const_iterator cend() const DENSITY_NOEXCEPT
+        const_iterator cend() const noexcept
         {
             if (m_first_page != nullptr)
             {
@@ -583,12 +583,12 @@ namespace density
         /** Returns true if this queue contains no elements.
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        bool empty() const DENSITY_NOEXCEPT { return m_first_page == nullptr; }
+        bool empty() const noexcept { return m_first_page == nullptr; }
 
         /** Deletes all the elements from this queue.
             \n\b Throws: nothing
             \n\b Complexity: linear */
-        void clear() DENSITY_NOEXCEPT
+        void clear() noexcept
         {
             delete_all();
             m_first_page = nullptr;
@@ -605,7 +605,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        reference front() DENSITY_NOEXCEPT
+        reference front() noexcept
         {
             DENSITY_ASSERT(!empty());
             const auto it = m_first_page->m_queue.begin();
@@ -618,7 +618,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        const_reference front() const DENSITY_NOEXCEPT
+        const_reference front() const noexcept
         {
             DENSITY_ASSERT(!empty());
             const auto it = m_first_page->m_queue.begin();
@@ -631,7 +631,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_capacity() const DENSITY_NOEXCEPT
+        size_t mem_capacity() const noexcept
         {
             size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
@@ -648,7 +648,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_size() const DENSITY_NOEXCEPT
+        size_t mem_size() const noexcept
         {
             size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
@@ -663,7 +663,7 @@ namespace density
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        size_t mem_free() const DENSITY_NOEXCEPT
+        size_t mem_free() const noexcept
         {
             size_t result(0);
             for (PageHeader * page = m_first_page; page != nullptr; page = page->m_next_page)
@@ -676,7 +676,7 @@ namespace density
         /** Returns a copy of the allocator instance owned by the queue.
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        allocator_type get_allocator() const DENSITY_NOEXCEPT
+        allocator_type get_allocator() const noexcept
         {
             return *this;
         }
@@ -684,7 +684,7 @@ namespace density
         /** Returns a reference to the allocator instance owned by the queue.
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        allocator_type & get_allocator_ref() DENSITY_NOEXCEPT
+        allocator_type & get_allocator_ref() noexcept
         {
             return *this;
         }
@@ -692,7 +692,7 @@ namespace density
         /** Returns a const reference to the allocator instance owned by the queue.
             \n\b Throws: nothing
             \n\b Complexity: constant */
-        const allocator_type & get_allocator_ref() const DENSITY_NOEXCEPT
+        const allocator_type & get_allocator_ref() const noexcept
         {
             return *this;
         }
@@ -704,7 +704,7 @@ namespace density
             detail::QueueImpl<RUNTIME_TYPE> m_queue;
             PageHeader * m_next_page;
 
-            PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) DENSITY_NOEXCEPT
+            PageHeader(void * i_buffer_address, size_t i_buffer_byte_capacity) noexcept
                 : m_queue(i_buffer_address, i_buffer_byte_capacity), m_next_page(nullptr) { }
         };
 
@@ -816,7 +816,7 @@ namespace density
             m_last_page = new_page;
         }
 
-        void delete_page(PageHeader * i_page) DENSITY_NOEXCEPT
+        void delete_page(PageHeader * i_page) noexcept
         {
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());
@@ -836,7 +836,7 @@ namespace density
             }
         }
 
-        void delete_all() DENSITY_NOEXCEPT
+        void delete_all() noexcept
         {
             #if DENSITY_DEBUG_INTERNAL
                 check_invariants();
@@ -856,7 +856,7 @@ namespace density
         // overload used if the return type is to not void
         template <typename OPERATION>
             auto manual_consume_impl(OPERATION && i_operation, std::false_type)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+                noexcept(noexcept((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
                     -> decltype(i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))
         {
             auto const result = m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
@@ -883,7 +883,7 @@ namespace density
         // overload used if the return type is to void
         template <typename OPERATION>
             void manual_consume_impl(OPERATION && i_operation, std::true_type)
-                DENSITY_NOEXCEPT_IF(DENSITY_NOEXCEPT_IF((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
+                noexcept(noexcept((i_operation(std::declval<const RUNTIME_TYPE>(), std::declval<ELEMENT*>()))))
         {
             m_first_page->m_queue.manual_consume([&i_operation](const RUNTIME_TYPE & i_type, void * i_element) {
                 i_operation(i_type, static_cast<ELEMENT*>(i_element));
