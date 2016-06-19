@@ -4,12 +4,12 @@
 	<Project>
 		<Option title="density" />
 		<Option pch_mode="2" />
-		<Option compiler="gcc" />
+		<Option compiler="clang" />
 		<Build>
 			<Target title="Debug Win32">
 				<Option output="density_test" prefix_auto="1" extension_auto="1" />
 				<Option type="0" />
-				<Option compiler="gcc" />
+				<Option compiler="clang" />
 				<Compiler>
 					<Add directory="../../../boost_1_60_0" />
 					<Add directory="../../../mingw-std-threads" />
@@ -18,7 +18,7 @@
 			<Target title="Debug x64">
 				<Option output="density_test" prefix_auto="1" extension_auto="1" />
 				<Option type="0" />
-				<Option compiler="gcc" />
+				<Option compiler="clang" />
 				<Compiler>
 					<Add directory="../../../boost_1_60_0" />
 					<Add directory="../../../mingw-std-threads" />
@@ -27,7 +27,7 @@
 			<Target title="Release x64">
 				<Option output="density_test" prefix_auto="1" extension_auto="1" />
 				<Option type="0" />
-				<Option compiler="gcc" />
+				<Option compiler="clang" />
 				<Compiler>
 					<Add directory="../../../boost_1_60_0" />
 					<Add directory="../../../mingw-std-threads" />
@@ -36,7 +36,7 @@
 			<Target title="Release Win32">
 				<Option output="density_test" prefix_auto="1" extension_auto="1" />
 				<Option type="0" />
-				<Option compiler="gcc" />
+				<Option compiler="clang" />
 				<Compiler>
 					<Add directory="../../../boost_1_60_0" />
 					<Add directory="../../../mingw-std-threads" />
@@ -44,6 +44,10 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-pedantic-errors" />
+			<Add option="-pedantic" />
+			<Add option="-std=c++11" />
+			<Add option="-g" />
 			<Add option="-Winit-self" />
 			<Add option="-Wredundant-decls" />
 			<Add option="-Wundef" />
@@ -51,11 +55,7 @@
 			<Add option="-Wmissing-include-dirs" />
 			<Add option="-Wswitch-enum" />
 			<Add option="-Wmain" />
-			<Add option="-pedantic-errors" />
-			<Add option="-pedantic" />
 			<Add option="-Wfatal-errors" />
-			<Add option="-std=c++11" />
-			<Add option="-g" />
 		</Compiler>
 		<Unit filename="../../density/array_any.h" />
 		<Unit filename="../../density/density_common.h" />

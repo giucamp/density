@@ -39,14 +39,14 @@ namespace testity
         void TestAllocatorBase::pop_level()
         {
             auto & levels = GetThreadData().m_levels;
-            DENSITY_TEST_ASSERT(levels.size() > 0);
+            TESTITY_ASSERT(levels.size() > 0);
 
             for (const auto & leaking_allocation : levels.back().m_allocations)
             {
                 std::cout << "Leak of " << leaking_allocation.second.m_size << ", progressive: " << leaking_allocation.second.m_progressive << std::endl;
             }
 
-            DENSITY_TEST_ASSERT(levels.back().m_allocations.size() == 0);
+            TESTITY_ASSERT(levels.back().m_allocations.size() == 0);
             levels.pop_back();
         }
 
@@ -62,11 +62,11 @@ namespace testity
                 AllocationEntry entry;
                 entry.m_size = i_size;
                 entry.m_progressive = thread_data.m_last_progressive++;
-                // DENSITY_TEST_ASSERT(entry.m_progressive != ...);
+                // TESTITY_ASSERT(entry.m_progressive != ...);
 
                 auto & allocations = thread_data.m_levels.back().m_allocations;
                 auto res = allocations.insert(std::make_pair(block, entry));
-                DENSITY_TEST_ASSERT(res.second);
+                TESTITY_ASSERT(res.second);
             }
 
             return block;
@@ -81,7 +81,7 @@ namespace testity
                 {
                     auto & allocations = thread_data.m_levels.back().m_allocations;
                     auto it = allocations.find(i_block);
-                    DENSITY_TEST_ASSERT(it != allocations.end());
+                    TESTITY_ASSERT(it != allocations.end());
                     allocations.erase(it);
                 }
 
@@ -122,7 +122,7 @@ namespace testity
 
     void run_exception_stress_test(std::function<void()> i_test)
     {
-        DENSITY_TEST_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
+        TESTITY_ASSERT(st_static_data == nullptr); // "run_exception_stress_test does no support recursion"
 
         i_test();
 

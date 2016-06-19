@@ -246,7 +246,7 @@ namespace density
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
                 {
-                    return i_element_type.copy_construct(i_dest, m_source);
+                    return i_element_type.copy_construct(i_dest, static_cast<const typename RUNTIME_TYPE::base_type*>(m_source) );
                 }
             };
 
@@ -259,7 +259,7 @@ namespace density
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) DENSITY_NOEXCEPT
                 {
-                    return i_element_type.move_construct_nothrow(i_dest, m_source);
+                    return i_element_type.move_construct_nothrow(i_dest, static_cast<typename RUNTIME_TYPE::base_type*>(m_source));
                 }
             };
 

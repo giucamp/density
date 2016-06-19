@@ -62,10 +62,10 @@ namespace runtime_type_sample
             buffer.resize(widget_type.size(), widget_type.alignment());
 
             // create the widget of the specified type
-            void * widget = widget_type.default_construct(buffer.data());
+			Widget * widget = widget_type.default_construct(buffer.data());
 
-            // draw it. Note: widget is pointing to the Widget subobject, so this cast is correct
-            static_cast<Widget*>(widget)->draw();
+            // draw it
+            widget->draw();
 
             // destroy the widget
             widget_type.destroy(widget);

@@ -32,7 +32,7 @@ namespace density
                 });
             }
 
-            DENSITY_TEST_ASSERT(queue.empty());
+            TESTITY_ASSERT(queue.empty());
 
           /*  for (int i = 0; i < 1000; i++)
             {
@@ -44,8 +44,8 @@ namespace density
                 }
 
                 auto const queue_dist = std::distance(queue.begin(), queue.end());
-                DENSITY_TEST_ASSERT(queue_dist == static_cast<decltype(queue_dist)>(ints.size()));
-                DENSITY_TEST_ASSERT(queue.empty() == ints.empty());
+                TESTITY_ASSERT(queue_dist == static_cast<decltype(queue_dist)>(ints.size()));
+                TESTITY_ASSERT(queue.empty() == ints.empty());
 
                 if ( !ints.empty() && std::uniform_int_distribution<int>(0, 6)(i_random) <= 2)
                 {

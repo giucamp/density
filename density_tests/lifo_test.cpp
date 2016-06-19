@@ -43,17 +43,17 @@ namespace density
             LifoTestArray(const lifo_array<TYPE> & i_array)
                 : m_array(i_array)
             {
-                DENSITY_TEST_ASSERT( is_address_aligned( i_array.data(), alignof(TYPE) ) );
+                TESTITY_ASSERT( is_address_aligned( i_array.data(), alignof(TYPE) ) );
                 m_vector.insert(m_vector.end(), i_array.begin(), i_array.end());
             }
 
             void check() const override
             {
                 const size_t size = m_array.size();
-                DENSITY_TEST_ASSERT(m_vector.size() == size);
+                TESTITY_ASSERT(m_vector.size() == size);
                 for(size_t i = 0; i < size; i++)
                 {
-                    DENSITY_TEST_ASSERT( m_vector[i] == m_array[i] );
+                    TESTITY_ASSERT( m_vector[i] == m_array[i] );
                 }
             }
 
@@ -75,8 +75,8 @@ namespace density
 
             void check() const override
             {
-                DENSITY_TEST_ASSERT(m_buffer.mem_size() == m_vector.size());
-                DENSITY_TEST_ASSERT(std::memcmp(m_buffer.data(), m_vector.data(), m_vector.size())==0);
+                TESTITY_ASSERT(m_buffer.mem_size() == m_vector.size());
+                TESTITY_ASSERT(std::memcmp(m_buffer.data(), m_vector.data(), m_vector.size())==0);
             }
 
             virtual bool resize(std::mt19937 & i_random) override
@@ -94,7 +94,7 @@ namespace density
                 {
                     const auto alignment = random_alignment(i_random);
                     m_buffer.resize(new_size, alignment);
-                    DENSITY_TEST_ASSERT(is_address_aligned(m_buffer.data(), alignment));
+                    TESTITY_ASSERT(is_address_aligned(m_buffer.data(), alignment));
                 }
                 else
                 {
@@ -179,7 +179,7 @@ namespace density
         {
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(i_context.m_random));
-            DENSITY_TEST_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
+            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
@@ -194,7 +194,7 @@ namespace density
             const auto alignment = random_alignment(i_context.m_random);
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(i_context.m_random), alignment);
-            DENSITY_TEST_ASSERT(is_address_aligned(buffer.data(), alignment));
+            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignment));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),

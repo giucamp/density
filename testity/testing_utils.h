@@ -9,9 +9,18 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <assert.h>
+#include <iostream>
 
-#define DENSITY_TEST_ASSERT(i_bool_expr)        assert(i_bool_expr)
+#ifdef _MSC_VER
+	#define TESTITY_ASSERT(i_bool_expr)        if(!(i_bool_expr)) \
+													{ \
+														std::cerr << "Test assert failed: '" #i_bool_expr "' at " __FILE__ "(" << __LINE__ << ")" << std::endl; \
+														__debugbreak(); \
+													}
+#else
+	#include <assert.h>
+	#define TESTITY_ASSERT(i_bool_expr)        assert(!(i_bool_expr))
+#endif // _MSC_VER
 
 namespace testity
 {

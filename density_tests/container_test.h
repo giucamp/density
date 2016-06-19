@@ -33,26 +33,26 @@ namespace density
             TestObjectBase(const TestObjectBase & i_source)
                 : m_hash(std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash))
             {
-                DENSITY_TEST_ASSERT(i_source.m_check_word == 3232);
+                TESTITY_ASSERT(i_source.m_check_word == 3232);
             }
 
             TestObjectBase(TestObjectBase && i_source) noexcept
                 : m_hash(std::move(i_source.m_hash))
             {
-                DENSITY_TEST_ASSERT(i_source.m_check_word == 3232);
+                TESTITY_ASSERT(i_source.m_check_word == 3232);
                 i_source.m_hash = nullptr;
             }
 
             TestObjectBase & operator = (const TestObjectBase & i_source)
             {
-                DENSITY_TEST_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
+                TESTITY_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
                 m_hash = std::allocate_shared<size_t>(TestAllocator<size_t>(), *i_source.m_hash);
                 return *this;
             }
 
             TestObjectBase & operator = (TestObjectBase && i_source) noexcept
             {
-                DENSITY_TEST_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
+                TESTITY_ASSERT(m_check_word == 3232 && i_source.m_check_word == 3232);
                 m_hash = std::move(i_source.m_hash);
                 i_source.m_hash = nullptr;
                 return *this;
@@ -65,19 +65,19 @@ namespace density
 
             bool operator == (const TestObjectBase & i_other) const
             {
-                DENSITY_TEST_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
+                TESTITY_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
                 return *m_hash == *i_other.m_hash;
             }
 
             bool operator != (const TestObjectBase & i_other) const
             {
-                DENSITY_TEST_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
+                TESTITY_ASSERT(m_check_word == 3232 && i_other.m_check_word == 3232);
                 return *m_hash != *i_other.m_hash;
             }
 
             size_t hash() const
             {
-                DENSITY_TEST_ASSERT(m_check_word == 3232);
+                TESTITY_ASSERT(m_check_word == 3232);
                 return m_hash != nullptr ? *m_hash : 0;
             }
 
@@ -168,7 +168,7 @@ namespace density
 
             size_t hash() const
             {
-                DENSITY_TEST_ASSERT(m_check_word_1 == 7865);
+                TESTITY_ASSERT(m_check_word_1 == 7865);
 
                 size_t result = 0;
                 for (size_t i = 0; i < SIZE; i++)
@@ -200,7 +200,7 @@ namespace density
 
             virtual size_t hash() const
             {
-                DENSITY_TEST_ASSERT(m_check_word_2 == 7865);
+                TESTITY_ASSERT(m_check_word_2 == 7865);
                 return m_hash ^ CopyableTestObject::hash();
             }
 
@@ -220,7 +220,7 @@ namespace density
 
             virtual size_t hash() const
             {
-                DENSITY_TEST_ASSERT(m_check_word_3 == 1543);
+                TESTITY_ASSERT(m_check_word_3 == 1543);
                 return m_hash ^ ComplexTypeBase::hash();
             }
 
@@ -240,7 +240,7 @@ namespace density
 
             virtual size_t hash() const
             {
-                DENSITY_TEST_ASSERT(m_check_word_4 == 12465);
+                TESTITY_ASSERT(m_check_word_4 == 12465);
                 return m_hash ^ ComplexTypeBase::hash();
             }
 
@@ -321,8 +321,8 @@ namespace density
             void compare_all(const DENSE_CONTAINER & i_container)
             {
                 const auto container_is_empty = i_container.empty();
-                DENSITY_TEST_ASSERT(container_is_empty == m_deque.empty());
-                DENSITY_TEST_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
+                TESTITY_ASSERT(container_is_empty == m_deque.empty());
+                TESTITY_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
 
                 const auto end_it1 = i_container.end();
                 for (auto it = i_container.begin(); it != end_it1; it++)
@@ -331,7 +331,7 @@ namespace density
                 }
 
                 auto const dist = std::distance(i_container.begin(), i_container.end());
-                DENSITY_TEST_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());
+                TESTITY_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());
 
                 size_t index = 0;
                 const auto end_it = i_container.end();
@@ -341,31 +341,31 @@ namespace density
                     const auto & type_info = it.complete_type().type_info();
                     const auto & deq_entry = m_deque[index];
                     const auto hash = hasher(it.element());
-                    DENSITY_TEST_ASSERT(type_info == *deq_entry.m_type_info
+                    TESTITY_ASSERT(type_info == *deq_entry.m_type_info
                         && hash == deq_entry.m_hash );
                     index++;
                 }
 
-                DENSITY_TEST_ASSERT(index == m_deque.size());
+                TESTITY_ASSERT(index == m_deque.size());
             }
 
             void compare_at(size_t i_at, const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
             {
-                DENSITY_TEST_ASSERT(i_at < m_deque.size());
-                DENSITY_TEST_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
+                TESTITY_ASSERT(i_at < m_deque.size());
+                TESTITY_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
                 const auto element_hash = i_type.template get_feature<type_features::hash>()(i_element);
-                DENSITY_TEST_ASSERT(element_hash == m_deque[i_at].m_hash);
+                TESTITY_ASSERT(element_hash == m_deque[i_at].m_hash);
             }
 
             void compare_front(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
             {
-                DENSITY_TEST_ASSERT(m_deque.size() > 0);
+                TESTITY_ASSERT(m_deque.size() > 0);
                 compare_at(0, i_type, i_element);
             }
 
             void compare_back(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
             {
-                DENSITY_TEST_ASSERT(m_deque.size() > 0);
+                TESTITY_ASSERT(m_deque.size() > 0);
                 compare_at(m_deque.size() - 1, i_type, i_element);
             }
 
@@ -402,7 +402,7 @@ namespace density
             {
                 try
                 {
-                    DENSITY_TEST_ASSERT(m_deque.size() >= i_at + i_count);
+                    TESTITY_ASSERT(m_deque.size() >= i_at + i_count);
                     m_deque.erase(m_deque.begin() + i_at, m_deque.begin() + i_at + i_count);
                 }
                 catch (...)
@@ -564,18 +564,18 @@ namespace density
                 // check the size with the iterators
                 const auto size_1 = std::distance(dense_container.cbegin(), dense_container.cend());
                 const auto size_2 = std::distance(copy.cbegin(), copy.cend());
-                DENSITY_TEST_ASSERT(size_1 == size_2);
+                TESTITY_ASSERT(size_1 == size_2);
 
                 // move construct dense_container to tmp
                 auto tmp(std::move(dense_container));
-                DENSITY_TEST_ASSERT(dense_container.empty());
+                TESTITY_ASSERT(dense_container.empty());
                 const auto size_3 = std::distance(tmp.cbegin(), tmp.cend());
-                DENSITY_TEST_ASSERT(size_1 == size_3);
+                TESTITY_ASSERT(size_1 == size_3);
 
                 // move assign tmp to dense_container
                 dense_container = std::move(tmp);
                 const auto size_4 = std::distance(dense_container.cbegin(), dense_container.cend());
-                DENSITY_TEST_ASSERT(size_1 == size_4);
+                TESTITY_ASSERT(size_1 == size_4);
             }, i_probability);
         }
 

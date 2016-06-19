@@ -19,7 +19,7 @@ namespace density
 			for (size_t i = 0; i < 1000; i++)
 			{
 				i_queue.push([&count, i] {
-					DENSITY_TEST_ASSERT(count == i);
+					TESTITY_ASSERT(count == i);
 					count++;
 				});
 			}
@@ -29,7 +29,7 @@ namespace density
 				i_queue.consume_front();
 			}
 
-			DENSITY_TEST_ASSERT(count == 1000);
+			TESTITY_ASSERT(count == 1000);
 		}
 	}
 

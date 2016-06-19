@@ -70,7 +70,7 @@ namespace density
             i_test.add_test_case("consume_until_empty", [&i_test](std::mt19937 & /*i_random*/) {
                 while(!i_test.dense_container().empty())
                 {
-                    DENSITY_TEST_ASSERT(!i_test.shadow_container().empty());
+                    TESTITY_ASSERT(!i_test.shadow_container().empty());
                     i_test.dense_container().manual_consume(
                         [](const typename DENSE_CONTAINER::runtime_type & i_type, typename DENSE_CONTAINER::value_type * i_element )
                     {
@@ -79,7 +79,7 @@ namespace density
                     } );
                     i_test.shadow_container().pop_front();
                 }
-                DENSITY_TEST_ASSERT(i_test.shadow_container().empty());
+                TESTITY_ASSERT(i_test.shadow_container().empty());
             }, i_probability);
         }
 
@@ -88,7 +88,7 @@ namespace density
         {
             i_container_test.set_custom_check([&i_container_test] {
                 const bool mem_size_is_zero = i_container_test.dense_container().mem_size() == 0;
-                DENSITY_TEST_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
+                TESTITY_ASSERT(i_container_test.dense_container().empty() == mem_size_is_zero); });
         }
 
         template <template <class> class QUEUE>
@@ -172,7 +172,7 @@ namespace density
             {
                 queue.manual_consume([i](const Queue::runtime_type & i_type, int * i_element)
                 {
-                    DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i);
+                    TESTITY_ASSERT(i_type.type_info() == typeid(int) && *i_element == i);
                 });
             }
         }
@@ -189,29 +189,29 @@ namespace density
             {
                 queue.manual_consume([i](const small_queue_any<int>::runtime_type & i_type, int * i_element)
                 {
-                    DENSITY_TEST_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
+                    TESTITY_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
                 });
             }
 
             // this must use the lvalue overload, so queue must be preserved
             const auto prev_size = queue.mem_size();
             queue_of_queues.push(queue);
-            DENSITY_TEST_ASSERT(queue.mem_size() == prev_size);
+            TESTITY_ASSERT(queue.mem_size() == prev_size);
 
             // this must use the rvalue overload, so queue must be empty after the call
             queue_of_queues.push(std::move(queue));
-            DENSITY_TEST_ASSERT(queue.mem_size() == 0);
-            DENSITY_TEST_ASSERT(queue.empty());
+            TESTITY_ASSERT(queue.mem_size() == 0);
+            TESTITY_ASSERT(queue.empty());
 
             // try with a non-copyable type (std::unique_ptr)
             small_queue_any<std::unique_ptr<int>> queue_of_uncopyable;
             queue_of_uncopyable.push(std::unique_ptr<int>(new int(10)));
             queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::unique_ptr<int>(new int (10)));
-            DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
+            TESTITY_ASSERT(*queue_of_uncopyable.front() == 10);
             queue_of_uncopyable.pop();
-            DENSITY_TEST_ASSERT(*queue_of_uncopyable.front() == 10);
+            TESTITY_ASSERT(*queue_of_uncopyable.front() == 10);
             queue_of_uncopyable.pop();
-            DENSITY_TEST_ASSERT(queue_of_uncopyable.empty());
+            TESTITY_ASSERT(queue_of_uncopyable.empty());
 
             // this must fail to compile
             //auto copy = queue_of_uncopyable;

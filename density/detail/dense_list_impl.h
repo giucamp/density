@@ -224,7 +224,8 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
-                    const auto element_base = i_element_info.copy_construct(complete_new_element, i_source);
+                    const auto element_base = i_element_info.copy_construct(complete_new_element, 
+						static_cast<const typename RUNTIME_TYPE::base_type*>(i_source) );
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -247,7 +248,8 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
-                    const auto element_base = i_element_info.move_construct_nothrow(complete_new_element, i_source);
+                    const auto element_base = i_element_info.move_construct_nothrow(complete_new_element, 
+						static_cast<typename RUNTIME_TYPE::base_type*>(i_source));
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -538,7 +540,8 @@ namespace density
                             }
                             else
                             {
-                                tmp_it.complete_type().move_construct_nothrow(this_it.element(), tmp_it.element());
+                                tmp_it.complete_type().move_construct_nothrow(this_it.element(), 
+									static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
                                 this_it.move_next();
                             }
                         }

@@ -616,6 +616,12 @@ namespace density
     {
     public:
 
+		/** Alias for the template argument BASE_TYPE */
+		using base_type = BASE_TYPE;
+
+		/** Alias for the template argument FEATURE_LIST */
+		using feature_list = FEATURE_LIST;
+
 		/** Creates a runtime_type associated with the specified type. The latter is the target type.
 				@tparam TYPE target type that is type-erased by the returned runtime_type. */
 		template <typename TYPE>
@@ -652,26 +658,61 @@ namespace density
             return get_feature<type_features::alignment>();
         }
 
-		/** Default constructs an instance of the target type on the specified uninitialized storage
-			The effect of this function is the evaluation of new(i_dest) TERGET_TYPE, where TERGET_TYPE is the target type
+		/** Default constructs an instance of the target type on the specified uninitialized storage. \n
+			The effect of this function is the same of this code:
+				@code
+					return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE() );
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make). Note that primitive 
+			types are initialized by this expression.
 			@param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
 				must be large at least as the result of runtime_type::size, and must be aligned like runtime_type::alignment. 
-			@return pointer 
-				*/
-        void * default_construct(void * i_dest) const
+			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
+				assume that the value of this pointer is the same of i_dest. 
+			
+			\n\b Throws: anything that the default constructor of the target type throws. */
+		BASE_TYPE * default_construct(void * i_dest) const
         {
 			DENSITY_ASSERT( is_address_aligned( i_dest, alignment() ) );
-            return get_feature<type_features::default_construct>()(i_dest);
+            return static_cast<BASE_TYPE*>( get_feature<type_features::default_construct>()(i_dest) );
         }
 
-        void * copy_construct(void * i_dest, const void * i_source) const
+		/** Copy constructs an instance of the target type on the specified uninitialized storage. \n
+			The effect of this function is the same of this code:
+				@code
+					return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE( 
+						*dynamic_cast<const TARGET_TYPE*>(i_source) ) );
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
+			@param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
+				must be large at least as the result of runtime_type::size, and must be aligned like runtime_type::alignment. 
+			@param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
+			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
+				assume that the value of this pointer is the same of i_dest. 
+				
+			\n\b Throws: anything that the copy constructor of the target type throws. */
+		BASE_TYPE * copy_construct(void * i_dest, const BASE_TYPE * i_source) const
         {
-            return get_feature<type_features::copy_construct>()(i_dest, i_source);
+            return static_cast<BASE_TYPE*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
         }
 
-        void * move_construct_nothrow(void * i_dest, void * i_source) const DENSITY_NOEXCEPT
+		/** Move constructs an instance of the target type on the specified uninitialized storage. \n
+			The effect of this function is the same of this code:
+				@code
+					return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE( 
+						std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) );
+				@endcode
+			where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
+			@param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
+				must be large at least as the result of runtime_type::size, and must be aligned like runtime_type::alignment. 
+			@param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
+			@return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not 
+				assume that the value of this pointer is the same of i_dest. 
+				
+			\n\b Throws: nothing. This library requires noexcept move constructors. */
+		BASE_TYPE * move_construct_nothrow(void * i_dest, BASE_TYPE * i_source) const DENSITY_NOEXCEPT
         {
-            return get_feature<type_features::move_construct>()(i_dest, i_source);
+            return static_cast<BASE_TYPE*>(get_feature<type_features::move_construct>()(i_dest, i_source));
         }
 
         void destroy(void * i_dest) const noexcept
