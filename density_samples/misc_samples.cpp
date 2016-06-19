@@ -6,6 +6,41 @@
 
 namespace misc_samples
 {
+	//! [runtime_type example 2]
+	
+	/* This feature calls an update function on any object. The update has not to be virtual, as 
+		type erasure is a kind of virtualization. */
+	struct feature_call_update
+	{
+		using type = void(*)(void * i_dest, float i_elapsed_time);
+
+		template <typename BASE, typename TYPE> struct Impl
+		{
+			static void invoke(void * i_base_dest, float i_elapsed_time) noexcept
+			{
+				const auto base_dest = static_cast<BASE*>(i_base_dest);
+				static_cast<TYPE*>(base_dest)->update(i_elapsed_time);
+			}
+			static const uintptr_t value;
+		};
+	};
+	template <typename TYPE, typename BASE>
+		const uintptr_t feature_call_update::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+	struct ObjectA
+	{
+		void update(float i_elapsed_time)
+			{ std::cout << "ObjectA::update(" << i_elapsed_time << ")" << std::endl; }
+	};
+
+	struct ObjectB
+	{
+		void update(float i_elapsed_time)
+			{ std::cout << "ObjectB::update(" << i_elapsed_time << ")" << std::endl; }
+	};
+
+	//! [runtime_type example 2]
+
 	void run()
 	{
 		{
@@ -73,6 +108,31 @@ namespace misc_samples
 	free(buff);
 
 			//! [runtime_type example 1]
+		}
+
+
+		{
+			//! [runtime_type example 3]
+
+	using namespace density;
+	using namespace type_features;
+
+	// concatenates feature_call_update to the default features
+	using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
+
+	// create an array with 4 objects
+	auto my_array = array_any<void, std::allocator<void>, runtime_type<void, MyFeatures> >::make(
+		ObjectA(), ObjectB(), ObjectA(), ObjectB() );
+	
+	// call update on all the objects
+	auto const end_it = my_array.end();
+	for (auto it = my_array.begin(); it != end_it; ++it)
+	{
+		auto const update_func = it.complete_type().get_feature<feature_call_update>();
+		update_func(it.element(), 1.f / 60.f );
+	}
+
+			//! [runtime_type example 3]
 		}
 	}
 } // namespace misc_samples

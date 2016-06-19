@@ -14,7 +14,7 @@
 
 #define DENSITY_VERSION            0x0007
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(NDEBUG)
     #define DENSITY_DEBUG                    1
     #define DENSITY_DEBUG_INTERNAL           1
 #else
