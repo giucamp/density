@@ -172,8 +172,10 @@ namespace testity
         std::ostringstream compiler;
         #ifdef _MSC_VER
                 compiler << "MSC - " << _MSC_VER;
-        #elif __clang__
+        #elif defined(__clang__)
                 compiler << "Clang - " << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__;
+        #elif defined( __GNUC__ )
+               compiler << "GCC - " << __GNUC__ << '.' << __GNUC_MINOR__ << '.' << __GNUC_PATCHLEVEL__;
         #else
                 compiler << "unknown";
         #endif

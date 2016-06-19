@@ -291,7 +291,7 @@ namespace density
 
             /* Exception thrown as result to an exception occurred during the update of the shadow container.
                 Handlers for of this exception can't check the tested container against the shadow container. */
-            class BasicGuaranteeException : TestException
+            class BasicGuaranteeException : public TestException
             {
             public:
 

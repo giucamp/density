@@ -305,7 +305,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
         void * allocate(size_t i_mem_size)
         {
-            return t_allocator.allocate(i_mem_size);
+            return get_allocator().allocate(i_mem_size);
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -319,7 +319,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
         void * reallocate(void * i_block, size_t i_new_mem_size)
         {
-            return t_allocator.reallocate(i_block, i_new_mem_size);
+            return get_allocator().reallocate(i_block, i_new_mem_size);
         }
 
         /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
@@ -328,15 +328,22 @@ namespace density
             \n\b Throws: nothing. */
         void deallocate(void * i_block) DENSITY_NOEXCEPT
         {
-            t_allocator.deallocate(i_block);
+			get_allocator().deallocate(i_block);
         }
 
+	private:
+		static lifo_allocator<UNDERLYING_VOID_ALLOCATOR> & get_allocator()
+		{
+			static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> s_allocator;
+			return s_allocator;
+		}
+
     private:
-        static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> t_allocator;
+        //static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> t_allocator;
     };
 
-    template <typename UNDERLYING_VOID_ALLOCATOR>
-        thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> thread_lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_allocator;
+    /*template <typename UNDERLYING_VOID_ALLOCATOR>
+        thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> thread_lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_allocator;*/
 
     template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
         class lifo_buffer : LIFO_ALLOCATOR
