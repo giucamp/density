@@ -611,36 +611,56 @@ namespace density
     /** Class template that performs type-erasure.
             @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
     */
-    template <typename BASE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<BASE> >
+    template <typename BASE_TYPE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<BASE_TYPE> >
         class runtime_type
     {
     public:
 
-		/** Construct an empty runtime_type not associated with any type. Trying to use any feature of a  */
-        runtime_type() = default;
-        runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
-        runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;
-		runtime_type & operator = (runtime_type &&) DENSITY_NOEXCEPT = default;
-		runtime_type & operator = (const runtime_type &) DENSITY_NOEXCEPT = default;
-
-        template <typename TYPE>
-            static runtime_type make()
+		/** Creates a runtime_type associated with the specified type. The latter is the target type.
+				@tparam TYPE target type that is type-erased by the returned runtime_type. */
+		template <typename TYPE>
+            static runtime_type make() DENSITY_NOEXCEPT
         {
-            return runtime_type(detail::FeatureTable<BASE, TYPE, FEATURE_LIST>::s_table);
+            return runtime_type(detail::FeatureTable<BASE_TYPE, TYPE, FEATURE_LIST>::s_table);
         }
 
+		/** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
+			runtime_type leads to undefined behavior. */
+        runtime_type() = default;
+
+		/** Move-constructs a runtime_type */
+        runtime_type(runtime_type && ) DENSITY_NOEXCEPT = default;
+        
+		/** Copy-constructs a runtime_type */
+		runtime_type(const runtime_type &) DENSITY_NOEXCEPT = default;
+		
+		/** Move-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
+		runtime_type & operator = (runtime_type &&) DENSITY_NOEXCEPT = default;
+		
+		/** Copy-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
+		runtime_type & operator = (const runtime_type &) DENSITY_NOEXCEPT = default;
+
+		/** Returns the size (in bytes) of the target type, as sizeof() does. */
         size_t size() const DENSITY_NOEXCEPT
         {
             return get_feature<type_features::size>();
         }
 
+		/** Returns the alignment (in bytes) of the target type, as alignof() operator does. */
         size_t alignment() const DENSITY_NOEXCEPT
         {
             return get_feature<type_features::alignment>();
         }
 
+		/** Default constructs an instance of the target type on the specified uninitialized storage
+			The effect of this function is the evaluation of new(i_dest) TERGET_TYPE, where TERGET_TYPE is the target type
+			@param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
+				must be large at least as the result of runtime_type::size, and must be aligned like runtime_type::alignment. 
+			@return pointer 
+				*/
         void * default_construct(void * i_dest) const
         {
+			DENSITY_ASSERT( is_address_aligned( i_dest, alignment() ) );
             return get_feature<type_features::default_construct>()(i_dest);
         }
 
