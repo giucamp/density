@@ -5,39 +5,44 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <memory>
-#include <cstddef>
+#include <cstdlib>
 
 namespace density
 {
-    template <typename ALLOCATOR>
-        class page_allocator : private std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>
-    {
-    private:
-        using Base = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
-
+    class page_allocator
+	{
     public:
         static const size_t page_size = 4096;
         static const size_t page_alignment = alignof(std::max_align_t);
 
         void * allocate_page()
         {
-            return this->allocate(page_size);
+			return operator new (page_size);
         }
 
-        void deallocate_page(void * i_page)
+        void deallocate_page(void * i_page) noexcept
         {
-            return this->deallocate(static_cast<char*>(i_page), page_size);
+			long bb = __cplusplus;
+			#if __cplusplus >= 201402L
+				operator delete (i_page, page_size); // since C++14
+			#else
+				operator delete (i_page);
+			#endif
         }
 
-        void * allocate(size_t i_size)
+        void * allocate_large_block(size_t i_size)
         {
-            return this->Base::allocate(i_size);
+			return operator new (i_size);
         }
 
-        void deallocate(void * i_block, size_t i_size)
+        void deallocate_large_block(void * i_block, size_t i_size)
         {
-            this->Base::deallocate(reinterpret_cast<char*>(i_block), i_size);
+			#if __cplusplus >= 201402L
+				operator delete (i_block, i_size); // since C++14
+			#else
+				(void)i_size;
+				operator delete (i_block);
+			#endif
         }
     };
 

@@ -248,7 +248,6 @@
     <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
-    <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\testity\correctness_test_context.h" />
     <ClInclude Include="..\..\testity\environment.h" />
     <ClInclude Include="..\..\testity\testing_utils.h" />

@@ -105,9 +105,6 @@
     <ClInclude Include="..\..\density\detail\dense_list_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\void_allocator.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
     </ClInclude>

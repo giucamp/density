@@ -25,7 +25,7 @@ namespace density
 
         /* TestPagedQueue<TYPE> - queue_any that uses TestAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
-            using TestPagedQueue = queue_any<TYPE, page_allocator<TestAllocator<TYPE>>, runtime_type<TYPE,
+            using TestPagedQueue = queue_any<TYPE, page_allocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>

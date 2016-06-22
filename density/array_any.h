@@ -16,7 +16,7 @@ namespace density
         of many methods is linear, in contrast with the constant amortized time of the equivalent methods of std::vector. Insertions
         and removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate
         existing iterators
-        The inline storage of array_any is the same of a pointer, provided that the template argument ALLOCATOR is an empty class
+        The sizeof(array_any) is the same of a pointer, provided that the template argument ALLOCATOR is an empty class
         and the compiler supports the empty base class optimization. An empty array_any does not own a dynamic memory block.
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of array_any is noexcept or provides the strong exception guarantee.

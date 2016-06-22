@@ -51,7 +51,7 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator<std::allocator<ELEMENT>>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class queue_any final : private PAGE_ALLOCATOR
     {
         struct PageHeader;
@@ -801,7 +801,7 @@ namespace density
             else
             {
                 actual_page_size = min_page_size;
-                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate(actual_page_size));
+                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate_large_block(actual_page_size));
             }
 
             auto new_page = new(alloc) PageHeader(alloc + 1, actual_page_size - sizeof(PageHeader));
@@ -832,7 +832,7 @@ namespace density
             else
             {
                 char * block = reinterpret_cast<char*>(i_page);
-                get_allocator_ref().deallocate(block, actual_page_size);
+                get_allocator_ref().deallocate_large_block(block, actual_page_size);
             }
         }
 

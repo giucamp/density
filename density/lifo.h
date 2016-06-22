@@ -6,8 +6,8 @@
 
 #pragma once
 #include "density_common.h"
-#include "void_allocator.h"
 #include "runtime_type.h"
+#include "page_allocator.h"
 #include <vector>
 #include <memory>
 
@@ -24,8 +24,8 @@ namespace density
         The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block.
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
         See thread_lifo_allocator for a stateless LIFO allocator. */
-    template <typename UNDERLYING_VOID_ALLOCATOR = void_allocator >
-        class lifo_allocator : private UNDERLYING_VOID_ALLOCATOR
+    template <typename PAGE_ALLOCATOR = page_allocator >
+        class lifo_allocator : private PAGE_ALLOCATOR
     {
     public:
 
@@ -38,14 +38,16 @@ namespace density
         lifo_allocator(const lifo_allocator &) = delete;
         lifo_allocator & operator = (const lifo_allocator &) = delete;
 
-        /** Destroys the allocator, deallocating any living bock*/
+        /** Destroys the allocator, deallocating any living bock */
         ~lifo_allocator()
         {
             deallocate_all();
         }
 
-        /** Allocates a memory block. The content of the newly allocated memory is undefined.
+        /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
+			is aligned at least liek std::max_align_t.
                 @param i_block i_mem_size The size of the requested block, in bytes.
+				@return address of the alocated block
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
         void * allocate(size_t i_mem_size)
@@ -62,7 +64,6 @@ namespace density
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
             The address of the block may change. The content of the memory block is not preserved.
-            If the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, is no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
                 @param i_new_mem_size the new size requested for the block, in bytes.
@@ -79,13 +80,7 @@ namespace density
             else
             {
                 auto prev_last_page = m_last_page;
-                auto size_to_copy = m_last_page->size_of_most_recent_block(i_block);
-                if (size_to_copy >= new_actual_size)
-                {
-                    size_to_copy = new_actual_size;
-                }
-                // the following line may throw
-                auto const new_block = alloc_new_page(new_actual_size);
+				auto const new_block = alloc_new_page(new_actual_size); // <- this line may throw
                 prev_last_page->free(i_block);
                 return new_block;
             }
@@ -148,35 +143,42 @@ namespace density
             }
         }
 
-        UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() noexcept
+		PAGE_ALLOCATOR & get_page_allocator() noexcept
         {
             return *this;
         }
 
-        const UNDERLYING_VOID_ALLOCATOR & get_underlying_allocator() const noexcept
+        const PAGE_ALLOCATOR & get_page_allocator() const noexcept
         {
             return *this;
         }
 
     private:
 
-        static const size_t s_granularity = alignof(std::max_align_t);
+        static const size_t granularity = alignof(std::max_align_t);
         static const size_t s_alignment_mask = s_alignment - 1;
         static const size_t s_min_page_size = 2048;
 
-        DENSITY_NO_INLINE void * alloc_new_page(size_t i_size)
+        DENSITY_NO_INLINE void * alloc_new_page(size_t i_needed_size)
         {
-            const size_t page_size = detail::size_max(
-                i_size + sizeof(PageHeader),
-                detail::size_max(s_min_page_size, UNDERLYING_VOID_ALLOCATOR::s_min_block_size));
-
-            PageHeader * const new_page = static_cast<PageHeader*>( get_underlying_allocator().allocate(page_size, s_granularity) );
-            m_last_page = new(new_page) PageHeader(m_last_page,
-                new_page + 1, address_add(new_page, page_size));
+			auto needed_page_size = i_needed_size + sizeof(PageHeader);
+			void * page_address;
+			if (needed_page_size <= PAGE_ALLOCATOR::page_size)
+			{
+				page_address = get_page_allocator().allocate_page();
+				needed_page_size = PAGE_ALLOCATOR::page_size;
+			}
+			else
+			{
+				page_address = get_page_allocator().allocate_large_block(needed_page_size);
+			}
+            
+            m_last_page = new(page_address) PageHeader(m_last_page,
+				address_add(page_address, sizeof(PageHeader)), address_add(page_address, needed_page_size));
 
             /* note: the size of the first block of a page cannot be zero, otherwise is_empty() would
                 return true even if this block is living. */
-            void * const new_block = new_page->allocate(i_size > 0 ? i_size : s_granularity);
+            void * const new_block = m_last_page->allocate(i_needed_size > 0 ? i_needed_size : granularity);
             DENSITY_ASSERT_INTERNAL(new_block != nullptr);
             return new_block;
         }
@@ -185,9 +187,17 @@ namespace density
         {
             auto const last_page = m_last_page;
             auto const prev_page = last_page->prev_page();
-            last_page->PageHeader::~PageHeader();
-            get_underlying_allocator().deallocate(last_page, last_page->capacity() + sizeof(PageHeader), s_granularity);
-            m_last_page = prev_page;
+			auto const last_page_size = last_page->capacity() + sizeof(PageHeader);
+			last_page->PageHeader::~PageHeader();
+			if (last_page_size <= PAGE_ALLOCATOR::page_size)
+			{
+				get_page_allocator().deallocate_page(last_page);
+			}
+			else
+			{
+				get_page_allocator().deallocate_large_block(last_page, last_page_size);
+			}
+			m_last_page = prev_page;
         }
 
         class PageHeader
@@ -293,13 +303,13 @@ namespace density
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
         Only the calling thread matters.
         When a thread exits all its living block are deallocated. */
-    template <typename UNDERLYING_VOID_ALLOCATOR = void_allocator >
+    template <typename PAGE_ALLOCATOR = page_allocator >
         class thread_lifo_allocator
     {
     public:
 
         /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-        static const size_t s_alignment = lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::s_alignment;
+        static const size_t page_alignment = PAGE_ALLOCATOR::page_alignment;
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined.
                 @param i_block i_mem_size The size of the requested block, in bytes.
@@ -334,18 +344,18 @@ namespace density
         }
 
 	private:
-		static lifo_allocator<UNDERLYING_VOID_ALLOCATOR> & get_allocator()
+		static lifo_allocator<PAGE_ALLOCATOR> & get_allocator()
 		{
-			static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> s_allocator;
+			static thread_local lifo_allocator<PAGE_ALLOCATOR> s_allocator;
 			return s_allocator;
 		}
 
     private:
-        //static thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> t_allocator;
+        //static thread_local lifo_allocator<PAGE_ALLOCATOR> t_allocator;
     };
 
-    /*template <typename UNDERLYING_VOID_ALLOCATOR>
-        thread_local lifo_allocator<UNDERLYING_VOID_ALLOCATOR> thread_lifo_allocator<UNDERLYING_VOID_ALLOCATOR>::t_allocator;*/
+    /*template <typename PAGE_ALLOCATOR>
+        thread_local lifo_allocator<PAGE_ALLOCATOR> thread_lifo_allocator<PAGE_ALLOCATOR>::t_allocator;*/
 
     template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
         class lifo_buffer : LIFO_ALLOCATOR
