@@ -7,6 +7,7 @@
 #pragma once
 #include "density_common.h"
 #include "void_allocator.h"
+#include "runtime_type.h"
 #include <vector>
 #include <memory>
 
@@ -219,7 +220,8 @@ namespace density
             {
                 const auto start_of_block = i_block;
                 const auto end_of_block = address_add(i_block, i_new_size);
-                if (end_of_block >= start_of_block && end_of_block <= m_end_address)
+				// check for arithmetic overflow or insufficient space
+				if (end_of_block >= start_of_block && end_of_block <= m_end_address)
                 {
                     m_curr_address = end_of_block;
                     return true;
@@ -379,7 +381,7 @@ namespace density
         lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size, size_t i_alignment)
             : LIFO_ALLOCATOR(i_allocator)
         {
-                        // the lifo block is already aligned like std::max_align_t
+            // the lifo block is already aligned like std::max_align_t
             auto actual_block_size = i_mem_size;
             if (i_alignment > alignof(std::max_align_t))
             {
@@ -637,5 +639,122 @@ namespace density
         using detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>::m_elements;
         const size_t m_size;
     };
+
+	template <typename RUNTIME_TYPE = runtime_type<>, typename LIFO_ALLOCATOR = thread_lifo_allocator<> >
+		class lifo_any : private LIFO_ALLOCATOR
+	{
+	public:
+
+		lifo_any() noexcept
+			: m_block(nullptr), m_object(nullptr)
+				{ }
+
+		template <typename TARGET_TYPE>
+			lifo_any(TARGET_TYPE && i_source)
+				: m_type(RUNTIME_TYPE::template make<TARGET_TYPE>())
+		{
+			assign_impl(i_source);
+		}
+
+		template <typename TARGET_TYPE>
+			lifo_any & operator = (TARGET_TYPE && i_source)
+		{
+			clear_impl();
+			m_type = RUNTIME_TYPE::template make<TARGET_TYPE>();
+			assign_impl(i_source);
+			return *this;
+		}
+
+		void clear() noexcept
+		{
+			clear_impl();
+			m_type.clear();
+			m_block = nullptr;
+			m_object = nullptr;
+		}
+
+		bool operator == (const lifo_any & i_other) const noexcept
+		{
+			return m_type == i_other.m_type &&
+				m_type.get_feature<type_features::equals>()(m_object, i_other.m_object);
+		}
+
+		bool operator != (const lifo_any & i_other) const noexcept
+		{
+			return m_type != i_other.m_type ||
+				m_type.get_feature<type_features::less>()(m_object, i_other.m_object);
+		}
+
+		const RUNTIME_TYPE & type() const noexcept { return m_type; }
+
+		const typename RUNTIME_TYPE::base_type * data() const noexcept
+		{
+			return m_object;
+		}
+
+		typename RUNTIME_TYPE::base_type * data() noexcept
+		{
+			return m_object;
+		}
+
+		LIFO_ALLOCATOR & get_allocator() noexcept
+		{
+			return *this;
+		}
+
+		const LIFO_ALLOCATOR & get_allocator() const noexcept
+		{
+			return *this;
+		}
+
+	private:
+
+		template <typename TARGET_TYPE>
+			typename RUNTIME_TYPE::base_type * construct_impl(void * i_dest, TARGET_TYPE && i_source, std::true_type)
+		{
+			typename RUNTIME_TYPE::base_type * base_ptr = &i_source;
+			return m_type.move_construct(i_dest, base_ptr);
+		}
+
+		template <typename TARGET_TYPE>
+			typename RUNTIME_TYPE::base_type * construct_impl(void * i_dest, const TARGET_TYPE & i_source, std::false_type)
+		{
+			const typename RUNTIME_TYPE::base_type * base_ptr = &i_source;
+			return m_type.copy_construct(i_dest, base_ptr);
+		}
+
+		template <typename TARGET_TYPE>
+			void assign_impl(TARGET_TYPE && i_source)
+		{
+			auto const size = m_type.alignment();
+			auto const alignment = m_type.alignment();
+			void * aligned_block;
+			if (alignment <= alignof(std::max_align_t))
+			{
+				aligned_block = m_block = get_allocator().allocate(size);
+			}
+			else
+			{
+				// the lifo block is already aligned like std::max_align_t
+				const size_t size_overhead = alignment - alignof(std::max_align_t);
+				m_block = get_allocator().allocate(size_overhead + size);				
+				aligned_block = address_upper_align(m_block, alignment);
+				DENSITY_ASSERT_INTERNAL(address_diff(aligned_block, m_block) <= size_overhead);
+			}
+			m_object = construct_impl(aligned_block, std::forward<TARGET_TYPE>(i_source),
+				typename std::is_rvalue_reference<TARGET_TYPE&&>::type() );
+		}
+
+		void clear_impl() noexcept
+		{
+			m_type.destroy(m_object);
+			get_allocator().deallocate(m_block);
+		}
+
+	private:
+		RUNTIME_TYPE m_type;
+		void * m_block;
+		typename RUNTIME_TYPE::base_type * m_object;
+	};
 
 } // namespace density

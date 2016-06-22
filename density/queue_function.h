@@ -41,11 +41,11 @@ namespace density
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of queue_function is noexcept or provides the strong exception guarantee.
 
-        There is not constant time function that gives the number of elements in a small_queue_any in constant time,
-        but std::distance will do (in linear time). Anyway small_queue_any::mem_size, small_queue_any::mem_capacity and
-        small_queue_any::empty work in constant time.
-        Insertion is allowed only at the end (with the methods small_queue_any::push or small_queue_any::emplace).
-        Removal is allowed only at the begin (with the methods small_queue_any::pop or small_queue_any::consume). */
+        There is not constant time function that gives the number of elements in a queue_function in constant time,
+        but std::distance will do (in linear time). Anyway queue_function::mem_size, queue_function::mem_capacity and
+        queue_function::empty work in constant time.
+        Insertion is allowed only at the end (with the methods queue_function::push or queue_function::emplace).
+        Removal is allowed only at the begin (with the methods queue_function::pop or queue_function::consume). */
     template < typename RET_VAL, typename... PARAMS >
         class queue_function<RET_VAL (PARAMS...)> final
     {
@@ -89,7 +89,8 @@ namespace density
         RET_VAL invoke_front(PARAMS... i_params) const
         {
             auto first = m_queue.begin();
-            return first.complete_type().template get_feature<typename type_features::invoke<value_type>>()(first.element(), i_params...);
+            return first.complete_type().template get_feature<typename type_features::invoke<value_type>>()(
+				first.element(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Invokes the first function object of the queue and then deletes it from the queue.
@@ -105,7 +106,8 @@ namespace density
         RET_VAL consume_front(PARAMS... i_params)
         {
             return m_queue.manual_consume([&i_params...](const runtime_type<void, features > & i_complete_type, void * i_element) {
-                return i_complete_type.template get_feature<typename type_features::invoke_destroy<value_type>>()(i_element, i_params...);
+                return i_complete_type.template get_feature<typename type_features::invoke_destroy<value_type>>()(
+					i_element, std::forward<PARAMS>(i_params)...);
             } );
         }
 

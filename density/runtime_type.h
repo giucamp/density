@@ -75,7 +75,7 @@ namespace density
 				};
 			};
 			\endcode
-			A feature is a struct (or class) that doesn't depend on the type to erase. In constrast the inner type Impl
+			A feature is a struct (or class) that doesn't depend on the type to erase. In contrast the inner type Impl
 			depends on the type to erase, and on the base type. All the types to erase are covariant to
 			the base type. If the base type is void any type can be erased. \n
 			The value of the feature (a static const uintptr_t) in Impl stores a value that is required for
@@ -614,21 +614,23 @@ namespace density
 				the feature_list is obtained with type_features::default_type_features.
 		
 		An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
-		depending on the features included on FEATURE_LIST. \n
+		instances of the target types, depending on the features included on FEATURE_LIST. \n
 		A runtime_type bound to a type can be created with the static function runtime_type::make. runtime_type is copyable. \n
 		A default-constructed runtime_type is empty: trying to use type-features of an empty runtime_type leads to undefined behavior.
+		A runtime_type becomes empty is the member function clear is called.
 
 		runtime_type exposes a set of functions to manipulate instances of the target type. Anyway it can be extended
 		with any type feature built-in in density (for example type_features::equals or type_features::less). Furthermore
 		user-defined features are supported, to add custom capabilities to the type erasure (see the examples below). \n
-		Features can be queried with the function get_feature, specifying the requested feature at compile-time as template
+		Features can be queried with the function runtime_type::get_feature, specifying the requested feature at compile-time as template
 		argument. The search is performed at compile time. If the requested feature is not included in FEATURE_LIST, a 
 		static_assert fails.
 
 		\n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable, that is a static array of feature 
 			values: for every feature in FEATURE_LIST there is an entry in this vtable. Most entries are pointer to functions.
-			Anyway, some features (notably type_features::size and type_features::alignment) store a simple value.
+			Anyway, some features (notably type_features::size and type_features::alignment) store a simple value. \n
 					
+		
 		In this example a std::string is created and destroyed using a runtime_type.
 		
 		\snippet misc_samples.cpp runtime_type example 1
@@ -637,7 +639,7 @@ namespace density
 		
 		\snippet misc_samples.cpp runtime_type example 2
 
-		This code uses feature_call_update. Note that:
+		The example below uses feature_call_update. Note that:
 			- ObjectA and ObjectB are unrelated types (no common base class)
 			- ObjectA::update and ObjectB::update are not virtual functions
 			- If a std::string was added to the array, a compile time error would report that std::string has not an update function
@@ -660,7 +662,8 @@ namespace density
 		template <typename TYPE>
             static runtime_type make() noexcept
         {
-            return runtime_type(detail::FeatureTable<BASE_TYPE, TYPE, FEATURE_LIST>::s_table);
+            return runtime_type(detail::FeatureTable<BASE_TYPE, 
+				typename std::decay<TYPE>::type, FEATURE_LIST>::s_table);
         }
 
 		/** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
@@ -681,6 +684,11 @@ namespace density
 
 		/** Returns whether this runtime_type is not bound to a target type */
 		bool empty() const noexcept { return m_table == nullptr; }
+
+		void clear() noexcept
+		{
+			m_table = nullptr;
+		}
 
 		/** Returns the size (in bytes) of the target type, which is always > 0. \n 
 			The effect of this function is the same of this code:

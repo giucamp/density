@@ -27,18 +27,6 @@ namespace misc_samples
 	template <typename TYPE, typename BASE>
 		const uintptr_t feature_call_update::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-	struct ObjectA
-	{
-		void update(float i_elapsed_time)
-			{ std::cout << "ObjectA::update(" << i_elapsed_time << ")" << std::endl; }
-	};
-
-	struct ObjectB
-	{
-		void update(float i_elapsed_time)
-			{ std::cout << "ObjectB::update(" << i_elapsed_time << ")" << std::endl; }
-	};
-
 	//! [runtime_type example 2]
 
 	void run()
@@ -113,6 +101,18 @@ namespace misc_samples
 
 		{
 			//! [runtime_type example 3]
+
+	struct ObjectA
+	{
+		void update(float i_elapsed_time)
+			{ std::cout << "ObjectA::update(" << i_elapsed_time << ")" << std::endl; }
+	};
+
+	struct ObjectB
+	{
+		void update(float i_elapsed_time)
+			{ std::cout << "ObjectB::update(" << i_elapsed_time << ")" << std::endl; }
+	};
 
 	using namespace density;
 	using namespace type_features;

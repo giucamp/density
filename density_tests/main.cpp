@@ -42,9 +42,9 @@ int main()
 	misc_samples::run();
 
 	#ifdef  _DEBUG
+		lifo_test();
 		dense_queue_test();
 		list_test();
-		lifo_test();
 		function_queue_test();
 		paged_queue_test();
 	#endif //  _DEBUG
