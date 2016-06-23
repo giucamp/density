@@ -106,7 +106,7 @@ namespace testity
         for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
-                [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length); });
+                [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length) == 0; });
 
             if (entry_it != node->m_children.end())
             {

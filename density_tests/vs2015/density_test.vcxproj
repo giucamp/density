@@ -155,6 +155,7 @@
       <CLanguageStandard>Default</CLanguageStandard>
       <CppLanguageStandard>c++11</CppLanguageStandard>
       <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -165,6 +166,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -179,6 +181,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -193,6 +196,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -208,6 +212,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CppLanguageStandard>c++11</CppLanguageStandard>
       <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

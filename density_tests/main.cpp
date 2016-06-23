@@ -39,31 +39,30 @@ int main()
     using namespace density::tests;
     using namespace testity;
 
-	misc_samples::run();
-
 	#ifdef  _DEBUG
-		lifo_test();
+		/*lifo_test();
+		paged_queue_test();
 		dense_queue_test();
 		list_test();
-		function_queue_test();
-		paged_queue_test();
+		function_queue_test();*/
 	#endif //  _DEBUG
 
     testity::TestTree test_tree("");
-
+	
     test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
 	add_queue_benchmarks(test_tree["/density/queue_test"]);
     add_function_queue_benchmarks(test_tree["/density/function_queue_test"]);
-    add_list_benchmarks(test_tree["/density/list_test"]);
+    //add_list_benchmarks(test_tree["/density/list_test"]);
 
     testity::Session test_session;
-    auto results = test_session.run(test_tree, std::cout);
-    results.save_to("perf.txt");
+    auto results = test_session.run(test_tree["/density/function_queue_test"], std::cout);
+	results.save_to("perf.txt");
 
     /*pointer_arithmetic_test();
     list_test();
     list_benchmark();*/
 
+	misc_samples::run();
 	producer_consumer_sample::run();
 	function_queue_sample::run();
 	lifo_sample::run();
