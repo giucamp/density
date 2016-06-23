@@ -39,12 +39,12 @@ int main()
     using namespace density::tests;
     using namespace testity;
 
-	#ifdef  _DEBUG
-		/*lifo_test();
+	#ifdef  _DEBUG		
 		paged_queue_test();
 		dense_queue_test();
+		lifo_test();
 		list_test();
-		function_queue_test();*/
+		function_queue_test();
 	#endif //  _DEBUG
 
     testity::TestTree test_tree("");

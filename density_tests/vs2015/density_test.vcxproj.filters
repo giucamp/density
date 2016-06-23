@@ -111,19 +111,19 @@
     <ClInclude Include="..\..\density\pointer_artithmetic.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\array_any.h">
+    <ClInclude Include="..\..\density\heterogeneous_array.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\small_queue_any.h">
+    <ClInclude Include="..\..\density\heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\queue_function.h">
+    <ClInclude Include="..\..\density\function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\small_queue_function.h">
+    <ClInclude Include="..\..\density\small_heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\queue_any.h">
+    <ClInclude Include="..\..\density\small_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>

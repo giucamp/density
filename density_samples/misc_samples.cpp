@@ -1,6 +1,6 @@
 
 #include "../density/runtime_type.h"
-#include "../density/array_any.h"
+#include "../density/heterogeneous_array.h"
 #include <string>
 #include <iostream>
 
@@ -63,8 +63,8 @@ namespace misc_samples
 	// since we are going to declare a type-erased container, we must include the default features (size, alignment, ...)
 	using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke >;
 			
-	// alias for a specific array_any. Until now we have just declared types
-	using ArrayOfInvokables = array_any<void, std::allocator<void>, runtime_type<void, MyFeatures> >;
+	// alias for a specific heterogeneous_array. Until now we have just declared types
+	using ArrayOfInvokables = heterogeneous_array<void, std::allocator<void>, runtime_type<void, MyFeatures> >;
 			
 	// instances an array with a lambda expression as only element
 	auto my_array = ArrayOfInvokables::make([](std::string s) { std::cout << s << std::endl; });
@@ -121,7 +121,7 @@ namespace misc_samples
 	using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
 
 	// create an array with 4 objects
-	auto my_array = array_any<void, std::allocator<void>, runtime_type<void, MyFeatures> >::make(
+	auto my_array = heterogeneous_array<void, std::allocator<void>, runtime_type<void, MyFeatures> >::make(
 		ObjectA(), ObjectB(), ObjectA(), ObjectB() );
 	
 	// call update on all the objects

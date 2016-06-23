@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/small_queue_function.h"
-#include "../density/queue_function.h"
+#include "../density/small_function_queue.h"
+#include "../density/function_queue.h"
 #include "../density/lifo.h"
 #include <string>
 #include <thread>
@@ -74,7 +74,7 @@ namespace producer_consumer_sample
 			// this buffer is used to store temporary the command to be executed
 			lifo_buffer<> buffer;
 
-			queue_function<void(size_t)>::underlying_queue::runtime_type function_type;
+			function_queue<void(size_t)>::underlying_queue::runtime_type function_type;
 			for (;;)
 			{
 				{
@@ -107,7 +107,7 @@ namespace producer_consumer_sample
 	private:
 		vector<thread> m_worker_threads;
 		mutex m_mutex;
-		queue_function<void(size_t)> m_commands;
+		function_queue<void(size_t)> m_commands;
 		condition_variable m_condition_variable;
 		bool m_termination_requested = false;
 	};

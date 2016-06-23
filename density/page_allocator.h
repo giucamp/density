@@ -25,11 +25,10 @@ namespace density
         void * allocate_page()
         {
 			auto page = thread_page_store().peek();
-			if (page != nullptr)
+			if (page == nullptr)
 			{
-				return page;
-			}
-			page = allocate_page_impl();
+				page = allocate_page_impl();
+			}			
 			#if DENSITY_DEBUG_INTERNAL
 				m_dbg_data->add_page(page);
 			#endif

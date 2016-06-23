@@ -5,11 +5,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "queue_any.h"
+#include "heterogeneous_queue.h"
 
 namespace density
 {
-    template < typename FUNCTION > class queue_function;
+    template < typename FUNCTION > class function_queue;
 
     /** \brief Queue of callable objects (or function object).
         Every element in the queue is a type-erased callable object (like a std::function). Elements that can be added to
@@ -25,29 +25,29 @@ namespace density
         For example:
 
         \code{.cpp}
-            queue_function<void()> queue_1;
+            function_queue<void()> queue_1;
             queue_1.push([]() { std::cout << "hello!" << std::endl; });
             queue_1.consume_front();
 
-            queue_function<int(double, double)> queue_2;
+            function_queue<int(double, double)> queue_2;
             queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
             std::cout << queue_2.consume_front(40., 2.) << std::endl;
         \endcode
 
-        small_queue_function internally uses a void queue_any (a queue that can contain elements of any type).
-        queue_function never moves or reallocates its elements, and has both better performances and better behavior
-        respect to small_queue_function when the number of elements is not small.
+        small_function_queue internally uses a void heterogeneous_queue (a queue that can contain elements of any type).
+        function_queue never moves or reallocates its elements, and has both better performances and better behavior
+        respect to small_function_queue when the number of elements is not small.
 
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of queue_function is noexcept or provides the strong exception guarantee.
+        \n<b>Exception safeness</b>: Any function of function_queue is noexcept or provides the strong exception guarantee.
 
-        There is not constant time function that gives the number of elements in a queue_function in constant time,
-        but std::distance will do (in linear time). Anyway queue_function::mem_size, queue_function::mem_capacity and
-        queue_function::empty work in constant time.
-        Insertion is allowed only at the end (with the methods queue_function::push or queue_function::emplace).
-        Removal is allowed only at the begin (with the methods queue_function::pop or queue_function::consume). */
+        There is not constant time function that gives the number of elements in a function_queue in constant time,
+        but std::distance will do (in linear time). Anyway function_queue::mem_size, function_queue::mem_capacity and
+        function_queue::empty work in constant time.
+        Insertion is allowed only at the end (with the methods function_queue::push or function_queue::emplace).
+        Removal is allowed only at the begin (with the methods function_queue::pop or function_queue::consume). */
     template < typename RET_VAL, typename... PARAMS >
-        class queue_function<RET_VAL (PARAMS...)> final
+        class function_queue<RET_VAL (PARAMS...)> final
     {
     public:
 
@@ -56,7 +56,7 @@ namespace density
 			type_features::size, type_features::alignment,
 			type_features::copy_construct, type_features::move_construct,
 			type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
-		using underlying_queue = queue_any<void, page_allocator, runtime_type<void, features > >;
+		using underlying_queue = heterogeneous_queue<void, page_allocator, runtime_type<void, features > >;
 
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.
@@ -160,7 +160,7 @@ namespace density
 
         /** Returns the used size in bytes. This size is dependant, in an implementation defined way, to the count, the type and
             the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is recommended
-            to use the function small_queue_function::empty to check if the queue is empty.
+            to use the function small_function_queue::empty to check if the queue is empty.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
@@ -170,7 +170,7 @@ namespace density
             return m_queue.mem_size();
         }
 
-        /** Returns the free size in bytes. This is equivalent to small_queue_function::mem_capacity decreased by small_queue_function::mem_size.
+        /** Returns the free size in bytes. This is equivalent to small_function_queue::mem_capacity decreased by small_function_queue::mem_size.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing

@@ -42,6 +42,8 @@
     #define DENSITY_STRONG_INLINE
 #endif
 
+#define DENSITY_COMPATCT_QUEUE                   1
+
 namespace density
 {
     namespace detail
@@ -441,9 +443,9 @@ namespace density
 
     /*! \page wid_list_iter_bench Widget list benchmarks
 
-    These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: array_any seems to perform better, but it's hard to tell how much.
+    These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: heterogeneous_array seems to perform better, but it's hard to tell how much.
 
-    ptr_vector is a std::vector of std::unique_ptr's, den_list is a array_any<Widget>. They are created before the test runs, with this code:
+    ptr_vector is a std::vector of std::unique_ptr's, den_list is a heterogeneous_array<Widget>. They are created before the test runs, with this code:
 
     \code{.cpp}
         static auto ptr_vector = []() {
@@ -462,7 +464,7 @@ namespace density
         }();
 
         static auto den_list = []() {
-            array_any<Widget> list;
+            heterogeneous_array<Widget> list;
             for (size_t i = 0; i < 3000; i++)
             {
                 switch (i % 3)
@@ -514,7 +516,7 @@ namespace density
 		}();
 
 		static auto den_list = []() {
-			array_any<void> res;
+			heterogeneous_array<void> res;
 			for (size_t i = 0; i < 3000; i++)
 			{
 				res.push_back(static_cast<int>(i));
@@ -531,8 +533,8 @@ namespace density
     - using a std::vector of std::function's
     - using a std::vector of std::function's with an initial reserve. In general one does not know the maximum size of the queue, so this may be considered a 'cheat'
     - using a std::queue (which uses a std::deque)
-    - using a \ref density::small_queue_function< RET_VAL(PARAMS...)> "small_queue_function"
-    - using a \ref density::queue_function< RET_VAL(PARAMS...)> "queue_function"
+    - using a \ref density::small_function_queue< RET_VAL(PARAMS...)> "small_function_queue"
+    - using a \ref density::function_queue< RET_VAL(PARAMS...)> "function_queue"
 
     \section func_queue_bench_sec1 No capture
     In the first test there is no captured state (function object are small).

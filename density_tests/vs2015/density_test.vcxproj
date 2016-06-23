@@ -241,15 +241,15 @@
     <ClCompile Include="..\queue_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\small_queue_function.h" />
-    <ClInclude Include="..\..\density\array_any.h" />
-    <ClInclude Include="..\..\density\small_queue_any.h" />
+    <ClInclude Include="..\..\density\small_function_queue.h" />
+    <ClInclude Include="..\..\density\heterogeneous_array.h" />
+    <ClInclude Include="..\..\density\small_heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\detail\dense_list_impl.h" />
     <ClInclude Include="..\..\density\detail\queue_impl.h" />
     <ClInclude Include="..\..\density\lifo.h" />
-    <ClInclude Include="..\..\density\queue_function.h" />
-    <ClInclude Include="..\..\density\queue_any.h" />
+    <ClInclude Include="..\..\density\function_queue.h" />
+    <ClInclude Include="..\..\density\heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />

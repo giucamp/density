@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/array_any.h"
+#include "../density/heterogeneous_array.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
 #include <algorithm>
@@ -15,9 +15,9 @@ namespace density
     namespace tests
     {
 
-        /* TestDenseList<TYPE> - array_any that uses TestAllocator and adds type_features::hash to the automatic runtime type */
+        /* TestDenseList<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseList = array_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+            using TestDenseList = heterogeneous_array<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>
@@ -183,7 +183,7 @@ namespace density
         {
             using namespace density;
             using namespace std;
-            auto list = array_any<>::make(3 + 5, string("abc"), 42.f);
+            auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
             list.push_front(wstring(L"ABC"));
             for (auto it = list.begin(); it != list.end(); it++)
             {
@@ -199,7 +199,7 @@ namespace density
             struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
             struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
-            auto widgets = array_any<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
+            auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
             for (auto & widget : widgets)
             {
                 widget.draw();
@@ -213,11 +213,11 @@ namespace density
         using namespace tests;
 
         std::mt19937 random;
-        list_test_impl(random, "array_any");
+        list_test_impl(random, "heterogeneous_array");
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            list_test_impl(random, "array_any");
+            list_test_impl(random, "heterogeneous_array");
         });
     }
 

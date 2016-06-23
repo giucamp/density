@@ -8,8 +8,8 @@
     #pragma warning(disable:4503) // '__LINE__Var': decorated name length exceeded, name was truncated
 #endif
 
-#include "../density/small_queue_any.h"
-#include "../density/queue_any.h"
+#include "../density/small_heterogeneous_queue.h"
+#include "../density/heterogeneous_queue.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
 #include <algorithm>
@@ -18,14 +18,14 @@ namespace density
 {
     namespace tests
     {
-        /* TestDenseQueue<TYPE> - small_queue_any that uses TestAllocator and adds hash to the automatic runtime type */
+        /* TestDenseQueue<TYPE> - small_heterogeneous_queue that uses TestAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseQueue = small_queue_any<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+            using TestDenseQueue = small_heterogeneous_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
-        /* TestPagedQueue<TYPE> - queue_any that uses TestAllocator and adds hash to the automatic runtime type */
+        /* TestPagedQueue<TYPE> - heterogeneous_queue that uses TestAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
-            using TestPagedQueue = queue_any<TYPE, page_allocator, runtime_type<TYPE,
+            using TestPagedQueue = heterogeneous_queue<TYPE, page_allocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
@@ -161,7 +161,7 @@ namespace density
         void dense_queue_leak_basic_tests()
         {
             NoLeakScope no_leaks;
-            using Queue = small_queue_any<int, TestAllocator<int>>;
+            using Queue = small_heterogeneous_queue<int, TestAllocator<int>>;
             Queue queue;
             for (int i = 0; i < 1000; i++)
             {
@@ -179,15 +179,15 @@ namespace density
 
         void dense_queue_basic_tests()
         {
-            small_queue_any< small_queue_any<int> > queue_of_queues;
-            small_queue_any<int> queue;
+            small_heterogeneous_queue< small_heterogeneous_queue<int> > queue_of_queues;
+            small_heterogeneous_queue<int> queue;
             for (int i = 0; i < 1000; i++)
             {
                 queue.push(i);
             }
             for (int i = 0; i < 57; i++)
             {
-                queue.manual_consume([i](const small_queue_any<int>::runtime_type & i_type, int * i_element)
+                queue.manual_consume([i](const small_heterogeneous_queue<int>::runtime_type & i_type, int * i_element)
                 {
                     TESTITY_ASSERT(i_type.type_info() == typeid(int) && *i_element == i );
                 });
@@ -204,7 +204,7 @@ namespace density
             TESTITY_ASSERT(queue.empty());
 
             // try with a non-copyable type (std::unique_ptr)
-            small_queue_any<std::unique_ptr<int>> queue_of_uncopyable;
+            small_heterogeneous_queue<std::unique_ptr<int>> queue_of_uncopyable;
             queue_of_uncopyable.push(std::unique_ptr<int>(new int(10)));
             queue_of_uncopyable.emplace<std::unique_ptr<int>>(std::unique_ptr<int>(new int (10)));
             TESTITY_ASSERT(*queue_of_uncopyable.front() == 10);
@@ -229,7 +229,7 @@ namespace density
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            queue_test_impl<TestDenseQueue>(random, "small_queue_any");
+            queue_test_impl<TestDenseQueue>(random, "small_heterogeneous_queue");
         });
     }
 
@@ -239,7 +239,7 @@ namespace density
 
         run_exception_stress_test([] {
             std::mt19937 random;
-            queue_test_impl<TestPagedQueue>(random, "queue_any");
+            queue_test_impl<TestPagedQueue>(random, "heterogeneous_queue");
         });
     }
 

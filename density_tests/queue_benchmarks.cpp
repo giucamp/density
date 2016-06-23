@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/small_queue_any.h"
-#include "../density/queue_any.h"
+#include "../density/small_heterogeneous_queue.h"
+#include "../density/heterogeneous_queue.h"
 #include "../testity/test_tree.h"
 #include <functional>
 #include <deque>
@@ -23,16 +23,16 @@ namespace density
 		{
 			PerformanceTestGroup group("push & consume, no capture", "density version: " + std::to_string(DENSITY_VERSION));
 
-			// small_queue_any
+			// small_heterogeneous_queue
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				small_queue_any<> queue;
+				small_heterogeneous_queue<> queue;
 				for (size_t index = 0; index < i_cardinality; index++)
 					queue.push(static_cast<int>(index));
 			}, __LINE__);
 
-			// queue_any
+			// heterogeneous_queue
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				queue_any<> queue;
+				heterogeneous_queue<> queue;
 				for (size_t index = 0; index < i_cardinality; index++)
 					queue.push(static_cast<int>(index));
 			}, __LINE__);
@@ -58,16 +58,16 @@ namespace density
         {
             PerformanceTestGroup group("fill queue by ints", "density version: " + std::to_string(DENSITY_VERSION));
 
-            // small_queue_any
+            // small_heterogeneous_queue
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-                small_queue_any<> queue;
+                small_heterogeneous_queue<> queue;
                 for (size_t index = 0; index < i_cardinality; index++)
                     queue.push(static_cast<int>(index));
             }, __LINE__);
 
-			// queue_any
+			// heterogeneous_queue
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				queue_any<> queue;
+				heterogeneous_queue<> queue;
 				for (size_t index = 0; index < i_cardinality; index++)
 					queue.push(static_cast<int>(index));
 			}, __LINE__);
