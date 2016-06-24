@@ -7,7 +7,7 @@
 #pragma once
 #include "density_common.h"
 #include "runtime_type.h"
-#include "page_allocator.h"
+#include "void_allocator.h"
 #include <vector>
 #include <memory>
 
@@ -24,8 +24,8 @@ namespace density
         The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block.
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
         See thread_lifo_allocator for a stateless LIFO allocator. */
-    template <typename PAGE_ALLOCATOR = page_allocator >
-        class lifo_allocator : private PAGE_ALLOCATOR
+    template <typename VOID_ALLOCATOR = void_allocator >
+        class lifo_allocator : private VOID_ALLOCATOR
     {
     public:
 
@@ -143,12 +143,12 @@ namespace density
             }
         }
 
-		PAGE_ALLOCATOR & get_page_allocator() noexcept
+		VOID_ALLOCATOR & get_page_allocator() noexcept
         {
             return *this;
         }
 
-        const PAGE_ALLOCATOR & get_page_allocator() const noexcept
+        const VOID_ALLOCATOR & get_page_allocator() const noexcept
         {
             return *this;
         }
@@ -161,7 +161,7 @@ namespace density
 
         DENSITY_NO_INLINE void * alloc_new_page(size_t i_needed_size)
         {
-			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+			const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
 
 			auto needed_page_size = i_needed_size + sizeof(PageHeader);
 			void * page_address;
@@ -172,7 +172,7 @@ namespace density
 			}
 			else
 			{
-				page_address = get_page_allocator().allocate_large_block(needed_page_size);
+				page_address = get_page_allocator().allocate(needed_page_size);
 			}
             
             m_last_page = new(page_address) PageHeader(m_last_page,
@@ -187,7 +187,7 @@ namespace density
 
         void pop_page() noexcept
         {
-			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+			const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
 
             auto const last_page = m_last_page;
             auto const prev_page = last_page->prev_page();
@@ -199,7 +199,7 @@ namespace density
 			}
 			else
 			{
-				get_page_allocator().deallocate_large_block(last_page, last_page_size);
+				get_page_allocator().deallocate(last_page, last_page_size);
 			}
 			m_last_page = prev_page;
         }
@@ -307,13 +307,13 @@ namespace density
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
         Only the calling thread matters.
         When a thread exits all its living block are deallocated. */
-    template <typename PAGE_ALLOCATOR = page_allocator >
+    template <typename VOID_ALLOCATOR = void_allocator >
         class thread_lifo_allocator
     {
     public:
 
         /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-		static size_t page_alignment() noexcept { return PAGE_ALLOCATOR::page_alignment; }
+		static size_t page_alignment() noexcept { return VOID_ALLOCATOR::page_alignment; }
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined.
                 @param i_block i_mem_size The size of the requested block, in bytes.
@@ -348,18 +348,18 @@ namespace density
         }
 
 	private:
-		static lifo_allocator<PAGE_ALLOCATOR> & get_allocator()
+		static lifo_allocator<VOID_ALLOCATOR> & get_allocator()
 		{
-			static thread_local lifo_allocator<PAGE_ALLOCATOR> s_allocator;
+			static thread_local lifo_allocator<VOID_ALLOCATOR> s_allocator;
 			return s_allocator;
 		}
 
     private:
-        //static thread_local lifo_allocator<PAGE_ALLOCATOR> t_allocator;
+        //static thread_local lifo_allocator<VOID_ALLOCATOR> t_allocator;
     };
 
-    /*template <typename PAGE_ALLOCATOR>
-        thread_local lifo_allocator<PAGE_ALLOCATOR> thread_lifo_allocator<PAGE_ALLOCATOR>::t_allocator;*/
+    /*template <typename VOID_ALLOCATOR>
+        thread_local lifo_allocator<VOID_ALLOCATOR> thread_lifo_allocator<VOID_ALLOCATOR>::t_allocator;*/
 
     template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
         class lifo_buffer : LIFO_ALLOCATOR

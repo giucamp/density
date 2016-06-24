@@ -73,7 +73,7 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp">
       <Filter>samples</Filter>
     </ClCompile>
-    <ClCompile Include="..\page_allocator_benchmarks.cpp">
+    <ClCompile Include="..\allocator_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
   </ItemGroup>
@@ -82,9 +82,6 @@
       <Filter>density_tests</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\density_common.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\page_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\runtime_type.h">
@@ -127,6 +124,9 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\small_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>

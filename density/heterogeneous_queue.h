@@ -7,7 +7,7 @@
 #pragma once
 #include <vector>
 #include "density_common.h"
-#include "page_allocator.h"
+#include "void_allocator.h"
 #include "detail\queue_impl.h"
 
 namespace density
@@ -51,8 +51,8 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class heterogeneous_queue final : private PAGE_ALLOCATOR
+    template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class heterogeneous_queue final : private VOID_ALLOCATOR
     {
         struct PageHeader;
 
@@ -61,7 +61,7 @@ namespace density
         static_assert(std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT, void>::value : true,
             "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )");
 
-        using allocator_type = PAGE_ALLOCATOR;
+        using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -793,7 +793,7 @@ namespace density
 
             PageHeader * alloc;
             size_t actual_page_size;
-			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+			const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
             if (min_page_size <= allocator_page_size)
             {
                 actual_page_size = allocator_page_size;
@@ -802,7 +802,7 @@ namespace density
             else
             {
                 actual_page_size = min_page_size;
-                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate_large_block(actual_page_size));
+                alloc = static_cast<PageHeader*>(get_allocator_ref().allocate(actual_page_size));
             }
 
             auto new_page = new(alloc) PageHeader(alloc + 1, actual_page_size - sizeof(PageHeader));
@@ -819,7 +819,7 @@ namespace density
 
         void delete_page(PageHeader * i_page) noexcept
         {
-			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+			const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
 
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());
@@ -835,7 +835,7 @@ namespace density
             else
             {
                 char * block = reinterpret_cast<char*>(i_page);
-                get_allocator_ref().deallocate_large_block(block, actual_page_size);
+                get_allocator_ref().deallocate(block, actual_page_size);
             }
         }
 
