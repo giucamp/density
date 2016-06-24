@@ -30,7 +30,7 @@ namespace density
             // void_allocator
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
 				void_allocator allocator;
-				void * pages[void_allocator::thread_store_size];
+				void * pages[void_allocator::free_page_cache_size];
 				for( size_t i = 0; i < i_cardinality; i++)
 				{					
 					for (auto & page : pages)
@@ -42,7 +42,7 @@ namespace density
 
 			// new and delete
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				void * pages[void_allocator::thread_store_size];
+				void * pages[void_allocator::free_page_cache_size];
 				const size_t allocator_page_size = void_allocator::page_size();
 				for (size_t i = 0; i < i_cardinality; i++)
 				{
@@ -55,7 +55,7 @@ namespace density
 
 			// new and delete
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				void * pages[void_allocator::thread_store_size];
+				void * pages[void_allocator::free_page_cache_size];
 				for (size_t i = 0; i < i_cardinality; i++)
 				{
 					for (auto & page : pages)
