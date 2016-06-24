@@ -6,6 +6,7 @@
 
 #pragma once
 #include <cstdlib> // for std::max_align_t
+#include "density_common.h"
 #if DENSITY_DEBUG_INTERNAL
 	#include <mutex>
 	#include <memory>

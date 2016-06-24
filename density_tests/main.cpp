@@ -23,6 +23,7 @@ namespace density
         void add_list_benchmarks(testity::TestTree & i_tree);
 		void add_queue_benchmarks(testity::TestTree & i_tree);
         void add_function_queue_benchmarks(testity::TestTree & i_tree);
+		void add_page_allocator_benchmarks(testity::TestTree & i_tree);
         testity::PerformanceTestGroup make_lifo_array_benchmarks();
     }
 }
@@ -40,11 +41,11 @@ int main()
     using namespace testity;
 
 	#ifdef  _DEBUG		
-		paged_queue_test();
+		/*paged_queue_test();
 		dense_queue_test();
 		lifo_test();
 		list_test();
-		function_queue_test();
+		function_queue_test();*/
 	#endif //  _DEBUG
 
     testity::TestTree test_tree("");
@@ -52,10 +53,11 @@ int main()
     test_tree["/density/lifo_array_test"].add_performance_test(make_lifo_array_benchmarks());
 	add_queue_benchmarks(test_tree["/density/queue_test"]);
     add_function_queue_benchmarks(test_tree["/density/function_queue_test"]);
-    //add_list_benchmarks(test_tree["/density/list_test"]);
+	add_page_allocator_benchmarks(test_tree["/density/page_allocator_test"]);
+	//add_list_benchmarks(test_tree["/density/list_test"]);
 
     testity::Session test_session;
-    auto results = test_session.run(test_tree["/density/function_queue_test"], std::cout);
+    auto results = test_session.run(test_tree["/density/page_allocator_test"], std::cout);
 	results.save_to("perf.txt");
 
     /*pointer_arithmetic_test();

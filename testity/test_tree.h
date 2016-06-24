@@ -59,6 +59,11 @@ namespace testity
         size_t cardinality_start() const { return m_cardinality_start; }
         size_t cardinality_step() const { return m_cardinality_step; }
         size_t cardinality_end() const { return m_cardinality_end; }
+
+		void set_cardinality_start(size_t i_cardinality_start) { m_cardinality_start = i_cardinality_start; }
+		void set_cardinality_step(size_t i_cardinality_step) { m_cardinality_step = i_cardinality_step; }
+		void set_cardinality_end(size_t i_cardinality_end) { m_cardinality_end = i_cardinality_end; }
+
         const std::vector<BenchmarkTest> & tests() const { return m_tests; }
 
     private:

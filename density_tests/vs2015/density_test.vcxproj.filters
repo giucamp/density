@@ -73,6 +73,9 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp">
       <Filter>samples</Filter>
     </ClCompile>
+    <ClCompile Include="..\page_allocator_benchmarks.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
