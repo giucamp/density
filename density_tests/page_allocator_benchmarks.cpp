@@ -34,7 +34,7 @@ namespace density
 				for( size_t i = 0; i < i_cardinality; i++)
 				{					
 					for (auto & page : pages)
-						page = allocator.allocate_page();
+						*(int*)(page = allocator.allocate_page()) = 0;
 					for (auto page : pages)
 						 allocator.deallocate_page(page);
 				}
@@ -43,10 +43,11 @@ namespace density
 			// new and delete
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
 				void * pages[page_allocator::thread_store_size];
+				const size_t allocator_page_size = page_allocator::page_size();
 				for (size_t i = 0; i < i_cardinality; i++)
 				{
 					for (auto & page : pages)
-						page = operator new ( page_allocator::page_size );
+						*(int*)(page = operator new (allocator_page_size)) = 0;
 					for (auto page : pages)
 						operator delete(page);
 				}
@@ -58,7 +59,7 @@ namespace density
 				for (size_t i = 0; i < i_cardinality; i++)
 				{
 					for (auto & page : pages)
-						page = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_READWRITE);
+						*(int*)(page = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_READWRITE)) = 0;
 					for (auto page : pages)
 						VirtualFree(page, 0, MEM_RELEASE);
 				}
@@ -86,22 +87,19 @@ namespace density
 					*(int*)pages[i] = 42;
 				}
 				for (size_t i = 0; i < i_cardinality; i++)
-				{
 					allocator.deallocate_page(pages[i]);
-				}
 			}, __LINE__);
 
 			// new and delete
 			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+				const size_t allocator_page_size = page_allocator::page_size();
 				for (size_t i = 0; i < i_cardinality; i++)
 				{
-					pages[i] = operator new (page_allocator::page_size);
+					pages[i] = operator new (allocator_page_size);
 					*(int*)pages[i] = 42;
 				}
 				for (size_t i = 0; i < i_cardinality; i++)
-				{
 					operator delete(pages[i]);
-				}
 			}, __LINE__);
 
 			// new and delete
@@ -112,9 +110,7 @@ namespace density
 					*(int*)pages[i] = 42;
 				}
 				for (size_t i = 0; i < i_cardinality; i++)
-				{
 					VirtualFree(pages[i], 0, MEM_RELEASE);
-				}
 			}, __LINE__);
 
 			return group;

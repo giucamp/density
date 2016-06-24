@@ -793,9 +793,10 @@ namespace density
 
             PageHeader * alloc;
             size_t actual_page_size;
-            if (min_page_size <= PAGE_ALLOCATOR::page_size)
+			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+            if (min_page_size <= allocator_page_size)
             {
-                actual_page_size = PAGE_ALLOCATOR::page_size;
+                actual_page_size = allocator_page_size;
                 alloc = static_cast<PageHeader*>( get_allocator_ref().allocate_page() );
             }
             else
@@ -818,14 +819,16 @@ namespace density
 
         void delete_page(PageHeader * i_page) noexcept
         {
+			const size_t allocator_page_size = PAGE_ALLOCATOR::page_size();
+
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());
 
             size_t actual_page_size = i_page->m_queue.mem_capacity();
             DENSITY_ASSERT(actual_page_size >= sizeof(PageHeader));
             actual_page_size += sizeof(PageHeader);
-            DENSITY_ASSERT(actual_page_size >= PAGE_ALLOCATOR::page_size);
-            if (actual_page_size <= PAGE_ALLOCATOR::page_size)
+            DENSITY_ASSERT(actual_page_size >= allocator_page_size);
+            if (actual_page_size <= allocator_page_size)
             {
                 get_allocator_ref().deallocate_page(i_page);
             }

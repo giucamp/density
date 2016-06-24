@@ -16,11 +16,50 @@
 
 namespace density
 {
+	/*! \page PageAllocator_concept PageAllocator concept
+		A PageAllocator is a type that encapsulates an untyped page-based memory management. Pages have a 
+		fixed size and requirement. Being untyped, a PageAllocator is unaware of the type of objects that
+		will be constructed in a page (like std::malloc).
+		
+		A PageAllocator provides a fall-back allocation strategy for large blocks: the user may need to allocate
+		blocks larger than a page.
+
+		A PageAllocator must provide the following members:
+		
+		\section SizeAlign Size and alignment
+		@code
+		static size_t page_size() noexcept;
+		static size_t page_alignment() noexcept;
+		@endcode
+		All pages have the same size and alignment. These two functions must return the same value for every 
+		invocation in the same program execution. 
+
+		\section PageAlloc Page allocation \ deallocation
+		@code
+		void * allocate_page();
+		void deallocate_page(void * i_page) noexcept;
+		@endcode
+		These functions allocate and deallocate a single page. The size and alignment of the page are the
+		values returned by page_size() and page_alignment().
+
+		\section LargeBlockAlloc Large block allocation \ deallocation
+		@code
+		void * allocate_large_block(size_t i_size);
+		void deallocate_large_block(void * i_block, size_t i_size) noexcept;
+		@endcode
+		These functions allocate and deallocate a single page
+	*/
+
+
+	/** This class provides  */
     class page_allocator
 	{
     public:
-        static const size_t page_size = 4096;
-        static const size_t page_alignment = alignof(std::max_align_t);
+		
+		static size_t page_size() noexcept { return 4096; }
+		
+		static size_t page_alignment() noexcept { return alignof(std::max_align_t); }
+		
 		static const size_t thread_store_size = 8;
 		
         void * allocate_page()
@@ -78,13 +117,13 @@ namespace density
 		
 		static void * allocate_page_impl()
 		{
-			return operator new (page_size);
+			return operator new (page_size());
 		}
 
 		static void deallocate_page_impl(void * i_page) noexcept
 		{
 			#if __cplusplus >= 201402L
-				operator delete (i_page, page_size); // since C++14
+				operator delete (i_page, page_size()); // since C++14
 			#else
 				operator delete (i_page);
 			#endif
@@ -184,7 +223,7 @@ namespace density
 				{
 					auto next = curr->m_next;
 					#if __cplusplus >= 201402L
-						operator delete (curr, page_size); // since C++14
+						operator delete (curr, page_size()); // since C++14
 					#else
 						operator delete (curr);
 					#endif
