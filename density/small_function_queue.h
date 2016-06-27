@@ -58,7 +58,7 @@ namespace density
 			type_features::size, type_features::alignment,
 			type_features::copy_construct, type_features::move_construct,
 			type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
-		using underlying_queue = small_heterogeneous_queue<void, std::allocator<char>, runtime_type<void, features > >;
+		using underlying_queue = small_heterogeneous_queue<void, void_allocator, runtime_type<void, features > >;
 
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.

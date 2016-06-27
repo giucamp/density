@@ -5,15 +5,14 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <memory>
 #include "../runtime_type.h"
 
 namespace density
 {
     namespace detail
     {
-        template < typename ALLOCATOR, typename RUNTIME_TYPE >
-            class DenseListImpl : private ALLOCATOR
+        template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE >
+            class ArrayImpl : private VOID_ALLOCATOR
         {
         private:
 
@@ -72,11 +71,11 @@ namespace density
                 m_control_blocks = nullptr;
             }
 
-            DenseListImpl() noexcept
+            ArrayImpl() noexcept
                 : m_control_blocks(nullptr)
                     { }
 
-            DenseListImpl(DenseListImpl && i_source) noexcept
+            ArrayImpl(ArrayImpl && i_source) noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -84,7 +83,7 @@ namespace density
                 move_impl(std::move(i_source));
             }
 
-            DenseListImpl & operator = (DenseListImpl && i_source) noexcept
+            ArrayImpl & operator = (ArrayImpl && i_source) noexcept
             {
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
@@ -98,7 +97,7 @@ namespace density
                 return *this;
             }
 
-            DenseListImpl(const DenseListImpl & i_source)
+            ArrayImpl(const ArrayImpl & i_source)
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -106,7 +105,7 @@ namespace density
                 copy_impl(i_source);
             }
 
-            DenseListImpl & operator = (const DenseListImpl & i_source)
+            ArrayImpl & operator = (const ArrayImpl & i_source)
             {
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
@@ -121,7 +120,7 @@ namespace density
                 return *this;
             }
 
-            ~DenseListImpl() noexcept
+            ~ArrayImpl() noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     check_invariants();
@@ -201,9 +200,9 @@ namespace density
                 ListBuilder(const ListBuilder&) = delete;
                 ListBuilder & operator = (const ListBuilder&) = delete;
 
-                void init(ALLOCATOR & i_allocator, size_t i_count, size_t i_buffer_size, size_t i_buffer_alignment)
+                void init(VOID_ALLOCATOR & i_allocator, size_t i_count, size_t i_buffer_size, size_t i_buffer_alignment)
                 {
-                    void * const memory_block = aligned_alloc(i_allocator, i_buffer_size + sizeof(Header), i_buffer_alignment, sizeof(Header));
+                    void * const memory_block = i_allocator.allocate(i_buffer_size + sizeof(Header), i_buffer_alignment, sizeof(Header));
                     Header * header = static_cast<Header*>(memory_block);
                     header->m_count = i_count;
                     m_end_of_control_blocks = m_control_blocks = reinterpret_cast<ControlBlock*>(header + 1);
@@ -287,7 +286,7 @@ namespace density
                     return m_control_blocks;
                 }
 
-                void rollback(ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) noexcept
+                void rollback(VOID_ALLOCATOR & i_allocator, size_t i_buffer_size, size_t i_buffer_alignment) noexcept
                 {
                     if (m_control_blocks != nullptr)
                     {
@@ -299,7 +298,7 @@ namespace density
                             element = address_add(element, element_info->size());
                             element_info->~ControlBlock();
                         }
-                        aligned_free(i_allocator, reinterpret_cast<Header*>(m_control_blocks) - 1, i_buffer_size, i_buffer_alignment);
+                        i_allocator.deallocate(reinterpret_cast<Header*>(m_control_blocks) - 1, i_buffer_size, i_buffer_alignment);
                     }
                 }
 
@@ -341,11 +340,11 @@ namespace density
                     }
 
                     Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
-                    aligned_free(*static_cast<ALLOCATOR*>(this), header, dense_size, dense_alignment);
+                    static_cast<VOID_ALLOCATOR*>(this)->deallocate(header, dense_size, dense_alignment);
                 }
             }
 
-            void copy_impl(const DenseListImpl & i_source)
+            void copy_impl(const ArrayImpl & i_source)
             {
                 if (i_source.m_control_blocks != nullptr)
                 {
@@ -355,7 +354,7 @@ namespace density
                     try
                     {
                         const auto source_size = i_source.get_size_not_empty();
-                        builder.init(*static_cast<ALLOCATOR*>(this), source_size, buffer_size, buffer_alignment);
+                        builder.init(*static_cast<VOID_ALLOCATOR*>(this), source_size, buffer_size, buffer_alignment);
                         auto const end_it = i_source.end();
                         for (auto it = i_source.begin(); it != end_it; ++it)
                         {
@@ -366,7 +365,7 @@ namespace density
                     }
                     catch (...)
                     {
-                        builder.rollback(*static_cast<ALLOCATOR*>(this), buffer_size, buffer_alignment);
+                        builder.rollback(*static_cast<VOID_ALLOCATOR*>(this), buffer_size, buffer_alignment);
                         throw;
                     }
                 }
@@ -376,14 +375,14 @@ namespace density
                 }
             }
 
-            void move_impl(DenseListImpl && i_source) noexcept
+            void move_impl(ArrayImpl && i_source) noexcept
             {
                 m_control_blocks = i_source.m_control_blocks;
                 i_source.m_control_blocks = nullptr;
             }
 
             template <typename ELEMENT, typename... TYPES>
-                static void make_impl(DenseListImpl & o_dest_list, TYPES &&... i_args)
+                static void make_impl(ArrayImpl & o_dest_list, TYPES &&... i_args)
             {
                 DENSITY_ASSERT(o_dest_list.m_control_blocks == nullptr); // precondition
 
@@ -397,7 +396,7 @@ namespace density
                     ListBuilder builder;
                     try
                     {
-                        builder.init(static_cast<ALLOCATOR&>(o_dest_list), element_count, buffer_size, buffer_alignment);
+                        builder.init(static_cast<VOID_ALLOCATOR&>(o_dest_list), element_count, buffer_size, buffer_alignment);
 
                         RecursiveHelper<ELEMENT, TYPES...>::construct(builder, std::forward<TYPES>(i_args)...);
 
@@ -405,7 +404,7 @@ namespace density
                     }
                     catch (...)
                     {
-                        builder.rollback(static_cast<ALLOCATOR&>(o_dest_list), buffer_size, buffer_alignment);
+                        builder.rollback(static_cast<VOID_ALLOCATOR&>(o_dest_list), buffer_size, buffer_alignment);
                         throw;
                     }
                 }
@@ -487,7 +486,7 @@ namespace density
                 IteratorBaseImpl it = begin();
                 try
                 {
-                    builder.init(*static_cast<ALLOCATOR*>(this), size() + i_count_to_insert, buffer_size, buffer_alignment);
+                    builder.init(*static_cast<VOID_ALLOCATOR*>(this), size() + i_count_to_insert, buffer_size, buffer_alignment);
 
                     size_t count_to_insert = i_count_to_insert;
                     auto const end_it = end();
@@ -530,7 +529,7 @@ namespace density
                     /* in the same loop we iterate over tmp, that is the list that we was creating. The
                         elements that were moved from this list to tmp have to be moved back to this list. The elements
                         that was just constructed have to be destroyed. */
-                    DenseListImpl tmp;
+                    ArrayImpl tmp;
                     tmp.m_control_blocks = builder.control_blocks();
                     if (tmp.m_control_blocks != nullptr) // if the allocation fails builder.control_blocks() is null
                     {
@@ -553,7 +552,7 @@ namespace density
                         }
 
                         Header * const header = reinterpret_cast<Header*>(tmp.m_control_blocks) - 1;
-                        aligned_free(*static_cast<ALLOCATOR*>(this), header, buffer_size, buffer_alignment);
+                        static_cast<VOID_ALLOCATOR*>(this)->deallocate(header, buffer_size, buffer_alignment);
                         tmp.m_control_blocks = nullptr;
                     }
                     throw;
@@ -586,7 +585,7 @@ namespace density
                     ControlBlock * return_control_block = nullptr;
 
                     ListBuilder builder;
-                    builder.init(*static_cast<ALLOCATOR*>(this), prev_size - size_to_remove, buffer_size, buffer_alignment);
+                    builder.init(*static_cast<VOID_ALLOCATOR*>(this), prev_size - size_to_remove, buffer_size, buffer_alignment);
 
                     const auto end_it = end();
                     bool is_in_range = false;

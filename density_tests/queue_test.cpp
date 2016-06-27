@@ -12,20 +12,21 @@
 #include "../density/heterogeneous_queue.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
+#include "test_allocators.h"
 #include <algorithm>
 
 namespace density
 {
     namespace tests
     {
-        /* TestDenseQueue<TYPE> - small_heterogeneous_queue that uses TestAllocator and adds hash to the automatic runtime type */
+        /* TestDenseQueue<TYPE> - small_heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseQueue = small_heterogeneous_queue<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+            using TestDenseQueue = small_heterogeneous_queue<TYPE, TestVoidAllocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
-        /* TestPagedQueue<TYPE> - heterogeneous_queue that uses TestAllocator and adds hash to the automatic runtime type */
+        /* TestPagedQueue<TYPE> - heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
         template <typename TYPE>
-            using TestPagedQueue = heterogeneous_queue<TYPE, void_allocator, runtime_type<TYPE,
+            using TestPagedQueue = heterogeneous_queue<TYPE, TestVoidAllocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename DENSE_CONTAINER, typename... CONSTRUCTION_PARAMS>
@@ -161,7 +162,7 @@ namespace density
         void dense_queue_leak_basic_tests()
         {
             NoLeakScope no_leaks;
-            using Queue = small_heterogeneous_queue<int, TestAllocator<int>>;
+            using Queue = small_heterogeneous_queue<int, TestVoidAllocator>;
             Queue queue;
             for (int i = 0; i < 1000; i++)
             {

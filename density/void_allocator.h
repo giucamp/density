@@ -9,7 +9,6 @@
 #include "density_common.h"
 #if DENSITY_DEBUG_INTERNAL
 	#include <mutex>
-	#include <memory>
 	#include <unordered_set>
 	#include <unordered_map>
 #endif
@@ -99,6 +98,7 @@ namespace density
 			DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 			DENSITY_ASSERT(i_alignment_offset <= i_size);
 			
+			// if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
 			void * user_block;
 			if (i_alignment <= alignof(std::max_align_t))
 			{
@@ -107,15 +107,15 @@ namespace density
 			else
 			{
 				// reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) = sizeof(void*) )
-				size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+				size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
 				size_t const actual_size = i_size + extra_size;
 				auto complete_block = operator new (actual_size);
 				user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-				detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+				AlignmentHeader & header = *(static_cast<AlignmentHeader*>(user_block) - 1);
 				header.m_block = complete_block;
 			}
 			#if DENSITY_DEBUG_INTERNAL
-				dbg_data().add_block(block, i_size, i_alignment);
+				dbg_data().add_block(user_block, i_size, i_alignment);
 			#endif
 			return user_block;
         }
@@ -165,9 +165,9 @@ namespace density
 			{
 				if(i_block != nullptr)
 				{
-					const auto & header = *( static_cast<detail::AlignmentHeader*>(i_block) - 1 );
+					const auto & header = *( static_cast<AlignmentHeader*>(i_block) - 1 );
 					#if __cplusplus >= 201402L // since C++14
-						size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+						size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
 						size_t const actual_size = i_size + extra_size;
 						operator delete (header.m_block, actual_size);
 					#else
@@ -325,7 +325,7 @@ namespace density
 					}
 				}
 
-				void check_block(void * i_block, size_t i_size, size_t i_alignment) const noexcept
+				void check_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
 				{
 					std::lock_guard<std::mutex> lock(m_mutex);
 					if (m_enable)

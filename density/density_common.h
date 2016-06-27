@@ -10,7 +10,6 @@
 #include <ostream>
 #include <limits>
 #include <cstddef>
-#include <memory>
 
 #define DENSITY_VERSION            0x0007
 
@@ -274,116 +273,7 @@ namespace density
         }
         return true;
     }
-
-    namespace detail
-    {
-        struct AlignmentHeader
-        {
-            void * m_block;
-        };
-    }
-
-    /** Allocates aligned memory using the provided allocator. This function just allocates (no constructors are called). Throws std::bad_alloc if allocation fails.
-            @param i_allocator allocator to use
-            @param i_size size of the requested memory block, in bytes
-            @param i_alignment alignment of the requested memory block, in bytes. Must be >0 and a power of 2
-            @param i_alignment_offset offset of the block to be aligned. The alignment is guaranteed only at i_alignment_offset
-                from the beginning of the block.
-            @return address of the new memory block */
-    template <typename ALLOCATOR>
-        void * aligned_alloc(ALLOCATOR & i_allocator, size_t i_size, size_t i_alignment, size_t i_alignment_offset )
-    {
-        DENSITY_ASSERT(is_power_of_2(i_alignment));
-
-        if (i_alignment <= std::alignment_of<void*>::value)
-        {
-            typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<void *> other_alloc(i_allocator);
-            return other_alloc.allocate((i_size + sizeof(void*) - 1) / sizeof(void*));
-        }
-        else
-        {
-            size_t const extra_size = (i_alignment >= sizeof(detail::AlignmentHeader) ? i_alignment : sizeof(detail::AlignmentHeader));
-            size_t const actual_size = i_size + extra_size;
-
-            typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(i_allocator);
-            void * const complete_block = char_alloc.allocate(actual_size);
-
-            void * const user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-            detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
-            header.m_block = complete_block;
-
-            // done
-            return user_block;
-        }
-    }
-
-    /** Frees an address allocated with aligned_alloc. This function just deallocates (no destructors are called). It never throws.
-            @param i_allocator allocator to use. Must be the same passed to aligned_alloc, otherwise the behavior is undefined.
-            @param i_block block to free (returned by aligned_alloc). If it's not a valid block the behavior is undefined.
-            @param i_size size of the block to free, in bytes. Must be the same passed to aligned_alloc, otherwise the behavior is undefined.
-            @param i_alignment alignment of the memory block. Must be the same passed to aligned_alloc, otherwise the behavior is undefined. */
-    template <typename ALLOCATOR>
-        void aligned_free(ALLOCATOR & i_allocator, void * i_block, size_t i_size, size_t i_alignment ) noexcept
-    {
-        if (i_alignment <= std::alignment_of<void*>::value)
-        {
-            typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<void *> other_alloc(i_allocator);
-            other_alloc.deallocate(static_cast<void**>(i_block), (i_size + sizeof(void*) - 1) / sizeof(void*));
-        }
-        else if (i_block != nullptr)
-        {
-            {
-                size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-                size_t const actual_size = i_size + extra_size;
-
-                detail::AlignmentHeader * header = static_cast<detail::AlignmentHeader*>(i_block) - 1;
-
-                typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char> char_alloc(i_allocator);
-                char_alloc.deallocate(static_cast<char*>(header->m_block), actual_size);
-            }
-        }
-    }
-
-
-    class AllocatorUtils
-    {
-    public:
-
-        template <typename CHAR_ALLOCATOR>
-            static void * aligned_allocate(CHAR_ALLOCATOR & i_char_allocator, size_t i_size, size_t i_alignment, size_t i_alignment_offset )
-        {
-            static_assert(std::is_same<typename CHAR_ALLOCATOR::value_type, char>::value, "The valuetype of the allocator must be char");
-
-            DENSITY_ASSERT(is_power_of_2(i_alignment));
-
-            size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-            size_t const actual_size = i_size + extra_size;
-
-            void * const complete_block = i_char_allocator.allocate(actual_size);
-
-            void * const user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-            detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
-            header.m_block = complete_block;
-
-            return user_block;
-        }
-
-        template <typename CHAR_ALLOCATOR>
-            static void aligned_deallocate(CHAR_ALLOCATOR & i_char_allocator, void * i_block, size_t i_size ) noexcept
-        {
-            static_assert(std::is_same<typename CHAR_ALLOCATOR::value_type, char>::value, "The valuetype of the allocator must be char");
-
-            if (i_block != nullptr)
-            {
-                detail::AlignmentHeader * header = static_cast<detail::AlignmentHeader*>(i_block) - 1;
-
-                const size_t complete_size = address_diff(address_add(i_block, i_size), header->m_block);
-
-                i_char_allocator.deallocate(static_cast<char*>(header->m_block), complete_size);
-            }
-        }
-    };
-
+		
     /** Finds the aligned storage for a block with the specified size and alignment, such that it is
             >= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
         @param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After

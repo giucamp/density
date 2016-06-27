@@ -7,6 +7,7 @@
 #include "../density/heterogeneous_array.h"
 #include "../testity/testing_utils.h"
 #include "container_test.h"
+#include "test_allocators.h"
 #include <algorithm>
 
 
@@ -17,7 +18,7 @@ namespace density
 
         /* TestDenseList<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseList = heterogeneous_array<TYPE, TestAllocator<TYPE>, runtime_type<TYPE,
+            using TestDenseList = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>

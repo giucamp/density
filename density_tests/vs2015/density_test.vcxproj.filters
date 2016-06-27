@@ -102,9 +102,6 @@
     <ClInclude Include="..\..\testity\environment.h">
       <Filter>testity</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\dense_list_impl.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -128,6 +125,12 @@
     </ClInclude>
     <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\array_impl.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_allocators.h">
+      <Filter>density_tests</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

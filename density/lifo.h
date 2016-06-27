@@ -9,7 +9,6 @@
 #include "runtime_type.h"
 #include "void_allocator.h"
 #include <vector>
-#include <memory>
 
 namespace density
 {

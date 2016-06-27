@@ -24,47 +24,44 @@
 
 namespace testity
 {
-    namespace detail
+    class TestAllocatorBase
     {
-        class TestAllocatorBase
+    public:
+
+        static void push_level();
+        static void pop_level();
+
+        static void notify_alloc(void * i_block, size_t i_size, size_t i_alignment);
+        static void notify_deallocation(void * i_block, size_t i_size, size_t i_alignment);
+
+    private:
+        struct AllocationEntry
         {
-        public:
-
-            static void push_level();
-            static void pop_level();
-
-            static void * alloc(size_t i_size);
-            static void free(void * i_block);
-
-        private:
-            struct AllocationEntry
-            {
-                size_t m_progressive = 0;
-                size_t m_size = 0;
-            };
-            struct Levels
-            {
-                std::unordered_map<void*, AllocationEntry> m_allocations;
-            };
-            struct ThreadData
-            {
-                std::vector<Levels> m_levels;
-                size_t m_last_progressive = 0;
-            };
-            static ThreadData & GetThreadData();
-
-        private:
-            #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-                static _declspec(thread) ThreadData * st_thread_data;
-            #else
-                static thread_local ThreadData st_thread_data;
-            #endif
+            size_t m_progressive = 0;
+            size_t m_size = 0;
+			size_t m_alignment = 0;
         };
+        struct Levels
+        {
+            std::unordered_map<void*, AllocationEntry> m_allocations;
+        };
+        struct ThreadData
+        {
+            std::vector<Levels> m_levels;
+            size_t m_last_progressive = 0;
+        };
+        static ThreadData & GetThreadData();
 
-    } // namespace detail
+    private:
+        #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
+            static _declspec(thread) ThreadData * st_thread_data;
+        #else
+            static thread_local ThreadData st_thread_data;
+        #endif
+    };
 
     template <class TYPE>
-        class TestAllocator : private detail::TestAllocatorBase
+        class TestAllocator : private TestAllocatorBase
     {
     public:
         typedef TYPE value_type;
@@ -75,12 +72,16 @@ namespace testity
 
         TYPE * allocate(std::size_t i_count)
         {
-            return static_cast<TYPE *>(detail::TestAllocatorBase::alloc(i_count * sizeof(TYPE)) );
+			exception_check_point();
+			void * block = operator new (i_count * sizeof(TYPE));
+			TestAllocatorBase::notify_alloc(block, i_count * sizeof(TYPE), alignof(std::max_align_t));
+			return static_cast<TYPE*>(block);
         }
 
-        void deallocate(TYPE * i_block, std::size_t /*i_count*/)
+        void deallocate(TYPE * i_block, std::size_t i_count)
         {
-            detail::TestAllocatorBase::free(i_block);
+			TestAllocatorBase::notify_deallocation(i_block, sizeof(TYPE) * i_count, alignof(std::max_align_t));
+			operator delete( i_block );
         }
 
         template <typename OTHER_TYPE>
@@ -127,8 +128,8 @@ namespace testity
     class NoLeakScope
     {
     public:
-        NoLeakScope() { detail::TestAllocatorBase::push_level(); }
-        ~NoLeakScope() { detail::TestAllocatorBase::pop_level(); }
+        NoLeakScope() { TestAllocatorBase::push_level(); }
+        ~NoLeakScope() { TestAllocatorBase::pop_level(); }
         NoLeakScope(const NoLeakScope &) = delete;
         NoLeakScope & operator = (const NoLeakScope &) = delete;
     };

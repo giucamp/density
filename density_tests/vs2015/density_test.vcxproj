@@ -246,7 +246,7 @@
     <ClInclude Include="..\..\density\heterogeneous_array.h" />
     <ClInclude Include="..\..\density\small_heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
-    <ClInclude Include="..\..\density\detail\dense_list_impl.h" />
+    <ClInclude Include="..\..\density\detail\array_impl.h" />
     <ClInclude Include="..\..\density\detail\queue_impl.h" />
     <ClInclude Include="..\..\density\lifo.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\testity\testing_utils.h" />
     <ClInclude Include="..\..\testity\test_tree.h" />
     <ClInclude Include="..\container_test.h" />
+    <ClInclude Include="..\test_allocators.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

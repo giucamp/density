@@ -64,7 +64,7 @@ namespace misc_samples
 	using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke >;
 			
 	// alias for a specific heterogeneous_array. Until now we have just declared types
-	using ArrayOfInvokables = heterogeneous_array<void, std::allocator<void>, runtime_type<void, MyFeatures> >;
+	using ArrayOfInvokables = heterogeneous_array<void, void_allocator, runtime_type<void, MyFeatures> >;
 			
 	// instances an array with a lambda expression as only element
 	auto my_array = ArrayOfInvokables::make([](std::string s) { std::cout << s << std::endl; });
@@ -121,7 +121,7 @@ namespace misc_samples
 	using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
 
 	// create an array with 4 objects
-	auto my_array = heterogeneous_array<void, std::allocator<void>, runtime_type<void, MyFeatures> >::make(
+	auto my_array = heterogeneous_array<void, void_allocator, runtime_type<void, MyFeatures> >::make(
 		ObjectA(), ObjectB(), ObjectA(), ObjectB() );
 	
 	// call update on all the objects

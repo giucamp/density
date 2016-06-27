@@ -6,7 +6,7 @@
 
 #pragma once
 #include "detail\queue_impl.h"
-#include <memory>
+#include "void_allocator.h"
 
 namespace density
 {
@@ -29,7 +29,7 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::queue) instead of std::small_heterogeneous_queue is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
-            @param ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
+            @param VOID_ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
@@ -47,15 +47,15 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class small_heterogeneous_queue final : private std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>
+    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class small_heterogeneous_queue final : private VOID_ALLOCATOR
     {
     public:
 
         static_assert( std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT,void>::value : true,
             "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )" );
 
-        using allocator_type = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+        using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -89,7 +89,7 @@ namespace density
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
-        small_heterogeneous_queue(const ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
+        small_heterogeneous_queue(const VOID_ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
             : allocator_type(i_allocator)
         {
             alloc(detail::size_max(i_initial_reserved_bytes, detail::QueueImpl<RUNTIME_TYPE>::s_initial_mem_reserve),
@@ -104,7 +104,7 @@ namespace density
             \n\b Complexity: constant */
         small_heterogeneous_queue(small_heterogeneous_queue && i_source) noexcept
             : allocator_type(std::move(static_cast<allocator_type&>(i_source))),
-              m_impl(std::move(i_source.m_impl))
+              m_impl(std::move(i_source.m_impl)), m_block_alignment(i_source.m_block_alignment)
         {
             static_assert(noexcept( allocator_type(std::move(std::declval<allocator_type>()))),
                 "The move constructor of the allocator is required to be noexcept");
@@ -130,6 +130,7 @@ namespace density
             free();
             static_cast<allocator_type&>(*this) = std::move( static_cast<allocator_type&>(i_source) );
             m_impl = std::move(i_source.m_impl);
+			m_block_alignment = i_source.m_block_alignment;
             return *this;
         }
 
@@ -144,6 +145,7 @@ namespace density
             {
                 alloc(i_source.m_impl.mem_capacity(), i_source.m_impl.element_max_alignment());
                 m_impl.copy_elements_from(i_source.m_impl);
+				m_block_alignment = i_source.m_block_alignment;
             }
             catch (...)
             {
@@ -168,6 +170,7 @@ namespace density
             small_heterogeneous_queue tmp(i_source); // the copy may throw, with this queue still being unmodified
             // from now on nothing can throw
             *this = std::move(tmp);
+			m_block_alignment = i_source.m_block_alignment;
             return *this;
         }
 
@@ -579,32 +582,37 @@ namespace density
 
         void alloc(size_t i_size, size_t i_alignment)
         {
-            m_impl = Impl(AllocatorUtils::aligned_allocate(get_allocator_ref(), i_size, i_alignment, 0), i_size);
+            m_impl = Impl(get_allocator_ref().allocate(i_size, i_alignment, 0), i_size);
+			m_block_alignment = i_alignment;
         }
 
         void free() noexcept
         {
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
+			get_allocator_ref().deallocate(m_impl.buffer(), m_impl.mem_capacity(), m_block_alignment);
+			#if DENSITY_DEBUG_INTERNAL
+				m_block_alignment = 7777;
+			#endif
         }
 
         void mem_realloc_impl(size_t i_mem_size)
         {
             DENSITY_ASSERT(i_mem_size > m_impl.mem_capacity());
 
-            Impl new_impl(AllocatorUtils::aligned_allocate(get_allocator_ref(), i_mem_size, m_impl.element_max_alignment(), 0), i_mem_size);
+            Impl new_impl(get_allocator_ref().allocate(i_mem_size, m_impl.element_max_alignment(), 0), i_mem_size);
             try
             {
                 new_impl.move_elements_from(m_impl);
             }
             catch (...)
             {
-                AllocatorUtils::aligned_deallocate(get_allocator_ref(), new_impl.buffer(), new_impl.mem_capacity());
+                get_allocator_ref().deallocate(new_impl.buffer(), new_impl.mem_capacity(), m_impl.element_max_alignment());
                 throw;
             }
 
             // from now on, nothing can throw
-            AllocatorUtils::aligned_deallocate(get_allocator_ref(), m_impl.buffer(), m_impl.mem_capacity());
+            get_allocator_ref().deallocate(m_impl.buffer(), m_impl.mem_capacity(), m_block_alignment);
             m_impl = std::move(new_impl);
+			m_block_alignment = m_impl.element_max_alignment();
         }
 
         // overload used if i_source is an r-value
@@ -645,6 +653,7 @@ namespace density
 
     private:
         detail::QueueImpl<RUNTIME_TYPE> m_impl; /* m_impl manages the memory buffer, but small_heterogeneous_queue owns it */
+		size_t m_block_alignment = 0;
     }; // class template small_heterogeneous_queue
 
 } // namespace density

@@ -4,7 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "detail\dense_list_impl.h"
+#include "detail\array_impl.h"
+#include "void_allocator.h"
 
 namespace density
 {
@@ -16,7 +17,7 @@ namespace density
         of many methods is linear, in contrast with the constant amortized time of the equivalent methods of std::vector. Insertions
         and removals of a non-zero number of elements and clear() always reallocate the memory blocks and invalidate
         existing iterators
-        The sizeof(heterogeneous_array) is the same of a pointer, provided that the template argument ALLOCATOR is an empty class
+        The sizeof(heterogeneous_array) is the same of a pointer, provided that the template argument VOID_ALLOCATOR is an empty class
         and the compiler supports the empty base class optimization. An empty heterogeneous_array does not own a dynamic memory block.
         \n\b Thread safeness: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of heterogeneous_array is noexcept or provides the strong exception guarantee.
@@ -32,7 +33,7 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::vector) instead of std::heterogeneous_array is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
-            @param ALLOCATOR Allocator to be used to allocate the memory buffer. The list may rebind
+            @param VOID_ALLOCATOR Allocator to be used to allocate the memory buffer. The list may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
@@ -45,17 +46,17 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class heterogeneous_array final
     {
     private:
 
-        using ListImpl = typename detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE>;
+        using ListImpl = typename detail::ArrayImpl<VOID_ALLOCATOR, RUNTIME_TYPE>;
         using IteratorImpl = typename ListImpl::IteratorBaseImpl;
 
     public:
 
-        using allocator_type = typename std::allocator_traits<ALLOCATOR>::template rebind_alloc<char>;
+		using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -91,7 +92,7 @@ namespace density
                 const auto list = heterogeneous_array<int>::make_with_alloc(my_alloc, 1, 2, 3);
                 const auto list1 = heterogeneous_array<ListImpl>::make_with_alloc(my_alloc1, Derived1(), Derived2(), Derived1()); */
         template <typename... TYPES>
-            inline static heterogeneous_array make_with_alloc(const ALLOCATOR & i_allocator, TYPES &&... i_elements)
+            inline static heterogeneous_array make_with_alloc(const VOID_ALLOCATOR & i_allocator, TYPES &&... i_elements)
         {
             static_assert(detail::AllCovariant<ELEMENT, TYPES...>::value, "All the parameter types must be covariant to ELEMENT");
             heterogeneous_array new_list;
@@ -491,7 +492,7 @@ namespace density
         }
 
     private:
-        detail::DenseListImpl<ALLOCATOR, RUNTIME_TYPE> m_impl;
+        detail::ArrayImpl<VOID_ALLOCATOR, RUNTIME_TYPE> m_impl;
     }; // class heterogeneous_array;
 
     template <typename ELEMENT, typename... TYPES>
