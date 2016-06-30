@@ -19,40 +19,40 @@ namespace density
     {
         using namespace testity;
 
-		PerformanceTestGroup iterate_list_benchmarks()
-		{
-			PerformanceTestGroup group("push & consume, no capture", "density version: " + std::to_string(DENSITY_VERSION));
+        PerformanceTestGroup iterate_list_benchmarks()
+        {
+            PerformanceTestGroup group("push & consume, no capture", "density version: " + std::to_string(DENSITY_VERSION));
 
-			// small_heterogeneous_queue
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				small_heterogeneous_queue<> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push(static_cast<int>(index));
-			}, __LINE__);
+            // small_heterogeneous_queue
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                small_heterogeneous_queue<> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push(static_cast<int>(index));
+            }, __LINE__);
 
-			// heterogeneous_queue
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				heterogeneous_queue<> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push(static_cast<int>(index));
-			}, __LINE__);
+            // heterogeneous_queue
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                heterogeneous_queue<> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push(static_cast<int>(index));
+            }, __LINE__);
 
-			// vector<any>
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				std::vector<boost::any> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push_back(static_cast<int>(index));
-			}, __LINE__);
+            // vector<any>
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                std::vector<boost::any> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push_back(static_cast<int>(index));
+            }, __LINE__);
 
-			// deque<any>
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				std::queue<boost::any> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push(static_cast<int>(index));
-			}, __LINE__);
+            // deque<any>
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                std::queue<boost::any> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push(static_cast<int>(index));
+            }, __LINE__);
 
-			return group;
-		}
+            return group;
+        }
 
         PerformanceTestGroup fill_queue_benchmarks()
         {
@@ -65,26 +65,26 @@ namespace density
                     queue.push(static_cast<int>(index));
             }, __LINE__);
 
-			// heterogeneous_queue
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				heterogeneous_queue<> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push(static_cast<int>(index));
-			}, __LINE__);
+            // heterogeneous_queue
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                heterogeneous_queue<> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push(static_cast<int>(index));
+            }, __LINE__);
 
             // vector<any>
             group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
                 std::vector<boost::any> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push_back(static_cast<int>(index));
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push_back(static_cast<int>(index));
             }, __LINE__);
 
-			// deque<any>
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				std::queue<boost::any> queue;
-				for (size_t index = 0; index < i_cardinality; index++)
-					queue.push(static_cast<int>(index));
-			}, __LINE__);
+            // deque<any>
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                std::queue<boost::any> queue;
+                for (size_t index = 0; index < i_cardinality; index++)
+                    queue.push(static_cast<int>(index));
+            }, __LINE__);
 
             return group;
         }

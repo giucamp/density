@@ -54,11 +54,11 @@ namespace density
 
         using value_type = RET_VAL(PARAMS...);
 
-		using features = type_features::feature_list<
-			type_features::size, type_features::alignment,
-			type_features::copy_construct, type_features::move_construct,
-			type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
-		using underlying_queue = small_heterogeneous_queue<void, void_allocator, runtime_type<void, features > >;
+        using features = type_features::feature_list<
+            type_features::size, type_features::alignment,
+            type_features::copy_construct, type_features::move_construct,
+            type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
+        using underlying_queue = small_heterogeneous_queue<void, void_page_allocator, runtime_type<void, features > >;
 
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.
@@ -180,17 +180,17 @@ namespace density
             return m_queue.mem_free();
         }
 
-		typename underlying_queue::iterator begin() noexcept { return m_queue.begin(); }
-		typename underlying_queue::iterator end() noexcept { return m_queue.end(); }
+        typename underlying_queue::iterator begin() noexcept { return m_queue.begin(); }
+        typename underlying_queue::iterator end() noexcept { return m_queue.end(); }
 
-		typename underlying_queue::const_iterator cbegin() noexcept { return m_queue.cbegin(); }
-		typename underlying_queue::const_iterator cend() noexcept { return m_queue.cend(); }
+        typename underlying_queue::const_iterator cbegin() noexcept { return m_queue.cbegin(); }
+        typename underlying_queue::const_iterator cend() noexcept { return m_queue.cend(); }
 
-		typename underlying_queue::const_iterator begin() const noexcept { return m_queue.cbegin(); }
-		typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
+        typename underlying_queue::const_iterator begin() const noexcept { return m_queue.cbegin(); }
+        typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
 
     private:
-		underlying_queue m_queue;
+        underlying_queue m_queue;
     };
 
 } // namespace density

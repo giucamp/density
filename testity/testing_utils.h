@@ -12,14 +12,14 @@
 #include <iostream>
 
 #ifdef _MSC_VER
-	#define TESTITY_ASSERT(i_bool_expr)        if(!(i_bool_expr)) \
-													{ \
-														std::cerr << "Test assert failed: '" #i_bool_expr "' at " __FILE__ "(" << __LINE__ << ")" << std::endl; \
-														__debugbreak(); \
-													}
+    #define TESTITY_ASSERT(i_bool_expr)        if(!(i_bool_expr)) \
+                                                    { \
+                                                        std::cerr << "Test assert failed: '" #i_bool_expr "' at " __FILE__ "(" << __LINE__ << ")" << std::endl; \
+                                                        __debugbreak(); \
+                                                    }
 #else
-	#include <assert.h>
-	#define TESTITY_ASSERT(i_bool_expr)        assert(!(i_bool_expr))
+    #include <assert.h>
+    #define TESTITY_ASSERT(i_bool_expr)        assert(!(i_bool_expr))
 #endif // _MSC_VER
 
 namespace testity
@@ -39,7 +39,7 @@ namespace testity
         {
             size_t m_progressive = 0;
             size_t m_size = 0;
-			size_t m_alignment = 0;
+            size_t m_alignment = 0;
         };
         struct Levels
         {
@@ -72,16 +72,16 @@ namespace testity
 
         TYPE * allocate(std::size_t i_count)
         {
-			exception_check_point();
-			void * block = operator new (i_count * sizeof(TYPE));
-			TestAllocatorBase::notify_alloc(block, i_count * sizeof(TYPE), alignof(std::max_align_t));
-			return static_cast<TYPE*>(block);
+            exception_check_point();
+            void * block = operator new (i_count * sizeof(TYPE));
+            TestAllocatorBase::notify_alloc(block, i_count * sizeof(TYPE), alignof(std::max_align_t));
+            return static_cast<TYPE*>(block);
         }
 
         void deallocate(TYPE * i_block, std::size_t i_count)
         {
-			TestAllocatorBase::notify_deallocation(i_block, sizeof(TYPE) * i_count, alignof(std::max_align_t));
-			operator delete( i_block );
+            TestAllocatorBase::notify_deallocation(i_block, sizeof(TYPE) * i_count, alignof(std::max_align_t));
+            operator delete( i_block );
         }
 
         template <typename OTHER_TYPE>

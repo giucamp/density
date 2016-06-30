@@ -143,65 +143,65 @@ namespace density
             return group;
         }
 
-		PerformanceTestGroup make_list_benchmarks_3()
-		{
-			PerformanceTestGroup group("iterate an heterogeneous list and print type name", "density version: " + std::to_string(DENSITY_VERSION));
+        PerformanceTestGroup make_list_benchmarks_3()
+        {
+            PerformanceTestGroup group("iterate an heterogeneous list and print type name", "density version: " + std::to_string(DENSITY_VERSION));
 
-			using namespace std;
+            using namespace std;
 
-			struct Widget { int a, b, c, d, e, f, g, h; };
-			struct TextWidget : Widget { char str[8]; };
-			struct ImageWidget : Widget { float a, b, c; };
+            struct Widget { int a, b, c, d, e, f, g, h; };
+            struct TextWidget : Widget { char str[8]; };
+            struct ImageWidget : Widget { float a, b, c; };
 
-			static auto any_vector = []() {
-				vector<boost::any> res;
-				for (size_t i = 0; i < 3000; i++)
-				{
-					res.push_back(static_cast<int>(i));
-				}
-				return res;
-			}();
+            static auto any_vector = []() {
+                vector<boost::any> res;
+                for (size_t i = 0; i < 3000; i++)
+                {
+                    res.push_back(static_cast<int>(i));
+                }
+                return res;
+            }();
 
-			static auto den_list = []() {
-				heterogeneous_array<void> res;
-				for (size_t i = 0; i < 3000; i++)
-				{
-					res.push_back(static_cast<int>(i));
-				}
-				return res;
-			}();
+            static auto den_list = []() {
+                heterogeneous_array<void> res;
+                for (size_t i = 0; i < 3000; i++)
+                {
+                    res.push_back(static_cast<int>(i));
+                }
+                return res;
+            }();
 
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				for (size_t index = 0; index < i_cardinality; index += 20)
-				{
-					for (const boost::any & any : any_vector)
-					{
-						volatile auto type = &any.type();
-						(void)type;
-					}
-				}
-			}, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                for (size_t index = 0; index < i_cardinality; index += 20)
+                {
+                    for (const boost::any & any : any_vector)
+                    {
+                        volatile auto type = &any.type();
+                        (void)type;
+                    }
+                }
+            }, __LINE__);
 
-			group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-				for (size_t index = 0; index < i_cardinality; index += 20)
-				{
-					const auto end = den_list.end();
-					for (auto it = den_list.begin(); it != end; it++)
-					{
-						volatile auto type = &it.complete_type().type_info();
-						(void)type;
-					}
-				}
-			}, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                for (size_t index = 0; index < i_cardinality; index += 20)
+                {
+                    const auto end = den_list.end();
+                    for (auto it = den_list.begin(); it != end; it++)
+                    {
+                        volatile auto type = &it.complete_type().type_info();
+                        (void)type;
+                    }
+                }
+            }, __LINE__);
 
-			return group;
-		}
+            return group;
+        }
 
         void add_list_benchmarks(TestTree & i_tree)
         {
             i_tree.add_performance_test(make_list_benchmarks_1());
             i_tree.add_performance_test(make_list_benchmarks_2());
-			i_tree.add_performance_test(make_list_benchmarks_3());
+            i_tree.add_performance_test(make_list_benchmarks_3());
         }
 
     } // namespace tests

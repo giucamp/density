@@ -12,53 +12,53 @@ namespace density
 {
     namespace detail
     {
-		enum class QueueControlBlockKind
-		{
-			ElementNextPointers,
-			ElementNextOffsets
-		};
+        enum class QueueControlBlockKind
+        {
+            ElementNextPointers,
+            ElementNextOffsets
+        };
 
-		template <typename RUNTIME_TYPE, QueueControlBlockKind KIND>
-			class QueueControlBlock;
+        template <typename RUNTIME_TYPE, QueueControlBlockKind KIND>
+            class QueueControlBlock;
 
-		template <typename RUNTIME_TYPE>
-			class QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextPointers> : public RUNTIME_TYPE
-		{
-		public:
-			QueueControlBlock(const RUNTIME_TYPE & i_type, void * i_element, QueueControlBlock * i_next) noexcept
-				: RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
+        template <typename RUNTIME_TYPE>
+            class QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextPointers> : public RUNTIME_TYPE
+        {
+        public:
+            QueueControlBlock(const RUNTIME_TYPE & i_type, void * i_element, QueueControlBlock * i_next) noexcept
+                : RUNTIME_TYPE(i_type), m_element(i_element), m_next(i_next) { }
 
-			void * element() const noexcept { return m_element; }
-			QueueControlBlock * next() const noexcept { return m_next; }
+            void * element() const noexcept { return m_element; }
+            QueueControlBlock * next() const noexcept { return m_next; }
 
-		private:
-			void * const m_element;
-			QueueControlBlock * const m_next;
-		};
+        private:
+            void * const m_element;
+            QueueControlBlock * const m_next;
+        };
 
-		template <typename RUNTIME_TYPE>
-			class QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextOffsets> : public RUNTIME_TYPE
-		{
-		public:
-			QueueControlBlock(const RUNTIME_TYPE & i_type, void * i_element, QueueControlBlock * i_next) noexcept
-				: RUNTIME_TYPE(i_type)
-			{
-				const auto element_offset = reinterpret_cast<intptr_t>(i_element) - reinterpret_cast<intptr_t>(this);
-				const auto next_offset = reinterpret_cast<intptr_t>(i_next) - reinterpret_cast<intptr_t>(this);
-				m_element_offset = static_cast<int32_t>(element_offset);
-				m_next_offset = static_cast<int32_t>(next_offset);
-			}
+        template <typename RUNTIME_TYPE>
+            class QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextOffsets> : public RUNTIME_TYPE
+        {
+        public:
+            QueueControlBlock(const RUNTIME_TYPE & i_type, void * i_element, QueueControlBlock * i_next) noexcept
+                : RUNTIME_TYPE(i_type)
+            {
+                const auto element_offset = reinterpret_cast<intptr_t>(i_element) - reinterpret_cast<intptr_t>(this);
+                const auto next_offset = reinterpret_cast<intptr_t>(i_next) - reinterpret_cast<intptr_t>(this);
+                m_element_offset = static_cast<int32_t>(element_offset);
+                m_next_offset = static_cast<int32_t>(next_offset);
+            }
 
-			void * element() const noexcept { return reinterpret_cast<void*>(
-				reinterpret_cast<intptr_t>(this) + m_element_offset ); }
-				
-			QueueControlBlock * next() const noexcept { return reinterpret_cast<QueueControlBlock *>(
-				reinterpret_cast<intptr_t>(this) + m_next_offset); }
+            void * element() const noexcept { return reinterpret_cast<void*>(
+                reinterpret_cast<intptr_t>(this) + m_element_offset ); }
 
-		private:
-			int32_t m_element_offset;
-			int32_t m_next_offset;
-		};
+            QueueControlBlock * next() const noexcept { return reinterpret_cast<QueueControlBlock *>(
+                reinterpret_cast<intptr_t>(this) + m_next_offset); }
+
+        private:
+            int32_t m_element_offset;
+            int32_t m_next_offset;
+        };
 
         /** This internal class template implements an heterogeneous FIFO container that allocates the elements on an externally-owned
            memory buffer. QueueImpl is movable but not copyable.
@@ -85,11 +85,11 @@ namespace density
             // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
             static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
 
-			#if DENSITY_COMPATCT_QUEUE
-				using ControlBlock = QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextOffsets>;
-			#else
-				using ControlBlock = QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextPointers>;
-			#endif
+            #if DENSITY_COMPATCT_QUEUE
+                using ControlBlock = QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextOffsets>;
+            #else
+                using ControlBlock = QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextPointers>;
+            #endif
 
         public:
 

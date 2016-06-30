@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "detail\array_impl.h"
-#include "void_allocator.h"
+#include "void_page_allocator.h"
 
 namespace density
 {
@@ -46,7 +46,7 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class heterogeneous_array final
     {
     private:
@@ -56,7 +56,7 @@ namespace density
 
     public:
 
-		using allocator_type = VOID_ALLOCATOR;
+        using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -406,26 +406,26 @@ namespace density
         }
 
         bool operator == (const heterogeneous_array & i_source) const
-		{
-			if (m_impl.size() != i_source.size())
-			{
-				return false;
-			}
-			else
-			{
-				const auto end_1 = cend();
-				for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
-				{
-					auto const equal_comparer = it_1.complete_type().template get_feature<type_features::equals>();
-					if (it_1.complete_type() != it_2.complete_type() ||
-						!equal_comparer(it_1.element(), it_2.element()))
-					{
-						return false;
-					}
-				}
-				return true;
-			}
-		}
+        {
+            if (m_impl.size() != i_source.size())
+            {
+                return false;
+            }
+            else
+            {
+                const auto end_1 = cend();
+                for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
+                {
+                    auto const equal_comparer = it_1.complete_type().template get_feature<type_features::equals>();
+                    if (it_1.complete_type() != it_2.complete_type() ||
+                        !equal_comparer(it_1.element(), it_2.element()))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
 
         bool operator != (const heterogeneous_array & i_source) const { return !operator == (i_source); }
 

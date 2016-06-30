@@ -55,7 +55,7 @@ namespace testity
         {
             AllocationEntry entry;
             entry.m_size = i_size;
-			entry.m_alignment = i_alignment;
+            entry.m_alignment = i_alignment;
             entry.m_progressive = thread_data.m_last_progressive++;
             // TESTITY_ASSERT(entry.m_progressive != ...);
 
@@ -75,8 +75,8 @@ namespace testity
                 auto & allocations = thread_data.m_levels.back().m_allocations;
                 auto it = allocations.find(i_block);
                 TESTITY_ASSERT(it != allocations.end());
-				TESTITY_ASSERT(it->second.m_size == i_size);
-				TESTITY_ASSERT(it->second.m_alignment == i_alignment);
+                TESTITY_ASSERT(it->second.m_size == i_size);
+                TESTITY_ASSERT(it->second.m_alignment == i_alignment);
                 allocations.erase(it);
             }
         }

@@ -30,7 +30,7 @@ namespace runtime_type_sample
     };
 
     using Features = type_features::feature_list<type_features::default_construct, type_features::destroy,
-		type_features::size, type_features::alignment, type_features::rtti>;
+        type_features::size, type_features::alignment, type_features::rtti>;
 
     runtime_type<Widget, Features> select_widget_type()
     {
@@ -62,7 +62,7 @@ namespace runtime_type_sample
             buffer.resize(widget_type.size(), widget_type.alignment());
 
             // create the widget of the specified type
-			Widget * widget = widget_type.default_construct(buffer.data());
+            Widget * widget = widget_type.default_construct(buffer.data());
 
             // draw it
             widget->draw();

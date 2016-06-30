@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-
 #include "../density/lifo.h"
 #include "../testity/testing_utils.h"
 #include <random>
@@ -132,26 +131,26 @@ namespace density
             std::vector<unsigned char> m_vector;
         };
 
-		template <typename TYPE>
-			class LifoTestAny : public LifoTestItem
-		{
-		public:
-			LifoTestAny(lifo_any<> & i_any, const TYPE & i_value )
-				: m_any(i_any), m_value(i_value)
-			{
-				LifoTestAny::check();
-			}
+        template <typename TYPE>
+            class LifoTestAny : public LifoTestItem
+        {
+        public:
+            LifoTestAny(lifo_any<> & i_any, const TYPE & i_value )
+                : m_any(i_any), m_value(i_value)
+            {
+                LifoTestAny::check();
+            }
 
-			void check() const override
-			{
-				TESTITY_ASSERT(m_any.type() == runtime_type<>::template make<TYPE>());
-				TESTITY_ASSERT(*static_cast<const TYPE*>(m_any.data()) == m_value);
-			}
+            void check() const override
+            {
+                TESTITY_ASSERT(m_any.type() == runtime_type<>::template make<TYPE>());
+                TESTITY_ASSERT(*static_cast<const TYPE*>(m_any.data()) == m_value);
+            }
 
-		private:
-			lifo_any<> & m_any;
-			TYPE m_value;
-		};
+        private:
+            lifo_any<> & m_any;
+            TYPE m_value;
+        };
 
         struct LifoTestContext
         {
@@ -171,11 +170,11 @@ namespace density
                 m_tests.emplace_back( new LifoTestBuffer(i_buffer) );
             }
 
-			template <typename TYPE>
-				void push_test(lifo_any<> & i_any, const TYPE & i_value)
-			{
-				m_tests.emplace_back(new LifoTestAny<TYPE>(i_any, i_value));
-			}
+            template <typename TYPE>
+                void push_test(lifo_any<> & i_any, const TYPE & i_value)
+            {
+                m_tests.emplace_back(new LifoTestAny<TYPE>(i_any, i_value));
+            }
 
             void pop_test()
             {
@@ -215,16 +214,16 @@ namespace density
             i_context.pop_test();
         }
 
-		void lifo_test_push_any_int(LifoTestContext & i_context)
-		{
-			int value = std::uniform_int_distribution<int>(-100, 100)(i_context.m_random);
-			lifo_any<> any = value;
+        void lifo_test_push_any_int(LifoTestContext & i_context)
+        {
+            int value = std::uniform_int_distribution<int>(-100, 100)(i_context.m_random);
+            lifo_any<> any = value;
 
-			TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
-			i_context.push_test(any, value);
-			lifo_test_push(i_context);
-			i_context.pop_test();
-		}
+            TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
+            i_context.push_test(any, value);
+            lifo_test_push(i_context);
+            i_context.pop_test();
+        }
 
         void lifo_test_push_buffer_aligned(LifoTestContext & i_context)
         {
@@ -299,7 +298,7 @@ namespace density
                 using Func = void(*)(LifoTestContext & i_context);
                 Func tests[] = { lifo_test_push_buffer, lifo_test_push_char, lifo_test_push_int,
                     lifo_test_push_double, lifo_test_push_wide_alignment,
-					lifo_test_push_any_int };
+                    lifo_test_push_any_int };
 
                 i_context.m_curr_depth++;
 

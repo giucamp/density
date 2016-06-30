@@ -14,7 +14,7 @@
 #define DENSITY_VERSION            0x0007
 
 #if !defined(NDEBUG)
-	#define DENSITY_DEBUG                    1
+    #define DENSITY_DEBUG                    1
     #define DENSITY_DEBUG_INTERNAL           1
 #else
     #define DENSITY_DEBUG                    0
@@ -22,7 +22,7 @@
 #endif
 
 #if DENSITY_DEBUG
-	#define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
+    #define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
 #else
     #define DENSITY_ASSERT(bool_expr)
 #endif
@@ -273,7 +273,7 @@ namespace density
         }
         return true;
     }
-		
+
     /** Finds the aligned storage for a block with the specified size and alignment, such that it is
             >= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
         @param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After
@@ -389,34 +389,34 @@ namespace density
     \endcode
     \image html iterate_dense_list_and_set_variables.png width=10cm
 
-	\page any_bench Comparison benchmarks with boost::any
-	This test just instances an homogeneous queue and fill it with int's
-	\image html queue_push.png width=10cm
+    \page any_bench Comparison benchmarks with boost::any
+    This test just instances an homogeneous queue and fill it with int's
+    \image html queue_push.png width=10cm
 
-	This test iterates an homogeneous container and get the std::type_info for every element. The containers are created by this code:
+    This test iterates an homogeneous container and get the std::type_info for every element. The containers are created by this code:
 
-	\code{.cpp}
-		static auto any_vector = []() {
-			vector<boost::any> res;
-			for (size_t i = 0; i < 3000; i++)
-			{
-				res.push_back(static_cast<int>(i));
-			}
-			return res;
-		}();
+    \code{.cpp}
+        static auto any_vector = []() {
+            vector<boost::any> res;
+            for (size_t i = 0; i < 3000; i++)
+            {
+                res.push_back(static_cast<int>(i));
+            }
+            return res;
+        }();
 
-		static auto den_list = []() {
-			heterogeneous_array<void> res;
-			for (size_t i = 0; i < 3000; i++)
-			{
-				res.push_back(static_cast<int>(i));
-			}
-			return res;
-		}();
-	\endcode
-	\image html iterate_an_heterogeneous_list_and_print_type_name.png width=10cm
+        static auto den_list = []() {
+            heterogeneous_array<void> res;
+            for (size_t i = 0; i < 3000; i++)
+            {
+                res.push_back(static_cast<int>(i));
+            }
+            return res;
+        }();
+    \endcode
+    \image html iterate_an_heterogeneous_list_and_print_type_name.png width=10cm
 
-	\page func_queue_bench Function queue benchmarks
+    \page func_queue_bench Function queue benchmarks
 
     These tests create a queue, fill it with many lambda functions, and then call and remove every function. These tests have been performed on a program built with Visual Studio 2015 (update 2).
     5 snippets doing that are compared:
@@ -444,7 +444,7 @@ namespace density
     \code{.cpp}
     struct Virtual
     {
-		virtual ~Virtual() {}
+        virtual ~Virtual() {}
     };
     \endcode
     \image html create_array.png width=10cm
@@ -452,14 +452,14 @@ namespace density
     /*! \page runtime_type_sample A sample with runtime_type
     \include runtime_type_sample.cpp
     */
-	/*! \page lifo_sample A lifo sample
-	\include lifo_sample.cpp
-	*/
-	/*! \page function_queue_sample A sample with function queues
-	\include function_queue_sample.cpp
-	*/
-	/*! \page producer_consumer_sample A producer-consumer sample
-	\include producer_consumer_sample.cpp
-	*/
+    /*! \page lifo_sample A lifo sample
+    \include lifo_sample.cpp
+    */
+    /*! \page function_queue_sample A sample with function queues
+    \include function_queue_sample.cpp
+    */
+    /*! \page producer_consumer_sample A producer-consumer sample
+    \include producer_consumer_sample.cpp
+    */
 
 } // namespace density

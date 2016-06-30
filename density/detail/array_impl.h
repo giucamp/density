@@ -223,8 +223,8 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
-                    const auto element_base = i_element_info.copy_construct(complete_new_element, 
-						static_cast<const typename RUNTIME_TYPE::base_type*>(i_source) );
+                    const auto element_base = i_element_info.copy_construct(complete_new_element,
+                        static_cast<const typename RUNTIME_TYPE::base_type*>(i_source) );
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -233,9 +233,9 @@ namespace density
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
                     #endif
 
-					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)), 
-						"All the constructors of RUNTIME_TYPE are required not be noexcept");
-					new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
+                    static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)),
+                        "All the constructors of RUNTIME_TYPE are required not be noexcept");
+                    new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
                 }
 
@@ -249,8 +249,8 @@ namespace density
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
-                    const auto element_base = i_element_info.move_construct(complete_new_element, 
-						static_cast<typename RUNTIME_TYPE::base_type*>(i_source));
+                    const auto element_base = i_element_info.move_construct(complete_new_element,
+                        static_cast<typename RUNTIME_TYPE::base_type*>(i_source));
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -259,16 +259,16 @@ namespace density
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
                     #endif
 
-					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)),
-						"All the constructors of RUNTIME_TYPE are required not be noexcept");
+                    static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base)),
+                        "All the constructors of RUNTIME_TYPE are required not be noexcept");
                     new(m_end_of_control_blocks++) ControlBlock(i_element_info, element_base);
                     return element_base;
                 }
 
                 void add_only_control_block(const RUNTIME_TYPE & i_element_info, void * i_element) noexcept
                 {
-					static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element)),
-						"All the constructors of RUNTIME_TYPE are required not be noexcept");
+                    static_assert(noexcept(new(m_end_of_control_blocks++) ControlBlock(i_element_info, i_element)),
+                        "All the constructors of RUNTIME_TYPE are required not be noexcept");
 
                     #if DENSITY_DEBUG_INTERNAL
                         dbg_check_range(m_end_of_control_blocks, m_end_of_control_blocks + 1);
@@ -545,8 +545,8 @@ namespace density
                             }
                             else
                             {
-                                tmp_it.complete_type().move_construct(this_it.element(), 
-									static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
+                                tmp_it.complete_type().move_construct(this_it.element(),
+                                    static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
                                 this_it.move_next();
                             }
                         }
