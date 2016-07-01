@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "../density/void_page_allocator.h"
+#include "../density/void_allocator.h"
 #include "../testity/testing_utils.h"
 
 namespace density
@@ -31,11 +31,11 @@ namespace density
                 m_underlying_allocator.deallocate(i_block, i_size, i_alignment);
             }
 
-            static size_t page_size() noexcept { return void_page_allocator::page_size(); }
+            static size_t page_size() noexcept { return void_allocator::page_size(); }
 
-            static size_t page_alignment() noexcept { return void_page_allocator::page_alignment(); }
+            static size_t page_alignment() noexcept { return void_allocator::page_alignment(); }
 
-            static const size_t free_page_cache_size = void_page_allocator::free_page_cache_size;
+            static const size_t free_page_cache_size = void_allocator::free_page_cache_size;
 
             void * allocate_page()
             {
@@ -51,7 +51,7 @@ namespace density
             }
 
         private:
-            void_page_allocator m_underlying_allocator;
+            void_allocator m_underlying_allocator;
         };
     }
 }

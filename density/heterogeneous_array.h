@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "detail\array_impl.h"
-#include "void_page_allocator.h"
+#include "void_allocator.h"
 
 namespace density
 {
@@ -46,7 +46,7 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class heterogeneous_array final
     {
     private:

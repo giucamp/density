@@ -7,7 +7,7 @@
 #pragma once
 #include "density_common.h"
 #include "runtime_type.h"
-#include "void_page_allocator.h"
+#include "void_allocator.h"
 #include <vector>
 
 namespace density
@@ -23,7 +23,7 @@ namespace density
         The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block.
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
         See thread_lifo_allocator for a stateless LIFO allocator. */
-    template <typename VOID_ALLOCATOR = void_page_allocator >
+    template <typename VOID_ALLOCATOR = void_allocator >
         class lifo_allocator : private VOID_ALLOCATOR
     {
     public:
@@ -306,7 +306,7 @@ namespace density
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
         Only the calling thread matters.
         When a thread exits all its living block are deallocated. */
-    template <typename VOID_ALLOCATOR = void_page_allocator >
+    template <typename VOID_ALLOCATOR = void_allocator >
         class thread_lifo_allocator
     {
     public:
