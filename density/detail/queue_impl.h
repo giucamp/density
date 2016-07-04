@@ -82,9 +82,6 @@ namespace density
         template <typename RUNTIME_TYPE>
             class QueueImpl final
         {
-            // this causes RuntimeTypeConceptCheck<RUNTIME_TYPE> to be specialized, and eventually compilation to fail
-            static_assert(sizeof(RuntimeTypeConceptCheck<RUNTIME_TYPE>)>0, "");
-
             #if DENSITY_COMPATCT_QUEUE
                 using ControlBlock = QueueControlBlock<RUNTIME_TYPE, QueueControlBlockKind::ElementNextOffsets>;
             #else

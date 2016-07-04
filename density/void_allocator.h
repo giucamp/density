@@ -24,7 +24,7 @@ namespace density
 			
 		<table>
 		<caption id="multi_row">UntypedAllocator Requirements</caption>
-		<tr><th style="width:500px">Requirement                      <th>Semantic
+		<tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 		<tr><td>Non-static member function: @code void * allocate(
 				size_t i_size,
 				size_t i_alignment = alignof(std::max_align_t),
@@ -57,9 +57,10 @@ namespace density
 		- \em i_size, \em i_alignment and \em i_alignment_offset are the same used when the block was allocated.
 		
 		otherwise the behavior may be undefined.
-		<tr><td>Operators == and !=</td></tr>
-		<td>Checks for equality\inequality.
-		</td></tr>
+		<tr>
+			<td>Operators == and !=</td>
+			<td>Checks for equality\inequality.</td>
+		</tr>
 		<tr><td>Default constructor and non-throwing destructor</td></tr>
 		<td>A default constructed allocator is usable to allocate and deallocate memory block. The destructor must be no-except.
 		</td></tr>
@@ -84,7 +85,7 @@ namespace density
 
 		<table>
 		<caption id="multi_row">PagedAllocator Requirements</caption>
-		<tr><th style="width:500px">Requirement                      <th>Semantic
+		<tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 
 		<tr><td>Static member function: @code static size_t page_size() noexcept; @endcode </td></tr>
 		<td>Returns the size of a page in bytes, . In the same program execution this function must return the same value on every invocation. </td> </tr>
@@ -121,7 +122,8 @@ namespace density
 		void_allocator models the PagedAllocator concept.
     */
 
-    /** This class encapsulates an untyped memory allocation service, modeling the \ref VoidAllocator_concept "VoidAllocator concept".
+    /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
+		and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
         void_allocator is stateless. Any instance of void_allocator compares equal to any instance of void_allocator. This implies that
         blocks and pages can be deallocated by any instance of void_allocator.
@@ -129,12 +131,13 @@ namespace density
         \section Implementation
         void_allocator redirects block allocations to the language built-in operator new. Whenever the requested alignment
         is greater than alignof(std::max_align_t), void_allocator allocates an overhead whose size is the maximum between
-        alignof(std::max_align_t) and sizeof(void*). \n
+        the requested alignment and sizeof(void*). \n
+
         Every thread is associated to a free-page cache. When a page is deallocated, if the cache has less than 4 pages,
         the page to deallocate is pushed in this cache. When a page allocation is requested, a page from the cache is returned (if any).
         Pushing/peeking to\from the cache is very fast, and does not require thread synchronization. \n
         Note: on win32 void_allocator is not redirecting page allocations to VirtualAlloc, since from several tests the latter resulted
-        around ten times slower than operator new.
+        around ten times slower than the operator new.
     */
     class void_allocator
     {
@@ -142,7 +145,7 @@ namespace density
 
         /** Allocates a memory block with at least the specified size and alignment.
             @param i_size size of the requested memory block, in bytes
-            @param i_alignment alignment of the requested memory block, in bytes. Must be >0 and a power of 2
+            @param i_alignment alignment of the requested memory block, in bytes
             @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
                 from the beginning of the block.
             @return address of the new memory block
@@ -150,12 +153,11 @@ namespace density
             \pre i_alignment is > 0 and is an integer power of 2
             \pre i_alignment_offset is <= i_size
 
+			A violation of any precondition results in undefined behavior.
+
             \exception std::bad_alloc if the allocation fails
 
-            The content of the newly allocated block is undefined.
-
-            A failure to meet the preconditions result in undefined behavior
-        */
+            The content of the newly allocated block is undefined. */
         void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
@@ -187,6 +189,7 @@ namespace density
             @param i_block block to deallocate, or nullptr.
             @param i_size size of the block to deallocate, in bytes.
             @param i_alignment alignment of the memory block.
+			@param i_alignment_offset
 
             \pre i_block is a memory block allocated with any instance of void_allocator, or nullptr
             \pre i_size and i_alignment are the same specified when allocating the block

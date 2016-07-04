@@ -40,26 +40,6 @@ namespace density
 
     */
 
-    /* This struct template checks the requirements on a RUNTIME_TYPE. Violations are detected with static_assert. */
-    template <typename RUNTIME_TYPE>
-        struct RuntimeTypeConceptCheck
-    {
-        static_assert(std::is_nothrow_default_constructible<RUNTIME_TYPE>::value,
-            "The copy constructor of RUNTIME_TYPE must be declared as noexcept");
-
-        static_assert(std::is_nothrow_copy_constructible<RUNTIME_TYPE>::value,
-            "The copy constructor of RUNTIME_TYPE must be declared as noexcept");
-
-        static_assert( std::is_nothrow_destructible<RUNTIME_TYPE>::value,
-            "The destructor of RUNTIME_TYPE must be noexcept"); // note: destructors are noexcept by default
-
-        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().size()),
-            "RUNTIME_TYPE::size must be declared as noexcept");
-
-        static_assert(noexcept(std::declval<const RUNTIME_TYPE>().alignment()),
-            "RUNTIME_TYPE::alignment must be declared as noexcept");
-    };
-
     namespace type_features
     {
         /** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
@@ -608,14 +588,87 @@ namespace density
 
     } // namespace type_features
 
+	/*! \page RuntimeType_concept RuntimeType concept
+
+		The RuntimeType concept provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
+		ctors, dtor, or retrieval of size and alignment.
+
+		The target type is assigned with the make static function template (see below). A default constructed RuntimeType is empty,
+		that is it has no target type. Trying to use any feature of the target type on an empty RuntimeType results is undefined behavior.
+
+		<table>
+		<tr><th style="width:600px">Requirement                      </th><th>Semantic</th></tr>
+		<tr>
+			<td>Non-throwing default constructor and destructor</td>
+			<td>A default constructed RuntimeType is empty (not assigned to a target type).</td>
+		</tr>
+		<tr>
+			<td>Copy constructor and copy assignment</td>
+			<td>The destination RuntimeType gets the same target type of the source RuntimeType.</td>
+		</tr>
+		<tr>
+			<td>Non-throwing move constructor and non-throwing move assignment</td>
+			<td>The destination RuntimeType gets the target type of the source RuntimeType. The source becomes empty.</td>
+		</tr>
+		<tr>
+			<td>Operators == and !=</td>
+			<td>Checks for equality\inequality. Two RuntimeType are equal if they have the same target type.</td>
+		</tr>
+		<tr>
+			<td>Type alias: @code using base_type = [implementation defined] @endcode</td>
+			<td>The base type handled by the RuntimeType. base_type can be void, is which case any target type is legal.</td>
+		</tr>
+		<tr>
+			<td>Static function template: @code 
+				template <typename TARGET_TYPE>\n
+					static RuntimeType make() noexcept @endcode</td>
+			<td>Returns a RuntimeType that has TARGET_TYPE as target type. The target type must be covariant to <em>base_type</em>, otherwise the
+				behavior is undefined</td>
+		</tr>
+		<tr>
+			<td>Member function: @code size_t size() const noexcept @endcode</td>
+			<td>Equivalent to: @code return sizeof(TARGET_TYPE); @endcode. </td>
+		</tr>
+		<tr>
+			<td>Member function: @code size_t alignment() const noexcept @endcode</td>
+			<td>Equivalent to: @code return aignof(TARGET_TYPE); @endcode. </td>
+		</tr>
+		<tr>
+			<td>Member function: @code base_type * default_construct(void * i_dest) const @endcode</td>
+			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE() ); @endcode. </td>
+		</tr>
+		<tr>
+			<td>Member function: @code base_type * copy_construct(void * i_dest, const base_type * i_source) const @endcode</td>
+			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
+                        *dynamic_cast<const TARGET_TYPE*>(i_source) ) ); @endcode. </td>
+		</tr>
+		<tr>
+			<td>Member function: @code base_type * move_construct(void * i_dest, base_type * i_source) const noexcept @endcode</td>
+			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
+                        std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) ); @endcode </td>
+		</tr>	
+		<tr>
+			<td>Member function: @code void destroy(base_type * i_dest) const noexcept @endcode</td>
+			<td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE(); @endcode </td>
+		</tr>
+		<tr>
+			<td>Member function: @code const std::type_info & type_info() const noexcept @endcode</td>
+			<td>Equivalent to: @code return typeid(TARGET_TYPE); @endcode </td>
+		</tr>
+		</table>
+	*/
+
     /** Class template that performs type-erasure.
             @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
             @tparam FEATURE_LIST type_features::feature_list that defines which type-features are type-erased. By default
-                the feature_list is obtained with type_features::default_type_features.
+                the feature_list is obtained with type_features::default_type_features. If this type is not a type_features::feature_list,
+				a compile time error is reported.
+
+		runtime_type models the \ref RuntimeType_concept "RuntimeType" concept .
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
         instances of the target types, depending on the features included on FEATURE_LIST. \n
-        A runtime_type bound to a type can be created with the static function runtime_type::make. runtime_type is copyable. \n
+        A runtime_type bound to a type can be created with the static function runtime_type::make. runtime_type has value semantic, and is copyable. \n
         A default-constructed runtime_type is empty: trying to use type-features of an empty runtime_type leads to undefined behavior.
         A runtime_type becomes empty is the member function clear is called.
 
@@ -628,7 +681,7 @@ namespace density
 
         \n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable, that is a static array of feature
             values: for every feature in FEATURE_LIST there is an entry in this vtable. Most entries are pointer to functions.
-            Anyway, some features (notably type_features::size and type_features::alignment) store a simple value. \n
+            Anyway, some features (notably type_features::size and type_features::alignment) store a static const value. \n
 
 
         In this example a std::string is created and destroyed using a runtime_type.
@@ -662,7 +715,7 @@ namespace density
         template <typename TYPE>
             static runtime_type make() noexcept
         {
-            return runtime_type(detail::FeatureTable<BASE_TYPE,
+            return runtime_type(detail::FeatureTable<base_type,
                 typename std::decay<TYPE>::type, FEATURE_LIST>::s_table);
         }
 
@@ -730,13 +783,13 @@ namespace density
         /** Default constructs an instance of the target type on the specified uninitialized storage. \n
             The effect of this function is the same of this code:
                 @code
-                    return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE() );
+                    return static_cast<base_type*>( new(i_dest) TARGET_TYPE() );
                 @endcode
             where TARGET_TYPE is the target type (see the static member function runtime_type::make). Note that primitive
             types are initialized by this expression.
             @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
                 must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
-            @return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
+            @return pointer to the base_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
                 assume that the value of this pointer is the same of i_dest.
 
             \n\b Requires:
@@ -744,7 +797,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the default constructor of the target type throws. */
-        BASE_TYPE * default_construct(void * i_dest) const
+		base_type * default_construct(void * i_dest) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -752,20 +805,20 @@ namespace density
                         std::true_type, std::false_type >() );
             #endif
             DENSITY_ASSERT(!empty());
-            return static_cast<BASE_TYPE*>( get_feature<type_features::default_construct>()(i_dest) );
+            return static_cast<base_type*>( get_feature<type_features::default_construct>()(i_dest) );
         }
 
         /** Copy constructs an instance of the target type on the specified uninitialized storage. \n
             The effect of this function is the same of this code:
                 @code
-                    return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE(
+                    return static_cast<base_type*>( new(i_dest) TARGET_TYPE(
                         *dynamic_cast<const TARGET_TYPE*>(i_source) ) );
                 @endcode
             where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
             @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
                 must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
-            @param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
-            @return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
+            @param i_source pointer to a subobject base_type of an instance of TARGET_TYPE.
+            @return pointer to the base_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
                 assume that the value of this pointer is the same of i_dest.
 
             \n\b Requires:
@@ -773,7 +826,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the copy constructor of the target type throws. */
-        BASE_TYPE * copy_construct(void * i_dest, const BASE_TYPE * i_source) const
+		base_type * copy_construct(void * i_dest, const base_type * i_source) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -781,20 +834,20 @@ namespace density
                         std::true_type, std::false_type >() );
             #endif
             DENSITY_ASSERT(!empty());
-            return static_cast<BASE_TYPE*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
+            return static_cast<base_type*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
         }
 
         /** Move constructs an instance of the target type on the specified uninitialized storage. \n
             The effect of this function is the same of this code:
                 @code
-                    return static_cast<BASE_TYPE*>( new(i_dest) TARGET_TYPE(
+                    return static_cast<base_type*>( new(i_dest) TARGET_TYPE(
                         std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) );
                 @endcode
             where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
             @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
                 must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
-            @param i_source pointer to a subobject BASE_TYPE of an instance of TARGET_TYPE.
-            @return pointer to the BASE_TYPE subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
+            @param i_source pointer to a subobject base_type of an instance of TARGET_TYPE.
+            @return pointer to the base_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
                 assume that the value of this pointer is the same of i_dest.
 
             \n\b Requires:
@@ -802,7 +855,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. Move constructors are required to be noexcept. */
-        BASE_TYPE * move_construct(void * i_dest, BASE_TYPE * i_source) const noexcept
+		base_type * move_construct(void * i_dest, base_type * i_source) const noexcept
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -810,10 +863,10 @@ namespace density
                         std::true_type, std::false_type >() );
             #endif
             DENSITY_ASSERT(!empty());
-            return static_cast<BASE_TYPE*>(get_feature<type_features::move_construct>()(i_dest, i_source));
+            return static_cast<base_type*>(get_feature<type_features::move_construct>()(i_dest, i_source));
         }
 
-        /** Destroys an object of the target type through a pointer to the subobject BASE_TYPE.
+        /** Destroys an object of the target type through a pointer to the subobject base_type.
 
             The effect of this function is the same of this code:
                 @code
@@ -826,7 +879,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. Destructors are required to be noexcept. */
-        void destroy(BASE_TYPE * i_dest) const noexcept
+        void destroy(base_type * i_dest) const noexcept
         {
             DENSITY_ASSERT(!empty());
             get_feature<type_features::destroy>()(i_dest);
