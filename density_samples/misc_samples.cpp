@@ -140,6 +140,30 @@ namespace misc_samples
 
             //! [runtime_type example 3]
         }
+
+        {
+            //! [heterogeneous_array example 1]
+			using namespace density;
+			const auto list = heterogeneous_array<>::make(1, std::string("abc"), 2.5);
+
+			struct Base {};
+			struct Derived1 : Base {};
+			struct Derived2 : Base {};
+			const auto list1 = heterogeneous_array<Base>::make(Derived1(), Derived2(), Derived1());
+            //! [heterogeneous_array example 1]
+        }
+
+		{
+			//! [heterogeneous_array example 2]
+			using namespace density;
+			struct Base {};
+			struct Derived1 : Base {};
+			struct Derived2 : Base {};			
+			const auto list = heterogeneous_array<Base>::make_with_alloc(void_allocator(), Derived1(), Derived2(), Derived1());
+			//! [heterogeneous_array example 2]
+		}
+
+
     }
 } // namespace misc_samples
 

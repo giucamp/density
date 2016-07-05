@@ -612,7 +612,7 @@ namespace density
 		</tr>
 		<tr>
 			<td>Operators == and !=</td>
-			<td>Checks for equality\inequality. Two RuntimeType are equal if they have the same target type.</td>
+			<td>Checks for equality\\inequality. Two RuntimeType are equal if they have the same target type.</td>
 		</tr>
 		<tr>
 			<td>Type alias: @code using base_type = [implementation defined] @endcode</td>
@@ -664,7 +664,7 @@ namespace density
                 the feature_list is obtained with type_features::default_type_features. If this type is not a type_features::feature_list,
 				a compile time error is reported.
 
-		runtime_type models the \ref RuntimeType_concept "RuntimeType" concept .
+		runtime_type models the \ref RuntimeType_concept "RuntimeType" concept.
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
         instances of the target types, depending on the features included on FEATURE_LIST. \n

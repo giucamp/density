@@ -71,38 +71,52 @@ namespace density
                 m_control_blocks = nullptr;
             }
 
+			// default constructor
             ArrayImpl() noexcept
                 : m_control_blocks(nullptr)
                     { }
 
-            ArrayImpl(ArrayImpl && i_source) noexcept
-            {
-                #if DENSITY_DEBUG_INTERNAL
-                    i_source.check_invariants();
-                #endif
-                move_impl(std::move(i_source));
-            }
+			// constructor with allocator
+			ArrayImpl(const VOID_ALLOCATOR & i_allocator)
+				: VOID_ALLOCATOR(i_allocator), m_control_blocks(nullptr)
+					{ }
 
-            ArrayImpl & operator = (ArrayImpl && i_source) noexcept
-            {
-                DENSITY_ASSERT(this != &i_source); // self assignment not supported
-
-                #if DENSITY_DEBUG_INTERNAL
-                    this->check_invariants();
-                    i_source.check_invariants();
-                #endif
-
-                destroy_impl();
-                move_impl(std::move(i_source));
-                return *this;
-            }
-
+			// copy constructor
             ArrayImpl(const ArrayImpl & i_source)
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
                 #endif
                 copy_impl(i_source);
+            }
+
+			// copy constructor with allocator
+            ArrayImpl(const ArrayImpl & i_source, const VOID_ALLOCATOR & i_allocator)
+				: VOID_ALLOCATOR(i_allocator)
+            {
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
+                copy_impl(i_source);
+            }
+
+			// move constructor
+			ArrayImpl(ArrayImpl && i_source) noexcept
+            {
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
+                move_impl(std::move(i_source));
+            }
+
+			// move constructor with allocator
+			ArrayImpl(ArrayImpl && i_source, const VOID_ALLOCATOR & i_allocator) noexcept
+				: VOID_ALLOCATOR(i_allocator)
+            {
+                #if DENSITY_DEBUG_INTERNAL
+                    i_source.check_invariants();
+                #endif
+                move_impl(std::move(i_source));
             }
 
             ArrayImpl & operator = (const ArrayImpl & i_source)
@@ -117,6 +131,20 @@ namespace density
                 auto copy(i_source);
                 destroy_impl();
                 move_impl(std::move(copy));
+                return *this;
+            }
+
+            ArrayImpl & operator = (ArrayImpl && i_source) noexcept
+            {
+                DENSITY_ASSERT(this != &i_source); // self assignment not supported
+
+                #if DENSITY_DEBUG_INTERNAL
+                    this->check_invariants();
+                    i_source.check_invariants();
+                #endif
+
+                destroy_impl();
+                move_impl(std::move(i_source));
                 return *this;
             }
 

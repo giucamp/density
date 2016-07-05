@@ -59,7 +59,7 @@ namespace density
 		otherwise the behavior may be undefined.
 		<tr>
 			<td>Operators == and !=</td>
-			<td>Checks for equality\inequality.</td>
+			<td>Checks for equality\\inequality.</td>
 		</tr>
 		<tr><td>Default constructor and non-throwing destructor</td></tr>
 		<td>A default constructed allocator is usable to allocate and deallocate memory block. The destructor must be no-except.
@@ -104,7 +104,7 @@ namespace density
 		<td>Deallocates a memory page. </td></tr>
 
 		<tr><td>Operators == and !=</td></tr>
-		<td>Checks for equality\inequality.
+		<td>Checks for equality\\inequality.
 		</td></tr>
 		<tr><td>Default constructor and non-throwing destructor</td></tr>
 		<td>A default constructed allocator is usable to allocate and deallocate memory pages. The destructor must be no-except.
