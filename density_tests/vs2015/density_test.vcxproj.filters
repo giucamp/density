@@ -43,9 +43,6 @@
     <ClCompile Include="..\list_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\lifo_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\lifo_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
@@ -76,6 +73,9 @@
     <ClCompile Include="..\allocator_benchmarks.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\heterogeneous_array.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
@@ -89,9 +89,6 @@
     </ClInclude>
     <ClInclude Include="..\..\density\detail\queue_impl.h">
       <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\correctness_test_context.h">
-      <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\testing_utils.h">
       <Filter>testity</Filter>
@@ -131,6 +128,12 @@
     </ClInclude>
     <ClInclude Include="..\test_allocators.h">
       <Filter>density_tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\functionality_test_context.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\test_classes_kit.h">
+      <Filter>testity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

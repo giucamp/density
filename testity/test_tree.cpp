@@ -202,8 +202,8 @@ namespace testity
             i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
             i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;
             i_ostream << "SIZEOF_POINTER:" << m_environment.sizeof_pointer() << std::endl;
-            i_ostream << "DETERMINISTIC:" << (m_session.deterministic() ? "yes" : "no") << std::endl;
-            i_ostream << "RANDOM_SHUFFLE:" << (m_session.random_shuffle() ? "yes (with std::mt19937)" : "no") << std::endl;
+            i_ostream << "DETERMINISTIC:" << (m_session.config().m_deterministic ? "yes" : "no") << std::endl;
+            i_ostream << "RANDOM_SHUFFLE:" << (m_session.config().m_random_shuffle ? "yes (with std::mt19937)" : "no") << std::endl;
 
             const auto date_time = std::chrono::system_clock::to_time_t(m_environment.startup_clock());
             #ifdef _MSC_VER
@@ -231,7 +231,7 @@ namespace testity
             i_ostream << "CARDINALITY_START:" << performance_test_group.cardinality_start() << std::endl;
             i_ostream << "CARDINALITY_STEP:" << performance_test_group.cardinality_step() << std::endl;
             i_ostream << "CARDINALITY_END:" << performance_test_group.cardinality_end() << std::endl;
-            i_ostream << "MULTEPLICITY:" << m_session.repetitions() << std::endl;
+            i_ostream << "MULTEPLICITY:" << m_session.config().m_performance_repetitions << std::endl;
 
             // write legend
             i_ostream << "LEGEND_START:" << std::endl;
@@ -282,7 +282,7 @@ namespace testity
         }
     }
 
-    void Session::generate_operations(const TestTree & i_test_tree, Operations & i_dest) const
+    void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const
     {
         for (auto & test_group : i_test_tree.performance_tests())
         {
@@ -304,30 +304,32 @@ namespace testity
 
         for (auto & child : i_test_tree.children())
         {
-            generate_operations(child, i_dest);
+            generate_performance_operations(child, i_dest);
         }
     }
 
-    Results Session::run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const
-    {
-        using namespace std;
+	Results Session::run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const
+	{
+		using namespace std;
 
-        mt19937 random = m_deterministic ? mt19937() : mt19937(random_device()());
+		mt19937 random = m_config.m_deterministic ? mt19937() : mt19937(random_device()());
 
-        Operations operations;
-        for (size_t repetition_index = 0; repetition_index < m_repetitions; repetition_index++)
-        {
-            generate_operations(i_test_tree, operations);
-        }
+		// generate operation array
+		Operations operations;
+		if (m_config.m_test_performances)
+		{
+			for (size_t repetition_index = 0; repetition_index < m_config.m_performance_repetitions; repetition_index++)
+			{
+				generate_performance_operations(i_test_tree, operations);
+			}
+		}
+
         const auto operations_size = operations.size();
 
-        if (m_random_shuffle)
+        if (m_config.m_random_shuffle)
         {
             i_dest_stream << "randomizing operations..." << endl;
-            for (Operations::size_type index = 0; index < operations_size; index++)
-            {
-                swap(operations[index], operations[uniform_int_distribution<Operations::size_type>(0, operations_size - 1)(random)]);
-            }
+			std::shuffle(operations.begin(), operations.end(), random);
         }
 
         i_dest_stream << "performing tests..." << endl;

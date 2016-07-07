@@ -10,11 +10,11 @@
 
 namespace testity
 {
-    class CorrectnessTestContext
+    class FunctionalityContext
     {
     public:
 
-        CorrectnessTestContext()
+        FunctionalityContext()
             : m_random(std::random_device()())
         {
 

@@ -16,14 +16,14 @@ namespace density
     namespace tests
     {
 
-        /* TestDenseList<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */
+        /* TestHeterogeneousArray<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */
         template <typename TYPE>
-            using TestDenseList = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
+            using TestHeterogeneousArray = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
                 typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>
             void add_test_case_add_by_copy(
-                ContainerTest<TestDenseList<BASE_ELEMENT>> & i_test,
+                ContainerTest<TestHeterogeneousArray<BASE_ELEMENT>> & i_test,
                 double i_probability,
                 CONSTRUCTION_PARAMS && ... i_construction_parameters )
         {
@@ -75,7 +75,7 @@ namespace density
 
         template <typename COMPLETE_ELEMENT, typename BASE_ELEMENT, typename... CONSTRUCTION_PARAMS>
             void add_test_case_add_by_move(
-                ContainerTest<TestDenseList<BASE_ELEMENT>> & i_test,
+                ContainerTest<TestHeterogeneousArray<BASE_ELEMENT>> & i_test,
                 double i_probability,
                 CONSTRUCTION_PARAMS && ... i_construction_parameters )
         {
@@ -117,7 +117,7 @@ namespace density
         }
 
         template <typename BASE_ELEMENT>
-            void add_test_case_erase( ContainerTest<TestDenseList<BASE_ELEMENT>> & i_test, double i_probability )
+            void add_test_case_erase( ContainerTest<TestHeterogeneousArray<BASE_ELEMENT>> & i_test, double i_probability )
         {
             const double probability = i_probability / 2.;
 
@@ -155,7 +155,7 @@ namespace density
             NoLeakScope no_leak_scope;
 
             {
-                ContainerTest<TestDenseList<void>> test(i_container_name);
+                ContainerTest<TestHeterogeneousArray<void>> test(i_container_name);
                 add_test_case_add_by_copy<TestObjectBase>(test, 1., i_random);
                 const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random); // this is a number used to initialize the instances of TestObjectBase
                 add_test_case_add_by_move<TestObjectBase>(test, 1., rand_size_t);
@@ -165,7 +165,7 @@ namespace density
             }
 
             {
-                ContainerTest<TestDenseList<TestObjectBase>> test(i_container_name);
+                ContainerTest<TestHeterogeneousArray<TestObjectBase>> test(i_container_name);
                 add_test_case_add_by_copy<TestObjectBase>(test, 1., i_random);
                 const auto rand_size_t = std::uniform_int_distribution<size_t>()(i_random); // this is a number used to initialize the instances of TestObjectBase
                 add_test_case_add_by_move<TestObjectBase>(test, 1., rand_size_t);

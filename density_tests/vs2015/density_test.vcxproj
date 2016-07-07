@@ -232,7 +232,7 @@
     <ClCompile Include="..\queue_benchmarks.cpp" />
     <ClCompile Include="..\function_queue_test.cpp" />
     <ClCompile Include="..\lifo_benchmarks.cpp" />
-    <ClCompile Include="..\lifo_test.cpp" />
+    <ClCompile Include="..\heterogeneous_array.cpp" />
     <ClCompile Include="..\list_benchmarks.cpp" />
     <ClCompile Include="..\list_test.cpp" />
     <ClCompile Include="..\function_queue_benchmarks.cpp" />
@@ -254,9 +254,10 @@
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
-    <ClInclude Include="..\..\testity\correctness_test_context.h" />
+    <ClInclude Include="..\..\testity\functionality_test_context.h" />
     <ClInclude Include="..\..\testity\environment.h" />
     <ClInclude Include="..\..\testity\testing_utils.h" />
+    <ClInclude Include="..\..\testity\test_classes_kit.h" />
     <ClInclude Include="..\..\testity\test_tree.h" />
     <ClInclude Include="..\container_test.h" />
     <ClInclude Include="..\test_allocators.h" />

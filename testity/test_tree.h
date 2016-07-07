@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "correctness_test_context.h"
+#include "functionality_test_context.h"
 #include "environment.h"
 #include <memory>
 #include <string>
@@ -15,8 +15,7 @@
 #include <algorithm>
 #include <ostream>
 #include <unordered_map>
-
-#define DENSITY_MAKE_BENCHMARK_TEST(...)            testity::BenchmarkTest(#__VA_ARGS__, [](size_t i_cardinality) { __VA_ARGS__; } )
+#include <type_traits>
 
 namespace testity
 {
@@ -50,11 +49,28 @@ namespace testity
             m_tests.push_back(std::move(i_test));
         }
 
+		void set_description(std::string i_description)
+		{
+			m_description = std::move(i_description);
+		}
+
+		void set_prolog_code(std::string i_code)
+		{
+			m_prolog_code = std::move(i_code);
+		}
+
+		void set_prolog_code(const char * i_code, size_t i_length)
+		{
+			m_prolog_code.assign(i_code, i_length);
+		}
+
         void add_test(const char * i_source_file, int i_start_line,
             std::function<BenchmarkTest::TestFunction> i_function, int i_end_line);
 
         const std::string & name() const { return m_name; }
         const std::string & version_label() const { return m_version_label; }
+		const std::string & description() const { return m_description; }
+		const std::string & prolog_code() const { return m_prolog_code; }
 
         size_t cardinality_start() const { return m_cardinality_start; }
         size_t cardinality_step() const { return m_cardinality_step; }
@@ -71,22 +87,37 @@ namespace testity
         size_t m_cardinality_step = 10000;
         size_t m_cardinality_end = 800000;
         std::vector<BenchmarkTest> m_tests;
-        std::string m_name, m_version_label;
+        std::string m_name, m_description, m_prolog_code, m_version_label;
     };
 
-    using CorrectnessTestFunction = void(*)(CorrectnessTestContext & i_context);
+    using FunctionalityFunction = void(*)(FunctionalityContext & i_context);
 
-    class CorrectnessTest
+	/** Describes a set of boolean options for a functionality test. Two FunctionalityFlag can 
+		be combined using the overloaded operator |. */
+	enum class FunctionalityFlag
+	{
+		None, /**< no options */
+		FullExceptionSafeness /**< an exhaustive exception safeness test is required. */
+	};
+
+	/** Combines two FunctionalityFlag in or. This function is const_expr. */
+	constexpr inline FunctionalityFlag operator | (FunctionalityFlag i_first, FunctionalityFlag i_second)
+	{
+		using underlying = std::underlying_type<FunctionalityFlag>::type;
+		return static_cast<FunctionalityFlag>(static_cast<underlying>(i_first) | static_cast<underlying>(i_second));
+	}
+
+    class FunctionalityTest
     {
     public:
 
-        CorrectnessTest(CorrectnessTestFunction i_function)
+        FunctionalityTest(FunctionalityFunction i_function)
             : m_function(i_function)
         {
         }
 
     private:
-        CorrectnessTestFunction m_function;
+        FunctionalityFunction m_function;
     };
 
     class TestTree
@@ -97,9 +128,9 @@ namespace testity
 
         const std::string & name() const { return m_name; }
 
-        void add_correctess_test(CorrectnessTest i_correctess_test)
+        void add_correctess_test(FunctionalityTest i_correctess_test)
         {
-            m_correctness_tests.emplace_back(std::move(i_correctess_test));
+            m_functionality_tests.emplace_back(std::move(i_correctess_test));
         }
 
         void add_performance_test(PerformanceTestGroup i_group)
@@ -107,7 +138,7 @@ namespace testity
             m_performance_tests.emplace_back(std::move(i_group));
         }
 
-        const std::vector< CorrectnessTest > & correctness_tests() const { return m_correctness_tests; }
+        const std::vector< FunctionalityTest > & functionality_tests() const { return m_functionality_tests; }
         const std::vector< PerformanceTestGroup > & performance_tests() const { return m_performance_tests;  }
 
         const std::vector<TestTree> & children() const { return m_children; }
@@ -120,7 +151,7 @@ namespace testity
 
     private:
         std::string m_name;
-        std::vector< CorrectnessTest > m_correctness_tests;
+        std::vector< FunctionalityTest > m_functionality_tests;
         std::vector< PerformanceTestGroup > m_performance_tests;
         std::vector< TestTree > m_children;
     };
@@ -167,22 +198,32 @@ namespace testity
     class Session
     {
     public:
-
+		
         Results run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const;
 
-        bool deterministic() const { return m_deterministic; }
-        bool random_shuffle() const { return m_random_shuffle; }
-        size_t repetitions() const { return m_repetitions; }
+		struct Config
+		{
+			bool m_test_functionality = true;
+			bool m_test_exception_safeness = true;
+			bool m_test_performances = true;
+			bool m_deterministic = true;
+			bool m_random_shuffle = true;
+			size_t m_functionality_repetitions = 2;
+			size_t m_performance_repetitions = 8;
+		};
+
+		void set_config(const Config & i_config) { m_config = i_config; }
+
+		const Config & config() const { return m_config; }
 
     private:
 
         using Operations = std::deque<std::function<void(Results & results)>>;
-        void generate_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+        void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const;
 
     private:
-        bool m_deterministic = true;
-        bool m_random_shuffle = true;
-        size_t m_repetitions = 8;
+		Config m_config;
     };
 
 } // namespace testity

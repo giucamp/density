@@ -75,21 +75,25 @@ namespace density
 		heterogeneous_array() noexcept = default;
 
 		/** Move constructor. The source array is left empty after the call. \n
-			No allocation is performed. */
+			The allocator of the destination is move-constructed from the source. \n
+			No allocation is performed. \n
+			\n\b Requires: the move-constructor of the allocator must be noexcept. */
 		heterogeneous_array(heterogeneous_array && i_source) noexcept = default;
 
-		/** Copy constructor. The source array is left unchanged after the call. */
+		/** Copy constructor. The source array is left unchanged after the call.
+			The allocator of the destination is copy-constructed from the source. \n*/
 		heterogeneous_array(const heterogeneous_array & i_source) = default;
 
-		/** Constructor that copy-construct the allocator */
+		/** Constructor that copy-construct the allocator from the parameter. */
 		heterogeneous_array(const UNTYPED_ALLOCATOR & i_allocator)
 			: m_impl(i_allocator) { }
 
-		/** Move constructor that copy-constructs the allocator */
+		/** Move constructor that copy-constructs the allocator from the parameter. \n
+				The source array is left empty after the call. */
 		heterogeneous_array(heterogeneous_array && i_source, const UNTYPED_ALLOCATOR & i_allocator)
 			: m_impl(std::move(i_source.m_impl), i_allocator) { }
 
-		/** Copy constructor that copy-constructs the allocator */
+		/** Copy constructor that copy-constructs the allocator from the parameter. */
 		heterogeneous_array(const heterogeneous_array & i_source, const UNTYPED_ALLOCATOR & i_allocator)
 			: m_impl(i_source.m_impl, i_allocator) { }
 
@@ -99,7 +103,11 @@ namespace density
 		/** Move assignment. The source array is left empty after the call. */
 		heterogeneous_array & operator = (heterogeneous_array &&) noexcept = default;
 
-        /** Creates a heterogeneous_array containing all the elements specified in the parameter list.
+		/** Destructor. \n
+			\n\b Requires: the destructor of the allocator must be noexcept.*/
+		~heterogeneous_array() = default;
+        
+		/** Creates a heterogeneous_array containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_elements elements to add to the list.
                 @return the new heterogeneous_array
@@ -143,6 +151,7 @@ namespace density
             return m_impl.empty();
         }
 
+		/** Non-const iterator. Random access is not supported. */
         class iterator final
         {
         public:
@@ -203,6 +212,7 @@ namespace density
             IteratorImpl m_impl;
         }; // class iterator
 
+		/** Const iterator. Random access is not supported. */
         class const_iterator final
         {
         public:
