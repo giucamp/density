@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include "..\testity\test_tree.h"
+#include "..\testity\test_session.h"
 
 namespace density
 {

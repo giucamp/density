@@ -16,6 +16,9 @@
     <Filter Include="samples">
       <UniqueIdentifier>{19c7d4d9-1c1f-43bd-b78f-6338b7d9b7a0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="testity\detail">
+      <UniqueIdentifier>{dce9f0e0-4088-4a46-8de1-79823ff74acd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\function_queue_benchmarks.cpp">
@@ -30,16 +33,7 @@
     <ClCompile Include="..\queue_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\testity\testing_utils.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
     <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\..\testity\test_tree.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\environment.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
     <ClCompile Include="..\list_test.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
@@ -76,6 +70,27 @@
     <ClCompile Include="..\heterogeneous_array.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\testity\testing_utils.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\test_tree.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\detail\environment.cpp">
+      <Filter>testity\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\detail\functionality_test.cpp">
+      <Filter>testity\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\test_session.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\performance_test.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\functionality_context.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\container_test.h">
@@ -89,15 +104,6 @@
     </ClInclude>
     <ClInclude Include="..\..\density\detail\queue_impl.h">
       <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\testing_utils.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\test_tree.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\environment.h">
-      <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
@@ -129,10 +135,28 @@
     <ClInclude Include="..\test_allocators.h">
       <Filter>density_tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\testity\functionality_test_context.h">
+    <ClInclude Include="..\..\testity\test_tree.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\testing_utils.h">
       <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\test_classes_kit.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\detail\functionality_test.h">
+      <Filter>testity\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\detail\environment.h">
+      <Filter>testity\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\test_session.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\performance_test.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\functionality_context.h">
       <Filter>testity</Filter>
     </ClInclude>
   </ItemGroup>

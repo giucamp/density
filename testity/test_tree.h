@@ -5,121 +5,12 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "functionality_test_context.h"
-#include "environment.h"
-#include <memory>
-#include <string>
-#include <deque>
-#include <chrono>
-#include <functional>
-#include <algorithm>
-#include <ostream>
-#include <unordered_map>
-#include <type_traits>
+#include "detail\functionality_test.h"
+#include "performance_test.h"
+#include "functionality_context.h"
 
 namespace testity
 {
-    class BenchmarkTest
-    {
-    public:
-
-        using TestFunction = void(size_t i_cardinality);
-
-        BenchmarkTest(std::string i_source_code, std::function<TestFunction> i_function)
-            : m_source_code(std::move(i_source_code)), m_function(std::move(i_function))
-                { }
-
-        const std::string & source_code() const { return m_source_code; }
-        const std::function<TestFunction> & function() const { return m_function; }
-
-    private:
-        std::string m_source_code;
-        std::function<TestFunction> m_function;
-    };
-
-    class PerformanceTestGroup
-    {
-    public:
-
-        PerformanceTestGroup(std::string i_name, std::string i_version_label)
-            : m_name(std::move(i_name)), m_version_label(std::move(i_version_label)) { }
-
-        void add_test(BenchmarkTest i_test)
-        {
-            m_tests.push_back(std::move(i_test));
-        }
-
-		void set_description(std::string i_description)
-		{
-			m_description = std::move(i_description);
-		}
-
-		void set_prolog_code(std::string i_code)
-		{
-			m_prolog_code = std::move(i_code);
-		}
-
-		void set_prolog_code(const char * i_code, size_t i_length)
-		{
-			m_prolog_code.assign(i_code, i_length);
-		}
-
-        void add_test(const char * i_source_file, int i_start_line,
-            std::function<BenchmarkTest::TestFunction> i_function, int i_end_line);
-
-        const std::string & name() const { return m_name; }
-        const std::string & version_label() const { return m_version_label; }
-		const std::string & description() const { return m_description; }
-		const std::string & prolog_code() const { return m_prolog_code; }
-
-        size_t cardinality_start() const { return m_cardinality_start; }
-        size_t cardinality_step() const { return m_cardinality_step; }
-        size_t cardinality_end() const { return m_cardinality_end; }
-
-        void set_cardinality_start(size_t i_cardinality_start) { m_cardinality_start = i_cardinality_start; }
-        void set_cardinality_step(size_t i_cardinality_step) { m_cardinality_step = i_cardinality_step; }
-        void set_cardinality_end(size_t i_cardinality_end) { m_cardinality_end = i_cardinality_end; }
-
-        const std::vector<BenchmarkTest> & tests() const { return m_tests; }
-
-    private:
-        size_t m_cardinality_start = 0;
-        size_t m_cardinality_step = 10000;
-        size_t m_cardinality_end = 800000;
-        std::vector<BenchmarkTest> m_tests;
-        std::string m_name, m_description, m_prolog_code, m_version_label;
-    };
-
-    using FunctionalityFunction = void(*)(FunctionalityContext & i_context);
-
-	/** Describes a set of boolean options for a functionality test. Two FunctionalityFlag can 
-		be combined using the overloaded operator |. */
-	enum class FunctionalityFlag
-	{
-		None, /**< no options */
-		FullExceptionSafeness /**< an exhaustive exception safeness test is required. */
-	};
-
-	/** Combines two FunctionalityFlag in or. This function is const_expr. */
-	constexpr inline FunctionalityFlag operator | (FunctionalityFlag i_first, FunctionalityFlag i_second)
-	{
-		using underlying = std::underlying_type<FunctionalityFlag>::type;
-		return static_cast<FunctionalityFlag>(static_cast<underlying>(i_first) | static_cast<underlying>(i_second));
-	}
-
-    class FunctionalityTest
-    {
-    public:
-
-        FunctionalityTest(FunctionalityFunction i_function)
-            : m_function(i_function)
-        {
-        }
-
-    private:
-        FunctionalityFunction m_function;
-    };
-
     class TestTree
     {
     public:
@@ -128,17 +19,21 @@ namespace testity
 
         const std::string & name() const { return m_name; }
 
-        void add_correctess_test(FunctionalityTest i_correctess_test)
-        {
-            m_functionality_tests.emplace_back(std::move(i_correctess_test));
-        }
+		void add_functionality_test( void(*)(FunctionalityContext & i_context) );
+
+		template <typename TARGET>
+			void add_functionality_test(void(*)(FunctionalityContext & i_context, TARGET & i_target))
+		{
+			m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
+				new detail::TargetedFunctionalityTest<TARGET>(i_function)));
+		}
 
         void add_performance_test(PerformanceTestGroup i_group)
         {
             m_performance_tests.emplace_back(std::move(i_group));
         }
 
-        const std::vector< FunctionalityTest > & functionality_tests() const { return m_functionality_tests; }
+        const std::vector< std::unique_ptr<detail::IFunctionalityTest> > & functionality_tests() const { return m_functionality_tests; }
         const std::vector< PerformanceTestGroup > & performance_tests() const { return m_performance_tests;  }
 
         const std::vector<TestTree> & children() const { return m_children; }
@@ -149,82 +44,12 @@ namespace testity
 
         TestTree * find(const char * i_path);
 
-    private:
+    private:		
         std::string m_name;
-        std::vector< FunctionalityTest > m_functionality_tests;
+        std::vector< std::unique_ptr<detail::IFunctionalityTest> > m_functionality_tests;
         std::vector< PerformanceTestGroup > m_performance_tests;
         std::vector< TestTree > m_children;
-    };
-
-    using Duration = std::chrono::nanoseconds;
-
-    class Session;
-
-    class Results
-    {
-    public:
-
-        Results(const TestTree & i_test_tree, const Session & i_session) : m_test_tree(i_test_tree), m_session(i_session) {}
-
-        void add_result(const BenchmarkTest * i_test, size_t i_cardinality, Duration i_duration);
-
-        void save_to(const char * i_filename) const;
-
-        void save_to(std::ostream & i_ostream) const;
-
-    private:
-        void save_to_impl(std::string i_path, const TestTree & i_test_tree, std::ostream & i_ostream) const;
-
-    private:
-        struct TestId
-        {
-            const BenchmarkTest * m_test;
-            size_t m_cardinality;
-
-            bool operator == (const TestId & i_source) const
-                { return m_test == i_source.m_test && m_cardinality == i_source.m_cardinality; }
-        };
-        struct TestIdHash
-        {
-            size_t operator() (const TestId & i_test_id) const
-                { return std::hash<const void*>()(i_test_id.m_test) ^ std::hash<size_t>()(i_test_id.m_cardinality); }
-        };
-        std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
-        const TestTree & m_test_tree;
-        const Session & m_session;
-        Environment m_environment;
-    };
-
-    class Session
-    {
-    public:
-		
-        Results run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const;
-
-		struct Config
-		{
-			bool m_test_functionality = true;
-			bool m_test_exception_safeness = true;
-			bool m_test_performances = true;
-			bool m_deterministic = true;
-			bool m_random_shuffle = true;
-			size_t m_functionality_repetitions = 2;
-			size_t m_performance_repetitions = 8;
-		};
-
-		void set_config(const Config & i_config) { m_config = i_config; }
-
-		const Config & config() const { return m_config; }
-
-    private:
-
-        using Operations = std::deque<std::function<void(Results & results)>>;
-        void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const;
-		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const;
-
-    private:
-		Config m_config;
-    };
+    };   
 
 } // namespace testity
 
