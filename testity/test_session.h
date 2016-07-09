@@ -4,6 +4,7 @@
 #include "detail\environment.h"
 #include <chrono>
 #include <deque>
+#include <type_traits>
 
 namespace testity
 {
@@ -15,9 +16,10 @@ namespace testity
 	{
 	public:
 
-		Results(const TestTree & i_test_tree, const Session & i_session) : m_test_tree(i_test_tree), m_session(i_session) {}
+		Results(const TestTree & i_test_tree, const Session & i_session, std::random_device::result_type i_random_seed)
+			: m_test_tree(i_test_tree), m_session(i_session), m_random_seed(i_random_seed)  {}
 
-		void add_result(const BenchmarkTest * i_test, size_t i_cardinality, Duration i_duration);
+		void add_result(const detail::PerformanceTest * i_test, size_t i_cardinality, Duration i_duration);
 
 		void save_to(const char * i_filename) const;
 
@@ -29,7 +31,7 @@ namespace testity
 	private:
 		struct TestId
 		{
-			const BenchmarkTest * m_test;
+			const detail::PerformanceTest * m_test;
 			size_t m_cardinality;
 
 			bool operator == (const TestId & i_source) const
@@ -47,38 +49,53 @@ namespace testity
 		std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
 		const TestTree & m_test_tree;
 		const Session & m_session;
-		Environment m_environment;
+		detail::Environment m_environment;
+		const std::random_device::result_type m_random_seed;
+	};
+
+	enum class TestFlags : unsigned
+	{
+		none = 0,
+		FunctionalityTest = 1 << 0,
+		FunctionalityExceptionTest = 1 << 1,
+		PerformanceTests = 1 << 2,
+		All = (1 << 3) - 1,
+	};
+
+	inline constexpr TestFlags operator | (TestFlags i_first, TestFlags i_second)
+	{
+		return static_cast<TestFlags>(static_cast<unsigned>(i_first) | static_cast<unsigned>(i_second));
+	}
+
+	struct TestConfig
+	{
+		bool m_deterministic = true;
+		std::random_device::result_type m_random_seed = 0;
+		bool m_random_shuffle = true;
+		size_t m_functionality_repetitions = 2;
+		size_t m_performance_repetitions = 8;
 	};
 
 	class Session
 	{
 	public:
 
-		Results run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const;
+		Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_dest_stream) const;
+		
 
-		struct Config
-		{
-			bool m_test_functionality = true;
-			bool m_test_exception_safeness = true;
-			bool m_test_performances = true;
-			bool m_deterministic = true;
-			bool m_random_shuffle = true;
-			size_t m_functionality_repetitions = 2;
-			size_t m_performance_repetitions = 8;
-		};
+		void set_config(const TestConfig & i_config) { m_config = i_config; }
 
-		void set_config(const Config & i_config) { m_config = i_config; }
-
-		const Config & config() const { return m_config; }
+		const TestConfig & config() const { return m_config; }
 
 	private:
 
-		using Operations = std::deque<std::function<void(Results & results)>>;
+		using Operations = std::deque<std::function<void(Results & results, FunctionalityContext & i_functionality_context)>>;
 		void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const;
 		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const;
 
 	private:
-		Config m_config;
+		TestConfig m_config;
+		std::unordered_map<size_t, void*> m_functionality_targets;
 	};
 
 } // namespace testity

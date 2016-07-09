@@ -10,9 +10,103 @@
 
 namespace testity
 {
-	void Results::add_result(const BenchmarkTest * i_test, size_t i_cardinality, Duration i_duration)
+	void Results::add_result(const detail::PerformanceTest * i_test, size_t i_cardinality, Duration i_duration)
 	{
 		m_performance_results.insert(std::make_pair(TestId{ i_test, i_cardinality }, i_duration));
+	}
+
+	void Session::generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const
+	{
+		for (auto & test_group : i_test_tree.functionality_tests())
+		{
+			i_dest.push_back([&test_group, this](Results & /*results*/, FunctionalityContext & i_functionality_context) {
+				auto const target_type = test_group->get_target_type_and_key();
+				auto const target = target_type.m_type != nullptr ? m_functionality_targets.find(target_type.m_type_key)->second : nullptr;
+				test_group->execute(i_functionality_context, target);
+			});
+		}
+
+		for (auto & child : i_test_tree.children())
+		{
+			generate_functionality_operations(child, i_dest);
+		}
+	}
+
+	void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const
+	{
+		for (auto & test_group : i_test_tree.performance_tests())
+		{
+			for (size_t cardinality = test_group.cardinality_start();
+				cardinality < test_group.cardinality_end(); cardinality += test_group.cardinality_step())
+			{
+				for (auto & test : test_group.tests())
+				{
+					i_dest.push_back([&test, cardinality](Results & results, FunctionalityContext & ) {
+						using namespace std::chrono;
+						const auto time_before = high_resolution_clock::now();
+						test.function()(cardinality);
+						const auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - time_before);
+						results.add_result(&test, cardinality, duration);
+					});
+				}
+			}
+		}
+
+		for (auto & child : i_test_tree.children())
+		{
+			generate_performance_operations(child, i_dest);
+		}
+	}
+
+	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_dest_stream) const
+	{
+		using namespace std;
+
+		const std::random_device::result_type random_seed = m_config.m_deterministic ? m_config.m_random_seed : random_device()();
+		mt19937 random(random_seed);
+
+		FunctionalityContext functionality_context;
+
+		// generate operation array
+		Operations operations;
+		if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityTest))
+		{
+			for (size_t repetition_index = 0; repetition_index < m_config.m_functionality_repetitions; repetition_index++)
+			{
+				generate_functionality_operations(i_test_tree, operations);
+			}
+		}
+		if ( static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::PerformanceTests) )
+		{
+			for (size_t repetition_index = 0; repetition_index < m_config.m_performance_repetitions; repetition_index++)
+			{
+				generate_performance_operations(i_test_tree, operations);
+			}
+		}
+
+		
+		if (m_config.m_random_shuffle)
+		{
+			i_dest_stream << "randomizing operations..." << endl;
+			std::shuffle(operations.begin(), operations.end(), random);
+		}
+
+		const auto operations_size = operations.size();
+		i_dest_stream << "performing tests..." << endl;
+		Results results(i_test_tree, *this, random_seed);
+		double last_perc = -1.;
+		const double perc_mult = 100. / operations_size;
+		for (Operations::size_type index = 0; index < operations_size; index++)
+		{
+			const double perc = floor(index * perc_mult);
+			if (perc != last_perc)
+			{
+				i_dest_stream << perc << "%" << endl;
+				last_perc = perc;
+			}
+			operations[index](results, functionality_context);
+		}
+		return results;
 	}
 
 	void Results::save_to(const char * i_filename) const
@@ -118,72 +212,5 @@ namespace testity
 		{
 			save_to_impl(i_path + node.name() + '/', node, i_ostream);
 		}
-	}
-
-	void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const
-	{
-		for (auto & test_group : i_test_tree.performance_tests())
-		{
-			for (size_t cardinality = test_group.cardinality_start();
-				cardinality < test_group.cardinality_end(); cardinality += test_group.cardinality_step())
-			{
-				for (auto & test : test_group.tests())
-				{
-					i_dest.push_back([&test, cardinality](Results & results) {
-						using namespace std::chrono;
-						const auto time_before = high_resolution_clock::now();
-						test.function()(cardinality);
-						const auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - time_before);
-						results.add_result(&test, cardinality, duration);
-					});
-				}
-			}
-		}
-
-		for (auto & child : i_test_tree.children())
-		{
-			generate_performance_operations(child, i_dest);
-		}
-	}
-
-	Results Session::run(const TestTree & i_test_tree, std::ostream & i_dest_stream) const
-	{
-		using namespace std;
-
-		mt19937 random = m_config.m_deterministic ? mt19937() : mt19937(random_device()());
-
-		// generate operation array
-		Operations operations;
-		if (m_config.m_test_performances)
-		{
-			for (size_t repetition_index = 0; repetition_index < m_config.m_performance_repetitions; repetition_index++)
-			{
-				generate_performance_operations(i_test_tree, operations);
-			}
-		}
-
-		const auto operations_size = operations.size();
-
-		if (m_config.m_random_shuffle)
-		{
-			i_dest_stream << "randomizing operations..." << endl;
-			std::shuffle(operations.begin(), operations.end(), random);
-		}
-
-		i_dest_stream << "performing tests..." << endl;
-		Results results(i_test_tree, *this);
-		double last_perc = -1.;
-		const double perc_mult = 100. / operations_size;
-		for (Operations::size_type index = 0; index < operations_size; index++)
-		{
-			const double perc = floor(index * perc_mult);
-			if (perc != last_perc)
-			{
-				i_dest_stream << perc << "%" << endl;
-				last_perc = perc;
-			}
-			operations[index](results);
-		}
-		return results;
 	}
 }

@@ -11,7 +11,7 @@
 
 namespace testity
 {
-    namespace
+    namespace detail
     {
         template <typename PREEDICATE>
             static void for_each_token(const char * i_path, PREEDICATE && i_predicate)
@@ -31,7 +31,7 @@ namespace testity
 
 	void TestTree::add_functionality_test( void(*i_function)(FunctionalityContext & i_context) )
 	{
-		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(new detail::SimpleFunctionalityTest(i_function)));
+		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(new detail::NoTargetFunctionalityTest(i_function)));
 	}
 
     TestTree & TestTree::operator [] (const char * i_path)
@@ -39,7 +39,7 @@ namespace testity
         using namespace std;
 
         auto node = this;
-        for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
+		detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
                 [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length) == 0; });
@@ -63,7 +63,7 @@ namespace testity
         using namespace std;
 
         auto node = this;
-        for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
+		detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             if (node != nullptr)
             {
@@ -89,7 +89,7 @@ namespace testity
         using namespace std;
 
         auto node = this;
-        for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
+        detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             if (node != nullptr)
             {

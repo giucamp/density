@@ -11,23 +11,26 @@
 
 namespace testity
 {
-    class BenchmarkTest
-    {
-    public:
+	namespace detail
+	{
+		class PerformanceTest
+		{
+		public:
 
-        using TestFunction = void (size_t i_cardinality);
+			using TestFunction = void(size_t i_cardinality);
 
-        BenchmarkTest(std::string i_source_code, std::function<TestFunction> i_function)
-            : m_source_code(std::move(i_source_code)), m_function(std::move(i_function))
-                { }
+			PerformanceTest(std::string i_source_code, std::function<TestFunction> i_function)
+				: m_source_code(std::move(i_source_code)), m_function(std::move(i_function))
+					{ }
 
-        const std::string & source_code() const { return m_source_code; }
-        const std::function<TestFunction> & function() const { return m_function; }
+			const std::string & source_code() const { return m_source_code; }
+			const std::function<TestFunction> & function() const { return m_function; }
 
-    private:
-        std::string m_source_code;
-        std::function<TestFunction> m_function;
-    };
+		private:
+			std::string m_source_code;
+			std::function<TestFunction> m_function;
+		};
+	}
 
     class PerformanceTestGroup
     {
@@ -36,7 +39,7 @@ namespace testity
         PerformanceTestGroup(std::string i_name, std::string i_version_label)
             : m_name(std::move(i_name)), m_version_label(std::move(i_version_label)) { }
 
-        void add_test(BenchmarkTest i_test)
+        void add_test(detail::PerformanceTest i_test)
         {
             m_tests.push_back(std::move(i_test));
         }
@@ -57,7 +60,7 @@ namespace testity
 		}
 
         void add_test(const char * i_source_file, int i_start_line,
-            std::function<BenchmarkTest::TestFunction> i_function, int i_end_line);
+            std::function<detail::PerformanceTest::TestFunction> i_function, int i_end_line);
 
         const std::string & name() const { return m_name; }
         const std::string & version_label() const { return m_version_label; }
@@ -72,13 +75,13 @@ namespace testity
         void set_cardinality_step(size_t i_cardinality_step) { m_cardinality_step = i_cardinality_step; }
         void set_cardinality_end(size_t i_cardinality_end) { m_cardinality_end = i_cardinality_end; }
 
-        const std::vector<BenchmarkTest> & tests() const { return m_tests; }
+        const std::vector<detail::PerformanceTest> & tests() const { return m_tests; }
 
     private:
         size_t m_cardinality_start = 0;
         size_t m_cardinality_step = 10000;
         size_t m_cardinality_end = 800000;
-        std::vector<BenchmarkTest> m_tests;
+        std::vector<detail::PerformanceTest> m_tests;
         std::string m_name, m_description, m_prolog_code, m_version_label;
     };
 }

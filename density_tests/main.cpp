@@ -58,7 +58,7 @@ int main()
     //add_list_benchmarks(test_tree["/density/list_test"]);
 
     testity::Session test_session;
-    auto results = test_session.run(test_tree["/density/page_allocator_test"], std::cout);
+    auto results = test_session.run(test_tree["/density/page_allocator_test"], testity::TestFlags::All, std::cout);
     results.save_to("perf.txt");
 
     /*pointer_arithmetic_test();

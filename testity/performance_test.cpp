@@ -6,7 +6,7 @@
 namespace testity
 {
 	void PerformanceTestGroup::add_test(const char * i_source_file, int i_start_line,
-		std::function<BenchmarkTest::TestFunction> i_function, int i_end_line)
+		std::function<detail::PerformanceTest::TestFunction> i_function, int i_end_line)
 	{
 		using namespace std;
 
@@ -66,6 +66,6 @@ namespace testity
 			source_code += line + "#nl#";
 		}
 
-		add_test(BenchmarkTest(source_code.c_str(), move(i_function)));
+		add_test(detail::PerformanceTest(source_code.c_str(), move(i_function)));
 	}
 } // namespace testity
