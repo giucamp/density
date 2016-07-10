@@ -6,7 +6,7 @@
 
 #include "../density/small_function_queue.h"
 #include "../density/function_queue.h"
-#include "../testity/testing_utils.h"
+#include "../testity/testity_common.h"
 
 namespace density
 {

@@ -10,14 +10,21 @@ namespace testity
 {
 	using Duration = std::chrono::nanoseconds;
 
-	class Session;
+	struct TestConfig
+	{
+		bool m_deterministic = true;
+		std::random_device::result_type m_random_seed = 0;
+		bool m_random_shuffle = true;
+		size_t m_functionality_repetitions = 2;
+		size_t m_performance_repetitions = 8;
+	};
 
 	class Results
 	{
 	public:
 
-		Results(const TestTree & i_test_tree, const Session & i_session, std::random_device::result_type i_random_seed)
-			: m_test_tree(i_test_tree), m_session(i_session), m_random_seed(i_random_seed)  {}
+		Results(const TestTree & i_test_tree, const TestConfig & i_config, std::random_device::result_type i_random_seed)
+			: m_test_tree(i_test_tree), m_config(i_config), m_random_seed(i_random_seed)  {}
 
 		void add_result(const detail::PerformanceTest * i_test, size_t i_cardinality, Duration i_duration);
 
@@ -48,8 +55,8 @@ namespace testity
 		};
 		std::unordered_multimap< TestId, Duration, TestIdHash > m_performance_results;
 		const TestTree & m_test_tree;
-		const Session & m_session;
-		detail::Environment m_environment;
+		const TestConfig m_config;
+		const detail::Environment m_environment;
 		const std::random_device::result_type m_random_seed;
 	};
 
@@ -67,21 +74,13 @@ namespace testity
 		return static_cast<TestFlags>(static_cast<unsigned>(i_first) | static_cast<unsigned>(i_second));
 	}
 
-	struct TestConfig
-	{
-		bool m_deterministic = true;
-		std::random_device::result_type m_random_seed = 0;
-		bool m_random_shuffle = true;
-		size_t m_functionality_repetitions = 2;
-		size_t m_performance_repetitions = 8;
-	};
-
 	class Session
 	{
 	public:
 
-		Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_dest_stream) const;
-		
+		Results run(const TestTree & i_test_tree, TestFlags i_flags ) const;
+
+		Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream) const;
 
 		void set_config(const TestConfig & i_config) { m_config = i_config; }
 
@@ -90,8 +89,12 @@ namespace testity
 	private:
 
 		using Operations = std::deque<std::function<void(Results & results, FunctionalityContext & i_functionality_context)>>;
+
 		void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+		
 		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+
+		Results run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream) const;
 
 	private:
 		TestConfig m_config;

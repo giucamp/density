@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../density/heterogeneous_array.h"
-#include "../testity/testing_utils.h"
+#include "../testity/testity_common.h"
 #include "container_test.h"
 #include "test_allocators.h"
 #include <algorithm>

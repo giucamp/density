@@ -58,14 +58,23 @@ namespace testity
 		}
 	}
 
-	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_dest_stream) const
+	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags) const
+	{
+		return run_impl(i_test_tree, i_flags, nullptr);
+	}
+
+	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream) const
+	{
+		return run_impl(i_test_tree, i_flags, &i_progression_out_stream);
+	}
+
+	Results Session::run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream) const
 	{
 		using namespace std;
 
 		const std::random_device::result_type random_seed = m_config.m_deterministic ? m_config.m_random_seed : random_device()();
-		mt19937 random(random_seed);
-
-		FunctionalityContext functionality_context;
+		
+		FunctionalityContext functionality_context = FunctionalityContext(mt19937(random_seed));
 
 		// generate operation array
 		Operations operations;
@@ -87,22 +96,31 @@ namespace testity
 		
 		if (m_config.m_random_shuffle)
 		{
-			i_dest_stream << "randomizing operations..." << endl;
-			std::shuffle(operations.begin(), operations.end(), random);
+			if (i_progression_out_stream != nullptr)
+			{
+				*i_progression_out_stream << "randomizing operations..." << endl;
+			}
+			std::shuffle(operations.begin(), operations.end(), functionality_context.random_generator());
 		}
 
 		const auto operations_size = operations.size();
-		i_dest_stream << "performing tests..." << endl;
-		Results results(i_test_tree, *this, random_seed);
+		if (i_progression_out_stream != nullptr)
+		{
+			*i_progression_out_stream << "performing tests..." << endl;
+		}
+		Results results(i_test_tree, m_config, random_seed);
 		double last_perc = -1.;
 		const double perc_mult = 100. / operations_size;
 		for (Operations::size_type index = 0; index < operations_size; index++)
 		{
-			const double perc = floor(index * perc_mult);
-			if (perc != last_perc)
+			if (i_progression_out_stream != nullptr)
 			{
-				i_dest_stream << perc << "%" << endl;
-				last_perc = perc;
+				const double perc = floor(index * perc_mult);
+				if (perc != last_perc)
+				{
+					*i_progression_out_stream << perc << "%" << endl;
+					last_perc = perc;
+				}
 			}
 			operations[index](results, functionality_context);
 		}
@@ -132,8 +150,8 @@ namespace testity
 			i_ostream << "OS:" << m_environment.operating_sytem() << std::endl;
 			i_ostream << "SYSTEM:" << m_environment.system_info() << std::endl;
 			i_ostream << "SIZEOF_POINTER:" << m_environment.sizeof_pointer() << std::endl;
-			i_ostream << "DETERMINISTIC:" << (m_session.config().m_deterministic ? "yes" : "no") << std::endl;
-			i_ostream << "RANDOM_SHUFFLE:" << (m_session.config().m_random_shuffle ? "yes (with std::mt19937)" : "no") << std::endl;
+			i_ostream << "DETERMINISTIC:" << (m_config.m_deterministic ? "yes" : "no") << std::endl;
+			i_ostream << "RANDOM_SHUFFLE:" << (m_config.m_random_shuffle ? "yes (with std::mt19937)" : "no") << std::endl;
 
 			const auto date_time = std::chrono::system_clock::to_time_t(m_environment.startup_clock());
 			
@@ -163,7 +181,7 @@ namespace testity
 			i_ostream << "CARDINALITY_START:" << performance_test_group.cardinality_start() << std::endl;
 			i_ostream << "CARDINALITY_STEP:" << performance_test_group.cardinality_step() << std::endl;
 			i_ostream << "CARDINALITY_END:" << performance_test_group.cardinality_end() << std::endl;
-			i_ostream << "MULTEPLICITY:" << m_session.config().m_performance_repetitions << std::endl;
+			i_ostream << "MULTEPLICITY:" << m_config.m_performance_repetitions << std::endl;
 
 			// write legend
 			i_ostream << "LEGEND_START:" << std::endl;

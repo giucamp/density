@@ -70,9 +70,6 @@
     <ClCompile Include="..\heterogeneous_array.cpp">
       <Filter>density_tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\testity\testing_utils.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\testity\test_tree.cpp">
       <Filter>testity</Filter>
     </ClCompile>
@@ -89,6 +86,12 @@
       <Filter>testity</Filter>
     </ClCompile>
     <ClCompile Include="..\..\testity\functionality_context.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\testity_common.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\testity\test_classes.cpp">
       <Filter>testity</Filter>
     </ClCompile>
   </ItemGroup>
@@ -138,12 +141,6 @@
     <ClInclude Include="..\..\testity\test_tree.h">
       <Filter>testity</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\testity\testing_utils.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\test_classes_kit.h">
-      <Filter>testity</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\testity\detail\functionality_test.h">
       <Filter>testity\detail</Filter>
     </ClInclude>
@@ -157,6 +154,12 @@
       <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\functionality_context.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\testity_common.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\test_classes.h">
       <Filter>testity</Filter>
     </ClInclude>
   </ItemGroup>

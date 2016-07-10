@@ -229,7 +229,8 @@
     <ClCompile Include="..\..\testity\detail\functionality_test.cpp" />
     <ClCompile Include="..\..\testity\functionality_context.cpp" />
     <ClCompile Include="..\..\testity\performance_test.cpp" />
-    <ClCompile Include="..\..\testity\testing_utils.cpp" />
+    <ClCompile Include="..\..\testity\testity_common.cpp" />
+    <ClCompile Include="..\..\testity\test_classes.cpp" />
     <ClCompile Include="..\..\testity\test_session.cpp" />
     <ClCompile Include="..\..\testity\test_tree.cpp" />
     <ClCompile Include="..\allocator_benchmarks.cpp" />
@@ -262,8 +263,8 @@
     <ClInclude Include="..\..\testity\detail\functionality_test.h" />
     <ClInclude Include="..\..\testity\functionality_context.h" />
     <ClInclude Include="..\..\testity\performance_test.h" />
-    <ClInclude Include="..\..\testity\testing_utils.h" />
-    <ClInclude Include="..\..\testity\test_classes_kit.h" />
+    <ClInclude Include="..\..\testity\testity_common.h" />
+    <ClInclude Include="..\..\testity\test_classes.h" />
     <ClInclude Include="..\..\testity\test_session.h" />
     <ClInclude Include="..\..\testity\test_tree.h" />
     <ClInclude Include="..\container_test.h" />

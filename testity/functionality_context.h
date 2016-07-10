@@ -8,8 +8,8 @@ namespace testity
     {
     public:
 
-        FunctionalityContext()
-            : m_random(std::random_device()())
+        FunctionalityContext(std::mt19937 && i_random)
+            : m_random(std::move(i_random))
         {
 
         }

@@ -57,7 +57,7 @@ namespace testity
 			{
 			}
 
-			void execute(FunctionalityContext & i_context, void * /*i_target*/)
+			void execute(FunctionalityContext & i_context, void * /*i_target*/) override
 			{
 				(*m_function)(i_context);
 			}
