@@ -33,8 +33,8 @@ namespace testity
 			class ITargetType
 			{
 			public:
-				virtual void * create_instance() = 0;
-				virtual void destroy_instance(void * i_instance) = 0;
+				virtual void * create_instance() const = 0;
+				virtual void destroy_instance(void * i_instance) const = 0;
 				virtual ~ITargetType() = default;
 			};
 
@@ -84,8 +84,8 @@ namespace testity
 			template <typename TYPE> class TargetType : public IFunctionalityTest::ITargetType
 			{
 			public:
-				void * create_instance() override { return new TYPE; }
-				void destroy_instance(void * i_instance) { delete static_cast<TYPE*>(i_instance); }
+				void * create_instance() const override { return new TYPE; }
+				void destroy_instance(void * i_instance) const override { delete static_cast<TYPE*>(i_instance); }
 			};
 
 			size_t add_type(IFunctionalityTest::ITargetType * i_target_type);

@@ -19,6 +19,16 @@ namespace testity
 	{
 		for (auto & test_group : i_test_tree.functionality_tests())
 		{
+			{
+				auto const target_type = test_group->get_target_type_and_key();
+				if (target_type.m_type != nullptr)
+				{
+					m_functionality_targets[target_type.m_type_key];
+				}
+
+				m_functionality_targets_types[target_type.m_type_key] = target_type.m_type;
+			}
+
 			i_dest.push_back([&test_group, this](Results & /*results*/, FunctionalityContext & i_functionality_context) {
 				auto const target_type = test_group->get_target_type_and_key();
 				void * target = nullptr;
@@ -133,6 +143,14 @@ namespace testity
 			}
 			operations[index](results, functionality_context);
 		}
+		
+		for (auto && target : m_functionality_targets)
+		{
+			m_functionality_targets_types[target.first]->destroy_instance(target.second);
+		}
+		m_functionality_targets.clear();
+		m_functionality_targets_types.clear();
+
 		return results;
 	}
 

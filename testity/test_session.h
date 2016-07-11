@@ -103,6 +103,7 @@ namespace testity
 	private:
 		TestConfig m_config;
 		std::unordered_map<size_t, void*> m_functionality_targets;
+		std::unordered_map<size_t, const detail::IFunctionalityTest::ITargetType *> m_functionality_targets_types;
 	};
 
 } // namespace testity
