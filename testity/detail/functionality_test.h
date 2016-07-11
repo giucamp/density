@@ -113,6 +113,12 @@ namespace testity
 
 			using Function = void(*)(FunctionalityContext & i_context, TARGET_TYPE & i_target);
 
+			TargetedFunctionalityTest(Function i_function)
+				: m_function(i_function)
+			{
+
+			}
+
 			void execute(FunctionalityContext & i_context, void * i_target) override
 			{
 				(*m_function)(i_context, *static_cast<TARGET_TYPE*>(i_target) );
@@ -121,7 +127,7 @@ namespace testity
 			TargetTypeAndKey get_target_type_and_key() const override
 			{
 				auto const key = type_key();
-				return TargetTypeAndKey{ &FunctionalityTargetTypeRegistry::get_target_type(key), key };
+				return TargetTypeAndKey{ &FunctionalityTargetTypeRegistry::instance().get_target_type(key), key };
 			}
 
 		private:

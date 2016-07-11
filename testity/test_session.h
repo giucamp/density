@@ -74,13 +74,17 @@ namespace testity
 		return static_cast<TestFlags>(static_cast<unsigned>(i_first) | static_cast<unsigned>(i_second));
 	}
 
+	Results run_session(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All, const TestConfig & i_config = TestConfig());
+
+	Results run_session(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream, const TestConfig & i_config = TestConfig());
+
 	class Session
 	{
 	public:
 
-		Results run(const TestTree & i_test_tree, TestFlags i_flags ) const;
+		Results run(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All);
 
-		Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream) const;
+		Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream);
 
 		void set_config(const TestConfig & i_config) { m_config = i_config; }
 
@@ -90,11 +94,11 @@ namespace testity
 
 		using Operations = std::deque<std::function<void(Results & results, FunctionalityContext & i_functionality_context)>>;
 
-		void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+		void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest);
 		
-		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const;
+		void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest);
 
-		Results run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream) const;
+		Results run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream);
 
 	private:
 		TestConfig m_config;

@@ -95,8 +95,6 @@ namespace density
         template <template <class> class QUEUE>
             void queue_test_impl(std::mt19937 & i_random, const char * i_container_name)
         {
-            NoLeakScope no_leak_scope;
-
             {
                 ContainerTest<QUEUE<TestObjectBase>> test(i_container_name);
                 set_queue_custom_check(test);
@@ -161,7 +159,6 @@ namespace density
 
         void dense_queue_leak_basic_tests()
         {
-            NoLeakScope no_leaks;
             using Queue = small_heterogeneous_queue<int, TestVoidAllocator>;
             Queue queue;
             for (int i = 0; i < 1000; i++)

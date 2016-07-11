@@ -15,13 +15,22 @@ namespace testity
 		m_performance_results.insert(std::make_pair(TestId{ i_test, i_cardinality }, i_duration));
 	}
 
-	void Session::generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest) const
+	void Session::generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest)
 	{
 		for (auto & test_group : i_test_tree.functionality_tests())
 		{
 			i_dest.push_back([&test_group, this](Results & /*results*/, FunctionalityContext & i_functionality_context) {
 				auto const target_type = test_group->get_target_type_and_key();
-				auto const target = target_type.m_type != nullptr ? m_functionality_targets.find(target_type.m_type_key)->second : nullptr;
+				void * target = nullptr;
+				if (target_type.m_type != nullptr)
+				{
+					auto & target_ref = m_functionality_targets[target_type.m_type_key];
+					if (target_ref == nullptr)
+					{
+						target_ref = target_type.m_type->create_instance();
+					}
+					target = target_ref;
+				}
 				test_group->execute(i_functionality_context, target);
 			});
 		}
@@ -32,7 +41,7 @@ namespace testity
 		}
 	}
 
-	void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest) const
+	void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest)
 	{
 		for (auto & test_group : i_test_tree.performance_tests())
 		{
@@ -58,17 +67,17 @@ namespace testity
 		}
 	}
 
-	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags) const
+	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags)
 	{
 		return run_impl(i_test_tree, i_flags, nullptr);
 	}
 
-	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream) const
+	Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream)
 	{
 		return run_impl(i_test_tree, i_flags, &i_progression_out_stream);
 	}
 
-	Results Session::run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream) const
+	Results Session::run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream)
 	{
 		using namespace std;
 
@@ -230,5 +239,19 @@ namespace testity
 		{
 			save_to_impl(i_path + node.name() + '/', node, i_ostream);
 		}
+	}
+
+	Results run_session(const TestTree & i_test_tree, TestFlags i_flags, const TestConfig & i_config)
+	{
+		Session session;
+		session.set_config(i_config);
+		return session.run(i_test_tree, i_flags);
+	}
+
+	Results run_session(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream, const TestConfig & i_config)
+	{
+		Session session;
+		session.set_config(i_config);
+		return session.run(i_test_tree, i_flags, i_progression_out_stream);
 	}
 }

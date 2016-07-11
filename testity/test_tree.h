@@ -21,8 +21,10 @@ namespace testity
 
 		void add_functionality_test( void(*)(FunctionalityContext & i_context) );
 
+		void add_child(TestTree i_child);
+
 		template <typename TARGET>
-			void add_functionality_test(void(*)(FunctionalityContext & i_context, TARGET & i_target))
+			void add_functionality_test(void(*i_function)(FunctionalityContext & i_context, TARGET & i_target))
 		{
 			m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
 				new detail::TargetedFunctionalityTest<TARGET>(i_function)));

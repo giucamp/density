@@ -34,6 +34,16 @@ namespace testity
 		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(new detail::NoTargetFunctionalityTest(i_function)));
 	}
 
+	void TestTree::add_child(TestTree i_child)
+	{
+		if (find(i_child.name().c_str()) != nullptr)
+		{
+			throw std::invalid_argument("duplicate child in TestTree");
+		}
+
+		m_children.push_back(std::move(i_child));
+	}
+
     TestTree & TestTree::operator [] (const char * i_path)
     {
         using namespace std;

@@ -5,83 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "testity_common.h"
-#include <iostream>
 
 namespace testity
 {
-    #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-        _declspec(thread) TestAllocatorBase::ThreadData * TestAllocatorBase::st_thread_data;
-    #else
-        thread_local TestAllocatorBase::ThreadData TestAllocatorBase::st_thread_data;
-    #endif
-
-    TestAllocatorBase::ThreadData & TestAllocatorBase::GetThreadData()
-    {
-        #if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-            if (st_thread_data == nullptr)
-            {
-                st_thread_data = new ThreadData;
-            }
-            return *st_thread_data;
-        #else
-            return st_thread_data;
-        #endif
-    }
-
-    void TestAllocatorBase::push_level()
-    {
-        auto & levels = GetThreadData().m_levels;
-        levels.emplace_back();
-    }
-
-    void TestAllocatorBase::pop_level()
-    {
-        auto & levels = GetThreadData().m_levels;
-        TESTITY_ASSERT(levels.size() > 0);
-
-        for (const auto & leaking_allocation : levels.back().m_allocations)
-        {
-            std::cout << "Leak of " << leaking_allocation.second.m_size << ", progressive: " << leaking_allocation.second.m_progressive << std::endl;
-        }
-
-        TESTITY_ASSERT(levels.back().m_allocations.size() == 0);
-        levels.pop_back();
-    }
-
-    void TestAllocatorBase::notify_alloc(void * i_block, size_t i_size, size_t i_alignment)
-    {
-        auto & thread_data = GetThreadData();
-        if (thread_data.m_levels.size() > 0)
-        {
-            AllocationEntry entry;
-            entry.m_size = i_size;
-            entry.m_alignment = i_alignment;
-            entry.m_progressive = thread_data.m_last_progressive++;
-            // TESTITY_ASSERT(entry.m_progressive != ...);
-
-            auto & allocations = thread_data.m_levels.back().m_allocations;
-            auto res = allocations.insert(std::make_pair(i_block, entry));
-            TESTITY_ASSERT(res.second);
-        }
-    }
-
-    void TestAllocatorBase::notify_deallocation(void * i_block, size_t i_size, size_t i_alignment)
-    {
-        if (i_block != nullptr)
-        {
-            auto & thread_data = GetThreadData();
-            if (thread_data.m_levels.size() > 0)
-            {
-                auto & allocations = thread_data.m_levels.back().m_allocations;
-                auto it = allocations.find(i_block);
-                TESTITY_ASSERT(it != allocations.end());
-                TESTITY_ASSERT(it->second.m_size == i_size);
-                TESTITY_ASSERT(it->second.m_alignment == i_alignment);
-                allocations.erase(it);
-            }
-        }
-    }
-
     namespace
     {
         struct StaticData
@@ -126,7 +52,6 @@ namespace testity
             do {
                 exception_occurred = false;
 
-                NoLeakScope no_leak_scope;
                 try
                 {
                     static_data.m_current_counter = 0;

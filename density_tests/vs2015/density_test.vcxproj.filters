@@ -21,31 +21,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\function_queue_benchmarks.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\paged_queue_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\pointer_arithmetic_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\queue_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\list_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\lifo_benchmarks.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\list_benchmarks.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\function_queue_test.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp">
       <Filter>samples</Filter>
     </ClCompile>
@@ -58,17 +34,8 @@
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp">
       <Filter>samples</Filter>
     </ClCompile>
-    <ClCompile Include="..\queue_benchmarks.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\density_samples\misc_samples.cpp">
       <Filter>samples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\allocator_benchmarks.cpp">
-      <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\heterogeneous_array.cpp">
-      <Filter>density_tests</Filter>
     </ClCompile>
     <ClCompile Include="..\..\testity\test_tree.cpp">
       <Filter>testity</Filter>
@@ -94,11 +61,14 @@
     <ClCompile Include="..\..\testity\test_classes.cpp">
       <Filter>testity</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\testity\test_allocator.cpp">
+      <Filter>testity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\func_test_heter_array.cpp">
+      <Filter>density_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\container_test.h">
-      <Filter>density_tests</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\density_common.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -135,9 +105,6 @@
     <ClInclude Include="..\..\density\detail\array_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\test_allocators.h">
-      <Filter>density_tests</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\testity\test_tree.h">
       <Filter>testity</Filter>
     </ClInclude>
@@ -161,6 +128,15 @@
     </ClInclude>
     <ClInclude Include="..\..\testity\test_classes.h">
       <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\testity\test_allocator.h">
+      <Filter>testity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\container_test.h">
+      <Filter>density_tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_allocators.h">
+      <Filter>density_tests</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
