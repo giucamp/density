@@ -45,6 +45,11 @@ namespace testity
 			std::memset(i_dest, 0xDE, i_size);
 		}
 
+		bool random_storage_equals(const unsigned char * i_first, const unsigned char * i_second, size_t i_size)
+		{
+			return std::memcmp(i_first, i_second, i_size) == 0;
+		}
+
 		size_t random_storage_hash(const unsigned char * i_dest, size_t i_size)
 		{
 			size_t result = 0;

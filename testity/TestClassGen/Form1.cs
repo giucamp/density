@@ -72,7 +72,7 @@ namespace TestClassGen
                 KindToStr(i_defaultConstructor) + ", " +
                 KindToStr(i_copy) + ", " +
                 KindToStr(i_move) +
-                ", SIZE, ALIGNMENT> : public detail::RandomStorage<SIZE>");
+                ", SIZE, ALIGNMENT> : private detail::RandomStorage<SIZE>");
             i_out.AppendLine("{");
             i_out.AppendLine("public:");
 
@@ -136,6 +136,14 @@ namespace TestClassGen
                     i_out.AppendLine("\tTestClass & operator = (TestClass &&) noexcept = default;");
                     break;
             }
+
+            i_out.AppendLine("");
+            i_out.AppendLine("\t// comparison");
+            i_out.AppendLine("\tbool operator == (const TestClass && i_other) const");
+            i_out.AppendLine("\t\t{ return RandomStorage<SIZE>::operator == (i_other); }");
+
+            i_out.AppendLine("\tbool operator != (const TestClass && i_other) const");
+            i_out.AppendLine("\t\t{ return RandomStorage<SIZE>::operator != (i_other); }");
 
             i_out.AppendLine("};");
             i_out.AppendLine("");

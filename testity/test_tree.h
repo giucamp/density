@@ -8,6 +8,7 @@
 #include "detail\functionality_test.h"
 #include "performance_test.h"
 #include "functionality_context.h"
+#include <functional>
 
 namespace testity
 {
@@ -19,12 +20,12 @@ namespace testity
 
         const std::string & name() const { return m_name; }
 
-		void add_functionality_test( void(*)(FunctionalityContext & i_context) );
+		void add_functionality_test(std::function< void(FunctionalityContext & i_context) > i_function);
 
 		void add_child(TestTree i_child);
-
+		
 		template <typename TARGET>
-			void add_functionality_test(void(*i_function)(FunctionalityContext & i_context, TARGET & i_target))
+			void add_functionality_test(std::function< void(FunctionalityContext & i_context, TARGET & i_target) > i_function )
 		{
 			m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
 				new detail::TargetedFunctionalityTest<TARGET>(i_function)));

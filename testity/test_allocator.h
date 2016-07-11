@@ -20,9 +20,9 @@ namespace testity
 
 		SharedBlockRegistry & operator = (SharedBlockRegistry &&);
 		
-        void add_block(void * i_block, size_t i_size, size_t i_alignment);
+        void add_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
 
-        void remove_block(void * i_block, size_t i_size, size_t i_alignment);
+        void remove_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
 
 		bool operator == (const SharedBlockRegistry & i_other) const
 			{ return m_data == i_other.m_data; }

@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 #include "..\functionality_context.h"
 
 namespace testity
@@ -50,7 +51,7 @@ namespace testity
 		{
 		public:
 
-			using Function = void(*)(FunctionalityContext & i_context);
+			using Function = std::function< void(FunctionalityContext & i_context) >;
 
 			NoTargetFunctionalityTest(Function i_function)
 				: m_function(i_function)
@@ -59,7 +60,7 @@ namespace testity
 
 			void execute(FunctionalityContext & i_context, void * /*i_target*/) override
 			{
-				(*m_function)(i_context);
+				m_function(i_context);
 			}
 
 			TargetTypeAndKey get_target_type_and_key() const override
@@ -111,17 +112,16 @@ namespace testity
 		{
 		public:
 
-			using Function = void(*)(FunctionalityContext & i_context, TARGET_TYPE & i_target);
-
+			using Function = std::function< void(FunctionalityContext & i_context, TARGET_TYPE & i_target) >;
+					
 			TargetedFunctionalityTest(Function i_function)
-				: m_function(i_function)
+				: m_function(std::move(i_function))
 			{
-
 			}
 
 			void execute(FunctionalityContext & i_context, void * i_target) override
 			{
-				(*m_function)(i_context, *static_cast<TARGET_TYPE*>(i_target) );
+				m_function(i_context, *static_cast<TARGET_TYPE*>(i_target) );
 			}
 
 			TargetTypeAndKey get_target_type_and_key() const override

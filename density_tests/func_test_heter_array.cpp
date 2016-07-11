@@ -17,20 +17,31 @@ namespace density_tests
 	using namespace density;
 	using namespace testity;
 
-	void test(FunctionalityContext & i_context, heterogeneous_array<void> & i_array)
+	template <typename TYPE>
+		struct HeterogeneousArrayTest
+	{		
+		using Array = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
+			typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
+
+		Array m_array;
+		ShadowContainer<Array> m_shadow;
+
+		void compare() const
+		{
+			m_shadow.compare_all(m_array);
+		}
+	};
+
+	void make_heterogeneous_array_functionality_tests(TestTree & i_dest)
 	{
-		i_array.push_back(6);
-		i_array.push_back(8);
-		i_array.push_back(81);
-	}
+		using TestTarget = HeterogeneousArrayTest<void>;
+		using TestFunc = std::function< void(FunctionalityContext & i_context, TestTarget & i_target)>;
 
-	TestTree make_heterogeneous_array_functionality_tests()
-	{
-		TestTree dest("heterogeneous_array");
-
-		dest.add_functionality_test(test);
-
-		return std::move(dest);
+		i_dest.add_functionality_test(TestFunc([](FunctionalityContext & i_context, TestTarget & i_target) {
+			i_target.m_array.push_back(1);
+			i_target.m_shadow.push_back(1);
+			i_target.compare();
+		}));
 	}
 
     /* TestHeterogeneousArray<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */

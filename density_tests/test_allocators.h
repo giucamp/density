@@ -24,14 +24,14 @@ namespace density_tests
         void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
         {
             auto block = m_underlying_allocator.allocate(i_size, i_alignment, i_alignment_offset);
-			m_registry.add_block(block, i_size, i_alignment);
+			m_registry.add_block(block, i_size, i_alignment, i_alignment_offset);
             return block;
         }
 
-        void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t)) noexcept
+        void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
         {
-			m_registry.remove_block(i_block, i_size, i_alignment);
-            m_underlying_allocator.deallocate(i_block, i_size, i_alignment);
+			m_registry.remove_block(i_block, i_size, i_alignment, i_alignment_offset);
+            m_underlying_allocator.deallocate(i_block, i_size, i_alignment, i_alignment_offset);
         }
 
         static size_t page_size() noexcept { return void_allocator::page_size(); }
@@ -43,13 +43,13 @@ namespace density_tests
         void * allocate_page()
         {
             auto page = m_underlying_allocator.allocate_page();
-			m_registry.add_block(page, page_size(), page_alignment());
+			m_registry.add_block(page, page_size(), page_alignment(), 0);
             return page;
         }
 
         void deallocate_page(void * i_page) noexcept
         {
-			m_registry.remove_block(i_page, page_size(), page_alignment());
+			m_registry.remove_block(i_page, page_size(), page_alignment(), 0);
             m_underlying_allocator.deallocate_page(i_page);
         }
 

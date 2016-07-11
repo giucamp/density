@@ -29,9 +29,10 @@ namespace testity
         }
     }
 
-	void TestTree::add_functionality_test( void(*i_function)(FunctionalityContext & i_context) )
+	void TestTree::add_functionality_test(std::function< void(FunctionalityContext & i_context) > i_function)
 	{
-		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(new detail::NoTargetFunctionalityTest(i_function)));
+		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
+			new detail::NoTargetFunctionalityTest(i_function)));
 	}
 
 	void TestTree::add_child(TestTree i_child)

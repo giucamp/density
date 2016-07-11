@@ -13,15 +13,17 @@ namespace density_tests
 {
 	using namespace testity;
 	
-	TestTree make_heterogeneous_array_functionality_tests();
+	void make_heterogeneous_array_functionality_tests(TestTree & i_dest);
 }
 
 int main()
 {
 	using namespace testity;
+	using namespace density_tests;
 
 	TestTree test_tree("density");
-	test_tree.add_child( density_tests::make_heterogeneous_array_functionality_tests() );
+
+	make_heterogeneous_array_functionality_tests(test_tree["heterogeneous_array"]);
 
 	run_session(test_tree);
 

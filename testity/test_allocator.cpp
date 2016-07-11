@@ -12,6 +12,7 @@ namespace testity
 		size_t m_progressive = 0;
 		size_t m_size = 0;
 		size_t m_alignment = 0;
+		size_t m_alignment_offset = 0;
 	};
 
 	struct SharedBlockRegistry::Data
@@ -31,7 +32,7 @@ namespace testity
 		}
 	};
 	
-	SharedBlockRegistry::SharedBlockRegistry() = default;
+	SharedBlockRegistry::SharedBlockRegistry() : m_data(std::make_shared<Data>()) {}
 
 	SharedBlockRegistry::SharedBlockRegistry(const SharedBlockRegistry & i_source) = default;
 
@@ -52,7 +53,7 @@ namespace testity
 		return *this;
 	}
 
-	void SharedBlockRegistry::add_block(void * i_block, size_t i_size, size_t i_alignment)
+	void SharedBlockRegistry::add_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset)
 	{
 		TESTITY_ASSERT( m_data != nullptr ); // this registry can't be used to add blocks. Maybe it was used as source for a move.
 
@@ -64,6 +65,7 @@ namespace testity
 			entry.m_size = i_size;
 			entry.m_alignment = i_alignment;
 			entry.m_progressive = data.m_last_progressive++;
+			entry.m_alignment_offset = i_alignment_offset;
 			// TESTITY_ASSERT(entry.m_progressive != ...);
 
 			std::lock_guard<std::mutex> lock(data.m_mutex);
@@ -73,7 +75,7 @@ namespace testity
 		}
 	}
 
-	void SharedBlockRegistry::remove_block(void * i_block, size_t i_size, size_t i_alignment)
+	void SharedBlockRegistry::remove_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset)
 	{
 		TESTITY_ASSERT(m_data != nullptr); // this registry can't be used to remove blocks. Maybe it was used as source for a move.
 
@@ -86,6 +88,7 @@ namespace testity
 			TESTITY_ASSERT(it != data.m_allocations.end());
 			TESTITY_ASSERT(it->second.m_size == i_size);
 			TESTITY_ASSERT(it->second.m_alignment == i_alignment);
+			TESTITY_ASSERT(it->second.m_alignment_offset == i_alignment_offset);
 			data.m_allocations.erase(it);
 		}
 	}
