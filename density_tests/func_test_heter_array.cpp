@@ -18,13 +18,14 @@ namespace density_tests
 	using namespace testity;
 
 	template <typename TYPE>
+		using HeterogeneousArray = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
+			typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type> >;
+
+	template <typename TYPE>
 		struct HeterogeneousArrayTest
 	{		
-		using Array = heterogeneous_array<TYPE, TestVoidAllocator, runtime_type<TYPE,
-			typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::hash >::type> >;
-
-		Array m_array;
-		ShadowContainer<Array> m_shadow;
+		HeterogeneousArray<TYPE> m_array;
+		ShadowContainer<HeterogeneousArray<TYPE>> m_shadow;
 
 		void compare() const
 		{
@@ -32,16 +33,47 @@ namespace density_tests
 		}
 	};
 
-	void make_heterogeneous_array_functionality_tests(TestTree & i_dest)
-	{
-		using TestTarget = HeterogeneousArrayTest<void>;
-		using TestFunc = std::function< void(FunctionalityContext & i_context, TestTarget & i_target)>;
 
-		i_dest.add_functionality_test(TestFunc([](FunctionalityContext & i_context, TestTarget & i_target) {
+	template <typename TYPE>
+		void add_typed_heterogeneous_array_cases(TestTree & i_dest)
+	{
+		using TestTarget = HeterogeneousArrayTest<TYPE>;
+		using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
+
+		i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
+			HeterogeneousArray<TYPE> tmp_array;
+			TESTITY_ASSERT(tmp_array.size() == 0);
+			TESTITY_ASSERT(tmp_array.empty());
+			TESTITY_ASSERT(tmp_array.begin() == tmp_array.end());
+			tmp_array = i_target.m_array;
+			TESTITY_ASSERT(tmp_array == i_target.m_array);
+
+			HeterogeneousArray<TYPE> tmp_array_1(tmp_array);
+			TESTITY_ASSERT(tmp_array_1 == i_target.m_array);
+
+			HeterogeneousArray<TYPE> tmp_array_2(std::move(tmp_array));
+			TESTITY_ASSERT(tmp_array_2 == i_target.m_array);
+			TESTITY_ASSERT(tmp_array.size() == 0);
+
+			tmp_array = std::move(tmp_array_2);
+			TESTITY_ASSERT(tmp_array == i_target.m_array);
+			TESTITY_ASSERT(tmp_array_2.size() == 0);
+
+			tmp_array.clear();
+			TESTITY_ASSERT(tmp_array.size() == 0);
+		}));
+
+		i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
 			i_target.m_array.push_back(1);
 			i_target.m_shadow.push_back(1);
 			i_target.compare();
 		}));
+	}
+
+	void add_heterogeneous_array_cases(TestTree & i_dest)
+	{
+		add_typed_heterogeneous_array_cases<void>(i_dest["void"]);
+
 	}
 
     /* TestHeterogeneousArray<TYPE> - heterogeneous_array that uses TestAllocator and adds type_features::hash to the automatic runtime type */

@@ -83,6 +83,7 @@ namespace density
 
 			// copy constructor
             ArrayImpl(const ArrayImpl & i_source)
+				: VOID_ALLOCATOR(i_source.get_allocator())
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -102,7 +103,11 @@ namespace density
 
 			// move constructor
 			ArrayImpl(ArrayImpl && i_source) noexcept
+				: VOID_ALLOCATOR(std::move(i_source.get_allocator()))
             {
+				static_assert(std::is_nothrow_move_constructible<VOID_ALLOCATOR>::value,
+					"VOID_ALLOCATOR must have a noexcept move constructor");
+
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
                 #endif
@@ -129,20 +134,23 @@ namespace density
 
                 // use a copy to provide the strong exception guarantee
                 auto copy(i_source);
-                destroy_impl();
-                move_impl(std::move(copy));
+				*this = std::move(copy);
                 return *this;
             }
 
             ArrayImpl & operator = (ArrayImpl && i_source) noexcept
             {
+				static_assert( std::is_nothrow_move_assignable<VOID_ALLOCATOR>::value,
+					"VOID_ALLOCATOR must have a noexcept move assignment" );
+
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
                 #if DENSITY_DEBUG_INTERNAL
                     this->check_invariants();
                     i_source.check_invariants();
                 #endif
-
+					
+				VOID_ALLOCATOR::operator = (std::move(i_source.get_allocator()));
                 destroy_impl();
                 move_impl(std::move(i_source));
                 return *this;
@@ -204,6 +212,9 @@ namespace density
                 const ControlBlock * m_curr_control_block;
 
             }; // class IteratorBaseImpl
+
+			VOID_ALLOCATOR & get_allocator() noexcept { return *this; }
+			const VOID_ALLOCATOR & get_allocator() const noexcept { return *this; }
 
             IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks); }
             IteratorBaseImpl end() const noexcept { return IteratorBaseImpl(m_control_blocks + size()); }

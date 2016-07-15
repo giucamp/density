@@ -29,7 +29,7 @@ namespace testity
         }
     }
 
-	void TestTree::add_functionality_test(std::function< void(FunctionalityContext & i_context) > i_function)
+	void TestTree::add_case(std::function< void(std::mt19937 & i_random) > i_function)
 	{
 		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
 			new detail::NoTargetFunctionalityTest(i_function)));

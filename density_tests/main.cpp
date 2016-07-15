@@ -13,7 +13,7 @@ namespace density_tests
 {
 	using namespace testity;
 	
-	void make_heterogeneous_array_functionality_tests(TestTree & i_dest);
+	void add_heterogeneous_array_cases(TestTree & i_dest);
 }
 
 int main()
@@ -23,7 +23,7 @@ int main()
 
 	TestTree test_tree("density");
 
-	make_heterogeneous_array_functionality_tests(test_tree["heterogeneous_array"]);
+	add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
 
 	run_session(test_tree);
 

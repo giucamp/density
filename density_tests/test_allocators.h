@@ -21,7 +21,7 @@ namespace density_tests
     {
     public:
 
-        void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
+		void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
         {
             auto block = m_underlying_allocator.allocate(i_size, i_alignment, i_alignment_offset);
 			m_registry.add_block(block, i_size, i_alignment, i_alignment_offset);

@@ -52,9 +52,6 @@
     <ClCompile Include="..\..\testity\performance_test.cpp">
       <Filter>testity</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\testity\functionality_context.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\testity\testity_common.cpp">
       <Filter>testity</Filter>
     </ClCompile>
@@ -118,9 +115,6 @@
       <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\performance_test.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\functionality_context.h">
       <Filter>testity</Filter>
     </ClInclude>
     <ClInclude Include="..\..\testity\testity_common.h">

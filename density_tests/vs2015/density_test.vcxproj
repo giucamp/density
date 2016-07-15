@@ -227,7 +227,6 @@
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
     <ClCompile Include="..\..\testity\detail\environment.cpp" />
     <ClCompile Include="..\..\testity\detail\functionality_test.cpp" />
-    <ClCompile Include="..\..\testity\functionality_context.cpp" />
     <ClCompile Include="..\..\testity\performance_test.cpp" />
     <ClCompile Include="..\..\testity\testity_common.cpp" />
     <ClCompile Include="..\..\testity\test_allocator.cpp" />
@@ -252,7 +251,6 @@
     <ClInclude Include="..\..\density\runtime_type.h" />
     <ClInclude Include="..\..\testity\detail\environment.h" />
     <ClInclude Include="..\..\testity\detail\functionality_test.h" />
-    <ClInclude Include="..\..\testity\functionality_context.h" />
     <ClInclude Include="..\..\testity\performance_test.h" />
     <ClInclude Include="..\..\testity\testity_common.h" />
     <ClInclude Include="..\..\testity\test_allocator.h" />

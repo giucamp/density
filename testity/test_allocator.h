@@ -12,13 +12,13 @@ namespace testity
 
 		SharedBlockRegistry(const SharedBlockRegistry &);
 
-		SharedBlockRegistry(SharedBlockRegistry &&);
+		SharedBlockRegistry(SharedBlockRegistry &&) noexcept;
 
 		~SharedBlockRegistry();
 
 		SharedBlockRegistry & operator = (const SharedBlockRegistry &);
 
-		SharedBlockRegistry & operator = (SharedBlockRegistry &&);
+		SharedBlockRegistry & operator = (SharedBlockRegistry &&) noexcept;
 		
         void add_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
 

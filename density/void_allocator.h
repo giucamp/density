@@ -143,6 +143,12 @@ namespace density
     {
     public:
 
+		void_allocator() noexcept = default;
+		void_allocator(const void_allocator&) noexcept = default;
+		void_allocator(void_allocator&&) noexcept = default;
+		void_allocator & operator = (const void_allocator&) noexcept = default;
+		void_allocator & operator = (void_allocator&&) noexcept = default;
+
         /** Allocates a memory block with at least the specified size and alignment.
             @param i_size size of the requested memory block, in bytes
             @param i_alignment alignment of the requested memory block, in bytes

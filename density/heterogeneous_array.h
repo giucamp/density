@@ -471,6 +471,15 @@ namespace density
 
         bool operator != (const heterogeneous_array & i_source) const { return !operator == (i_source); }
 
+        /** Deletes all the elements from the array.
+            \n<b> Effects on iterators </b>: all the iterators are invalidated
+            \n\b Throws: nothing
+            \n\b Complexity: linear. */
+		void clear() noexcept
+		{
+			m_impl.clear();
+		}
+
     private:
 
         struct copy_construct

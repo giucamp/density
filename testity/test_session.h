@@ -92,7 +92,7 @@ namespace testity
 
 	private:
 
-		using Operations = std::deque<std::function<void(Results & results, FunctionalityContext & i_functionality_context)>>;
+		using Operations = std::deque<std::function<void(Results & results, std::mt19937 & i_random)>>;
 
 		void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest);
 		

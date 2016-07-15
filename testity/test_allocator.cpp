@@ -40,13 +40,13 @@ namespace testity
 
 	SharedBlockRegistry & SharedBlockRegistry::operator = (const SharedBlockRegistry & i_source) = default;
 
-	SharedBlockRegistry::SharedBlockRegistry(SharedBlockRegistry && i_source)
+	SharedBlockRegistry::SharedBlockRegistry(SharedBlockRegistry && i_source) noexcept
 		: m_data(i_source.m_data)
 	{
 		i_source.m_data = nullptr;
 	}
 
-	SharedBlockRegistry & SharedBlockRegistry::operator = (SharedBlockRegistry && i_source)
+	SharedBlockRegistry & SharedBlockRegistry::operator = (SharedBlockRegistry && i_source) noexcept
 	{
 		m_data = i_source.m_data;
 		i_source.m_data = nullptr;

@@ -29,7 +29,7 @@ namespace testity
 				m_functionality_targets_types[target_type.m_type_key] = target_type.m_type;
 			}
 
-			i_dest.push_back([&test_group, this](Results & /*results*/, FunctionalityContext & i_functionality_context) {
+			i_dest.push_back([&test_group, this](Results & /*results*/, std::mt19937 & i_random) {
 				auto const target_type = test_group->get_target_type_and_key();
 				void * target = nullptr;
 				if (target_type.m_type != nullptr)
@@ -41,7 +41,7 @@ namespace testity
 					}
 					target = target_ref;
 				}
-				test_group->execute(i_functionality_context, target);
+				test_group->execute(i_random, target);
 			});
 		}
 
@@ -60,7 +60,7 @@ namespace testity
 			{
 				for (auto & test : test_group.tests())
 				{
-					i_dest.push_back([&test, cardinality](Results & results, FunctionalityContext & ) {
+					i_dest.push_back([&test, cardinality](Results & results, std::mt19937 & ) {
 						using namespace std::chrono;
 						const auto time_before = high_resolution_clock::now();
 						test.function()(cardinality);
@@ -93,7 +93,7 @@ namespace testity
 
 		const std::random_device::result_type random_seed = m_config.m_deterministic ? m_config.m_random_seed : random_device()();
 		
-		FunctionalityContext functionality_context = FunctionalityContext(mt19937(random_seed));
+		mt19937 random = mt19937(random_seed);
 
 		// generate operation array
 		Operations operations;
@@ -119,7 +119,7 @@ namespace testity
 			{
 				*i_progression_out_stream << "randomizing operations..." << endl;
 			}
-			std::shuffle(operations.begin(), operations.end(), functionality_context.random_generator());
+			std::shuffle(operations.begin(), operations.end(), random);
 		}
 
 		const auto operations_size = operations.size();
@@ -141,7 +141,7 @@ namespace testity
 					last_perc = perc;
 				}
 			}
-			operations[index](results, functionality_context);
+			operations[index](results, random);
 		}
 		
 		for (auto && target : m_functionality_targets)
