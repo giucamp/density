@@ -13,133 +13,133 @@
 
 namespace testity
 {
-	namespace detail
-	{
-		class IFunctionalityTest
-		{
-		public:
+    namespace detail
+    {
+        class IFunctionalityTest
+        {
+        public:
 
-			IFunctionalityTest() = default;
+            IFunctionalityTest() = default;
 
-			// disable copy
-			IFunctionalityTest(const IFunctionalityTest &) = delete;
-			IFunctionalityTest & operator = (const IFunctionalityTest &) = delete;
+            // disable copy
+            IFunctionalityTest(const IFunctionalityTest &) = delete;
+            IFunctionalityTest & operator = (const IFunctionalityTest &) = delete;
 
-			virtual void execute(std::mt19937 & i_random, void * i_target) = 0;
+            virtual void execute(std::mt19937 & i_random, void * i_target) = 0;
 
-			virtual ~IFunctionalityTest() = default;
-			
-			class ITargetType
-			{
-			public:
-				virtual void * create_instance() const = 0;
-				virtual void destroy_instance(void * i_instance) const = 0;
-				virtual ~ITargetType() = default;
-			};
+            virtual ~IFunctionalityTest() = default;
 
-			struct TargetTypeAndKey
-			{
-				ITargetType * m_type;
-				size_t m_type_key;
-			};
+            class ITargetType
+            {
+            public:
+                virtual void * create_instance() const = 0;
+                virtual void destroy_instance(void * i_instance) const = 0;
+                virtual ~ITargetType() = default;
+            };
 
-			virtual TargetTypeAndKey get_target_type_and_key() const = 0;
-		};
+            struct TargetTypeAndKey
+            {
+                ITargetType * m_type;
+                size_t m_type_key;
+            };
 
-		class NoTargetFunctionalityTest : public IFunctionalityTest
-		{
-		public:
+            virtual TargetTypeAndKey get_target_type_and_key() const = 0;
+        };
 
-			using Function = std::function< void(std::mt19937 & i_random) >;
+        class NoTargetFunctionalityTest : public IFunctionalityTest
+        {
+        public:
 
-			NoTargetFunctionalityTest(Function i_function)
-				: m_function(i_function)
-			{
-			}
+            using Function = std::function< void(std::mt19937 & i_random) >;
 
-			void execute(std::mt19937 & i_random, void * /*i_target*/) override
-			{
-				m_function(i_random);
-			}
+            NoTargetFunctionalityTest(Function i_function)
+                : m_function(i_function)
+            {
+            }
 
-			TargetTypeAndKey get_target_type_and_key() const override
-			{
-				return TargetTypeAndKey{ nullptr, 0 };
-			}
+            void execute(std::mt19937 & i_random, void * /*i_target*/) override
+            {
+                m_function(i_random);
+            }
 
-		private:
-			const Function m_function;
-		};
+            TargetTypeAndKey get_target_type_and_key() const override
+            {
+                return TargetTypeAndKey{ nullptr, 0 };
+            }
 
-		class FunctionalityTargetTypeRegistry
-		{
-		private:
-			FunctionalityTargetTypeRegistry();
-			~FunctionalityTargetTypeRegistry();
+        private:
+            const Function m_function;
+        };
 
-			FunctionalityTargetTypeRegistry(const FunctionalityTargetTypeRegistry &) = delete;
-			FunctionalityTargetTypeRegistry & operator = (const FunctionalityTargetTypeRegistry &) = delete;
+        class FunctionalityTargetTypeRegistry
+        {
+        private:
+            FunctionalityTargetTypeRegistry();
+            ~FunctionalityTargetTypeRegistry();
 
-			template <typename TYPE> class TargetType : public IFunctionalityTest::ITargetType
-			{
-			public:
-				void * create_instance() const override { return new TYPE; }
-				void destroy_instance(void * i_instance) const override { delete static_cast<TYPE*>(i_instance); }
-			};
+            FunctionalityTargetTypeRegistry(const FunctionalityTargetTypeRegistry &) = delete;
+            FunctionalityTargetTypeRegistry & operator = (const FunctionalityTargetTypeRegistry &) = delete;
 
-			size_t add_type(IFunctionalityTest::ITargetType * i_target_type);
+            template <typename TYPE> class TargetType : public IFunctionalityTest::ITargetType
+            {
+            public:
+                void * create_instance() const override { return new TYPE; }
+                void destroy_instance(void * i_instance) const override { delete static_cast<TYPE*>(i_instance); }
+            };
 
-		public:
+            size_t add_type(IFunctionalityTest::ITargetType * i_target_type);
 
-			static FunctionalityTargetTypeRegistry & instance();
+        public:
 
-			template <typename TYPE>
-				size_t add_type()
-			{
-				return add_type(new TargetType<TYPE>());
-			}
+            static FunctionalityTargetTypeRegistry & instance();
 
-			IFunctionalityTest::ITargetType & get_target_type(size_t i_type_key) const;
+            template <typename TYPE>
+                size_t add_type()
+            {
+                return add_type(new TargetType<TYPE>());
+            }
 
-		private:
-			struct Impl;
-			std::unique_ptr<Impl> m_pimpl;
-		};
+            IFunctionalityTest::ITargetType & get_target_type(size_t i_type_key) const;
 
-		template <typename TARGET_TYPE>
-			class TargetedFunctionalityTest : public IFunctionalityTest
-		{
-		public:
+        private:
+            struct Impl;
+            std::unique_ptr<Impl> m_pimpl;
+        };
 
-			using Function = std::function< void(std::mt19937 & i_random, TARGET_TYPE & i_target) >;
-					
-			TargetedFunctionalityTest(Function i_function)
-				: m_function(std::move(i_function))
-			{
-			}
+        template <typename TARGET_TYPE>
+            class TargetedFunctionalityTest : public IFunctionalityTest
+        {
+        public:
 
-			void execute(std::mt19937 & i_random, void * i_target) override
-			{
-				m_function(i_random, *static_cast<TARGET_TYPE*>(i_target) );
-			}
+            using Function = std::function< void(std::mt19937 & i_random, TARGET_TYPE & i_target) >;
 
-			TargetTypeAndKey get_target_type_and_key() const override
-			{
-				auto const key = type_key();
-				return TargetTypeAndKey{ &FunctionalityTargetTypeRegistry::instance().get_target_type(key), key };
-			}
+            TargetedFunctionalityTest(Function i_function)
+                : m_function(std::move(i_function))
+            {
+            }
 
-		private:
-			static size_t type_key()
-			{
-				static size_t s_type_key = FunctionalityTargetTypeRegistry::instance().add_type<TARGET_TYPE>();
-				return s_type_key;
-			}
+            void execute(std::mt19937 & i_random, void * i_target) override
+            {
+                m_function(i_random, *static_cast<TARGET_TYPE*>(i_target) );
+            }
 
-		private:
-			Function m_function;
-		};
+            TargetTypeAndKey get_target_type_and_key() const override
+            {
+                auto const key = type_key();
+                return TargetTypeAndKey{ &FunctionalityTargetTypeRegistry::instance().get_target_type(key), key };
+            }
 
-	} // namespace detail
-	
+        private:
+            static size_t type_key()
+            {
+                static size_t s_type_key = FunctionalityTargetTypeRegistry::instance().add_type<TARGET_TYPE>();
+                return s_type_key;
+            }
+
+        private:
+            Function m_function;
+        };
+
+    } // namespace detail
+
 } // namespace testity

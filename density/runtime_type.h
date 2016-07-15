@@ -588,83 +588,83 @@ namespace density
 
     } // namespace type_features
 
-	/*! \page RuntimeType_concept RuntimeType concept
+    /*! \page RuntimeType_concept RuntimeType concept
 
-		The RuntimeType concept provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
-		ctors, dtor, or retrieval of size and alignment.
+        The RuntimeType concept provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
+        ctors, dtor, or retrieval of size and alignment.
 
-		The target type is assigned with the make static function template (see below). A default constructed RuntimeType is empty,
-		that is it has no target type. Trying to use any feature of the target type on an empty RuntimeType results is undefined behavior.
+        The target type is assigned with the make static function template (see below). A default constructed RuntimeType is empty,
+        that is it has no target type. Trying to use any feature of the target type on an empty RuntimeType results is undefined behavior.
 
-		<table>
-		<tr><th style="width:600px">Requirement                      </th><th>Semantic</th></tr>
-		<tr>
-			<td>Non-throwing default constructor and destructor</td>
-			<td>A default constructed RuntimeType is empty (not assigned to a target type).</td>
-		</tr>
-		<tr>
-			<td>Copy constructor and copy assignment</td>
-			<td>The destination RuntimeType gets the same target type of the source RuntimeType.</td>
-		</tr>
-		<tr>
-			<td>Non-throwing move constructor and non-throwing move assignment</td>
-			<td>The destination RuntimeType gets the target type of the source RuntimeType. The source becomes empty.</td>
-		</tr>
-		<tr>
-			<td>Operators == and !=</td>
-			<td>Checks for equality\\inequality. Two RuntimeType are equal if they have the same target type.</td>
-		</tr>
-		<tr>
-			<td>Type alias: @code using base_type = [implementation defined] @endcode</td>
-			<td>The base type handled by the RuntimeType. base_type can be void, is which case any target type is legal.</td>
-		</tr>
-		<tr>
-			<td>Static function template: @code 
-				template <typename TARGET_TYPE>\n
-					static RuntimeType make() noexcept @endcode</td>
-			<td>Returns a RuntimeType that has TARGET_TYPE as target type. The target type must be covariant to <em>base_type</em>, otherwise the
-				behavior is undefined</td>
-		</tr>
-		<tr>
-			<td>Member function: @code size_t size() const noexcept @endcode</td>
-			<td>Equivalent to: @code return sizeof(TARGET_TYPE); @endcode. </td>
-		</tr>
-		<tr>
-			<td>Member function: @code size_t alignment() const noexcept @endcode</td>
-			<td>Equivalent to: @code return aignof(TARGET_TYPE); @endcode. </td>
-		</tr>
-		<tr>
-			<td>Member function: @code base_type * default_construct(void * i_dest) const @endcode</td>
-			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE() ); @endcode. </td>
-		</tr>
-		<tr>
-			<td>Member function: @code base_type * copy_construct(void * i_dest, const base_type * i_source) const @endcode</td>
-			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
+        <table>
+        <tr><th style="width:600px">Requirement                      </th><th>Semantic</th></tr>
+        <tr>
+            <td>Non-throwing default constructor and destructor</td>
+            <td>A default constructed RuntimeType is empty (not assigned to a target type).</td>
+        </tr>
+        <tr>
+            <td>Copy constructor and copy assignment</td>
+            <td>The destination RuntimeType gets the same target type of the source RuntimeType.</td>
+        </tr>
+        <tr>
+            <td>Non-throwing move constructor and non-throwing move assignment</td>
+            <td>The destination RuntimeType gets the target type of the source RuntimeType. The source becomes empty.</td>
+        </tr>
+        <tr>
+            <td>Operators == and !=</td>
+            <td>Checks for equality\\inequality. Two RuntimeType are equal if they have the same target type.</td>
+        </tr>
+        <tr>
+            <td>Type alias: @code using base_type = [implementation defined] @endcode</td>
+            <td>The base type handled by the RuntimeType. base_type can be void, is which case any target type is legal.</td>
+        </tr>
+        <tr>
+            <td>Static function template: @code
+                template <typename TARGET_TYPE>\n
+                    static RuntimeType make() noexcept @endcode</td>
+            <td>Returns a RuntimeType that has TARGET_TYPE as target type. The target type must be covariant to <em>base_type</em>, otherwise the
+                behavior is undefined</td>
+        </tr>
+        <tr>
+            <td>Member function: @code size_t size() const noexcept @endcode</td>
+            <td>Equivalent to: @code return sizeof(TARGET_TYPE); @endcode. </td>
+        </tr>
+        <tr>
+            <td>Member function: @code size_t alignment() const noexcept @endcode</td>
+            <td>Equivalent to: @code return aignof(TARGET_TYPE); @endcode. </td>
+        </tr>
+        <tr>
+            <td>Member function: @code base_type * default_construct(void * i_dest) const @endcode</td>
+            <td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE() ); @endcode. </td>
+        </tr>
+        <tr>
+            <td>Member function: @code base_type * copy_construct(void * i_dest, const base_type * i_source) const @endcode</td>
+            <td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
                         *dynamic_cast<const TARGET_TYPE*>(i_source) ) ); @endcode. </td>
-		</tr>
-		<tr>
-			<td>Member function: @code base_type * move_construct(void * i_dest, base_type * i_source) const noexcept @endcode</td>
-			<td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
+        </tr>
+        <tr>
+            <td>Member function: @code base_type * move_construct(void * i_dest, base_type * i_source) const noexcept @endcode</td>
+            <td>Equivalent to: @code return static_cast<base_type*>( new(i_dest) TARGET_TYPE(\n
                         std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) ); @endcode </td>
-		</tr>	
-		<tr>
-			<td>Member function: @code void destroy(base_type * i_dest) const noexcept @endcode</td>
-			<td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE(); @endcode </td>
-		</tr>
-		<tr>
-			<td>Member function: @code const std::type_info & type_info() const noexcept @endcode</td>
-			<td>Equivalent to: @code return typeid(TARGET_TYPE); @endcode </td>
-		</tr>
-		</table>
-	*/
+        </tr>
+        <tr>
+            <td>Member function: @code void destroy(base_type * i_dest) const noexcept @endcode</td>
+            <td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE(); @endcode </td>
+        </tr>
+        <tr>
+            <td>Member function: @code const std::type_info & type_info() const noexcept @endcode</td>
+            <td>Equivalent to: @code return typeid(TARGET_TYPE); @endcode </td>
+        </tr>
+        </table>
+    */
 
     /** Class template that performs type-erasure.
             @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
             @tparam FEATURE_LIST type_features::feature_list that defines which type-features are type-erased. By default
                 the feature_list is obtained with type_features::default_type_features. If this type is not a type_features::feature_list,
-				a compile time error is reported.
+                a compile time error is reported.
 
-		runtime_type models the \ref RuntimeType_concept "RuntimeType" concept.
+        runtime_type models the \ref RuntimeType_concept "RuntimeType" concept.
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
         instances of the target types, depending on the features included on FEATURE_LIST. \n
@@ -797,7 +797,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the default constructor of the target type throws. */
-		base_type * default_construct(void * i_dest) const
+        base_type * default_construct(void * i_dest) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -826,7 +826,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the copy constructor of the target type throws. */
-		base_type * copy_construct(void * i_dest, const base_type * i_source) const
+        base_type * copy_construct(void * i_dest, const base_type * i_source) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -855,7 +855,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. Move constructors are required to be noexcept. */
-		base_type * move_construct(void * i_dest, base_type * i_source) const noexcept
+        base_type * move_construct(void * i_dest, base_type * i_source) const noexcept
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<

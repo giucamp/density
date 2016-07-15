@@ -11,26 +11,26 @@
 
 namespace testity
 {
-	namespace detail
-	{
-		class PerformanceTest
-		{
-		public:
+    namespace detail
+    {
+        class PerformanceTest
+        {
+        public:
 
-			using TestFunction = void(size_t i_cardinality);
+            using TestFunction = void(size_t i_cardinality);
 
-			PerformanceTest(std::string i_source_code, std::function<TestFunction> i_function)
-				: m_source_code(std::move(i_source_code)), m_function(std::move(i_function))
-					{ }
+            PerformanceTest(std::string i_source_code, std::function<TestFunction> i_function)
+                : m_source_code(std::move(i_source_code)), m_function(std::move(i_function))
+                    { }
 
-			const std::string & source_code() const { return m_source_code; }
-			const std::function<TestFunction> & function() const { return m_function; }
+            const std::string & source_code() const { return m_source_code; }
+            const std::function<TestFunction> & function() const { return m_function; }
 
-		private:
-			std::string m_source_code;
-			std::function<TestFunction> m_function;
-		};
-	}
+        private:
+            std::string m_source_code;
+            std::function<TestFunction> m_function;
+        };
+    }
 
     class PerformanceTestGroup
     {
@@ -44,28 +44,28 @@ namespace testity
             m_tests.push_back(std::move(i_test));
         }
 
-		void set_description(std::string i_description)
-		{
-			m_description = std::move(i_description);
-		}
+        void set_description(std::string i_description)
+        {
+            m_description = std::move(i_description);
+        }
 
-		void set_prolog_code(std::string i_code)
-		{
-			m_prolog_code = std::move(i_code);
-		}
+        void set_prolog_code(std::string i_code)
+        {
+            m_prolog_code = std::move(i_code);
+        }
 
-		void set_prolog_code(const char * i_code, size_t i_length)
-		{
-			m_prolog_code.assign(i_code, i_length);
-		}
+        void set_prolog_code(const char * i_code, size_t i_length)
+        {
+            m_prolog_code.assign(i_code, i_length);
+        }
 
         void add_test(const char * i_source_file, int i_start_line,
             std::function<detail::PerformanceTest::TestFunction> i_function, int i_end_line);
 
         const std::string & name() const { return m_name; }
         const std::string & version_label() const { return m_version_label; }
-		const std::string & description() const { return m_description; }
-		const std::string & prolog_code() const { return m_prolog_code; }
+        const std::string & description() const { return m_description; }
+        const std::string & prolog_code() const { return m_prolog_code; }
 
         size_t cardinality_start() const { return m_cardinality_start; }
         size_t cardinality_step() const { return m_cardinality_step; }

@@ -67,7 +67,7 @@ namespace density_tests
             const auto container_is_empty = i_container.empty();
             TESTITY_ASSERT(container_is_empty == m_deque.empty());
             TESTITY_ASSERT(container_is_empty == (i_container.begin() == i_container.end()));
-			
+
             auto const dist = std::distance(i_container.begin(), i_container.end());
             TESTITY_ASSERT(dist >= 0 && static_cast<size_t>(dist) == m_deque.size());
 

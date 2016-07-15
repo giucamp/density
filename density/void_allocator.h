@@ -15,115 +15,115 @@
 
 namespace density
 {
-	   /*! \page UntypedAllocator_concept UntypedAllocator concept
-        The UntypedAllocator concept encapsulates an untyped memory allocation service, similar to the 
-			<a href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator concept</a> defined by the standard, but untyped like
-			<a href="http://en.cppreference.com/w/cpp/memory/c/malloc">std::malloc</a>. UntypedAllocator supports over-alignment and alignment
-			offset. UntypedAllocator is also similar to the class <a href="http://en.cppreference.com/w/cpp/memory/memory_resource">
-			std::pmr::memory_resource</a> (introduced in C++17), but is not polymorphic.
-			
-		<table>
-		<caption id="multi_row">UntypedAllocator Requirements</caption>
-		<tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
-		<tr><td>Non-static member function: @code void * allocate(
-				size_t i_size,
-				size_t i_alignment = alignof(std::max_align_t),
-				size_t i_alignment_offset = 0); @endcode </td></tr>
-			<td>Allocates a memory block large at least \em i_size bytes. The address at the offset \em i_alignment_offset
+       /*! \page UntypedAllocator_concept UntypedAllocator concept
+        The UntypedAllocator concept encapsulates an untyped memory allocation service, similar to the
+            <a href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator concept</a> defined by the standard, but untyped like
+            <a href="http://en.cppreference.com/w/cpp/memory/c/malloc">std::malloc</a>. UntypedAllocator supports over-alignment and alignment
+            offset. UntypedAllocator is also similar to the class <a href="http://en.cppreference.com/w/cpp/memory/memory_resource">
+            std::pmr::memory_resource</a> (introduced in C++17), but is not polymorphic.
+
+        <table>
+        <caption id="multi_row">UntypedAllocator Requirements</caption>
+        <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
+        <tr><td>Non-static member function: @code void * allocate(
+                size_t i_size,
+                size_t i_alignment = alignof(std::max_align_t),
+                size_t i_alignment_offset = 0); @endcode </td></tr>
+            <td>Allocates a memory block large at least \em i_size bytes. The address at the offset \em i_alignment_offset
         from the beginning of the block is aligned at least to \em i_alignment. On failure this function should throw a
-		<a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
-		The return value is a pointer to the first byte of the memory block. The content of the block is undefined. \n
-		If \em i_alignment_offset is not zero, in general the allocator has no requirements on the alignment of the first byte of the block.
-		Anyway, since the address at \em i_alignment_offset will have \em n low-order zero bits (where <em>i_alignment = 1 << n</em>), if 
-		\em i_alignment_offset has \em m low-order zero bits (that is aligned to <em>1 << m</em>), then the address of the first byte 
-		of the block is aligned at least to <em>1 << min(n,m)</em>.
-				
-		The user is responsible to ensure that:
-		- \em i_alignment must be greater than zero and an integer power of 2
-		- \em i_alignment_offset must be less than or equal to \em i_size
+        <a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
+        The return value is a pointer to the first byte of the memory block. The content of the block is undefined. \n
+        If \em i_alignment_offset is not zero, in general the allocator has no requirements on the alignment of the first byte of the block.
+        Anyway, since the address at \em i_alignment_offset will have \em n low-order zero bits (where <em>i_alignment = 1 << n</em>), if
+        \em i_alignment_offset has \em m low-order zero bits (that is aligned to <em>1 << m</em>), then the address of the first byte
+        of the block is aligned at least to <em>1 << min(n,m)</em>.
 
-		otherwise the behavior may be undefined.
-		</td></tr>
+        The user is responsible to ensure that:
+        - \em i_alignment must be greater than zero and an integer power of 2
+        - \em i_alignment_offset must be less than or equal to \em i_size
 
-		<tr><td>Non-static member function: @code void deallocate(
-				void * i_block,
-				size_t i_size,
-				size_t i_alignment = alignof(std::max_align_t),
-				size_t i_alignment_offset = 0) noexcept; @endcode </td></tr>
-		<td>Deallocates a memory block. \n
+        otherwise the behavior may be undefined.
+        </td></tr>
 
-		The user is responsible to ensure that:
-		- \em i_block is a block allocated by the same allocator, or by an allocator that compares equal to it.
-		- \em i_size, \em i_alignment and \em i_alignment_offset are the same used when the block was allocated.
-		
-		otherwise the behavior may be undefined.
-		<tr>
-			<td>Operators == and !=</td>
-			<td>Checks for equality\\inequality.</td>
-		</tr>
-		<tr><td>Default constructor and non-throwing destructor</td></tr>
-		<td>A default constructed allocator is usable to allocate and deallocate memory block. The destructor must be no-except.
-		</td></tr>
-		<tr><td>Copy constructor and copy assignment</td></tr>
-		<td>A copy-constructed allocator compares equal to the source of the copy. As a consequence, a block allocated by an allocator can be deallocated by an 
-			allocator that was copy-constructed from it. Same for assignment.
-		</td></tr>
-		<tr><td>Non-throwing move constructor and non-throwing move assignment</td></tr>
-		<td>A move-constructed allocator may not compare equal to the source of the move. After a move construction or assignment, the source of the move cannot be used to allocate or deallocate any block.
-		As a consequence, after an allocator A is used as source for a move construction or assignment to an allocator B, any block allocated
-		by A must be deallocated by B. </td></tr>
-		</table>
-		
-		void_allocator models the UntypedAllocator concept.
+        <tr><td>Non-static member function: @code void deallocate(
+                void * i_block,
+                size_t i_size,
+                size_t i_alignment = alignof(std::max_align_t),
+                size_t i_alignment_offset = 0) noexcept; @endcode </td></tr>
+        <td>Deallocates a memory block. \n
+
+        The user is responsible to ensure that:
+        - \em i_block is a block allocated by the same allocator, or by an allocator that compares equal to it.
+        - \em i_size, \em i_alignment and \em i_alignment_offset are the same used when the block was allocated.
+
+        otherwise the behavior may be undefined.
+        <tr>
+            <td>Operators == and !=</td>
+            <td>Checks for equality\\inequality.</td>
+        </tr>
+        <tr><td>Default constructor and non-throwing destructor</td></tr>
+        <td>A default constructed allocator is usable to allocate and deallocate memory block. The destructor must be no-except.
+        </td></tr>
+        <tr><td>Copy constructor and copy assignment</td></tr>
+        <td>A copy-constructed allocator compares equal to the source of the copy. As a consequence, a block allocated by an allocator can be deallocated by an
+            allocator that was copy-constructed from it. Same for assignment.
+        </td></tr>
+        <tr><td>Non-throwing move constructor and non-throwing move assignment</td></tr>
+        <td>A move-constructed allocator may not compare equal to the source of the move. After a move construction or assignment, the source of the move cannot be used to allocate or deallocate any block.
+        As a consequence, after an allocator A is used as source for a move construction or assignment to an allocator B, any block allocated
+        by A must be deallocated by B. </td></tr>
+        </table>
+
+        void_allocator models the UntypedAllocator concept.
     */
 
 
-		  
-	/*! \page PagedAllocator_concept PagedAllocator concept
-        The PagedAllocator concept encapsulates a page-based untyped memory allocation service. All pages allocated by a 
-		PagedAllocator have the same size and alignment requirements.
 
-		<table>
-		<caption id="multi_row">PagedAllocator Requirements</caption>
-		<tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
+    /*! \page PagedAllocator_concept PagedAllocator concept
+        The PagedAllocator concept encapsulates a page-based untyped memory allocation service. All pages allocated by a
+        PagedAllocator have the same size and alignment requirements.
 
-		<tr><td>Static member function: @code static size_t page_size() noexcept; @endcode </td></tr>
-		<td>Returns the size of a page in bytes, . In the same program execution this function must return the same value on every invocation. </td> </tr>
+        <table>
+        <caption id="multi_row">PagedAllocator Requirements</caption>
+        <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 
-		<tr><td>Static member function: @code static size_t page_alignment() noexcept; @endcode </td></tr>
-		<td>Returns the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. In the same program execution this function must return the same value on every invocation. </td> </tr>
+        <tr><td>Static member function: @code static size_t page_size() noexcept; @endcode </td></tr>
+        <td>Returns the size of a page in bytes, . In the same program execution this function must return the same value on every invocation. </td> </tr>
 
-		<tr><td>Non-static member function: @code void * allocate_page(); @endcode </td></tr>
-			<td>Allocates a memory page large at least \em page_size() bytes. The first byte of the page is aligned at 
-			least to \em page_alignment(). On failure this function should throw a 
-			<a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
-		The return value is a pointer to the first byte of the memory page. The content of the page is undefined. \n
-		</td></tr>
+        <tr><td>Static member function: @code static size_t page_alignment() noexcept; @endcode </td></tr>
+        <td>Returns the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. In the same program execution this function must return the same value on every invocation. </td> </tr>
 
-		<tr><td>Non-static member function: @code void deallocate_page(void * i_page) noexcept; @endcode </td></tr>
-		<td>Deallocates a memory page. </td></tr>
+        <tr><td>Non-static member function: @code void * allocate_page(); @endcode </td></tr>
+            <td>Allocates a memory page large at least \em page_size() bytes. The first byte of the page is aligned at
+            least to \em page_alignment(). On failure this function should throw a
+            <a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
+        The return value is a pointer to the first byte of the memory page. The content of the page is undefined. \n
+        </td></tr>
 
-		<tr><td>Operators == and !=</td></tr>
-		<td>Checks for equality\\inequality.
-		</td></tr>
-		<tr><td>Default constructor and non-throwing destructor</td></tr>
-		<td>A default constructed allocator is usable to allocate and deallocate memory pages. The destructor must be no-except.
-		</td></tr>
-		<tr><td>Copy constructor and copy assignment</td></tr>
-		<td>A copy-constructed allocator compares equal to the source of the copy. As a consequence, a pages allocated by an allocator can be deallocated by an 
-			allocator that was copy-constructed from it. Same for assignment.
-		</td></tr>
-		<tr><td>Non-throwing move constructor and non-throwing move assignment</td></tr>
-		<td>A move-constructed allocator may not compare equal to the source of the move. After a move construction or assignment, the source of the move cannot be used to allocate or deallocate any page.
-		As a consequence, after an allocator A is used as source for a move construction or assignment to an allocator B, any page allocated
-		by A must be deallocated by B. </td></tr>
-		</table>
-		
-		void_allocator models the PagedAllocator concept.
+        <tr><td>Non-static member function: @code void deallocate_page(void * i_page) noexcept; @endcode </td></tr>
+        <td>Deallocates a memory page. </td></tr>
+
+        <tr><td>Operators == and !=</td></tr>
+        <td>Checks for equality\\inequality.
+        </td></tr>
+        <tr><td>Default constructor and non-throwing destructor</td></tr>
+        <td>A default constructed allocator is usable to allocate and deallocate memory pages. The destructor must be no-except.
+        </td></tr>
+        <tr><td>Copy constructor and copy assignment</td></tr>
+        <td>A copy-constructed allocator compares equal to the source of the copy. As a consequence, a pages allocated by an allocator can be deallocated by an
+            allocator that was copy-constructed from it. Same for assignment.
+        </td></tr>
+        <tr><td>Non-throwing move constructor and non-throwing move assignment</td></tr>
+        <td>A move-constructed allocator may not compare equal to the source of the move. After a move construction or assignment, the source of the move cannot be used to allocate or deallocate any page.
+        As a consequence, after an allocator A is used as source for a move construction or assignment to an allocator B, any page allocated
+        by A must be deallocated by B. </td></tr>
+        </table>
+
+        void_allocator models the PagedAllocator concept.
     */
 
     /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
-		and \ref PagedAllocator_concept "PagedAllocator" concepts.
+        and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
         void_allocator is stateless. Any instance of void_allocator compares equal to any instance of void_allocator. This implies that
         blocks and pages can be deallocated by any instance of void_allocator.
@@ -143,11 +143,11 @@ namespace density
     {
     public:
 
-		void_allocator() noexcept = default;
-		void_allocator(const void_allocator&) noexcept = default;
-		void_allocator(void_allocator&&) noexcept = default;
-		void_allocator & operator = (const void_allocator&) noexcept = default;
-		void_allocator & operator = (void_allocator&&) noexcept = default;
+        void_allocator() noexcept = default;
+        void_allocator(const void_allocator&) noexcept = default;
+        void_allocator(void_allocator&&) noexcept = default;
+        void_allocator & operator = (const void_allocator&) noexcept = default;
+        void_allocator & operator = (void_allocator&&) noexcept = default;
 
         /** Allocates a memory block with at least the specified size and alignment.
             @param i_size size of the requested memory block, in bytes
@@ -159,7 +159,7 @@ namespace density
             \pre i_alignment is > 0 and is an integer power of 2
             \pre i_alignment_offset is <= i_size
 
-			A violation of any precondition results in undefined behavior.
+            A violation of any precondition results in undefined behavior.
 
             \exception std::bad_alloc if the allocation fails
 
@@ -195,7 +195,7 @@ namespace density
             @param i_block block to deallocate, or nullptr.
             @param i_size size of the block to deallocate, in bytes.
             @param i_alignment alignment of the memory block.
-			@param i_alignment_offset
+            @param i_alignment_offset
 
             \pre i_block is a memory block allocated with any instance of void_allocator, or nullptr
             \pre i_size and i_alignment are the same specified when allocating the block

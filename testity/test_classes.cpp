@@ -1,4 +1,10 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+
 #include "test_classes.h"
 #include <type_traits>
 #include <cstring>
@@ -6,401 +12,401 @@
 
 namespace testity
 {
-	namespace detail
-	{
-		std::mt19937 & random_storage_random()
-		{
-			static thread_local std::mt19937 s_rand = std::mt19937(std::random_device()());
-			return s_rand;
-		}
+    namespace detail
+    {
+        std::mt19937 & random_storage_random()
+        {
+            static thread_local std::mt19937 s_rand = std::mt19937(std::random_device()());
+            return s_rand;
+        }
 
-		void random_storage_init(unsigned char * i_dest, size_t i_size) noexcept
-		{
-			auto & rand = random_storage_random();
-			for (size_t i = 0; i < i_size; i++)
-			{
-				i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand));
-			}
-		}
+        void random_storage_init(unsigned char * i_dest, size_t i_size) noexcept
+        {
+            auto & rand = random_storage_random();
+            for (size_t i = 0; i < i_size; i++)
+            {
+                i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand));
+            }
+        }
 
-		void random_storage_init(unsigned char * i_dest, size_t i_size, int i_seed) noexcept
-		{
-			auto seed = i_seed;
-			auto & rand = random_storage_random();
-			for (size_t i = 0; i < i_size; i++)
-			{
-				i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand) & std::numeric_limits<char>::max());
-				i_dest[i] ^= static_cast<unsigned char>(i_dest[i] & std::numeric_limits<char>::max());
-				seed *= seed;
-			}
-		}
+        void random_storage_init(unsigned char * i_dest, size_t i_size, int i_seed) noexcept
+        {
+            auto seed = i_seed;
+            auto & rand = random_storage_random();
+            for (size_t i = 0; i < i_size; i++)
+            {
+                i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand) & std::numeric_limits<char>::max());
+                i_dest[i] ^= static_cast<unsigned char>(i_dest[i] & std::numeric_limits<char>::max());
+                seed *= seed;
+            }
+        }
 
-		void random_storage_mark_moved_from(unsigned char * i_dest, size_t i_size) noexcept
-		{
-			std::memset(i_dest, 0xAD, i_size );
-		}
+        void random_storage_mark_moved_from(unsigned char * i_dest, size_t i_size) noexcept
+        {
+            std::memset(i_dest, 0xAD, i_size );
+        }
 
-		void random_storage_mark_deleted(unsigned char * i_dest, size_t i_size) noexcept
-		{
-			std::memset(i_dest, 0xDE, i_size);
-		}
+        void random_storage_mark_deleted(unsigned char * i_dest, size_t i_size) noexcept
+        {
+            std::memset(i_dest, 0xDE, i_size);
+        }
 
-		bool random_storage_equals(const unsigned char * i_first, const unsigned char * i_second, size_t i_size) noexcept
-		{
-			return std::memcmp(i_first, i_second, i_size) == 0;
-		}
+        bool random_storage_equals(const unsigned char * i_first, const unsigned char * i_second, size_t i_size) noexcept
+        {
+            return std::memcmp(i_first, i_second, i_size) == 0;
+        }
 
-		size_t random_storage_hash(const unsigned char * i_dest, size_t i_size) noexcept
-		{
-			size_t result = 0;
-			for (size_t i = 0; i < i_size; i++)
-			{
-				result = result * 33 + i_dest[i];
-			}
-			return result;
-		}
-	}
+        size_t random_storage_hash(const unsigned char * i_dest, size_t i_size) noexcept
+        {
+            size_t result = 0;
+            for (size_t i = 0; i < i_size; i++)
+            {
+                result = result * 33 + i_dest[i];
+            }
+            return result;
+        }
+    }
 
-	namespace test
-	{
-		// this function perform compile time tests on TestClass
-		void test_class_test()
-		{
-			static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 4>) == 128, "");
-			static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 8>) == 128, "");
-			static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 127, 1>) == 127, "");
-			static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 4>) == 4, "");
-			static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 8>) == 8, "");
-			static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 127, 1>) == 1, "");
+    namespace test
+    {
+        // this function perform compile time tests on TestClass
+        void test_class_test()
+        {
+            static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 4>) == 128, "");
+            static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 8>) == 128, "");
+            static_assert(sizeof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 127, 1>) == 127, "");
+            static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 4>) == 4, "");
+            static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 128, 8>) == 8, "");
+            static_assert(alignof(TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted, 127, 1>) == 1, "");
 
-			// warning: the following tests were generated by the program TestClassGen
+            // warning: the following tests were generated by the program TestClassGen
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_default_constructibleshould be false");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Deleted, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_default_constructibleshould be false");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::Supported, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_constructibleshould be false");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_copy_assignableshould be false");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Deleted, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_constructibleshould be false");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == false, "is_nothrow_copy_assignableshould be false");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::Supported, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_constructibleshould be false");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_move_assignableshould be false");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Deleted>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_constructibleshould be false");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::Supported>>::value == false, "is_nothrow_move_assignableshould be false");
 
-			// test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
-			static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
-			static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
-			static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
-			static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
-			static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
-			static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
-			static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
-			static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
-			static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
-			static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
+            // test TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>
+            static_assert(std::is_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_default_constructibleshould be true");
+            static_assert(std::is_nothrow_default_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_default_constructibleshould be true");
+            static_assert(std::is_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_constructibleshould be true");
+            static_assert(std::is_nothrow_copy_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_constructibleshould be true");
+            static_assert(std::is_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_copy_assignableshould be true");
+            static_assert(std::is_nothrow_copy_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_copy_assignableshould be true");
+            static_assert(std::is_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_constructibleshould be true");
+            static_assert(std::is_nothrow_move_constructible<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_constructibleshould be true");
+            static_assert(std::is_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_move_assignableshould be true");
+            static_assert(std::is_nothrow_move_assignable<TestClass<FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept, FeatureKind::SupportedNoExcept>>::value == true, "is_nothrow_move_assignableshould be true");
 
-		}
+        }
 
-	} //namespace test
+    } //namespace test
 
 } // namespace testity

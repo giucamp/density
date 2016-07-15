@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-
 #include "../density/runtime_type.h"
 #include "../density/heterogeneous_array.h"
 #include <string>
@@ -143,59 +142,59 @@ namespace misc_samples
 
         {
             //! [heterogeneous_array example 1]
-			using namespace density;
-			const auto list = heterogeneous_array<>::make(1, std::string("abc"), 2.5);
+            using namespace density;
+            const auto list = heterogeneous_array<>::make(1, std::string("abc"), 2.5);
 
-			struct Base {};
-			struct Derived1 : Base {};
-			struct Derived2 : Base {};
-			const auto list1 = heterogeneous_array<Base>::make(Derived1(), Derived2(), Derived1());
+            struct Base {};
+            struct Derived1 : Base {};
+            struct Derived2 : Base {};
+            const auto list1 = heterogeneous_array<Base>::make(Derived1(), Derived2(), Derived1());
             //! [heterogeneous_array example 1]
         }
 
-		{
-			//! [heterogeneous_array example 2]
-			using namespace density;
-			struct Base {};
-			struct Derived1 : Base {};
-			struct Derived2 : Base {};			
-			const auto list = heterogeneous_array<Base>::make_with_alloc(void_allocator(), Derived1(), Derived2(), Derived1());
-			//! [heterogeneous_array example 2]
-		}
+        {
+            //! [heterogeneous_array example 2]
+            using namespace density;
+            struct Base {};
+            struct Derived1 : Base {};
+            struct Derived2 : Base {};
+            const auto list = heterogeneous_array<Base>::make_with_alloc(void_allocator(), Derived1(), Derived2(), Derived1());
+            //! [heterogeneous_array example 2]
+        }
 
 
 
-		{
-			//! [heterogeneous_array example 3]
-			using namespace density;
-			using namespace std;
-			auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
-			list.push_front(wstring(L"ABC"));
-			for (auto it = list.begin(); it != list.end(); it++)
-			{
-				cout << it.complete_type().type_info().name() << endl;
-			}
-			//! [heterogeneous_array example 3]
-		}
+        {
+            //! [heterogeneous_array example 3]
+            using namespace density;
+            using namespace std;
+            auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
+            list.push_front(wstring(L"ABC"));
+            for (auto it = list.begin(); it != list.end(); it++)
+            {
+                cout << it.complete_type().type_info().name() << endl;
+            }
+            //! [heterogeneous_array example 3]
+        }
 
-		{
-			//! [heterogeneous_array example 4]
-			using namespace density;
-			using namespace std;
+        {
+            //! [heterogeneous_array example 4]
+            using namespace density;
+            using namespace std;
 
-			struct Widget { virtual void draw() { /* ... */ } };
-			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
-			struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
+            struct Widget { virtual void draw() { /* ... */ } };
+            struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
+            struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
-			auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
-			for (auto & widget : widgets)
-			{
-				widget.draw();
-			}
+            auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
+            for (auto & widget : widgets)
+            {
+                widget.draw();
+            }
 
-			widgets.push_back(TextWidget());
-			//! [heterogeneous_array example 4]
-		}
+            widgets.push_back(TextWidget());
+            //! [heterogeneous_array example 4]
+        }
     }
 } // namespace misc_samples
 

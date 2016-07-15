@@ -71,19 +71,19 @@ namespace density
                 m_control_blocks = nullptr;
             }
 
-			// default constructor
+            // default constructor
             ArrayImpl() noexcept
                 : m_control_blocks(nullptr)
                     { }
 
-			// constructor with allocator
-			ArrayImpl(const VOID_ALLOCATOR & i_allocator)
-				: VOID_ALLOCATOR(i_allocator), m_control_blocks(nullptr)
-					{ }
+            // constructor with allocator
+            ArrayImpl(const VOID_ALLOCATOR & i_allocator)
+                : VOID_ALLOCATOR(i_allocator), m_control_blocks(nullptr)
+                    { }
 
-			// copy constructor
+            // copy constructor
             ArrayImpl(const ArrayImpl & i_source)
-				: VOID_ALLOCATOR(i_source.get_allocator())
+                : VOID_ALLOCATOR(i_source.get_allocator())
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -91,9 +91,9 @@ namespace density
                 copy_impl(i_source);
             }
 
-			// copy constructor with allocator
+            // copy constructor with allocator
             ArrayImpl(const ArrayImpl & i_source, const VOID_ALLOCATOR & i_allocator)
-				: VOID_ALLOCATOR(i_allocator)
+                : VOID_ALLOCATOR(i_allocator)
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -101,12 +101,12 @@ namespace density
                 copy_impl(i_source);
             }
 
-			// move constructor
-			ArrayImpl(ArrayImpl && i_source) noexcept
-				: VOID_ALLOCATOR(std::move(i_source.get_allocator()))
+            // move constructor
+            ArrayImpl(ArrayImpl && i_source) noexcept
+                : VOID_ALLOCATOR(std::move(i_source.get_allocator()))
             {
-				static_assert(std::is_nothrow_move_constructible<VOID_ALLOCATOR>::value,
-					"VOID_ALLOCATOR must have a noexcept move constructor");
+                static_assert(std::is_nothrow_move_constructible<VOID_ALLOCATOR>::value,
+                    "VOID_ALLOCATOR must have a noexcept move constructor");
 
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -114,9 +114,9 @@ namespace density
                 move_impl(std::move(i_source));
             }
 
-			// move constructor with allocator
-			ArrayImpl(ArrayImpl && i_source, const VOID_ALLOCATOR & i_allocator) noexcept
-				: VOID_ALLOCATOR(i_allocator)
+            // move constructor with allocator
+            ArrayImpl(ArrayImpl && i_source, const VOID_ALLOCATOR & i_allocator) noexcept
+                : VOID_ALLOCATOR(i_allocator)
             {
                 #if DENSITY_DEBUG_INTERNAL
                     i_source.check_invariants();
@@ -134,14 +134,14 @@ namespace density
 
                 // use a copy to provide the strong exception guarantee
                 auto copy(i_source);
-				*this = std::move(copy);
+                *this = std::move(copy);
                 return *this;
             }
 
             ArrayImpl & operator = (ArrayImpl && i_source) noexcept
             {
-				static_assert( std::is_nothrow_move_assignable<VOID_ALLOCATOR>::value,
-					"VOID_ALLOCATOR must have a noexcept move assignment" );
+                static_assert( std::is_nothrow_move_assignable<VOID_ALLOCATOR>::value,
+                    "VOID_ALLOCATOR must have a noexcept move assignment" );
 
                 DENSITY_ASSERT(this != &i_source); // self assignment not supported
 
@@ -149,8 +149,8 @@ namespace density
                     this->check_invariants();
                     i_source.check_invariants();
                 #endif
-					
-				VOID_ALLOCATOR::operator = (std::move(i_source.get_allocator()));
+
+                VOID_ALLOCATOR::operator = (std::move(i_source.get_allocator()));
                 destroy_impl();
                 move_impl(std::move(i_source));
                 return *this;
@@ -213,8 +213,8 @@ namespace density
 
             }; // class IteratorBaseImpl
 
-			VOID_ALLOCATOR & get_allocator() noexcept { return *this; }
-			const VOID_ALLOCATOR & get_allocator() const noexcept { return *this; }
+            VOID_ALLOCATOR & get_allocator() noexcept { return *this; }
+            const VOID_ALLOCATOR & get_allocator() const noexcept { return *this; }
 
             IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks); }
             IteratorBaseImpl end() const noexcept { return IteratorBaseImpl(m_control_blocks + size()); }
@@ -372,9 +372,9 @@ namespace density
                     for (auto it = begin(); it != end_it; ++it)
                     {
                         auto control_block = it.control();
-						const auto alignment_mask = control_block->alignment() - 1;
-						dense_size = (dense_size + alignment_mask) & ~alignment_mask;
-						dense_size += control_block->size();
+                        const auto alignment_mask = control_block->alignment() - 1;
+                        dense_size = (dense_size + alignment_mask) & ~alignment_mask;
+                        dense_size += control_block->size();
                         dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
                         control_block->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(it.element()));
                         control_block->ControlBlock::~ControlBlock();
@@ -483,7 +483,7 @@ namespace density
             {
                 DENSITY_ASSERT(i_new_type.size() > 0 && is_power_of_2(i_new_type.alignment())); // the size must be non-zero, the alignment must be a non-zero power of 2
 
-				auto const current_size = size();
+                auto const current_size = size();
                 size_t buffer_size = (current_size + i_new_element_count) * sizeof(ControlBlock);
                 size_t buffer_alignment = detail::size_max(std::alignment_of<ControlBlock>::value, i_new_type.alignment());
                 auto const end_it = end();

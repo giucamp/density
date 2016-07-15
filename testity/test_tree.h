@@ -19,16 +19,16 @@ namespace testity
 
         const std::string & name() const { return m_name; }
 
-		void add_case(std::function< void(std::mt19937 & i_random) > i_function);
+        void add_case(std::function< void(std::mt19937 & i_random) > i_function);
 
-		void add_child(TestTree i_child);
-		
-		template <typename TARGET>
-			void add_case(std::function< void(std::mt19937 & i_random, TARGET & i_target) > i_function)
-		{
-			m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
-				new detail::TargetedFunctionalityTest<TARGET>(i_function)));
-		}
+        void add_child(TestTree i_child);
+
+        template <typename TARGET>
+            void add_case(std::function< void(std::mt19937 & i_random, TARGET & i_target) > i_function)
+        {
+            m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
+                new detail::TargetedFunctionalityTest<TARGET>(i_function)));
+        }
 
         void add_performance_test(PerformanceTestGroup i_group)
         {
@@ -46,12 +46,12 @@ namespace testity
 
         TestTree * find(const char * i_path);
 
-    private:		
+    private:
         std::string m_name;
         std::vector< std::unique_ptr<detail::IFunctionalityTest> > m_functionality_tests;
         std::vector< PerformanceTestGroup > m_performance_tests;
         std::vector< TestTree > m_children;
-    };   
+    };
 
 } // namespace testity
 

@@ -29,28 +29,28 @@ namespace testity
         }
     }
 
-	void TestTree::add_case(std::function< void(std::mt19937 & i_random) > i_function)
-	{
-		m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
-			new detail::NoTargetFunctionalityTest(i_function)));
-	}
+    void TestTree::add_case(std::function< void(std::mt19937 & i_random) > i_function)
+    {
+        m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
+            new detail::NoTargetFunctionalityTest(i_function)));
+    }
 
-	void TestTree::add_child(TestTree i_child)
-	{
-		if (find(i_child.name().c_str()) != nullptr)
-		{
-			throw std::invalid_argument("duplicate child in TestTree");
-		}
+    void TestTree::add_child(TestTree i_child)
+    {
+        if (find(i_child.name().c_str()) != nullptr)
+        {
+            throw std::invalid_argument("duplicate child in TestTree");
+        }
 
-		m_children.push_back(std::move(i_child));
-	}
+        m_children.push_back(std::move(i_child));
+    }
 
     TestTree & TestTree::operator [] (const char * i_path)
     {
         using namespace std;
 
         auto node = this;
-		detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
+        detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
                 [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length) == 0; });
@@ -74,7 +74,7 @@ namespace testity
         using namespace std;
 
         auto node = this;
-		detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
+        detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
 
             if (node != nullptr)
             {
@@ -121,6 +121,6 @@ namespace testity
         return node;
     }
 
- 
+
 
 } // namespace testity

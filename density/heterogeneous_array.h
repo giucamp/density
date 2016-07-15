@@ -9,13 +9,13 @@
 
 namespace density
 {
-    /** Class template that implements an heterogeneous sequence container optimized to be compact in both heap memory and 
-			inplace storage.
+    /** Class template that implements an heterogeneous sequence container optimized to be compact in both heap memory and
+            inplace storage.
 
-	       @tparam ELEMENT Base type of the elements of the array. The array enforces the compile-time constraint that the
-				type of each element is covariant to ELEMENT. If ELEMENT is void, elements of any complete type can be added
-				to the container. In this case, the methods of heterogeneous_array (and its iterators) that returns a pointer 
-				to an element will return a <em>void *</em> to a complete object, while the methods that returns a reference to
+           @tparam ELEMENT Base type of the elements of the array. The array enforces the compile-time constraint that the
+                type of each element is covariant to ELEMENT. If ELEMENT is void, elements of any complete type can be added
+                to the container. In this case, the methods of heterogeneous_array (and its iterators) that returns a pointer
+                to an element will return a <em>void *</em> to a complete object, while the methods that returns a reference to
                 an element will return <em>void</em>. Use iterators and pointer semantic to write generic code
                 that works with any heterogeneous_array (that is, use heterogeneous_array::begin instead of heterogeneous_array::front). \n
                 If ELEMENT decays to void but it is not a plain void, a compile time error is issued.
@@ -23,8 +23,8 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::vector) instead of std::heterogeneous_array is a better choice. \n
                 If ELEMENT is not void, it must be noexcept move constructible.\n The default is void.
-            @tparam UNTYPED_ALLOCATOR Allocator to be used by the container. This type must model the \ref UntypedAllocator_concept 
-				"UntypedAllocator" concept. \n The default is void_allocator.
+            @tparam UNTYPED_ALLOCATOR Allocator to be used by the container. This type must model the \ref UntypedAllocator_concept
+                "UntypedAllocator" concept. \n The default is void_allocator.
             @tparam RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must model the \ref RuntimeType_concept "RuntimeType" concept. \n The default is runtime_type.
 
@@ -37,11 +37,11 @@ namespace density
         any iterator.
         The sizeof(heterogeneous_array) is the same of a pointer, provided that the template argument UNTYPED_ALLOCATOR is an empty class
         and the compiler supports the empty base class optimization. An empty heterogeneous_array does not own a dynamic memory block.
-        
-		\n\b Thread safeness: None. The user is responsible to avoid race conditions.
+
+        \n\b Thread safeness: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of heterogeneous_array is noexcept or provides the strong exception guarantee.
 
-		heterogeneous_array provides only forward iteration. Only the first element is accessible in constant time (with
+        heterogeneous_array provides only forward iteration. Only the first element is accessible in constant time (with
         the functions heterogeneous_array::front or heterogeneous_array::begin). The iterator provides access to both the ELEMENT (with
         the function element) and the RUNTIME_TYPE (with the function type).
         Limitations: when an element of COMPETE_ELEMENT is pushed to the heterogeneous_array, the current implementation needs
@@ -70,49 +70,49 @@ namespace density
         class iterator;
         class const_iterator;
 
-		/** Default constructor. The constructed array is empty. \n
-			No allocation is performed. */
-		heterogeneous_array() noexcept = default;
+        /** Default constructor. The constructed array is empty. \n
+            No allocation is performed. */
+        heterogeneous_array() noexcept = default;
 
-		/** Move constructor. The source array is left empty after the call. \n
-			The allocator of the destination is move-constructed from the source. \n
-			No allocation is performed. \n
-			\n\b Requires: the move-constructor of the allocator must be noexcept. */
-		heterogeneous_array(heterogeneous_array && i_source) noexcept = default;
+        /** Move constructor. The source array is left empty after the call. \n
+            The allocator of the destination is move-constructed from the source. \n
+            No allocation is performed. \n
+            \n\b Requires: the move-constructor of the allocator must be noexcept. */
+        heterogeneous_array(heterogeneous_array && i_source) noexcept = default;
 
-		/** Copy constructor. The source array is left unchanged after the call.
-			The allocator of the destination is copy-constructed from the source. \n*/
-		heterogeneous_array(const heterogeneous_array & i_source) = default;
+        /** Copy constructor. The source array is left unchanged after the call.
+            The allocator of the destination is copy-constructed from the source. \n*/
+        heterogeneous_array(const heterogeneous_array & i_source) = default;
 
-		/** Constructor that copy-construct the allocator from the parameter. */
-		heterogeneous_array(const UNTYPED_ALLOCATOR & i_allocator)
-			: m_impl(i_allocator) { }
+        /** Constructor that copy-construct the allocator from the parameter. */
+        heterogeneous_array(const UNTYPED_ALLOCATOR & i_allocator)
+            : m_impl(i_allocator) { }
 
-		/** Move constructor that copy-constructs the allocator from the parameter. \n
-				The source array is left empty after the call. */
-		heterogeneous_array(heterogeneous_array && i_source, const UNTYPED_ALLOCATOR & i_allocator)
-			: m_impl(std::move(i_source.m_impl), i_allocator) { }
+        /** Move constructor that copy-constructs the allocator from the parameter. \n
+                The source array is left empty after the call. */
+        heterogeneous_array(heterogeneous_array && i_source, const UNTYPED_ALLOCATOR & i_allocator)
+            : m_impl(std::move(i_source.m_impl), i_allocator) { }
 
-		/** Copy constructor that copy-constructs the allocator from the parameter. */
-		heterogeneous_array(const heterogeneous_array & i_source, const UNTYPED_ALLOCATOR & i_allocator)
-			: m_impl(i_source.m_impl, i_allocator) { }
+        /** Copy constructor that copy-constructs the allocator from the parameter. */
+        heterogeneous_array(const heterogeneous_array & i_source, const UNTYPED_ALLOCATOR & i_allocator)
+            : m_impl(i_source.m_impl, i_allocator) { }
 
-		/** Copy assignment. */
-		heterogeneous_array & operator = (const heterogeneous_array &) = default;
+        /** Copy assignment. */
+        heterogeneous_array & operator = (const heterogeneous_array &) = default;
 
-		/** Move assignment. The source array is left empty after the call. */
-		heterogeneous_array & operator = (heterogeneous_array &&) noexcept = default;
+        /** Move assignment. The source array is left empty after the call. */
+        heterogeneous_array & operator = (heterogeneous_array &&) noexcept = default;
 
-		/** Destructor. \n
-			\n\b Requires: the destructor of the allocator must be noexcept.*/
-		~heterogeneous_array() = default;
-        
-		/** Creates a heterogeneous_array containing all the elements specified in the parameter list.
+        /** Destructor. \n
+            \n\b Requires: the destructor of the allocator must be noexcept.*/
+        ~heterogeneous_array() = default;
+
+        /** Creates a heterogeneous_array containing all the elements specified in the parameter list.
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_elements elements to add to the list.
                 @return the new heterogeneous_array
-            
-			Example:
+
+            Example:
                 \snippet misc_samples.cpp heterogeneous_array example 1 */
         template <typename... TYPES>
             inline static heterogeneous_array make(TYPES &&... i_elements)
@@ -127,8 +127,8 @@ namespace density
             For each object of the parameter pack, an element is added to the list by copy-construction or move-construction.
                 @param i_elements elements to add to the list.
                 @return the new heterogeneous_array
-            
-			Example:
+
+            Example:
                 \snippet misc_samples.cpp heterogeneous_array example 1 */
         template <typename... TYPES>
             inline static heterogeneous_array make_with_alloc(const UNTYPED_ALLOCATOR & i_allocator, TYPES &&... i_elements)
@@ -139,19 +139,19 @@ namespace density
             return std::move(new_list);
         }
 
-		/** Returns the number of elements in the array. */
+        /** Returns the number of elements in the array. */
         size_t size() const noexcept
         {
             return m_impl.size();
         }
 
-		/** Returns whether the array has no elements. */
+        /** Returns whether the array has no elements. */
         bool empty() const noexcept
         {
             return m_impl.empty();
         }
 
-		/** Non-const iterator. Random access is not supported. */
+        /** Non-const iterator. Random access is not supported. */
         class iterator final
         {
         public:
@@ -212,7 +212,7 @@ namespace density
             IteratorImpl m_impl;
         }; // class iterator
 
-		/** Const iterator. Random access is not supported. */
+        /** Const iterator. Random access is not supported. */
         class const_iterator final
         {
         public:
@@ -475,10 +475,10 @@ namespace density
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
             \n\b Complexity: linear. */
-		void clear() noexcept
-		{
-			m_impl.clear();
-		}
+        void clear() noexcept
+        {
+            m_impl.clear();
+        }
 
     private:
 
@@ -545,5 +545,5 @@ namespace density
     private:
         detail::ArrayImpl<UNTYPED_ALLOCATOR, RUNTIME_TYPE> m_impl;
     }; // class heterogeneous_array;
-	
+
 } // namespace density

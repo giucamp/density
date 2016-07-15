@@ -250,7 +250,7 @@ namespace density
             insert_back_impl(i_type,
                 typename detail::QueueImpl<RUNTIME_TYPE>::move_construct(i_source));
         }
-		
+
         /** Deletes the first element of the queue (the oldest one).
             \pre The queue must be non-empty (otherwise the behavior is undefined).
 
