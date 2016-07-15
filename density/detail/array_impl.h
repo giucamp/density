@@ -372,14 +372,16 @@ namespace density
                     for (auto it = begin(); it != end_it; ++it)
                     {
                         auto control_block = it.control();
-                        dense_size += control_block->size();
+						const auto alignment_mask = control_block->alignment() - 1;
+						dense_size = (dense_size + alignment_mask) & ~alignment_mask;
+						dense_size += control_block->size();
                         dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
                         control_block->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(it.element()));
                         control_block->ControlBlock::~ControlBlock();
                     }
 
                     Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
-                    static_cast<VOID_ALLOCATOR*>(this)->deallocate(header, dense_size, dense_alignment, sizeof(Header));
+                    get_allocator().deallocate(header, dense_size, dense_alignment, sizeof(Header));
                 }
             }
 
@@ -481,7 +483,8 @@ namespace density
             {
                 DENSITY_ASSERT(i_new_type.size() > 0 && is_power_of_2(i_new_type.alignment())); // the size must be non-zero, the alignment must be a non-zero power of 2
 
-                size_t buffer_size = (size() + i_new_element_count) * sizeof(ControlBlock);
+				auto const current_size = size();
+                size_t buffer_size = (current_size + i_new_element_count) * sizeof(ControlBlock);
                 size_t buffer_alignment = detail::size_max(std::alignment_of<ControlBlock>::value, i_new_type.alignment());
                 auto const end_it = end();
                 for (auto it = begin(); ; ++it)

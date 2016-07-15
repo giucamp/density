@@ -30,9 +30,11 @@ namespace TestClassGen
                 }
             }
 
+            var str_code = code.ToString().Replace("\r\n", "\r\n\t");
+
             //BuilClass(code, test, Kind.Supported, Kind.Supported, Kind.Supported);
 
-            textBox1.Text = code.ToString();
+            textBox1.Text = str_code;
             textBox2.Text = test.ToString();
         }
 
@@ -72,7 +74,7 @@ namespace TestClassGen
                 KindToStr(i_defaultConstructor) + ", " +
                 KindToStr(i_copy) + ", " +
                 KindToStr(i_move) +
-                ", SIZE, ALIGNMENT> : private detail::RandomStorage<SIZE>");
+                ", SIZE, ALIGNMENT> : public detail::RandomStorage<SIZE>");
             i_out.AppendLine("{");
             i_out.AppendLine("public:");
 
@@ -93,7 +95,7 @@ namespace TestClassGen
 
             i_out.AppendLine("");
             i_out.AppendLine("\t// constructor with int seed");
-            i_out.AppendLine("\tTestClass(int i_seed) : RandomStorage<SIZE>((exception_check_point(), i_seed)) { }");
+            i_out.AppendLine("\tTestClass(int i_seed) : detail::RandomStorage<SIZE>((exception_check_point(), i_seed)) { }");
 
             i_out.AppendLine("");
             i_out.AppendLine("\t// copy");
@@ -105,9 +107,9 @@ namespace TestClassGen
                     break;
                 case Kind.Supported:
                     i_out.AppendLine("\tTestClass(const TestClass & i_source)");
-                    i_out.AppendLine("\t\t: RandomStorage<SIZE>((exception_check_point(), i_source)) { }");
+                    i_out.AppendLine("\t\t: detail::RandomStorage<SIZE>((exception_check_point(), i_source)) { }");
                     i_out.AppendLine("\tconst TestClass & operator = (const TestClass & i_source)");
-                    i_out.AppendLine("\t\t{ exception_check_point(); RandomStorage<SIZE>::operator = (i_source); return *this; }");
+                    i_out.AppendLine("\t\t{ exception_check_point(); detail::RandomStorage<SIZE>::operator = (i_source); return *this; }");
                     break;
 
                 case Kind.SupportedNoExcept:
@@ -126,9 +128,9 @@ namespace TestClassGen
                     break;
                 case Kind.Supported:
                     i_out.AppendLine("\tTestClass(TestClass && i_source)");
-                    i_out.AppendLine("\t\t: RandomStorage<SIZE>((exception_check_point(), std::move(i_source))) { exception_check_point(); }");
+                    i_out.AppendLine("\t\t: detail::RandomStorage<SIZE>((exception_check_point(), std::move(i_source))) { exception_check_point(); }");
                     i_out.AppendLine("\tconst TestClass & operator = (TestClass && i_source)");
-                    i_out.AppendLine("\t\t{ exception_check_point(); RandomStorage<SIZE>::operator = (std::move(i_source)); return *this; }");
+                    i_out.AppendLine("\t\t{ exception_check_point(); detail::RandomStorage<SIZE>::operator = (std::move(i_source)); return *this; }");
                     break;
 
                 case Kind.SupportedNoExcept:
@@ -139,11 +141,11 @@ namespace TestClassGen
 
             i_out.AppendLine("");
             i_out.AppendLine("\t// comparison");
-            i_out.AppendLine("\tbool operator == (const TestClass && i_other) const");
-            i_out.AppendLine("\t\t{ return RandomStorage<SIZE>::operator == (i_other); }");
+            i_out.AppendLine("\tbool operator == (const TestClass & i_other) const");
+            i_out.AppendLine("\t\t{ return detail::RandomStorage<SIZE>::operator == (i_other); }");
 
-            i_out.AppendLine("\tbool operator != (const TestClass && i_other) const");
-            i_out.AppendLine("\t\t{ return RandomStorage<SIZE>::operator != (i_other); }");
+            i_out.AppendLine("\tbool operator != (const TestClass & i_other) const");
+            i_out.AppendLine("\t\t{ return detail::RandomStorage<SIZE>::operator != (i_other); }");
 
             i_out.AppendLine("};");
             i_out.AppendLine("");

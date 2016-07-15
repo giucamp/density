@@ -164,6 +164,38 @@ namespace misc_samples
 		}
 
 
+
+		{
+			//! [heterogeneous_array example 3]
+			using namespace density;
+			using namespace std;
+			auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
+			list.push_front(wstring(L"ABC"));
+			for (auto it = list.begin(); it != list.end(); it++)
+			{
+				cout << it.complete_type().type_info().name() << endl;
+			}
+			//! [heterogeneous_array example 3]
+		}
+
+		{
+			//! [heterogeneous_array example 4]
+			using namespace density;
+			using namespace std;
+
+			struct Widget { virtual void draw() { /* ... */ } };
+			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
+			struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
+
+			auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
+			for (auto & widget : widgets)
+			{
+				widget.draw();
+			}
+
+			widgets.push_back(TextWidget());
+			//! [heterogeneous_array example 4]
+		}
     }
 } // namespace misc_samples
 

@@ -24,7 +24,7 @@ namespace testity
 		void add_child(TestTree i_child);
 		
 		template <typename TARGET>
-			void add_case(std::function< void(std::mt19937 & i_random, TARGET & i_target) > i_function )
+			void add_case(std::function< void(std::mt19937 & i_random, TARGET & i_target) > i_function)
 		{
 			m_functionality_tests.emplace_back(std::unique_ptr<detail::IFunctionalityTest>(
 				new detail::TargetedFunctionalityTest<TARGET>(i_function)));

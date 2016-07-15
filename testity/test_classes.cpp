@@ -14,7 +14,7 @@ namespace testity
 			return s_rand;
 		}
 
-		void random_storage_init(unsigned char * i_dest, size_t i_size)
+		void random_storage_init(unsigned char * i_dest, size_t i_size) noexcept
 		{
 			auto & rand = random_storage_random();
 			for (size_t i = 0; i < i_size; i++)
@@ -23,7 +23,7 @@ namespace testity
 			}
 		}
 
-		void random_storage_init(unsigned char * i_dest, size_t i_size, int i_seed)
+		void random_storage_init(unsigned char * i_dest, size_t i_size, int i_seed) noexcept
 		{
 			auto seed = i_seed;
 			auto & rand = random_storage_random();
@@ -35,22 +35,22 @@ namespace testity
 			}
 		}
 
-		void random_storage_mark_moved_from(unsigned char * i_dest, size_t i_size)
+		void random_storage_mark_moved_from(unsigned char * i_dest, size_t i_size) noexcept
 		{
 			std::memset(i_dest, 0xAD, i_size );
 		}
 
-		void random_storage_mark_deleted(unsigned char * i_dest, size_t i_size)
+		void random_storage_mark_deleted(unsigned char * i_dest, size_t i_size) noexcept
 		{
 			std::memset(i_dest, 0xDE, i_size);
 		}
 
-		bool random_storage_equals(const unsigned char * i_first, const unsigned char * i_second, size_t i_size)
+		bool random_storage_equals(const unsigned char * i_first, const unsigned char * i_second, size_t i_size) noexcept
 		{
 			return std::memcmp(i_first, i_second, i_size) == 0;
 		}
 
-		size_t random_storage_hash(const unsigned char * i_dest, size_t i_size)
+		size_t random_storage_hash(const unsigned char * i_dest, size_t i_size) noexcept
 		{
 			size_t result = 0;
 			for (size_t i = 0; i < i_size; i++)
