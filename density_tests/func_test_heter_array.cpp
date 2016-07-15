@@ -36,7 +36,7 @@ namespace density_tests
 
 
     template <typename TYPE>
-        void add_typed_heterogeneous_array_cases(TestTree & i_dest)
+        void add_common_heterogeneous_array_cases(TestTree & i_dest)
     {
         using TestTarget = HeterogeneousArrayTest<TYPE>;
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
@@ -314,12 +314,33 @@ namespace density_tests
         }));
     }
 
+    template <typename TYPE>
+        void add_typed_heterogeneous_array_cases(TestTree & i_dest)
+    {
+        using TestTarget = HeterogeneousArrayTest<TYPE>;
+        using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
+
+                            /*---- push_back ----*/
+
+        // push_back(1)
+        i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
+            i_target.m_array.push_back(TYPE(1));
+            i_target.m_shadow.push_back(TYPE(1));
+            i_target.compare();
+        }));
+    }
+
     void add_heterogeneous_array_cases(TestTree & i_dest)
     {
         auto & void_test = i_dest["void"];
-        add_typed_heterogeneous_array_cases<void>(void_test);
-
+        add_common_heterogeneous_array_cases<void>(void_test);
         add_void_heterogeneous_array_cases(void_test);
+
+        using BaseElement = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t), Polymorphic::Yes >;
+        auto & typed_test = i_dest["typed"];
+        add_common_heterogeneous_array_cases<BaseElement>(typed_test);
+        add_typed_heterogeneous_array_cases<BaseElement>(typed_test);
     }
 
 } // namespace density_tests

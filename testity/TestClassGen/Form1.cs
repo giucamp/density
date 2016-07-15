@@ -1,4 +1,4 @@
-
+﻿
 //   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
@@ -31,7 +31,8 @@ namespace TestClassGen
                 {
                     for (int i3 = 0; i3 < 3; i3++)
                     {
-                        BuilClass(code, test, KindFromInt(i1), KindFromInt(i2), KindFromInt(i3));
+                        BuilClass(code, test, KindFromInt(i1), KindFromInt(i2), KindFromInt(i3), false);
+                        BuilClass(code, test, KindFromInt(i1), KindFromInt(i2), KindFromInt(i3), true);
                     }
                 }
             }
@@ -67,20 +68,22 @@ namespace TestClassGen
             return "FeatureKind::" + i_kind.ToString();
         }
 
-        private void BuildTest(StringBuilder i_test, string i_className, string i_trait, bool i_value)
+        private void BuildTest(StringBuilder i_test, string i_trait, bool i_value)
         {
-            i_test.AppendLine("static_assert( std::" + i_trait + "<" + i_className + ">::value == " + i_value.ToString().ToLowerInvariant() + ", \""
+            i_test.AppendLine("static_assert( std::" + i_trait + "<ThisType>::value == " + i_value.ToString().ToLowerInvariant() + ", \""
                 + i_trait + " should be " + i_value.ToString().ToLowerInvariant() + "\");");
         }
 
-        private void BuilClass(StringBuilder i_out, StringBuilder i_test, Kind i_defaultConstructor, Kind i_copy, Kind i_move)
+        private void BuilClass(StringBuilder i_out, StringBuilder i_test, Kind i_defaultConstructor, Kind i_copy, Kind i_move, bool i_polymorphic)
         {
             i_out.AppendLine("template <size_t SIZE, size_t ALIGNMENT>");
             i_out.AppendLine("\tclass alignas(ALIGNMENT) TestClass<" +
                 KindToStr(i_defaultConstructor) + ", " +
                 KindToStr(i_copy) + ", " +
                 KindToStr(i_move) +
-                ", SIZE, ALIGNMENT> : public detail::RandomStorage<SIZE>");
+                ", SIZE, ALIGNMENT, " +
+                (i_polymorphic ? "Polymorphic::Yes " : "Polymorphic::No ") +
+                "> : public detail::RandomStorage<SIZE>");
             i_out.AppendLine("{");
             i_out.AppendLine("public:");
 
@@ -145,6 +148,13 @@ namespace TestClassGen
                     break;
             }
 
+            if(i_polymorphic)
+            {
+                i_out.AppendLine("");
+                i_out.AppendLine("\t// virtual destructor");
+                i_out.AppendLine("\tvirtual ~TestClass() noexcept = default;");
+            }
+
             i_out.AppendLine("");
             i_out.AppendLine("\t// comparison");
             i_out.AppendLine("\tbool operator == (const TestClass & i_other) const");
@@ -158,21 +168,27 @@ namespace TestClassGen
 
 
             string className = "TestClass<" + KindToStr(i_defaultConstructor) + ", " +
-                KindToStr(i_copy) + ", " + KindToStr(i_move) + ">";
+                KindToStr(i_copy) + ", " + KindToStr(i_move) + ", sizeof(std::max_align_t), alignof(std::max_align_t), "
+                + (i_polymorphic ? "Polymorphic::Yes" : "Polymorphic::No") + " >";
             i_test.AppendLine("");
             i_test.AppendLine("// test " + className);
-            BuildTest(i_test, className, "is_default_constructible", i_defaultConstructor != Kind.Deleted);
-            BuildTest(i_test, className, "is_nothrow_default_constructible", i_defaultConstructor == Kind.SupportedNoExcept);
+            i_test.AppendLine("{ using ThisType = " + className + ";");
+            BuildTest(i_test, "is_default_constructible", i_defaultConstructor != Kind.Deleted);
+            BuildTest(i_test, "is_nothrow_default_constructible", i_defaultConstructor == Kind.SupportedNoExcept);
 
-            BuildTest(i_test, className, "is_copy_constructible", i_copy != Kind.Deleted);
-            BuildTest(i_test, className, "is_nothrow_copy_constructible", i_copy == Kind.SupportedNoExcept);
-            BuildTest(i_test, className, "is_copy_assignable", i_copy != Kind.Deleted);
-            BuildTest(i_test, className, "is_nothrow_copy_assignable", i_copy == Kind.SupportedNoExcept);
+            BuildTest(i_test, "is_copy_constructible", i_copy != Kind.Deleted);
+            BuildTest(i_test, "is_nothrow_copy_constructible", i_copy == Kind.SupportedNoExcept);
+            BuildTest(i_test, "is_copy_assignable", i_copy != Kind.Deleted);
+            BuildTest(i_test, "is_nothrow_copy_assignable", i_copy == Kind.SupportedNoExcept);
 
-            BuildTest(i_test, className, "is_move_constructible", i_move != Kind.Deleted);
-            BuildTest(i_test, className, "is_nothrow_move_constructible", i_move == Kind.SupportedNoExcept);
-            BuildTest(i_test, className, "is_move_assignable", i_move != Kind.Deleted);
-            BuildTest(i_test, className, "is_nothrow_move_assignable", i_move == Kind.SupportedNoExcept);
+            BuildTest(i_test, "is_move_constructible", i_move != Kind.Deleted);
+            BuildTest(i_test, "is_nothrow_move_constructible", i_move == Kind.SupportedNoExcept);
+            BuildTest(i_test, "is_move_assignable", i_move != Kind.Deleted);
+            BuildTest(i_test, "is_nothrow_move_assignable", i_move == Kind.SupportedNoExcept);
+
+            BuildTest(i_test, "is_polymorphic", i_polymorphic);
+
+            i_test.AppendLine("(void)( ThisType(1) == ThisType(1) && ThisType(1) != ThisType(2) ); }");
         }
     }
 }
