@@ -368,7 +368,7 @@ namespace density
                 {
                     size_t dense_alignment = std::alignment_of<ControlBlock>::value;
                     const auto end_it = end();
-                    size_t dense_size = get_size_not_empty() * sizeof(ControlBlock) + sizeof(Header);
+                    size_t dense_size = get_size_not_empty() * sizeof(ControlBlock);
                     for (auto it = begin(); it != end_it; ++it)
                     {
                         auto control_block = it.control();
@@ -381,7 +381,7 @@ namespace density
                     }
 
                     Header * const header = reinterpret_cast<Header*>(m_control_blocks) - 1;
-                    get_allocator().deallocate(header, dense_size, dense_alignment, sizeof(Header));
+                    get_allocator().deallocate(header, dense_size + sizeof(Header), dense_alignment, sizeof(Header));
                 }
             }
 

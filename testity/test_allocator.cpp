@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <iostream>
+#include <atomic>
 
 namespace testity
 {
@@ -25,7 +26,7 @@ namespace testity
     {
         std::mutex m_mutex;
         std::unordered_map<void*, AllocationEntry> m_allocations;
-        size_t m_last_progressive = 0;
+        static std::atomic<size_t> s_last_progressive;
 
         ~Data()
         {
@@ -37,6 +38,8 @@ namespace testity
             }
         }
     };
+
+	std::atomic<size_t> SharedBlockRegistry::Data::s_last_progressive(0);
 
     SharedBlockRegistry::SharedBlockRegistry() : m_data(std::make_shared<Data>()) {}
 
@@ -70,7 +73,7 @@ namespace testity
             AllocationEntry entry;
             entry.m_size = i_size;
             entry.m_alignment = i_alignment;
-            entry.m_progressive = data.m_last_progressive++;
+            entry.m_progressive = Data::s_last_progressive++;
             entry.m_alignment_offset = i_alignment_offset;
             // TESTITY_ASSERT(entry.m_progressive != ...);
 

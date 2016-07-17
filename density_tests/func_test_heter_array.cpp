@@ -314,20 +314,236 @@ namespace density_tests
         }));
     }
 
-    template <typename TYPE>
+    template <typename BASE_TYPE, typename MI_TYPE, typename VMI_TYPE>
         void add_typed_heterogeneous_array_cases(TestTree & i_dest)
     {
-        using TestTarget = HeterogeneousArrayTest<TYPE>;
+        using TestTarget = HeterogeneousArrayTest<BASE_TYPE>;
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
 
-                            /*---- push_back ----*/
+        static_assert(std::is_convertible<MI_TYPE*, BASE_TYPE*>::value,
+            "MI_TYPE must be covariant to BASE_TYPE");
+        static_assert(std::is_convertible<VMI_TYPE*, BASE_TYPE*>::value,
+            "VMI_TYPE must be covariant to BASE_TYPE");
 
-        // push_back(1)
-        i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_back(TYPE(1));
-            i_target.m_shadow.push_back(TYPE(1));
+                    /*---- push_back ----*/
+
+        // push_back(BASE_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_back(BASE_TYPE(seed));
+            i_target.m_shadow.push_back(BASE_TYPE(seed));
             i_target.compare();
         }));
+
+        // push_back(MI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_back(MI_TYPE(seed));
+            i_target.m_shadow.push_back(MI_TYPE(seed));
+            i_target.compare();
+        }));
+
+        // push_back(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_back(VMI_TYPE(seed));
+            i_target.m_shadow.push_back(VMI_TYPE(seed));
+            i_target.compare();
+        }));
+
+        // push_back(BASE_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const BASE_TYPE element(seed);
+            i_target.m_array.push_back(element);
+            i_target.m_shadow.push_back(element);
+            i_target.compare();
+        }));
+
+        // push_back(MI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const MI_TYPE element(seed);
+            i_target.m_array.push_back(element);
+            i_target.m_shadow.push_back(element);
+            i_target.compare();
+        }));
+
+        // push_back(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const VMI_TYPE element(seed);
+            i_target.m_array.push_back(element);
+            i_target.m_shadow.push_back(element);
+            i_target.compare();
+        }));
+
+                    /*---- push_front ----*/
+
+        // push_front(BASE_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_front(BASE_TYPE(seed));
+            i_target.m_shadow.push_front(BASE_TYPE(seed));
+            i_target.compare();
+        }));
+
+        // push_front(MI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_front(MI_TYPE(seed));
+            i_target.m_shadow.push_front(MI_TYPE(seed));
+            i_target.compare();
+        }));
+
+        // push_front(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.push_front(VMI_TYPE(seed));
+            i_target.m_shadow.push_front(VMI_TYPE(seed));
+            i_target.compare();
+        }));
+
+        // push_front(BASE_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const BASE_TYPE element(seed);
+            i_target.m_array.push_front(element);
+            i_target.m_shadow.push_front(element);
+            i_target.compare();
+        }));
+
+        // push_front(MI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const MI_TYPE element(seed);
+            i_target.m_array.push_front(element);
+            i_target.m_shadow.push_front(element);
+            i_target.compare();
+        }));
+
+        // push_front(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const VMI_TYPE element(seed);
+            i_target.m_array.push_front(element);
+            i_target.m_shadow.push_front(element);
+            i_target.compare();
+        }));
+
+                    /*---- insert ----*/
+
+        // insert(BASE_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), BASE_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index, BASE_TYPE(seed));
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, BASE_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index_c, BASE_TYPE(seed), count);
+            i_target.compare();
+        }));
+
+        // insert(MI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), MI_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index, MI_TYPE(seed));
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, MI_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index_c, MI_TYPE(seed), count);
+            i_target.compare();
+        }));
+
+        // insert(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), VMI_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index, VMI_TYPE(seed));
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, VMI_TYPE(seed));
+            i_target.m_shadow.insert_at(at_index_c, VMI_TYPE(seed), count);
+            i_target.compare();
+        }));
+
+        // insert(BASE_TYPE) as lvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const BASE_TYPE element(seed);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+            i_target.m_shadow.insert_at(at_index, element);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+            i_target.m_shadow.insert_at(at_index_c, element, count);
+            i_target.compare();
+        }));
+
+        // insert(MI_TYPE) as lvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const MI_TYPE element(seed);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+            i_target.m_shadow.insert_at(at_index, element);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+            i_target.m_shadow.insert_at(at_index_c, element, count);
+            i_target.compare();
+        }));
+
+        // insert(VMI_TYPE) as rvalue
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            // test an insert of a single element and an insert of multiple elements
+            const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
+            const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+            const VMI_TYPE element(seed);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+            i_target.m_shadow.insert_at(at_index, element);
+            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+            i_target.m_shadow.insert_at(at_index_c, element, count);
+            i_target.compare();
+        }));
+
+                    /*---- erase ----*/
+
+        // erase(at)
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            if (!i_target.m_shadow.empty())
+            {
+                const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
+                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index));
+                i_target.m_shadow.erase_at(at_index);
+            }
+        }));
+
+        // erase(at, n)
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            if (!i_target.m_shadow.empty())
+            {
+                const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
+                const auto count = std::uniform_int_distribution<size_t>(at_index, i_target.m_shadow.size())(i_random) - at_index;
+                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index),
+                    std::next(i_target.m_array.begin(), (at_index + count)) );
+                i_target.m_shadow.erase_at(at_index, count);
+            }
+        }));
+
     }
 
     void add_heterogeneous_array_cases(TestTree & i_dest)
@@ -338,9 +554,16 @@ namespace density_tests
 
         using BaseElement = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
             sizeof(std::max_align_t) * 2, alignof(std::max_align_t), Polymorphic::Yes >;
+
+        using MI_Element = MultipleInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
+
+        using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
+
         auto & typed_test = i_dest["typed"];
         add_common_heterogeneous_array_cases<BaseElement>(typed_test);
-        add_typed_heterogeneous_array_cases<BaseElement>(typed_test);
+        add_typed_heterogeneous_array_cases<BaseElement, MI_Element, MVI_Element>(typed_test);
     }
 
 } // namespace density_tests

@@ -1609,93 +1609,105 @@ namespace testity
 
     namespace detail
     {
-        template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
-            class TestBase1 : public TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
+        template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t /*SIZE*/ = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
+            class TestBase1 : public TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, sizeof(std::max_align_t) * 4, ALIGNMENT, Polymorphic::Yes>
         {
         private:
             std::string m_str1 = "abc";
+
+            using Base = TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, sizeof(std::max_align_t) * 4, ALIGNMENT, Polymorphic::Yes>;
 
         public:
             TestBase1() = default;
 
-            TestBase1(int i_seed) : TestClass(i_seed) {}
+            TestBase1(int i_seed) : Base(i_seed) {}
 
             // comparison
             bool operator == (const TestBase1 & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other);
+                return Base::operator == (i_other);
             }
             bool operator != (const TestBase1 & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other);
+                return Base::operator != (i_other);
             }
         };
 
         template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
-            class TestBase2 : public TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
+            class TestBase2 : public TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>
         {
         private:
             int m_int = 42;
             std::string m_str2 = "abc";
+
+            using Base = TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>;
 
         public:
             TestBase2() = default;
 
-            TestBase2(int i_seed) : TestClass(i_seed) {}
+            TestBase2(int i_seed) : Base(i_seed ^ 3231) {}
 
             // comparison
             bool operator == (const TestBase2 & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other);
+                return Base::operator == (i_other);
             }
             bool operator != (const TestBase2 & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other);
+                return Base::operator != (i_other);
             }
         };
 
         template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
-            class TestBase1_VirtualBase : public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
+            class TestBase1_VirtualBase : public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>
         {
         private:
             std::string m_str1 = "abc";
 
+            using Base = TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>;
+
         public:
             TestBase1_VirtualBase() = default;
 
-            TestBase1_VirtualBase(int i_seed) : TestClass(i_seed) {}
+            TestBase1_VirtualBase(int i_seed) : Base(i_seed ^ 223) {}
+
+            virtual ~TestBase1_VirtualBase() = default;
 
             // comparison
             bool operator == (const TestBase1_VirtualBase & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other);
+                return Base::operator == (i_other);
             }
             bool operator != (const TestBase1_VirtualBase & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other);
+                return Base::operator != (i_other);
             }
         };
 
         template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
-            class TestBase2_VirtualBase : public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
+            class TestBase2_VirtualBase : public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>
         {
         private:
             int m_int = 42;
             std::string m_str2 = "abc";
 
+            using Base = TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>;
+
         public:
             TestBase2_VirtualBase() = default;
 
-            TestBase2_VirtualBase(int i_seed) : TestClass(i_seed) {}
+            TestBase2_VirtualBase(int i_seed) : Base(i_seed) {}
+
+            virtual ~TestBase2_VirtualBase() = default;
 
             // comparison
             bool operator == (const TestBase2_VirtualBase & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other);
+                return Base::operator == (i_other);
             }
             bool operator != (const TestBase2_VirtualBase & i_other) const
             {
-                return TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other);
+                return Base::operator != (i_other);
             }
         };
 
@@ -1703,7 +1715,7 @@ namespace testity
 
     template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
         class MultipleInheriTestClass :
-            public detail::TestBase1<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>,
+            private detail::TestBase1<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>,
             public detail::TestBase2<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
     {
     private:
@@ -1740,41 +1752,39 @@ namespace testity
     template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t) >
         class MultipleVirtualInheriTestClass :
             public virtual detail::TestBase1_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>,
-            public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>,
+            public virtual TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>,
             public virtual detail::TestBase2_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>
     {
     private:
         double m_int2 = 42.0;
         std::string m_str3 = "abc";
 
+        using Base1 = detail::TestBase1_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>;
+        using Base2 = TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, Polymorphic::Yes>;
+        using Base3 = detail::TestBase2_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>;
+
     public:
+
         MultipleVirtualInheriTestClass() = default;
 
-        MultipleVirtualInheriTestClass(int i_seed) :
-            detail::TestBase1_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed),
-            TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed),
-            detail::TestBase2_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed)
-                { }
+        virtual ~MultipleVirtualInheriTestClass() = default;
+
+        MultipleVirtualInheriTestClass(int i_seed)
+            : Base1(i_seed), Base2(i_seed * 7), Base3(i_seed * 11) { }
 
         size_t hash() const noexcept
         {
-            return detail::TestBase1_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::hash()
-                ^ TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::hash()
-                ^ detail::TestBase2_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::hash();
+            return Base1::hash() ^ Base2::hash() ^ Base3::hash();
         }
 
         // comparison
         bool operator == (const MultipleVirtualInheriTestClass & i_other) const
         {
-            return detail::TestBase1<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other)
-                && TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other)
-                && detail::TestBase2<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator == (i_other);
+            return Base1::operator == (i_other) && Base2::operator == (i_other) && Base3::operator == (i_other);
         }
         bool operator != (const MultipleVirtualInheriTestClass & i_other) const
         {
-            return detail::TestBase1_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other)
-                || TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other)
-                || detail::TestBase2_VirtualBase<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::operator != (i_other);
+            return Base1::operator != (i_other) || Base2::operator != (i_other) || Base3::operator != (i_other);
         }
     };
 

@@ -44,8 +44,8 @@ namespace density
         heterogeneous_array provides only forward iteration. Only the first element is accessible in constant time (with
         the functions heterogeneous_array::front or heterogeneous_array::begin). The iterator provides access to both the ELEMENT (with
         the function element) and the RUNTIME_TYPE (with the function type).
-        Limitations: when an element of COMPETE_ELEMENT is pushed to the heterogeneous_array, the current implementation needs
-            sometimes to downcast from ELEMENT to COMPETE_ELEMENT.
+        Limitations: when an element of COMPLETE_ELEMENT is pushed to the heterogeneous_array, the current implementation needs
+            sometimes to downcast from ELEMENT to COMPLETE_ELEMENT.
                 - If no virtual inheritance is involved, static_cast is used
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-

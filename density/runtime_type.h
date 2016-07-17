@@ -482,8 +482,8 @@ namespace density
                 {
                     auto const base_first = static_cast<const BASE*>(i_first_base_object);
                     auto const base_second = static_cast<const BASE*>(i_second_base_object);
-                    auto const complete_first = static_cast<const TYPE*>(base_first);
-                    auto const complete_second = static_cast<const TYPE*>(base_second);
+                    auto const complete_first = detail::down_cast<const TYPE*>(base_first);
+                    auto const complete_second = detail::down_cast<const TYPE*>(base_second);
                     return *complete_first == *complete_second;
                 }
 
@@ -509,8 +509,8 @@ namespace density
                 {
                     auto const base_first = static_cast<const BASE*>(i_first_base_object);
                     auto const base_second = static_cast<const BASE*>(i_second_base_object);
-                    auto const complete_first = static_cast<const TYPE*>(base_first);
-                    auto const complete_second = static_cast<const TYPE*>(base_second);
+                    auto const complete_first = detail::down_cast<const TYPE*>(base_first);
+                    auto const complete_second = detail::down_cast<const TYPE*>(base_second);
                     return *complete_first < *complete_second;
                 }
 
