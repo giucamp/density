@@ -80,17 +80,28 @@ namespace testity
         return static_cast<TestFlags>(static_cast<unsigned>(i_first) | static_cast<unsigned>(i_second));
     }
 
-    Results run_session(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All, const TestConfig & i_config = TestConfig());
+	struct Progression
+	{
+		using Clock = std::chrono::steady_clock;
 
-    Results run_session(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream, const TestConfig & i_config = TestConfig());
+		std::string m_label;
+		Clock::time_point m_start_time;
+		double m_completion_factor;
+		std::chrono::duration<double> m_elapsed_time;
+		std::chrono::duration<double> m_remaining_time_extimate;
+	};
+
+	using ProgressionCallback = std::function<void(const Progression&)>;
+
+    Results run_session(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All, 
+		const TestConfig & i_config = TestConfig(), ProgressionCallback i_progression_callback = ProgressionCallback());
 
     class Session
     {
     public:
-
-        Results run(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All);
-
-        Results run(const TestTree & i_test_tree, TestFlags i_flags, std::ostream & i_progression_out_stream);
+	
+        Results run(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All, 
+			ProgressionCallback i_progression_callback = ProgressionCallback());
 
         void set_config(const TestConfig & i_config) { m_config = i_config; }
 
@@ -104,12 +115,20 @@ namespace testity
 
         void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest);
 
-        Results run_impl(const TestTree & i_test_tree, TestFlags i_flags, std::ostream * i_progression_out_stream);
+		void exception_test(const TestTree & i_test_tree, std::mt19937 & i_random);
+
+		struct CaseInfo
+		{
+			int64_t m_exception_checkpoints = -1;
+		};
+
+		void execute_test_case(detail::IFunctionalityTest * i_case, std::mt19937 & i_random);
 
     private:
         TestConfig m_config;
         std::unordered_map<size_t, void*> m_functionality_targets;
-        std::unordered_map<size_t, const detail::IFunctionalityTest::ITargetType *> m_functionality_targets_types;
+        std::unordered_map<size_t, const detail::ITargetType *> m_functionality_targets_types;
+		std::unordered_map<detail::IFunctionalityTest*, CaseInfo> m_cases_info;
     };
 
 } // namespace testity

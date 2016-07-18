@@ -20,12 +20,23 @@ int main()
 {
     using namespace testity;
     using namespace density_tests;
+	using namespace std;
 
     TestTree test_tree("density");
 
     add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
 
-    run_session(test_tree);
+	string last_label;
+
+	run_session(test_tree, TestFlags::All, TestConfig(), [&last_label](const Progression & i_progression) {
+		if (last_label != i_progression.m_label)
+		{
+			last_label = i_progression.m_label;
+			cout << endl << last_label << endl;
+		}
+		cout << static_cast<int>(i_progression.m_completion_factor * 100. + 0.5) << "%, remaining " <<
+			i_progression.m_remaining_time_extimate.count() << " secs" << endl;
+	});
 
     return 0;
 }

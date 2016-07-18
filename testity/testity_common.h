@@ -38,6 +38,8 @@ namespace testity
     */
     void run_exception_stress_test(std::function<void()> i_test);
 
+	int64_t run_count_exception_check_points(std::function<void()> i_test);
+
     void exception_check_point();
 
 } // namespace testity

@@ -16,7 +16,7 @@ namespace testity
         {
             std::mutex m_mutex;
             size_t m_next_type_key;
-            std::unordered_map<size_t, std::unique_ptr<IFunctionalityTest::ITargetType> > m_registry;
+            std::unordered_map<size_t, std::unique_ptr<ITargetType> > m_registry;
         };
 
         FunctionalityTargetTypeRegistry::FunctionalityTargetTypeRegistry()
@@ -32,7 +32,7 @@ namespace testity
             return s_instance;
         }
 
-        size_t FunctionalityTargetTypeRegistry::add_type(IFunctionalityTest::ITargetType * i_target_type)
+        size_t FunctionalityTargetTypeRegistry::add_type(ITargetType * i_target_type)
         {
             std::lock_guard<std::mutex> lock(m_pimpl->m_mutex);
             auto res = m_pimpl->m_registry.insert(std::make_pair(m_pimpl->m_next_type_key++, i_target_type));
@@ -43,7 +43,7 @@ namespace testity
             return res.first->first;
         }
 
-        IFunctionalityTest::ITargetType & FunctionalityTargetTypeRegistry::get_target_type(size_t i_type_key) const
+        ITargetType & FunctionalityTargetTypeRegistry::get_target_type(size_t i_type_key) const
         {
             std::lock_guard<std::mutex> lock(m_pimpl->m_mutex);
 

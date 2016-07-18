@@ -11,6 +11,11 @@
 
 namespace testity
 {
+	enum class CaseFlags
+	{
+
+	};
+
     class TestTree
     {
     public:

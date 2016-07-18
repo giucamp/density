@@ -15,6 +15,65 @@ namespace testity
 {
     namespace detail
     {
+		class ITargetType
+		{
+		public:
+			virtual void * create_instance() const = 0;
+			virtual void * clone_instance(const void * i_source_instance) const = 0;
+			virtual void destroy_instance(void * i_instance) const noexcept = 0;
+			virtual ~ITargetType() = default;
+		};
+
+		class TargetPtr
+		{
+		public:
+
+			TargetPtr() noexcept 
+				: m_type(nullptr), m_object(nullptr){}
+
+			TargetPtr(const ITargetType * i_type, void * i_object) noexcept 
+				: m_type(i_type), m_object(i_object) {}
+
+			TargetPtr(const TargetPtr &) = delete;
+			TargetPtr & operator = (const TargetPtr &) = delete;
+
+			TargetPtr(TargetPtr && i_source) noexcept
+				: m_type(i_source.m_type), m_object(i_source.m_object)
+			{
+				i_source.m_type = nullptr;
+				i_source.m_object = nullptr;
+			}
+
+			TargetPtr & operator = (TargetPtr && i_source) noexcept
+			{
+				if (m_object != nullptr)
+				{
+					m_type->destroy_instance(m_object);
+				}
+
+				m_type = i_source.m_type;
+				m_object = i_source.m_object;
+
+				i_source.m_type = nullptr;
+				i_source.m_object = nullptr;
+			}
+
+			~TargetPtr()
+			{
+				if (m_object != nullptr)
+				{
+					m_type->destroy_instance(m_object);
+				}
+			}
+
+			const ITargetType * type() const noexcept { return m_type; }
+			void * object() const noexcept { return m_object; }
+
+		private:
+			const ITargetType * m_type;
+			void * m_object;
+		};
+
         class IFunctionalityTest
         {
         public:
@@ -28,14 +87,6 @@ namespace testity
             virtual void execute(std::mt19937 & i_random, void * i_target) = 0;
 
             virtual ~IFunctionalityTest() = default;
-
-            class ITargetType
-            {
-            public:
-                virtual void * create_instance() const = 0;
-                virtual void destroy_instance(void * i_instance) const = 0;
-                virtual ~ITargetType() = default;
-            };
 
             struct TargetTypeAndKey
             {
@@ -80,14 +131,16 @@ namespace testity
             FunctionalityTargetTypeRegistry(const FunctionalityTargetTypeRegistry &) = delete;
             FunctionalityTargetTypeRegistry & operator = (const FunctionalityTargetTypeRegistry &) = delete;
 
-            template <typename TYPE> class TargetType : public IFunctionalityTest::ITargetType
+            template <typename TYPE> class TargetType : public ITargetType
             {
             public:
                 void * create_instance() const override { return new TYPE; }
-                void destroy_instance(void * i_instance) const override { delete static_cast<TYPE*>(i_instance); }
+				void * clone_instance(const void * i_source_instance) const override
+					{ return new TYPE(*static_cast<const TYPE*>(i_source_instance));  }
+                void destroy_instance(void * i_instance) const noexcept override { delete static_cast<TYPE*>(i_instance); }
             };
 
-            size_t add_type(IFunctionalityTest::ITargetType * i_target_type);
+            size_t add_type(ITargetType * i_target_type);
 
         public:
 
@@ -99,7 +152,7 @@ namespace testity
                 return add_type(new TargetType<TYPE>());
             }
 
-            IFunctionalityTest::ITargetType & get_target_type(size_t i_type_key) const;
+            ITargetType & get_target_type(size_t i_type_key) const;
 
         private:
             struct Impl;
