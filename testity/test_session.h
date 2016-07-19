@@ -96,43 +96,5 @@ namespace testity
     Results run_session(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All, 
 		const TestConfig & i_config = TestConfig(), ProgressionCallback i_progression_callback = ProgressionCallback());
 
-	namespace detail
-	{
-		class Session
-		{
-		public:
-
-			Results run(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All,
-				ProgressionCallback i_progression_callback = ProgressionCallback());
-
-			void set_config(const TestConfig & i_config) { m_config = i_config; }
-
-			const TestConfig & config() const { return m_config; }
-
-		private:
-
-			using Operations = std::deque<std::function<void(Results & results, std::mt19937 & i_random)>>;
-
-			void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest);
-
-			void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest);
-
-			void exception_test(const TestTree & i_test_tree, std::mt19937 & i_random);
-
-			struct CaseInfo
-			{
-				int64_t m_exception_checkpoints = -1;
-			};
-
-			const TargetPtr & get_test_case_target(const IFunctionalityTest * i_case);
-
-		private:
-			TestConfig m_config;
-			std::unordered_map<size_t, TargetPtr> m_functionality_targets;
-			std::unordered_map<size_t, const ITargetType *> m_functionality_targets_types;
-			std::unordered_map<IFunctionalityTest*, CaseInfo> m_cases_info;
-		};
-
-	} // namespace detail
 
 } // namespace testity

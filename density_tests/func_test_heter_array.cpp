@@ -96,7 +96,7 @@ namespace density_tests
         // push_back(ElementType(seed) as rvalue), sizeof(ElementType) = 3
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             i_target.m_array.push_back(ElementType(seed));
             i_target.m_shadow.push_back(ElementType(seed));
             i_target.compare();
@@ -113,7 +113,7 @@ namespace density_tests
         // push_back(TestClass(seed) as lvalue), sizeof(TestClass) = 3
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
             i_target.m_array.push_back(element);
             i_target.m_shadow.push_back(element);
@@ -155,7 +155,7 @@ namespace density_tests
         // push_front(ElementType(seed) as rvalue), sizeof(ElementType) = 3
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             i_target.m_array.push_front(ElementType(seed));
             i_target.m_shadow.push_front(ElementType(seed));
             i_target.compare();
@@ -172,7 +172,7 @@ namespace density_tests
         // push_front(TestClass(seed) as lvalue), sizeof(TestClass) = 3
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
             i_target.m_array.push_front(element);
             i_target.m_shadow.push_front(element);
@@ -236,7 +236,7 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), ElementType(seed));
             i_target.m_shadow.insert_at(at_index, ElementType(seed));
             i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, ElementType(seed));
@@ -265,7 +265,7 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 3, 1>;
+            using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
             i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
             i_target.m_shadow.insert_at(at_index, element);
@@ -560,6 +560,10 @@ namespace density_tests
 
         using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
             sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
+
+		static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
+		static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
+		static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
 
         auto & typed_test = i_dest["typed"];
         add_common_heterogeneous_array_cases<BaseElement>(typed_test);

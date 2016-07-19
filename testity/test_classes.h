@@ -1729,6 +1729,16 @@ namespace testity
             detail::TestBase1<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed),
             detail::TestBase2<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed)
                 { }
+		
+		MultipleInheriTestClass(const MultipleInheriTestClass&) = default;
+
+		MultipleInheriTestClass & operator = (const MultipleInheriTestClass&) = default;
+
+		MultipleInheriTestClass(MultipleInheriTestClass&&) noexcept = default;
+
+		MultipleInheriTestClass & operator = (MultipleInheriTestClass&&) noexcept = default;
+
+		virtual ~MultipleInheriTestClass() = default;
 
         size_t hash() const noexcept
         {
@@ -1767,10 +1777,18 @@ namespace testity
 
         MultipleVirtualInheriTestClass() = default;
 
-        virtual ~MultipleVirtualInheriTestClass() = default;
+		MultipleVirtualInheriTestClass(int i_seed)
+			: Base1(i_seed), Base2(i_seed * 7), Base3(i_seed * 11) { }
 
-        MultipleVirtualInheriTestClass(int i_seed)
-            : Base1(i_seed), Base2(i_seed * 7), Base3(i_seed * 11) { }
+		MultipleVirtualInheriTestClass(const MultipleVirtualInheriTestClass&) = default;
+
+		MultipleVirtualInheriTestClass & operator = (const MultipleVirtualInheriTestClass&) = default;
+
+		MultipleVirtualInheriTestClass(MultipleVirtualInheriTestClass&&) noexcept = default;
+
+		MultipleVirtualInheriTestClass & operator = (MultipleVirtualInheriTestClass&&) noexcept = default;
+
+        virtual ~MultipleVirtualInheriTestClass() = default;
 
         size_t hash() const noexcept
         {
@@ -1789,8 +1807,8 @@ namespace testity
     };
 
     using UnmovableTestClass = TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Deleted, 32>;
-    using UniqueTestClass = TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::Supported, 32>;
-    using CopyableTestClass = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::Supported, 32>;
+    using UniqueTestClass = TestClass<FeatureKind::Supported, FeatureKind::Deleted, FeatureKind::SupportedNoExcept, 32>;
+    using CopyableTestClass = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 32>;
 
     template < FeatureKind DEFAULT_CONSTRUCTOR_SUPPORT, FeatureKind COPY_SUPPORT, FeatureKind MOVE_SUPPORT, size_t SIZE = alignof(std::max_align_t), size_t ALIGNMENT = alignof(std::max_align_t), Polymorphic POLYMORPHIC >
         inline size_t hash_func(const TestClass<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT, POLYMORPHIC> & i_object) noexcept

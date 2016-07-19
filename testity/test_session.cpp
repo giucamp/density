@@ -17,6 +17,119 @@
 
 namespace testity
 {
+	namespace detail
+	{
+		struct ProgressionUpdater
+		{
+			Progression m_progression;
+			ProgressionCallback m_callback;
+			std::chrono::high_resolution_clock::time_point m_next_callback_call;
+			std::chrono::high_resolution_clock::duration m_callback_call_period =
+				std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::seconds(1));
+
+			ProgressionUpdater(const char * i_label = "", ProgressionCallback i_callback = ProgressionCallback())
+				: m_callback(i_callback)
+			{
+				if (m_callback)
+				{
+					m_progression.m_label = i_label;
+					m_progression.m_start_time = Progression::Clock::now();
+					m_progression.m_completion_factor = 0.;
+					m_next_callback_call = std::chrono::high_resolution_clock::now() - m_callback_call_period;
+				}
+			}
+
+			void update(size_t i_current, size_t i_total)
+			{
+				if (m_callback)
+				{
+					auto const now = Progression::Clock::now();
+
+					if (now > m_next_callback_call)
+					{
+						m_next_callback_call = now + m_callback_call_period;
+
+						m_progression.m_completion_factor = static_cast<double>(i_current) / i_total;
+
+						m_progression.m_elapsed_time = now - m_progression.m_start_time;
+
+						m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
+							m_progression.m_completion_factor > 0.0001 ? (m_progression.m_elapsed_time.count() / m_progression.m_completion_factor) : 0.);
+
+						m_callback(m_progression);
+					}
+				}
+			}
+
+			void update(int64_t i_current, int64_t i_total)
+			{
+				if (m_callback)
+				{
+					auto const now = Progression::Clock::now();
+
+					if (now > m_next_callback_call)
+					{
+						m_next_callback_call = now + m_callback_call_period;
+
+						m_progression.m_completion_factor = static_cast<double>(i_current) / i_total;
+
+						m_progression.m_elapsed_time = now - m_progression.m_start_time;
+
+						m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
+							m_progression.m_completion_factor > 0.0001 ? (m_progression.m_elapsed_time.count() / m_progression.m_completion_factor) : 0.);
+
+						m_callback(m_progression);
+					}
+				}
+			}
+		};
+
+		class Session
+		{
+		public:
+
+			Results run(const TestTree & i_test_tree, TestFlags i_flags = TestFlags::All,
+				ProgressionCallback i_progression_callback = ProgressionCallback());
+
+			void set_config(const TestConfig & i_config) { m_config = i_config; }
+
+			const TestConfig & config() const { return m_config; }
+
+		private:
+
+			using Operations = std::deque<std::function<void(Results & results, std::mt19937 & i_random)>>;
+
+			void generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest);
+
+			void generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest);
+
+			struct ExceptionTestState
+			{
+				ProgressionUpdater * m_progression_updater = nullptr;
+				struct CaseInfo
+				{
+					int64_t m_exception_checkpoints = -1;
+				};
+				std::unordered_map<IFunctionalityTest*, CaseInfo> m_case_info;
+				int64_t m_step_count = 0, m_curent_step = 0;
+			};
+
+			void prepare_for_exception_test(const TestTree & i_test_tree,
+				std::mt19937 & i_random, ExceptionTestState & io_state);
+
+			void exception_test(const TestTree & i_test_tree,
+				std::mt19937 & i_random, ExceptionTestState & io_state);
+
+			const TargetPtr & get_test_case_target(const IFunctionalityTest * i_case);
+
+		private:
+			TestConfig m_config;
+			std::unordered_map<size_t, TargetPtr> m_functionality_targets;
+			std::unordered_map<size_t, const ITargetType *> m_functionality_targets_types;
+		};
+
+	} // namespace detail
+
 	namespace
 	{
 		struct StaticData
@@ -27,9 +140,9 @@ namespace testity
 		};
 
 		#if defined(_MSC_VER) && _MSC_VER < 1900 // Visual Studio 2013 and below
-				_declspec(thread) StaticData  * st_static_data;
+			_declspec(thread) StaticData  * st_static_data;
 		#else
-				thread_local StaticData  * st_static_data;
+			thread_local StaticData  * st_static_data;
 		#endif
 	}
 
@@ -99,48 +212,6 @@ namespace testity
 		}
 		st_static_data = nullptr;
 	}
-	struct ProgressionUpdater
-	{
-		Progression m_progression;
-		ProgressionCallback m_callback;
-		std::chrono::high_resolution_clock::time_point m_next_callback_call;
-		std::chrono::high_resolution_clock::duration m_callback_call_period =
-			std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::seconds(1));
-
-		ProgressionUpdater(const char * i_label = "", ProgressionCallback i_callback = ProgressionCallback())
-			: m_callback(i_callback)
-		{
-			if (m_callback)
-			{
-				m_progression.m_label = i_label;
-				m_progression.m_start_time = Progression::Clock::now();
-				m_progression.m_completion_factor = 0.;
-				m_next_callback_call = std::chrono::high_resolution_clock::now() - m_callback_call_period;
-			}
-		}
-
-		void update(size_t i_current, size_t i_total)
-		{
-			if (m_callback)
-			{
-				auto const now = Progression::Clock::now();
-
-				if (now > m_next_callback_call)
-				{
-					m_next_callback_call = now + m_callback_call_period;
-
-					m_progression.m_completion_factor = static_cast<double>(i_current) / i_total;
-
-					m_progression.m_elapsed_time = now - m_progression.m_start_time;
-
-					m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
-						m_progression.m_completion_factor > 0.0001 ? (m_progression.m_elapsed_time.count() / m_progression.m_completion_factor) : 0.);
-
-					m_callback(m_progression);
-				}
-			}
-		}
-	};
 
     void Results::add_result(const detail::PerformanceTest * i_test, size_t i_cardinality, Duration i_duration)
     {
@@ -194,32 +265,46 @@ namespace testity
 			}
 		}
 
-		void Session::exception_test(const TestTree & i_test_tree, std::mt19937 & i_random)
+		void Session::prepare_for_exception_test(const TestTree & i_test_tree, 
+			std::mt19937 & i_random, ExceptionTestState & io_state)
 		{
 			for (auto & test_case : i_test_tree.functionality_tests())
 			{
-			try
+				try
 				{
-					/* the test case is executed twice, without raising any exception, to check that
-						exception_check_point() is called the name number of times (the test case must be
-						deterministic). */
+					// make a copy of the target and the random generator
 					auto random_copy = i_random;
-					auto & info = m_cases_info[test_case.get()];
-
 					auto & target_ptr = get_test_case_target(test_case.get());
 					auto target_copy_ptr = target_ptr.clone();
 
 					StaticData static_data;
 					st_static_data = &static_data;
-					test_case->execute(random_copy, target_copy_ptr.object());
-					info.m_exception_checkpoints = static_data.m_current_counter;
+					try
+					{
+						test_case->execute(random_copy, target_copy_ptr.object());
+						st_static_data = nullptr;
+					}
+					catch (...)
+					{
+						// unknown exception, just rethrow
+						st_static_data = nullptr;
+						throw;
+					}
 
-					static_data.m_current_counter = 0;
-					test_case->execute(i_random, target_ptr.object());
-
-					/* If this fails, exception_check_point() has been called a different number of times
-						with two equals std::mt19937. The test case must be deterministic. */
-					TESTITY_ASSERT(info.m_exception_checkpoints == static_data.m_current_counter);
+					auto & info = io_state.m_case_info[test_case.get()];
+					if (info.m_exception_checkpoints == -1)
+					{
+						// save the number of exception checkpoints, and update io_state.m_step_count
+						info.m_exception_checkpoints = static_data.m_current_counter;
+						io_state.m_step_count += (info.m_exception_checkpoints * (info.m_exception_checkpoints - 1)) / 2;
+					}
+					else
+					{
+						/* if this fails exception_check_point() has been called a different number of times 
+							by the same test case, with the equal target and random generator. This means that
+							the test case is not deterministic. Determinism is a requirement for the exception test. */
+						TESTITY_ASSERT( info.m_exception_checkpoints == static_data.m_current_counter );
+					}					
 				}
 				catch (...)
 				{
@@ -231,7 +316,72 @@ namespace testity
 
 			for (auto & child : i_test_tree.children())
 			{
-				exception_test(child, i_random);
+				prepare_for_exception_test(child, i_random, io_state);
+			}
+		}
+
+		void Session::exception_test(const TestTree & i_test_tree,
+			std::mt19937 & i_random, ExceptionTestState & io_state)
+		{
+			for (auto & test_case : i_test_tree.functionality_tests())
+			{
+				try
+				{
+					/* the test case is executed once for each exception checkpoint. Every time a different checkpoint
+						throws a TestException*/
+					
+					auto info_it = io_state.m_case_info.find(test_case.get());
+					TESTITY_ASSERT(info_it != io_state.m_case_info.end()); // internal error
+					auto const exception_checkpoints = info_it->second.m_exception_checkpoints;
+
+					for (int64_t checkpoint_index = 0; checkpoint_index < exception_checkpoints; checkpoint_index++)
+					{
+						// update the progression
+						io_state.m_curent_step++;
+						io_state.m_progression_updater->update(io_state.m_curent_step, io_state.m_step_count);
+
+						// make a copy of the target and the random generator
+						auto random_copy = i_random;
+						auto & target_ptr = get_test_case_target(test_case.get());
+						auto target_copy_ptr = target_ptr.clone();
+
+						StaticData static_data;
+						bool exception_occurred = false;
+						static_data.m_except_at = checkpoint_index;
+						st_static_data = &static_data;
+						try
+						{														
+							test_case->execute(random_copy, target_copy_ptr.object());
+							st_static_data = nullptr;
+						}
+						catch (TestException)
+						{
+							exception_occurred = true;
+							st_static_data = nullptr;
+						}
+						catch (...)
+						{
+							// unknown exception, just rethrow
+							st_static_data = nullptr;
+							throw;
+						}
+
+						// if this fails probably the test case is not deterministic
+						TESTITY_ASSERT(static_data.m_current_counter <= exception_checkpoints);
+						TESTITY_ASSERT(exception_occurred);
+					}
+				}
+				catch (...)
+				{
+					st_static_data = nullptr;
+					throw;
+				}
+				st_static_data = nullptr;
+			}
+
+			for (auto & child : i_test_tree.children())
+			{
+				exception_test(child, i_random, io_state);
 			}
 		}
 
@@ -313,13 +463,21 @@ namespace testity
 			// exception tests
 			if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityExceptionTest))
 			{
-				exception_test(i_test_tree, random);
+				progression = ProgressionUpdater("exception tests...", i_progression_callback);
+
+				ExceptionTestState state;
+				state.m_progression_updater = &progression;
+
+				// run prepare_for_exception_test twice to detect early non-deterministic cases
+				prepare_for_exception_test(i_test_tree, random, state);
+				prepare_for_exception_test(i_test_tree, random, state);
+				
+				exception_test(i_test_tree, random, state);
 			}
 
 			// delete targets
 			m_functionality_targets.clear();
 			m_functionality_targets_types.clear();
-			m_cases_info.clear();
 
 			return results;
 		}

@@ -329,15 +329,12 @@ namespace density
                 {
                     if (m_control_blocks != nullptr)
                     {
-                        void * element = m_elements;
                         for (ControlBlock * element_info = m_control_blocks; element_info < m_end_of_control_blocks; element_info++)
                         {
-                            element = address_upper_align(element, element_info->alignment());
-                            element_info->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(element));
-                            element = address_add(element, element_info->size());
+                            element_info->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(element_info->m_element));
                             element_info->~ControlBlock();
                         }
-                        i_allocator.deallocate(reinterpret_cast<Header*>(m_control_blocks) - 1, i_buffer_size, i_buffer_alignment, sizeof(Header));
+                        i_allocator.deallocate(reinterpret_cast<Header*>(m_control_blocks) - 1, i_buffer_size + sizeof(Header), i_buffer_alignment, sizeof(Header));
                     }
                 }
 
@@ -594,7 +591,7 @@ namespace density
                         }
 
                         Header * const header = reinterpret_cast<Header*>(tmp.m_control_blocks) - 1;
-                        static_cast<VOID_ALLOCATOR*>(this)->deallocate(header, buffer_size, buffer_alignment, sizeof(Header));
+                        static_cast<VOID_ALLOCATOR*>(this)->deallocate(header, buffer_size + sizeof(Header), buffer_alignment, sizeof(Header));
                         tmp.m_control_blocks = nullptr;
                     }
                     throw;
