@@ -147,177 +147,184 @@ namespace testity
         m_performance_results.insert(std::make_pair(TestId{ i_test, i_cardinality }, i_duration));
     }
 
-	void Session::execute_test_case(detail::IFunctionalityTest * i_case, std::mt19937 & i_random)
+	namespace detail
 	{
-		auto const target_type = i_case->get_target_type_and_key();
-		void * target = nullptr;
-		if (target_type.m_type != nullptr)
+		const TargetPtr & Session::get_test_case_target(const IFunctionalityTest * i_case)
 		{
-			auto & target_ref = m_functionality_targets[target_type.m_type_key];
-			if (target_ref == nullptr)
+			auto const target_type = i_case->get_target_type_and_key();
+			if (target_type.m_type != nullptr)
 			{
-				target_ref = target_type.m_type->create_instance();
+				auto & target_ref = m_functionality_targets[target_type.m_type_key];
+				if (target_ref.empty())
+				{
+					target_ref = TargetPtr(target_type.m_type, target_type.m_type->create_instance());
+				}
+				return target_ref;
 			}
-			target = target_ref;
+			else
+			{
+				static const TargetPtr null_target;
+				return null_target;
+			}
 		}
-		i_case->execute(i_random, target);
-	}
 
-    void Session::generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest)
-    {
-        for (auto & test_group : i_test_tree.functionality_tests())
-        {
-            {
-                auto const target_type = test_group->get_target_type_and_key();
-                if (target_type.m_type != nullptr)
-                {
-                    m_functionality_targets[target_type.m_type_key];
-                }
-
-                m_functionality_targets_types[target_type.m_type_key] = target_type.m_type;
-            }
-			auto test_case = test_group.get();
-            i_dest.push_back([test_case, this](Results & /*results*/, std::mt19937 & i_random) {
-				execute_test_case(test_case, i_random);
-            });
-        }
-
-        for (auto & child : i_test_tree.children())
-        {
-            generate_functionality_operations(child, i_dest);
-        }
-    }
-
-	void Session::exception_test(const TestTree & i_test_tree, std::mt19937 & i_random)
-	{
-		for (auto & test_group : i_test_tree.functionality_tests())
+		void Session::generate_functionality_operations(const TestTree & i_test_tree, Operations & i_dest)
 		{
-			StaticData static_data;
-			st_static_data = &static_data;
+			for (auto & test_group : i_test_tree.functionality_tests())
+			{
+				{
+					auto const target_type = test_group->get_target_type_and_key();
+					if (target_type.m_type != nullptr)
+					{
+						m_functionality_targets[target_type.m_type_key];
+					}
+
+					m_functionality_targets_types[target_type.m_type_key] = target_type.m_type;
+				}
+				auto test_case = test_group.get();
+				i_dest.push_back([test_case, this](Results & /*results*/, std::mt19937 & i_random) {
+					auto & target_ptr = get_test_case_target(test_case);
+					test_case->execute(i_random, target_ptr.object());
+				});
+			}
+
+			for (auto & child : i_test_tree.children())
+			{
+				generate_functionality_operations(child, i_dest);
+			}
+		}
+
+		void Session::exception_test(const TestTree & i_test_tree, std::mt19937 & i_random)
+		{
+			for (auto & test_case : i_test_tree.functionality_tests())
+			{
 			try
-			{
-				/* the test case is executed twice, without raising any exception, to check that
-					exception_check_point() is called the name number of times (the test case must be 
-					deterministic). */
-				auto random_copy = i_random;
-				auto & info = m_cases_info[test_group.get()];
+				{
+					/* the test case is executed twice, without raising any exception, to check that
+						exception_check_point() is called the name number of times (the test case must be
+						deterministic). */
+					auto random_copy = i_random;
+					auto & info = m_cases_info[test_case.get()];
 
-				execute_test_case(test_group.get(), i_random);
-				info.m_exception_checkpoints = static_data.m_current_counter;
+					auto & target_ptr = get_test_case_target(test_case.get());
+					auto target_copy_ptr = target_ptr.clone();
 
-				static_data.m_current_counter = 0;
-				execute_test_case(test_group.get(), random_copy);
-				
-				/* If this fails, exception_check_point() has been called a different number of times
-					with two equals std::mt19937. The test case must be deterministic. */
-				TESTITY_ASSERT(info.m_exception_checkpoints == static_data.m_current_counter);
-			}
-			catch (...)
-			{
+					StaticData static_data;
+					st_static_data = &static_data;
+					test_case->execute(random_copy, target_copy_ptr.object());
+					info.m_exception_checkpoints = static_data.m_current_counter;
+
+					static_data.m_current_counter = 0;
+					test_case->execute(i_random, target_ptr.object());
+
+					/* If this fails, exception_check_point() has been called a different number of times
+						with two equals std::mt19937. The test case must be deterministic. */
+					TESTITY_ASSERT(info.m_exception_checkpoints == static_data.m_current_counter);
+				}
+				catch (...)
+				{
+					st_static_data = nullptr;
+					throw;
+				}
 				st_static_data = nullptr;
-				throw;
 			}
-			st_static_data = nullptr;			
-		}
 
-		for (auto & child : i_test_tree.children())
-		{
-			exception_test(child, i_random);
-		}
-	}
-
-    void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest)
-    {
-        for (auto & test_group : i_test_tree.performance_tests())
-        {
-            for (size_t cardinality = test_group.cardinality_start();
-                cardinality < test_group.cardinality_end(); cardinality += test_group.cardinality_step())
-            {
-                for (auto & test : test_group.tests())
-                {
-                    i_dest.push_back([&test, cardinality](Results & results, std::mt19937 & ) {
-                        using namespace std::chrono;
-                        const auto time_before = high_resolution_clock::now();
-                        test.function()(cardinality);
-                        const auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - time_before);
-                        results.add_result(&test, cardinality, duration);
-                    });
-                }
-            }
-        }
-
-        for (auto & child : i_test_tree.children())
-        {
-            generate_performance_operations(child, i_dest);
-        }
-    }
-
-    Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, ProgressionCallback i_progression_callback)
-    {
-        using namespace std;
-
-		ProgressionUpdater progression;
-
-        const std::random_device::result_type random_seed = m_config.m_deterministic ? m_config.m_random_seed : random_device()();
-
-        mt19937 random = mt19937(random_seed);
-
-        // generate operation array
-        Operations operations;
-        if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityTest))
-        {
-            for (size_t repetition_index = 0; repetition_index < m_config.m_functionality_repetitions; repetition_index++)
-            {
-                generate_functionality_operations(i_test_tree, operations);
-            }
-        }
-        if ( static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::PerformanceTests) )
-        {
-            for (size_t repetition_index = 0; repetition_index < m_config.m_performance_repetitions; repetition_index++)
-            {
-                generate_performance_operations(i_test_tree, operations);
-            }
-        }
-
-		const auto operations_size = operations.size();
-
-        if (m_config.m_random_shuffle)
-        {
-			progression = ProgressionUpdater("randomizing operations...", i_progression_callback);
-            std::shuffle(operations.begin(), operations.end(), random);
-			for (size_t index = 0; index < operations_size; index++)
+			for (auto & child : i_test_tree.children())
 			{
-				std::swap(operations[index], 
-					operations[std::uniform_int_distribution<size_t>(0, operations_size - 1)(random)]);
+				exception_test(child, i_random);
+			}
+		}
+
+		void Session::generate_performance_operations(const TestTree & i_test_tree, Operations & i_dest)
+		{
+			for (auto & test_group : i_test_tree.performance_tests())
+			{
+				for (size_t cardinality = test_group.cardinality_start();
+					cardinality < test_group.cardinality_end(); cardinality += test_group.cardinality_step())
+				{
+					for (auto & test : test_group.tests())
+					{
+						i_dest.push_back([&test, cardinality](Results & results, std::mt19937 &) {
+							using namespace std::chrono;
+							const auto time_before = high_resolution_clock::now();
+							test.function()(cardinality);
+							const auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - time_before);
+							results.add_result(&test, cardinality, duration);
+						});
+					}
+				}
+			}
+
+			for (auto & child : i_test_tree.children())
+			{
+				generate_performance_operations(child, i_dest);
+			}
+		}
+
+		Results Session::run(const TestTree & i_test_tree, TestFlags i_flags, ProgressionCallback i_progression_callback)
+		{
+			using namespace std;
+
+			ProgressionUpdater progression;
+
+			const std::random_device::result_type random_seed = m_config.m_deterministic ? m_config.m_random_seed : random_device()();
+
+			mt19937 random = mt19937(random_seed);
+
+			// generate operation array
+			Operations operations;
+			if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityTest))
+			{
+				for (size_t repetition_index = 0; repetition_index < m_config.m_functionality_repetitions; repetition_index++)
+				{
+					generate_functionality_operations(i_test_tree, operations);
+				}
+			}
+			if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::PerformanceTests))
+			{
+				for (size_t repetition_index = 0; repetition_index < m_config.m_performance_repetitions; repetition_index++)
+				{
+					generate_performance_operations(i_test_tree, operations);
+				}
+			}
+
+			const auto operations_size = operations.size();
+
+			if (m_config.m_random_shuffle)
+			{
+				progression = ProgressionUpdater("randomizing operations...", i_progression_callback);
+				std::shuffle(operations.begin(), operations.end(), random);
+				for (size_t index = 0; index < operations_size; index++)
+				{
+					std::swap(operations[index],
+						operations[std::uniform_int_distribution<size_t>(0, operations_size - 1)(random)]);
+					progression.update(index, operations_size);
+				}
+			}
+
+			progression = ProgressionUpdater("performing tests...", i_progression_callback);
+			Results results(i_test_tree, m_config, random_seed);
+			for (Operations::size_type index = 0; index < operations_size; index++)
+			{
+				operations[index](results, random);
 				progression.update(index, operations_size);
 			}
+
+			// exception tests
+			if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityExceptionTest))
+			{
+				exception_test(i_test_tree, random);
+			}
+
+			// delete targets
+			m_functionality_targets.clear();
+			m_functionality_targets_types.clear();
+			m_cases_info.clear();
+
+			return results;
 		}
-        
-		progression = ProgressionUpdater("performing tests...", i_progression_callback);
-        Results results(i_test_tree, m_config, random_seed);
-        for (Operations::size_type index = 0; index < operations_size; index++)
-        {
-            operations[index](results, random);
-			progression.update(index, operations_size);
-        }
 
-		// exception tests
-		if (static_cast<unsigned>(i_flags) & static_cast<unsigned>(TestFlags::FunctionalityExceptionTest))
-		{
-			exception_test(i_test_tree, random);
-		}
-
-		// delete targets
-        for (auto && target : m_functionality_targets)
-        {
-            m_functionality_targets_types[target.first]->destroy_instance(target.second);
-        }
-        m_functionality_targets.clear();
-        m_functionality_targets_types.clear();
-		m_cases_info.clear();
-
-        return results;
-    }
+	} // namespace detail
 
     void Results::save_to(const char * i_filename) const
     {
@@ -427,7 +434,7 @@ namespace testity
     Results run_session(const TestTree & i_test_tree, TestFlags i_flags, const TestConfig & i_config,
 		ProgressionCallback i_progression_callback )
     {
-        Session session;
+        detail::Session session;
         session.set_config(i_config);
         return session.run(i_test_tree, i_flags, i_progression_callback);
     }

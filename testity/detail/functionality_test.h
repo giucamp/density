@@ -37,6 +37,11 @@ namespace testity
 			TargetPtr(const TargetPtr &) = delete;
 			TargetPtr & operator = (const TargetPtr &) = delete;
 
+			TargetPtr clone() const
+			{
+				return TargetPtr(m_type, m_type->clone_instance(m_object));
+			}
+
 			TargetPtr(TargetPtr && i_source) noexcept
 				: m_type(i_source.m_type), m_object(i_source.m_object)
 			{
@@ -56,6 +61,8 @@ namespace testity
 
 				i_source.m_type = nullptr;
 				i_source.m_object = nullptr;
+
+				return *this;
 			}
 
 			~TargetPtr()
@@ -68,6 +75,8 @@ namespace testity
 
 			const ITargetType * type() const noexcept { return m_type; }
 			void * object() const noexcept { return m_object; }
+
+			bool empty() const noexcept { return m_object == nullptr; }
 
 		private:
 			const ITargetType * m_type;
