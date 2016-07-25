@@ -53,8 +53,17 @@ namespace testity
 
 						m_progression.m_elapsed_time = now - m_progression.m_start_time;
 
-						m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
-							m_progression.m_completion_factor > 0.0001 ? (m_progression.m_elapsed_time.count() / m_progression.m_completion_factor) : 0.);
+						if (m_progression.m_completion_factor > 0.0001)
+						{
+							auto const factor = (1.0 - m_progression.m_completion_factor) / m_progression.m_completion_factor;
+							m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
+								m_progression.m_elapsed_time.count() * factor);
+						}
+						else
+						{
+							m_progression.m_remaining_time_extimate = std::chrono::duration<double>(
+								std::numeric_limits<double>::infinity() );
+						}
 
 						m_callback(m_progression);
 					}
@@ -296,7 +305,7 @@ namespace testity
 					{
 						// save the number of exception checkpoints, and update io_state.m_step_count
 						info.m_exception_checkpoints = static_data.m_current_counter;
-						io_state.m_step_count += (info.m_exception_checkpoints * (info.m_exception_checkpoints - 1)) / 2;
+						io_state.m_step_count += info.m_exception_checkpoints;
 					}
 					else
 					{

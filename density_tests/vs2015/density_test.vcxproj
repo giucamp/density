@@ -228,6 +228,7 @@
     <ClCompile Include="..\..\testity\detail\environment.cpp" />
     <ClCompile Include="..\..\testity\detail\functionality_test.cpp" />
     <ClCompile Include="..\..\testity\performance_test.cpp" />
+    <ClCompile Include="..\..\testity\sanitizer_allocator.cpp" />
     <ClCompile Include="..\..\testity\testity_common.cpp" />
     <ClCompile Include="..\..\testity\test_allocator.cpp" />
     <ClCompile Include="..\..\testity\test_classes.cpp" />
@@ -252,6 +253,7 @@
     <ClInclude Include="..\..\testity\detail\environment.h" />
     <ClInclude Include="..\..\testity\detail\functionality_test.h" />
     <ClInclude Include="..\..\testity\performance_test.h" />
+    <ClInclude Include="..\..\testity\sanitizer_allocator.h" />
     <ClInclude Include="..\..\testity\testity_common.h" />
     <ClInclude Include="..\..\testity\test_allocator.h" />
     <ClInclude Include="..\..\testity\test_classes.h" />

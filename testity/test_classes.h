@@ -1671,8 +1671,6 @@ namespace testity
 
             TestBase1_VirtualBase(int i_seed) : Base(i_seed ^ 223) {}
 
-            virtual ~TestBase1_VirtualBase() = default;
-
             // comparison
             bool operator == (const TestBase1_VirtualBase & i_other) const
             {
@@ -1697,9 +1695,7 @@ namespace testity
             TestBase2_VirtualBase() = default;
 
             TestBase2_VirtualBase(int i_seed) : Base(i_seed) {}
-
-            virtual ~TestBase2_VirtualBase() = default;
-
+			
             // comparison
             bool operator == (const TestBase2_VirtualBase & i_other) const
             {
@@ -1730,16 +1726,6 @@ namespace testity
             detail::TestBase2<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>(i_seed)
                 { }
 		
-		MultipleInheriTestClass(const MultipleInheriTestClass&) = default;
-
-		MultipleInheriTestClass & operator = (const MultipleInheriTestClass&) = default;
-
-		MultipleInheriTestClass(MultipleInheriTestClass&&) noexcept = default;
-
-		MultipleInheriTestClass & operator = (MultipleInheriTestClass&&) noexcept = default;
-
-		virtual ~MultipleInheriTestClass() = default;
-
         size_t hash() const noexcept
         {
             return detail::TestBase1<DEFAULT_CONSTRUCTOR_SUPPORT, COPY_SUPPORT, MOVE_SUPPORT, SIZE, ALIGNMENT>::hash()
@@ -1779,16 +1765,6 @@ namespace testity
 
 		MultipleVirtualInheriTestClass(int i_seed)
 			: Base1(i_seed), Base2(i_seed * 7), Base3(i_seed * 11) { }
-
-		MultipleVirtualInheriTestClass(const MultipleVirtualInheriTestClass&) = default;
-
-		MultipleVirtualInheriTestClass & operator = (const MultipleVirtualInheriTestClass&) = default;
-
-		MultipleVirtualInheriTestClass(MultipleVirtualInheriTestClass&&) noexcept = default;
-
-		MultipleVirtualInheriTestClass & operator = (MultipleVirtualInheriTestClass&&) noexcept = default;
-
-        virtual ~MultipleVirtualInheriTestClass() = default;
 
         size_t hash() const noexcept
         {

@@ -733,11 +733,19 @@ namespace density
         /** Copy-constructs a runtime_type */
         runtime_type(const runtime_type &) noexcept = default;
 
-        /** Move-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
+        /** Move-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
         runtime_type & operator = (runtime_type &&) noexcept = default;
 
-        /** Copy-assigns a runtime_type. Self assignment (a = a) is supported, and leads to undefined behavior. */
+        /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
         runtime_type & operator = (const runtime_type &) noexcept = default;
+
+		/** Destructor. */
+		~runtime_type()
+		{
+			#if DENSITY_DEBUG
+				*reinterpret_cast<size_t*>(&m_table) = 0xBA77;
+			#endif
+		}
 
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }
@@ -949,6 +957,8 @@ namespace density
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
+
+
 
         #if DENSITY_DEBUG
 

@@ -30,13 +30,10 @@ namespace testity
 
         void random_storage_init(unsigned char * i_dest, size_t i_size, int i_seed) noexcept
         {
-            auto seed = i_seed;
-            auto & rand = random_storage_random();
+			std::mt19937 rand(i_seed);
             for (size_t i = 0; i < i_size; i++)
             {
-                i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand) & std::numeric_limits<char>::max());
-                i_dest[i] ^= static_cast<unsigned char>(i_dest[i] & std::numeric_limits<char>::max());
-                seed *= seed;
+                i_dest[i] = static_cast<unsigned char>(std::uniform_int_distribution<unsigned>()(rand) & std::numeric_limits<unsigned char>::max());
             }
         }
 

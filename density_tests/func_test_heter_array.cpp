@@ -355,7 +355,15 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const BASE_TYPE element(seed);
-            i_target.m_array.push_back(element);
+			try
+			{
+				i_target.m_array.push_back(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.push_back(element);
             i_target.compare();
         }));
