@@ -21,8 +21,9 @@ namespace testity
         bool m_deterministic = true;
         std::random_device::result_type m_random_seed = 0;
         bool m_random_shuffle = true;
-        size_t m_functionality_repetitions = 1024;
+        size_t m_functionality_repetitions = 12800;
         size_t m_performance_repetitions = 8;
+		size_t m_exceptions_repetitions = 12800;
     };
 
     class Results

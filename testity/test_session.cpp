@@ -359,8 +359,11 @@ namespace testity
 						static_data.m_except_at = checkpoint_index;
 						st_static_data = &static_data;
 						try
-						{														
-							test_case->execute(random_copy, target_copy_ptr.object());
+						{
+							for (size_t rep_index = 0; rep_index < m_config.m_exceptions_repetitions; rep_index++)
+							{
+								test_case->execute(random_copy, target_copy_ptr.object());
+							}
 							st_static_data = nullptr;
 						}
 						catch (TestException)

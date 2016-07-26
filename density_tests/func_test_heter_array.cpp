@@ -46,8 +46,17 @@ namespace density_tests
             TESTITY_ASSERT(tmp_array.size() == 0);
             TESTITY_ASSERT(tmp_array.empty());
             TESTITY_ASSERT(tmp_array.begin() == tmp_array.end());
-            tmp_array = i_target.m_array;
-            TESTITY_ASSERT(tmp_array == i_target.m_array);
+            			
+			try
+			{
+				tmp_array = i_target.m_array;
+				TESTITY_ASSERT(tmp_array == i_target.m_array);
+			}
+			catch (...)
+			{
+				TESTITY_ASSERT(tmp_array.empty());
+				throw;
+			}
 
             HeterogeneousArray<TYPE> tmp_array_1(tmp_array);
             TESTITY_ASSERT(tmp_array_1 == i_target.m_array);
@@ -74,22 +83,46 @@ namespace density_tests
 
         // push_back(1)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_back(1);
-            i_target.m_shadow.push_back(1);
+			try
+			{
+				i_target.m_array.push_back(1);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(1);
             i_target.compare();
         }));
 
         // push_back(1.0)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_back(1.0);
-            i_target.m_shadow.push_back(1.0);
+			try
+			{
+				i_target.m_array.push_back(1.0);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(1.0);
             i_target.compare();
         }));
 
         // push_back('c')
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_back('c');
-            i_target.m_shadow.push_back('c');
+			try
+			{
+				i_target.m_array.push_back('c');
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back('c');
             i_target.compare();
         }));
 
@@ -97,16 +130,32 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
-            i_target.m_array.push_back(ElementType(seed));
-            i_target.m_shadow.push_back(ElementType(seed));
+			try
+			{
+				i_target.m_array.push_back(ElementType(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(ElementType(seed));
             i_target.compare();
         }));
 
         // push_back(CopyableTestClass(seed) as rvalue)
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            i_target.m_array.push_back(CopyableTestClass(seed));
-            i_target.m_shadow.push_back(CopyableTestClass(seed));
+			try
+			{
+				i_target.m_array.push_back(CopyableTestClass(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(CopyableTestClass(seed));
             i_target.compare();
         }));
 
@@ -115,8 +164,16 @@ namespace density_tests
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
-            i_target.m_array.push_back(element);
-            i_target.m_shadow.push_back(element);
+			try
+			{
+				i_target.m_array.push_back(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(element);
             i_target.compare();
         }));
 
@@ -124,8 +181,16 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             const CopyableTestClass element(seed);
-            i_target.m_array.push_back(element);
-            i_target.m_shadow.push_back(element);
+			try
+			{
+				i_target.m_array.push_back(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(element);
             i_target.compare();
         }));
 
@@ -133,22 +198,46 @@ namespace density_tests
 
         // push_front(1)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_front(1);
-            i_target.m_shadow.push_front(1);
+			try
+			{
+				i_target.m_array.push_front(1);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(1);
             i_target.compare();
         }));
 
         // push_front(1.0)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_front(1.0);
-            i_target.m_shadow.push_front(1.0);
+			try
+			{
+				i_target.m_array.push_front(1.0);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(1.0);
             i_target.compare();
         }));
 
         // push_front('c')
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            i_target.m_array.push_front('c');
-            i_target.m_shadow.push_front('c');
+			try
+			{
+				i_target.m_array.push_front('c');
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front('c');
             i_target.compare();
         }));
 
@@ -156,16 +245,32 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
-            i_target.m_array.push_front(ElementType(seed));
-            i_target.m_shadow.push_front(ElementType(seed));
+			try
+			{
+				i_target.m_array.push_front(ElementType(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(ElementType(seed));
             i_target.compare();
         }));
 
         // push_front(CopyableTestClass(seed) as rvalue)
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            i_target.m_array.push_front(CopyableTestClass(seed));
-            i_target.m_shadow.push_front(CopyableTestClass(seed));
+			try
+			{
+				i_target.m_array.push_front(CopyableTestClass(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(CopyableTestClass(seed));
             i_target.compare();
         }));
 
@@ -174,8 +279,16 @@ namespace density_tests
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
-            i_target.m_array.push_front(element);
-            i_target.m_shadow.push_front(element);
+			try
+			{
+				i_target.m_array.push_front(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(element);
             i_target.compare();
         }));
 
@@ -183,8 +296,16 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             const CopyableTestClass element(seed);
-            i_target.m_array.push_front(element);
-            i_target.m_shadow.push_front(element);
+			try
+			{
+				i_target.m_array.push_front(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(element);
             i_target.compare();
         }));
 
@@ -196,10 +317,27 @@ namespace density_tests
             const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 1);
-            i_target.m_shadow.insert_at(at_index, 1);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 1);
-            i_target.m_shadow.insert_at(at_index_c, 1, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 1);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, 1);
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 1);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, 1, count);
             i_target.compare();
         }));
 
@@ -209,10 +347,28 @@ namespace density_tests
             const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 1.0);
-            i_target.m_shadow.insert_at(at_index, 1.0);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 1.0);
-            i_target.m_shadow.insert_at(at_index_c, 1.0, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 1.0);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}			
+			i_target.m_shadow.insert_at(at_index, 1.0);
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 1.0);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+
+			i_target.m_shadow.insert_at(at_index_c, 1.0, count);
             i_target.compare();
         }));
 
@@ -222,10 +378,28 @@ namespace density_tests
             const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 'c');
-            i_target.m_shadow.insert_at(at_index, 'c');
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 'c');
-            i_target.m_shadow.insert_at(at_index_c, 'c', count);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), 'c');
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, 'c');
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, 'c');
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, 'c', count);
             i_target.compare();
         }));
 
@@ -237,10 +411,29 @@ namespace density_tests
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), ElementType(seed));
-            i_target.m_shadow.insert_at(at_index, ElementType(seed));
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, ElementType(seed));
-            i_target.m_shadow.insert_at(at_index_c, ElementType(seed), count);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), ElementType(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+
+			i_target.m_shadow.insert_at(at_index, ElementType(seed));
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, ElementType(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+
+			i_target.m_shadow.insert_at(at_index_c, ElementType(seed), count);
             i_target.compare();
         }));
 
@@ -251,10 +444,28 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), CopyableTestClass(seed));
-            i_target.m_shadow.insert_at(at_index, CopyableTestClass(seed));
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, CopyableTestClass(seed));
-            i_target.m_shadow.insert_at(at_index_c, CopyableTestClass(seed), count);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), CopyableTestClass(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, CopyableTestClass(seed));
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, CopyableTestClass(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, CopyableTestClass(seed), count);
             i_target.compare();
         }));
 
@@ -267,10 +478,27 @@ namespace density_tests
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
-            i_target.m_shadow.insert_at(at_index, element);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
-            i_target.m_shadow.insert_at(at_index_c, element, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+
+			i_target.m_shadow.insert_at(at_index, element);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, element, count);
             i_target.compare();
         }));
 
@@ -282,10 +510,27 @@ namespace density_tests
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             const CopyableTestClass element(seed);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
-            i_target.m_shadow.insert_at(at_index, element);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
-            i_target.m_shadow.insert_at(at_index_c, element, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, element);
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, element, count);
             i_target.compare();
         }));
 
@@ -296,8 +541,16 @@ namespace density_tests
             if (!i_target.m_shadow.empty())
             {
                 const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
-                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index));
-                i_target.m_shadow.erase_at(at_index);
+				try
+				{
+					i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index));
+				}
+				catch (...)
+				{
+					i_target.compare();
+					throw;
+				}
+				i_target.m_shadow.erase_at(at_index);
             }
         }));
 
@@ -307,9 +560,17 @@ namespace density_tests
             {
                 const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
                 const auto count = std::uniform_int_distribution<size_t>(at_index, i_target.m_shadow.size())(i_random) - at_index;
-                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index),
-                    std::next(i_target.m_array.begin(), (at_index + count)) );
-                i_target.m_shadow.erase_at(at_index, count);
+				try
+				{
+					i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index),
+						std::next(i_target.m_array.begin(), (at_index + count)));
+				}
+				catch (...)
+				{
+					i_target.compare();
+					throw;
+				}
+				i_target.m_shadow.erase_at(at_index, count);
             }
         }));
     }
@@ -330,24 +591,48 @@ namespace density_tests
         // push_back(BASE_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_back(BASE_TYPE(seed));
-            i_target.m_shadow.push_back(BASE_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_back(BASE_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(BASE_TYPE(seed));
             i_target.compare();
         }));
 
         // push_back(MI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_back(MI_TYPE(seed));
-            i_target.m_shadow.push_back(MI_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_back(MI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(MI_TYPE(seed));
             i_target.compare();
         }));
 
         // push_back(VMI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_back(VMI_TYPE(seed));
-            i_target.m_shadow.push_back(VMI_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_back(VMI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(VMI_TYPE(seed));
             i_target.compare();
         }));
 
@@ -372,8 +657,16 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const MI_TYPE element(seed);
-            i_target.m_array.push_back(element);
-            i_target.m_shadow.push_back(element);
+			try
+			{
+				i_target.m_array.push_back(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_back(element);
             i_target.compare();
         }));
 
@@ -381,7 +674,15 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const VMI_TYPE element(seed);
-            i_target.m_array.push_back(element);
+			try
+			{
+				i_target.m_array.push_back(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.push_back(element);
             i_target.compare();
         }));
@@ -391,24 +692,48 @@ namespace density_tests
         // push_front(BASE_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_front(BASE_TYPE(seed));
-            i_target.m_shadow.push_front(BASE_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_front(BASE_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(BASE_TYPE(seed));
             i_target.compare();
         }));
 
         // push_front(MI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_front(MI_TYPE(seed));
-            i_target.m_shadow.push_front(MI_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_front(MI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(MI_TYPE(seed));
             i_target.compare();
         }));
 
         // push_front(VMI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.push_front(VMI_TYPE(seed));
-            i_target.m_shadow.push_front(VMI_TYPE(seed));
+			try
+			{
+				i_target.m_array.push_front(VMI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(VMI_TYPE(seed));
             i_target.compare();
         }));
 
@@ -416,16 +741,32 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const BASE_TYPE element(seed);
-            i_target.m_array.push_front(element);
-            i_target.m_shadow.push_front(element);
+			try
+			{
+				i_target.m_array.push_front(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.push_front(element);
             i_target.compare();
         }));
 
         // push_front(MI_TYPE) as rvalue
-        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
-            auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            const MI_TYPE element(seed);
-            i_target.m_array.push_front(element);
+		i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+			auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
+			const MI_TYPE element(seed);
+			try
+			{
+				i_target.m_array.push_front(element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.push_front(element);
             i_target.compare();
         }));
@@ -434,7 +775,15 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const VMI_TYPE element(seed);
-            i_target.m_array.push_front(element);
+			try
+			{
+				i_target.m_array.push_front(element);
+			}            
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.push_front(element);
             i_target.compare();
         }));
@@ -448,9 +797,27 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), BASE_TYPE(seed));
-            i_target.m_shadow.insert_at(at_index, BASE_TYPE(seed));
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, BASE_TYPE(seed));
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), BASE_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, BASE_TYPE(seed));
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, BASE_TYPE(seed));	
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.insert_at(at_index_c, BASE_TYPE(seed), count);
             i_target.compare();
         }));
@@ -462,10 +829,28 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), MI_TYPE(seed));
+
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), MI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
             i_target.m_shadow.insert_at(at_index, MI_TYPE(seed));
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, MI_TYPE(seed));
-            i_target.m_shadow.insert_at(at_index_c, MI_TYPE(seed), count);
+			
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, MI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, MI_TYPE(seed), count);
             i_target.compare();
         }));
 
@@ -476,10 +861,28 @@ namespace density_tests
             const auto at_index_c = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size())(i_random);
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), VMI_TYPE(seed));
-            i_target.m_shadow.insert_at(at_index, VMI_TYPE(seed));
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, VMI_TYPE(seed));
-            i_target.m_shadow.insert_at(at_index_c, VMI_TYPE(seed), count);
+
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), VMI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, VMI_TYPE(seed));
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, VMI_TYPE(seed));
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, VMI_TYPE(seed), count);
             i_target.compare();
         }));
 
@@ -491,10 +894,27 @@ namespace density_tests
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const BASE_TYPE element(seed);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
-            i_target.m_shadow.insert_at(at_index, element);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
-            i_target.m_shadow.insert_at(at_index_c, element, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, element);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, element, count);
             i_target.compare();
         }));
 
@@ -506,10 +926,28 @@ namespace density_tests
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const MI_TYPE element(seed);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
-            i_target.m_shadow.insert_at(at_index, element);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
-            i_target.m_shadow.insert_at(at_index_c, element, count);
+
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, element);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, element, count);
             i_target.compare();
         }));
 
@@ -521,10 +959,27 @@ namespace density_tests
             const auto count = std::uniform_int_distribution<size_t>(0, 3)(i_random);
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const VMI_TYPE element(seed);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
-            i_target.m_shadow.insert_at(at_index, element);
-            i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
-            i_target.m_shadow.insert_at(at_index_c, element, count);
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index), element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index, element);
+            
+			try
+			{
+				i_target.m_array.insert(std::next(i_target.m_array.begin(), at_index_c), count, element);
+			}
+			catch (...)
+			{
+				i_target.compare();
+				throw;
+			}
+			i_target.m_shadow.insert_at(at_index_c, element, count);
             i_target.compare();
         }));
 
@@ -535,8 +990,16 @@ namespace density_tests
             if (!i_target.m_shadow.empty())
             {
                 const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
-                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index));
-                i_target.m_shadow.erase_at(at_index);
+				try
+				{
+					i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index));
+				}
+				catch (...)
+				{
+					i_target.compare();
+					throw;
+				}
+				i_target.m_shadow.erase_at(at_index);
             }
         }));
 
@@ -546,9 +1009,17 @@ namespace density_tests
             {
                 const auto at_index = std::uniform_int_distribution<size_t>(0, i_target.m_shadow.size() - 1)(i_random);
                 const auto count = std::uniform_int_distribution<size_t>(at_index, i_target.m_shadow.size())(i_random) - at_index;
-                i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index),
-                    std::next(i_target.m_array.begin(), (at_index + count)) );
-                i_target.m_shadow.erase_at(at_index, count);
+				try
+				{
+					i_target.m_array.erase(std::next(i_target.m_array.begin(), at_index),
+						std::next(i_target.m_array.begin(), (at_index + count)));
+				}
+				catch (...)
+				{
+					i_target.compare();
+					throw;
+				}
+				i_target.m_shadow.erase_at(at_index, count);
             }
         }));
 
