@@ -62,7 +62,7 @@ namespace density_tests
             }
         }
 
-        void compare_all(const DENSE_CONTAINER & i_container) const
+        void check_equal(const DENSE_CONTAINER & i_container) const
         {
             const auto container_is_empty = i_container.empty();
             TESTITY_ASSERT(container_is_empty == m_deque.empty());

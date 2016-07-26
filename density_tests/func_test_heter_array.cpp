@@ -27,13 +27,7 @@ namespace density_tests
     {
         HeterogeneousArray<TYPE> m_array;
         ShadowContainer<HeterogeneousArray<TYPE>> m_shadow;
-
-        void compare() const
-        {
-            m_shadow.compare_all(m_array);
-        }
     };
-
 
     template <typename TYPE>
         void add_common_heterogeneous_array_cases(TestTree & i_dest)
@@ -89,11 +83,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(1);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(1.0)
@@ -104,11 +98,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(1.0);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back('c')
@@ -119,11 +113,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back('c');
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(ElementType(seed) as rvalue), sizeof(ElementType) = 3
@@ -136,11 +130,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(ElementType(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(CopyableTestClass(seed) as rvalue)
@@ -152,11 +146,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(CopyableTestClass(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(TestClass(seed) as lvalue), sizeof(TestClass) = 3
@@ -170,11 +164,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(CopyableTestClass(seed) as lvalue)
@@ -187,11 +181,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- push_front ----*/
@@ -204,11 +198,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(1);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(1.0)
@@ -219,11 +213,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(1.0);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front('c')
@@ -234,11 +228,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front('c');
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(ElementType(seed) as rvalue), sizeof(ElementType) = 3
@@ -251,11 +245,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(ElementType(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(CopyableTestClass(seed) as rvalue)
@@ -267,11 +261,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(CopyableTestClass(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(TestClass(seed) as lvalue), sizeof(TestClass) = 3
@@ -285,11 +279,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(CopyableTestClass(seed) as lvalue)
@@ -302,11 +296,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- insert ----*/
@@ -323,7 +317,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, 1);
@@ -334,11 +328,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, 1, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(1.0)
@@ -353,7 +347,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}			
 			i_target.m_shadow.insert_at(at_index, 1.0);
@@ -364,12 +358,12 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 
 			i_target.m_shadow.insert_at(at_index_c, 1.0, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert('c')
@@ -385,7 +379,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, 'c');
@@ -396,11 +390,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, 'c', count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(ElementType(seed) as rvalue), sizeof(ElementType) = 3
@@ -418,7 +412,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 
@@ -429,12 +423,12 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 
 			i_target.m_shadow.insert_at(at_index_c, ElementType(seed), count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(CopyableTestClass(seed) as rvalue)
@@ -451,7 +445,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, CopyableTestClass(seed));
@@ -462,11 +456,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, CopyableTestClass(seed), count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(TestClass(seed) as lvalue), sizeof(TestClass) = 3
@@ -484,7 +478,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 
@@ -495,11 +489,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, element, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(CopyableTestClass(seed) as lvalue)
@@ -516,7 +510,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, element);
@@ -527,11 +521,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, element, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- erase ----*/
@@ -547,7 +541,7 @@ namespace density_tests
 				}
 				catch (...)
 				{
-					i_target.compare();
+					i_target.m_shadow.check_equal(i_target.m_array);
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index);
@@ -567,7 +561,7 @@ namespace density_tests
 				}
 				catch (...)
 				{
-					i_target.compare();
+					i_target.m_shadow.check_equal(i_target.m_array);
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index, count);
@@ -597,11 +591,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(BASE_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(MI_TYPE) as rvalue
@@ -613,11 +607,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(MI_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(VMI_TYPE) as rvalue
@@ -629,11 +623,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(VMI_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(BASE_TYPE) as rvalue
@@ -646,11 +640,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.push_back(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(MI_TYPE) as rvalue
@@ -663,11 +657,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_back(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_back(VMI_TYPE) as rvalue
@@ -680,11 +674,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.push_back(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- push_front ----*/
@@ -698,11 +692,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(BASE_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(MI_TYPE) as rvalue
@@ -714,11 +708,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(MI_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(VMI_TYPE) as rvalue
@@ -730,11 +724,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(VMI_TYPE(seed));
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(BASE_TYPE) as rvalue
@@ -747,11 +741,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.push_front(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(MI_TYPE) as rvalue
@@ -764,11 +758,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.push_front(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // push_front(VMI_TYPE) as rvalue
@@ -781,11 +775,11 @@ namespace density_tests
 			}            
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.push_front(element);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- insert ----*/
@@ -804,7 +798,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, BASE_TYPE(seed));
@@ -815,11 +809,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.insert_at(at_index_c, BASE_TYPE(seed), count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(MI_TYPE) as rvalue
@@ -836,7 +830,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
             i_target.m_shadow.insert_at(at_index, MI_TYPE(seed));
@@ -847,11 +841,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, MI_TYPE(seed), count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(VMI_TYPE) as rvalue
@@ -868,7 +862,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, VMI_TYPE(seed));
@@ -879,11 +873,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, VMI_TYPE(seed), count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(BASE_TYPE) as lvalue
@@ -900,7 +894,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, element);
@@ -911,11 +905,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, element, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(MI_TYPE) as lvalue
@@ -933,7 +927,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, element);
@@ -944,11 +938,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, element, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
         // insert(VMI_TYPE) as rvalue
@@ -965,7 +959,7 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index, element);
@@ -976,11 +970,11 @@ namespace density_tests
 			}
 			catch (...)
 			{
-				i_target.compare();
+				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
 			i_target.m_shadow.insert_at(at_index_c, element, count);
-            i_target.compare();
+            i_target.m_shadow.check_equal(i_target.m_array);
         }));
 
                     /*---- erase ----*/
@@ -996,7 +990,7 @@ namespace density_tests
 				}
 				catch (...)
 				{
-					i_target.compare();
+					i_target.m_shadow.check_equal(i_target.m_array);
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index);
@@ -1016,7 +1010,7 @@ namespace density_tests
 				}
 				catch (...)
 				{
-					i_target.compare();
+					i_target.m_shadow.check_equal(i_target.m_array);
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index, count);
