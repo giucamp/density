@@ -128,7 +128,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|Win32'">
@@ -136,7 +136,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -144,7 +144,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|x64'">
@@ -154,7 +154,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CLanguageStandard>Default</CLanguageStandard>
       <CppLanguageStandard>c++11</CppLanguageStandard>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -165,7 +165,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -180,7 +180,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -195,7 +195,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -211,7 +211,7 @@
       <SDLCheck>true</SDLCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CppLanguageStandard>c++11</CppLanguageStandard>
-      <AdditionalIncludeDirectories>..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -225,15 +225,6 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp" />
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
-    <ClCompile Include="..\..\testity\detail\environment.cpp" />
-    <ClCompile Include="..\..\testity\detail\functionality_test.cpp" />
-    <ClCompile Include="..\..\testity\performance_test.cpp" />
-    <ClCompile Include="..\..\testity\sanitizer_allocator.cpp" />
-    <ClCompile Include="..\..\testity\testity_common.cpp" />
-    <ClCompile Include="..\..\testity\test_allocator.cpp" />
-    <ClCompile Include="..\..\testity\test_classes.cpp" />
-    <ClCompile Include="..\..\testity\test_session.cpp" />
-    <ClCompile Include="..\..\testity\test_tree.cpp" />
     <ClCompile Include="..\func_test_heter_array.cpp" />
     <ClCompile Include="..\main.cpp" />
   </ItemGroup>
@@ -250,17 +241,13 @@
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
-    <ClInclude Include="..\..\testity\detail\environment.h" />
-    <ClInclude Include="..\..\testity\detail\functionality_test.h" />
-    <ClInclude Include="..\..\testity\performance_test.h" />
-    <ClInclude Include="..\..\testity\sanitizer_allocator.h" />
-    <ClInclude Include="..\..\testity\testity_common.h" />
-    <ClInclude Include="..\..\testity\test_allocator.h" />
-    <ClInclude Include="..\..\testity\test_classes.h" />
-    <ClInclude Include="..\..\testity\test_session.h" />
-    <ClInclude Include="..\..\testity\test_tree.h" />
     <ClInclude Include="..\container_test.h" />
     <ClInclude Include="..\test_allocators.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\testity\vs2015\testity.vcxproj">
+      <Project>{ff5c4ad3-9dbc-485c-928d-d9dc522f59da}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

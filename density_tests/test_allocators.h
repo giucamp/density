@@ -6,10 +6,10 @@
 
 #pragma once
 #include "../density/void_allocator.h"
-#include "../testity/testity_common.h"
-#include "../testity/test_allocator.h"
+#include "testity/testity_common.h"
+#include "testity/test_allocator.h"
 #ifdef _WIN32 // currently SanitizerAllocator is supported only on windows
-	#include "../testity/sanitizer_allocator.h"
+	#include "testity/sanitizer_allocator.h"
 #endif
 
 namespace density_tests

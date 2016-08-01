@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="testity">
-      <UniqueIdentifier>{2b9f7620-4805-4856-a214-ab37d5ce0b53}</UniqueIdentifier>
-    </Filter>
     <Filter Include="density_tests">
       <UniqueIdentifier>{59dbaf31-2bf8-4bcf-98e1-6ee014008b02}</UniqueIdentifier>
     </Filter>
@@ -15,9 +12,6 @@
     </Filter>
     <Filter Include="samples">
       <UniqueIdentifier>{19c7d4d9-1c1f-43bd-b78f-6338b7d9b7a0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="testity\detail">
-      <UniqueIdentifier>{dce9f0e0-4088-4a46-8de1-79823ff74acd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,35 +31,8 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp">
       <Filter>samples</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\testity\test_tree.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\detail\environment.cpp">
-      <Filter>testity\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\detail\functionality_test.cpp">
-      <Filter>testity\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\test_session.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\performance_test.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\testity_common.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\test_classes.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\test_allocator.cpp">
-      <Filter>testity</Filter>
-    </ClCompile>
     <ClCompile Include="..\func_test_heter_array.cpp">
       <Filter>density_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\testity\sanitizer_allocator.cpp">
-      <Filter>testity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -105,38 +72,11 @@
     <ClInclude Include="..\..\density\detail\array_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\testity\test_tree.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\detail\functionality_test.h">
-      <Filter>testity\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\detail\environment.h">
-      <Filter>testity\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\test_session.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\performance_test.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\testity_common.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\test_classes.h">
-      <Filter>testity</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\test_allocator.h">
-      <Filter>testity</Filter>
-    </ClInclude>
     <ClInclude Include="..\container_test.h">
       <Filter>density_tests</Filter>
     </ClInclude>
     <ClInclude Include="..\test_allocators.h">
       <Filter>density_tests</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\testity\sanitizer_allocator.h">
-      <Filter>testity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
