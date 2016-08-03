@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "../density/void_allocator.h"
+#include "../../density/void_allocator.h"
 #include "testity/testity_common.h"
 #include "testity/test_allocator.h"
 #ifdef _WIN32 // currently SanitizerAllocator is supported only on windows

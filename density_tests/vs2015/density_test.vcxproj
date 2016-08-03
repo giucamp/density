@@ -225,7 +225,9 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp" />
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
     <ClCompile Include="..\..\density_samples\runtime_type_sample.cpp" />
-    <ClCompile Include="..\func_test_heter_array.cpp" />
+    <ClCompile Include="..\benchmarks\bench_lifo.cpp" />
+    <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp" />
+    <ClCompile Include="..\functionality_cases\cases_lifo.cpp" />
     <ClCompile Include="..\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -241,8 +243,8 @@
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
-    <ClInclude Include="..\container_test.h" />
-    <ClInclude Include="..\test_allocators.h" />
+    <ClInclude Include="..\functionality_cases\shadow_container.h" />
+    <ClInclude Include="..\functionality_cases\test_allocators.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\testity\vs2015\testity.vcxproj">

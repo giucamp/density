@@ -4,11 +4,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/heterogeneous_array.h"
+#include "../../density/heterogeneous_array.h"
 #include "testity/testity_common.h"
 #include "testity/test_tree.h"
 #include "testity/test_classes.h"
-#include "container_test.h"
+#include "shadow_container.h"
 #include "test_allocators.h"
 #include <algorithm>
 #include <array>
@@ -361,7 +361,6 @@ namespace density_tests
 				i_target.m_shadow.check_equal(i_target.m_array);
 				throw;
 			}
-
 			i_target.m_shadow.insert_at(at_index_c, 1.0, count);
             i_target.m_shadow.check_equal(i_target.m_array);
         }));

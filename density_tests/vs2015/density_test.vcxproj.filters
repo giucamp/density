@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="density_tests">
-      <UniqueIdentifier>{59dbaf31-2bf8-4bcf-98e1-6ee014008b02}</UniqueIdentifier>
-    </Filter>
     <Filter Include="density">
       <UniqueIdentifier>{40e862db-7a51-4ac5-ab13-97fc36184d00}</UniqueIdentifier>
     </Filter>
@@ -12,6 +9,12 @@
     </Filter>
     <Filter Include="samples">
       <UniqueIdentifier>{19c7d4d9-1c1f-43bd-b78f-6338b7d9b7a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="functionality_cases">
+      <UniqueIdentifier>{59dbaf31-2bf8-4bcf-98e1-6ee014008b02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="benchmarks">
+      <UniqueIdentifier>{2000a144-b50f-4adf-871c-aec8d4af6c57}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -31,8 +34,14 @@
     <ClCompile Include="..\..\density_samples\misc_samples.cpp">
       <Filter>samples</Filter>
     </ClCompile>
-    <ClCompile Include="..\func_test_heter_array.cpp">
-      <Filter>density_tests</Filter>
+    <ClCompile Include="..\benchmarks\bench_lifo.cpp">
+      <Filter>benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_lifo.cpp">
+      <Filter>functionality_cases</Filter>
+    </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp">
+      <Filter>functionality_cases</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -72,11 +81,11 @@
     <ClInclude Include="..\..\density\detail\array_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\container_test.h">
-      <Filter>density_tests</Filter>
+    <ClInclude Include="..\functionality_cases\shadow_container.h">
+      <Filter>functionality_cases</Filter>
     </ClInclude>
-    <ClInclude Include="..\test_allocators.h">
-      <Filter>density_tests</Filter>
+    <ClInclude Include="..\functionality_cases\test_allocators.h">
+      <Filter>functionality_cases</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
