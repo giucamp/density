@@ -228,6 +228,7 @@
     <ClCompile Include="..\benchmarks\bench_lifo.cpp" />
     <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp" />
     <ClCompile Include="..\functionality_cases\cases_lifo.cpp" />
+    <ClCompile Include="..\functionality_cases\cases_queue.cpp" />
     <ClCompile Include="..\main.cpp" />
   </ItemGroup>
   <ItemGroup>

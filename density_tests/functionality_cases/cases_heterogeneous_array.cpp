@@ -544,6 +544,7 @@ namespace density_tests
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index);
+				i_target.m_shadow.check_equal(i_target.m_array);
             }
         }));
 
@@ -564,6 +565,7 @@ namespace density_tests
 					throw;
 				}
 				i_target.m_shadow.erase_at(at_index, count);
+				i_target.m_shadow.check_equal(i_target.m_array);
             }
         }));
     }
