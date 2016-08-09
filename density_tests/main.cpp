@@ -17,9 +17,12 @@ namespace density_tests
     void add_heterogeneous_array_cases(TestTree & i_dest);
 	void add_lifo_cases(TestTree & i_dest);
 	void add_queue_cases(TestTree & i_dest);
+	void add_function_queue_benchmarks(TestTree & i_dest);
 
 	// benchmarks
 	void add_lifo_array_benchmarks(TestTree & i_dest);
+	void add_queue_benchmarks(TestTree & i_dest);
+	void add_allocator_benchmarks(TestTree & i_dest);
 }
 
 int main()
@@ -32,11 +35,20 @@ int main()
 
     add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
 	add_queue_cases(test_tree["queue"]);
+	add_queue_benchmarks(test_tree["queue"]);
 	add_lifo_cases(test_tree["lifo"]);
 	add_lifo_array_benchmarks(test_tree["lifo"]);
+	add_function_queue_benchmarks(test_tree["function_queue"]);
+	add_allocator_benchmarks(test_tree["allocator"]);
+
+	#ifdef NDEBUG
+		auto const flags = TestFlags::FunctionalityTest | TestFlags::FunctionalityExceptionTest | TestFlags::PerformanceTests;
+	#else
+		auto const flags = TestFlags::FunctionalityTest | TestFlags::FunctionalityExceptionTest; 
+	#endif // _DEBUG
 
 	string last_label;
-	auto test_results = run_session(test_tree, TestFlags::All, TestConfig(), 
+	auto test_results = run_session(test_tree, flags, TestConfig(), 
 		[&last_label](const Progression & i_progression) {
 			if (last_label != i_progression.m_label)
 			{

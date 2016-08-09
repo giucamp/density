@@ -46,6 +46,15 @@
     <ClCompile Include="..\functionality_cases\cases_queue.cpp">
       <Filter>functionality_cases</Filter>
     </ClCompile>
+    <ClCompile Include="..\benchmarks\bench_queues.cpp">
+      <Filter>benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\benchmarks\bench_function_queue.cpp">
+      <Filter>benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\benchmarks\bench_allocator.cpp">
+      <Filter>benchmarks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">
