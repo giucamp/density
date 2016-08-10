@@ -85,7 +85,7 @@ namespace density_tests
             const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
 
             const bool custom_alignment = std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
-            const bool preserve = false; //  std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
+            const bool preserve = false; // preserve is currently not supported ---- std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
 
             m_vector.resize(new_size);
 
@@ -335,6 +335,76 @@ namespace density_tests
 	void add_lifo_cases(TestTree & i_dest)
 	{
 		using TestFunc = std::function< void(std::mt19937 & i_random)>;
+
+		// lifo_allocator
+		i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
+			
+			// instance a lifo_allocator
+			void_allocator underlying_allocator;
+			lifo_allocator<void_allocator> allocator(underlying_allocator);	
+
+			// for a random number of times....
+			while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+			{
+				// allocate a block and fill it with progressive numbers
+				auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				auto block = static_cast<unsigned char*>( allocator.allocate(size) );
+				for (size_t index = 0; index < size; index++)
+				{
+					block[index] = static_cast<unsigned char>(index & 0xFF);
+				}
+
+				// reallocate the block with reallocate_preserve, and check the content
+				auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+				for (size_t index = 0; index < std::min(size, new_size); index++)
+				{
+					TESTITY_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
+				}
+
+				// reallocate the block with reallocate
+				new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+
+				// done
+				allocator.deallocate(block);
+			}
+		}));
+
+		// thread_lifo_allocator
+		i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
+
+			// instance a lifo_allocator
+			thread_lifo_allocator<> allocator;
+
+			// for a random number of times....
+			while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+			{
+				// allocate a block and fill it with progressive numbers
+				auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				auto block = static_cast<unsigned char*>(allocator.allocate(size));
+				for (size_t index = 0; index < size; index++)
+				{
+					block[index] = static_cast<unsigned char>(index & 0xFF);
+				}
+
+				// reallocate the block with reallocate_preserve, and check the content
+				auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+				for (size_t index = 0; index < std::min(size, new_size); index++)
+				{
+					TESTITY_ASSERT(block[index] == static_cast<unsigned char>(index & 0xFF));
+				}
+
+				// reallocate the block with reallocate
+				new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+				block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+
+				// done
+				allocator.deallocate(block);
+			}
+		}));
+
 		i_dest.add_case(TestFunc([](std::mt19937 & i_random ) {
 			LifoTestContext context(i_random, 4);
 			context.lifo_test_push();
