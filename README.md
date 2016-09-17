@@ -14,7 +14,7 @@ Density is a C++11 header-only library that provides heterogeneous containers an
 Here is a summary of the containers provided by density:
 
 Container       | Memory layout      | Replacement for...
---------------- | ------------------
+--------------- | ------------------ | --------------------
 [function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html) | Paged | std::queue< std::function >
 [small_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1small__function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html) | Monolithic | std::queue< std::function >
 [heterogeneous_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__queue.html)  | Paged | std::queue< std::any >
