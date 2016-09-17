@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
+#include <vector>
 
 namespace lifo_sample
 {
