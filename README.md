@@ -38,10 +38,10 @@ Currently density provides 3 heterogeneous containers, which have a similar temp
     template <typename ELEMENT = void, typename UNTYPED_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
         class heterogeneous_array final;
 
-Template argument              |Meaning
+Template argument              | Description
 -------------------------------|----------------
 ELEMENT                        | Base type of the elements that are stored in the container. If it is void, the type of the elements is unconstrained (you can add an int, a std::string, a foo::Bike and a foo::Car). Otherwise, if you specify something like foo::Vehicle, you can add a foo::Bike, a foo::Car, but if you try to add an int you get a compile time error.
-*_ALLOCATOR | For monolithic containers this parameter must model the [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) concept. For paged container, it must model both [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) and [PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html).
+*_ALLOCATOR | For monolithic containers this parameter must model the [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) concept. For paged containers, it must model both [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) and [PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html).
 RUNTIME_TYPE | Type responsible of type-erasing the elements. The builtin class [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html) allows to specify which features you want to be exposed by the elements (copy costruction, comparison, or a custom Update(float dt) method) by composition. Anyway, if you already have in your project a reflection or type-erasure mechanism, you can define a custom type modelling the [RuntimeType concept](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html).
 
 Here is an example of how an heterogeneous_array can be created and iterated:
