@@ -85,9 +85,8 @@ Monolithic and paged containers
 --------------
 Inside heterogeneous containers elements are packed together (like they were allocated by a linear allocator). 
 
-Monolithic containers allocate a single memory block (like an std::vector). To perform an insertion sometimes the container must reallocate the block, and the elements have to be moved.
-
-Paged containers allocate multiple memory blocks (the term page is used for these blocks, as the size of them is fixed and specified by the allocator). The size of a page can be something like 4 KiB, and may depend on the operating system.
+- Monolithic containers allocate a single memory block (like an std::vector). To perform an insertion sometimes the container must reallocate the block, and the elements have to be moved.
+- Paged containers allocate multiple memory blocks (the term page is used for these blocks, as the size of them is fixed and specified by the allocator). The size of a page can be something like 4 KiB, and may depend on the operating system.
 A paged queue (like heterogeneous_queue or function_queue) pushes as many elements as possible in its *current page*. Whenever the element to push does not fit in the current page, the container just allocates a new page from its allocator, with no need to move any element. 
 Allocating a fixed-size page is much easier than allocating a dynamic block. As default page allocator, density provides the class [void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1void__allocator.html), that uses a thread-local cache of 4 free pages. Pushing and peeking a page from this cache requires no thread synchronization. This is much better than allocating a memory block (and probably locking a mutex) for every element to push in the queue.
 
@@ -105,7 +104,7 @@ Density provides two lifo data structures: lifo_array and lifo_buffer.
 			// ...
 
 The size of the array is provided at construction time, and cannot be changed. lifo_array allocates its element contiguously in memory in the **data stack** of the calling thread. 
-The data stack is a thread-local storage managed by a lifo allocator.  By "lifo" (last-in-first-out) we mean that only the most recently allocated block can be deallocated. If the lifo constraint is violated, the behaviour is undefined (defining DENSITY_DEBUG as non-zero in density_common.h enables a debug check, but beaware of the [one definition rule](https://en.wikipedia.org/wiki/One_Definition_Rule)). 
+The data stack is a thread-local storage managed by a lifo allocator.  By "lifo" (last-in-first-out) we mean that only the most recently allocated block can be deallocated. If the lifo constraint is violated, the behaviour of the program is undefined (defining DENSITY_DEBUG as non-zero in density_common.h enables a debug check, but beaware of the [one definition rule](https://en.wikipedia.org/wiki/One_Definition_Rule)). 
 If you declare a lifo_array locally to a function, you don't have to worry about the lifo-constraint, because C++ is designed so that automatic objects are destroyed in lifo order. Even a lifo_array as non-static member of a struct/class allocated on the callstack is safe.
 
 A [lifo_buffer](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__buffer.html) is not a container, it's more low-level. It provides a dynamic raw storage. Unlike lifo_array, lifo_buffer allows reallocation (that is changing the size and the alignment of the buffer), but only of the last created lifo_buffer (otherwise the behavior is undefined).
@@ -146,7 +145,7 @@ A [lifo_buffer](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo
 Concepts
 ----------
 
-Concept     | Modeled by
+Concept     | Modeled in density by
 ------------|--------------
 [RuntimeType](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html) | [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html)
 [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) | [void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1void__allocator.html)
@@ -166,9 +165,10 @@ Benchmarks
 - [Comparaison benchmarks with boost::any](http://peggysansonetti.it/tech/density/html/any_bench.html)
 - [Automatic variable-length array](http://peggysansonetti.it/tech/density/html/lifo_array_bench.html)	
  
-Using density
+Usage and release notes
 ----------
-Density is an header-only library, so you don't have to compile anything: you just need to include the headers you need. Get the latest revision from the master branch of the [github repository](https://github.com/giucamp/density), that is stable.
+Density is an header-only library, so you don't have to compile anything: just include the headers you need. You can get the latest revision from the master branch of the [github repository](https://github.com/giucamp/density).
+
 Density is known to compile with:
 
 - msc (Visual Studio 2015 - update 2)
@@ -179,7 +179,7 @@ Anyway it should compile with any C++11 compliant compiler. If you compile densi
 
 Important note: density has an extensive test suite, that include an exhaustive test of the exception safeness. Anyway some functions may be still uncovered by the tests.
 
-Release notes and future development
+Future development
 ------------------
 - Future version of density may provide an anti-slicing mechanism, to detect at compile-time copy-constructions or copy-assignments using as source a partial-type reference to an element of an heterogeneous containers. This feature will probably require a C++17 compiler.
 - Density currently lacks an heterogeneous_stack and a function_stack.
