@@ -5,19 +5,31 @@ Density Overview
 
 What's Density
 --------------
-
 Density is a C++11 header-only library that provides heterogeneous containers and lifo memory management. The key ideas behind density are:
-- allocating objects of heterogeneous type linearly and tightly in memory: this is beneficial for construction time, access memory locality, and global memory footprint.
-- superseding the *fixed-then-dynamic storage* pattern, that is: when you need to store N elements, you dedicate a fast-to-allocate fixed-sized storage big M. Then, when using it, if N > M, you allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need. density provides a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
-- providing at least the strong exception guarantee for every single function (that is, if an exception is thrown while executing the function, the call has no visible side effects at all on the calling thread). Exceptions are the easiest, safest and fastest way of handling errors, and applications should have a reliable behavior even in case of exception.
+- allocating objects of **heterogeneous** type linearly and tightly in memory: this is beneficial for construction time, access memory locality, and global memory footprint. A very fast function queue is provided, which performs much better than a standard vector of functions (see the [banchmarks](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)).
+- superseding the *fixed-then-dynamic storage* pattern, that is: when you need to store N elements, you dedicate a fast-to-allocate fixed-sized storage big M. Then, when using it, if N > M, you allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need. density provides [lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html), a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
+- providing at least the **strong exception guarantee** for every single function (that is, if an exception is thrown while executing the function, the call has no visible side effects at all on the calling thread). Exceptions are the easiest, safest and fastest way of handling errors, and applications should have a reliable behavior even in case of exception.
+
+Here is a summary of the containers provided by density:
+
+Container       | Memory layout| Description
+--------------- | -------------
+[heterogeneous_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__array.html)  | Monolithic | Array of elements with unrelated types
+[heterogeneous_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__queue.html)  | Paged | Queue of elements with unrelated types
+[small_heterogeneous_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1small__heterogeneous__queue.html) | Monolithic | Queue of elements with unrelated types
+[function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html) | Paged | Queue of std::function-like elements
+[small_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1small__function__queue_3_01RET__VAL_07PARAMS_8_8_8_08_4.html) | Monolithic | Queue of std::function-like elements
+[lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html) | Lifo monolithic | Homogeneous useful as lightweight automatic storage 
+
+
 
 Heterogeneous containers
 ========================
 
-dense_list<>
+heterogeneous_array<>
 ------------
-Heterogeneous containers are very frequent in production code. Using just the standard library, the best way to model a polymorphic container is probably a vector of smart pointers.
-As alternative, density provides [dense_list](http://peggysansonetti.it/tech/density/html/classdensity_1_1dense__list.html), a container whose elements can be of different type:
+Heterogeneous containers are very frequent in object-oriented designs. Using just the standard library, the best way to model a polymorphic container is probably a vector of smart pointers.
+As alternative, density provides [heterogeneous_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__array.html), a container whose elements can be of different type:
 
 			struct Widget { virtual void draw() { /* ... */ } };
 			struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
@@ -40,19 +52,19 @@ dense_list is recommended over a vector of smart pointers when the container is 
 
 If the element base type is void (the default), then any type can be added to the list:
 
-	auto list = dense_list<>::make(3 + 5, string("abc"), 42.f);
+	auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
 	list.push_front(wstring(L"ABC"));
 	for (auto it = list.begin(); it != list.end(); it++)
 	{
 		cout << it.complete_type().type_info().name() << endl;
 	} 
 			
-This snippet creates a list with 3 elements, and then adds another one at the beginning. Then the type of every element is written on std::cout. With a dense_list<void> range loops cannot be used, because the indirection of the iterator returns void. The expression iterator.element() returns a void pointer to the complete element.
+This snippet creates a list with 3 elements, and then adds another one at the beginning. Then the type of every element is written on std::cout. With a heterogeneous_array<void> range loops cannot be used, because the indirection of the iterator returns void. The expression iterator.element() returns a void pointer to the complete element.
 In the last snippet the function complete_type() of the iterartor is used. It returns a density::runtime_type, an object which is used as "type eraser": it is able to construct, destroy, copy, move, retrieve size and alignment of a type. The function type_info() of runtime_type returns the [std::type_info](http://en.cppreference.com/w/cpp/types/type_info) associated to the type. With the latter the user can discover the actual complete type of every element, and may match the type in a switch-like construct. Unfortunately this is almost everything you can do with the type_info. Even the names of the type, printed in the last snippet, are compiler dependent and unreliable.
 If you need to include additional information about the complete type of the elements, you can: density containers allow to customize the type used to do type-erasure. Here is the declaration of dense_list:
 
-    template <typename ELEMENT = void, typename ALLOCATOR = std::allocator<ELEMENT>, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class dense_list final;
+    template <typename ELEMENT = void, typename UNTYPED_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+            class heterogeneous_array final;
 
 The third template parameter can be used to specify a type other than the class template [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html), given that this type meets the requirements of RuntimeType. For example you may provide the capability of streaming objects to a std::ostream. Or, if your codebase is using a reflection mechanism, your custom RUNTIME_TYPE may wrap a pointer to your custom type_info-like class. Type erasure is a subset of reflection; density, by default stores about a type only what it needs to handle the lifetime of elements in a container.
  
