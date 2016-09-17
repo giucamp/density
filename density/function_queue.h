@@ -190,7 +190,7 @@ namespace density
         typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
 
     private:
-		underlying_queue m_queue;
+        underlying_queue m_queue;
     };
 
 } // namespace density

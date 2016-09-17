@@ -9,7 +9,7 @@
 #include "testity/testity_common.h"
 #include "testity/test_allocator.h"
 #ifdef _WIN32 // currently SanitizerAllocator is supported only on windows
-	#include "testity/sanitizer_allocator.h"
+    #include "testity/sanitizer_allocator.h"
 #endif
 
 namespace density_tests
@@ -45,23 +45,23 @@ namespace density_tests
 
         void * allocate_page()
         {
-			#ifdef _WIN32
-	            auto page = m_underlying_allocator.allocate(void_allocator::page_size(), void_allocator::page_alignment(), 0);
-			#else
-				auto page = m_underlying_allocator.allocate_page();
-			#endif
-			m_registry.add_block(page, page_size(), page_alignment(), 0);
+            #ifdef _WIN32
+                auto page = m_underlying_allocator.allocate(void_allocator::page_size(), void_allocator::page_alignment(), 0);
+            #else
+                auto page = m_underlying_allocator.allocate_page();
+            #endif
+            m_registry.add_block(page, page_size(), page_alignment(), 0);
             return page;
         }
 
         void deallocate_page(void * i_page) noexcept
         {
             m_registry.remove_block(i_page, page_size(), page_alignment(), 0);
-			#ifdef _WIN32
-				m_underlying_allocator.deallocate(i_page, void_allocator::page_size(), void_allocator::page_alignment(), 0);
-			#else
-				m_underlying_allocator.deallocate_page(i_page);
-			#endif		
+            #ifdef _WIN32
+                m_underlying_allocator.deallocate(i_page, void_allocator::page_size(), void_allocator::page_alignment(), 0);
+            #else
+                m_underlying_allocator.deallocate_page(i_page);
+            #endif
         }
 
         bool operator == (const TestVoidAllocator & i_other) const
@@ -76,11 +76,11 @@ namespace density_tests
 
     private:
         SharedBlockRegistry m_registry;
-		#ifdef _WIN32 
-			SanitizerAllocator m_underlying_allocator;
-		#else
-			void_allocator m_underlying_allocator;
-		#endif
+        #ifdef _WIN32
+            SanitizerAllocator m_underlying_allocator;
+        #else
+            void_allocator m_underlying_allocator;
+        #endif
     };
 
 } // density_tests

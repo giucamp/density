@@ -1,70 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
-	<ActiveTarget name="Debug Win32" />
-	<File name="..\..\density\detail\queue_impl.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<ActiveTarget name="Debug x64" />
+	<File name="..\..\density\lifo.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3760" topLine="33" />
+			<Cursor1 position="6909" topLine="115" />
 		</Cursor>
 	</File>
-	<File name="..\..\density\small_queue_any.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="..\benchmarks\bench_allocator.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7580" topLine="67" />
+			<Cursor1 position="1082" topLine="16" />
 		</Cursor>
 	</File>
-	<File name="..\..\density\lifo.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="..\functionality_cases\shadow_container.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="16597" topLine="342" />
-		</Cursor>
-	</File>
-	<File name="..\..\density\small_queue_function.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3389" topLine="31" />
-		</Cursor>
-	</File>
-	<File name="..\..\testity\environment.cpp" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6927" topLine="160" />
-		</Cursor>
-	</File>
-	<File name="..\..\density\density_common.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="539" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="..\..\density_samples\runtime_type_sample.cpp" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2471" topLine="49" />
-		</Cursor>
-	</File>
-	<File name="..\..\density_samples\producer_consumer_sample.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4971" topLine="152" />
-		</Cursor>
-	</File>
-	<File name="..\list_benchmarks.cpp" open="1" top="1" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6643" topLine="165" />
-		</Cursor>
-	</File>
-	<File name="..\..\density_samples\lifo_sample.cpp" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2765" topLine="57" />
-		</Cursor>
-	</File>
-	<File name="..\..\density\array_any.h" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="23713" topLine="389" />
-		</Cursor>
-	</File>
-	<File name="..\..\density\queue_function.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5158" topLine="62" />
-		</Cursor>
-	</File>
-	<File name="..\..\density\detail\dense_list_impl.h" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="13750" topLine="309" />
+			<Cursor1 position="4813" topLine="101" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

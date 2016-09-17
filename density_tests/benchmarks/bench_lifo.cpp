@@ -13,7 +13,7 @@
 
 namespace density_tests
 {
-	using namespace density;
+    using namespace density;
     using namespace testity;
 
     struct Virtual
@@ -21,11 +21,11 @@ namespace density_tests
         virtual ~Virtual() {}
     };
 
-	void add_lifo_array_benchmarks(TestTree & i_dest)
-	{
+    void add_lifo_array_benchmarks(TestTree & i_dest)
+    {
         PerformanceTestGroup group("create array", "density version: " + std::to_string(DENSITY_VERSION));
 
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+		group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             lifo_array< Virtual > array(i_cardinality);
         }, __LINE__);
 
@@ -38,7 +38,7 @@ namespace density_tests
             delete[] cpp98_array;
         }, __LINE__);
 
-		i_dest.add_performance_test(group);
+        i_dest.add_performance_test(group);
     }
 
 } // namespace density_tests

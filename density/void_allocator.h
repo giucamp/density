@@ -207,7 +207,7 @@ namespace density
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
+            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_block(i_block, i_size, i_alignment);
             #endif
             if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
@@ -259,7 +259,7 @@ namespace density
             {
                 page = allocate_page_impl();
             }
-			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
+            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
             return page;
@@ -273,7 +273,7 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
+            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_page(i_page);
             #endif
             auto & page_store = thread_page_store();
@@ -318,7 +318,7 @@ namespace density
             void * m_block;
         };
 
-		#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
+        #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
             class DbgData
             {
             public:

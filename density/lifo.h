@@ -14,40 +14,40 @@ namespace density
 {
     /** Class template that provides a typeless LIFO memory management.
 
-		@tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must model both the
-			\ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts.
+        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must model both the
+            \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
-		Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
-		A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
+        Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
+        A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
         To simpify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed to be like
         std::max_align_t. \n
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
         The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block. \n
-		lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and
-		there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
-		an untyped block is allocated from the underlying allocator. \n
-		lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately
-		deallocated. \n
-		lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
+        lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and
+        there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
+        an untyped block is allocated from the underlying allocator. \n
+        lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately
+        deallocated. \n
+        lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
         See thread_lifo_allocator for a stateless LIFO allocator. \n
 
-		Note: using a lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
+        Note: using a lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
     template <typename VOID_ALLOCATOR = void_allocator >
-		class lifo_allocator : private VOID_ALLOCATOR
-	{
-	public:
+        class lifo_allocator : private VOID_ALLOCATOR
+    {
+    public:
 
-		/** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-		static const size_t s_alignment = alignof(std::max_align_t);
+        /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+        static const size_t s_alignment = alignof(std::max_align_t);
 
-		/** Default constructor. */
-		lifo_allocator() = default;
+        /** Default constructor. */
+        lifo_allocator() = default;
 
-		/** Constructor from an allocator */
-		lifo_allocator(const VOID_ALLOCATOR & i_underlying_allocator)
-			: VOID_ALLOCATOR(i_underlying_allocator) { }
+        /** Constructor from an allocator */
+        lifo_allocator(const VOID_ALLOCATOR & i_underlying_allocator)
+            : VOID_ALLOCATOR(i_underlying_allocator) { }
 
         // disable copying
         lifo_allocator(const lifo_allocator &) = delete;
@@ -158,13 +158,13 @@ namespace density
             }
         }
 
-		/** Returns a reference to the underlying allocator. */
+        /** Returns a reference to the underlying allocator. */
         VOID_ALLOCATOR & get_underlying_allocator() noexcept
         {
             return *this;
         }
 
-		/** Returns a const reference to the underlying allocator. */
+        /** Returns a const reference to the underlying allocator. */
         const VOID_ALLOCATOR & get_underlying_allocator() const noexcept
         {
             return *this;
@@ -212,11 +212,11 @@ namespace density
             last_page->PageHeader::~PageHeader();
             if (last_page_size <= allocator_page_size)
             {
-				get_underlying_allocator().deallocate_page(last_page);
+                get_underlying_allocator().deallocate_page(last_page);
             }
             else
             {
-				get_underlying_allocator().deallocate(last_page, last_page_size);
+                get_underlying_allocator().deallocate(last_page, last_page_size);
             }
             m_last_page = prev_page;
         }
@@ -325,7 +325,7 @@ namespace density
         Only the calling thread matters.
         When a thread exits all its living block are deallocated. \n
 
-		Note: using thread_lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
+        Note: using thread_lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
     template <typename VOID_ALLOCATOR = void_allocator >
         class thread_lifo_allocator
     {
@@ -334,12 +334,12 @@ namespace density
         /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
         static size_t page_alignment() noexcept { return VOID_ALLOCATOR::page_alignment; }
 
-		/** Default constructor */
-		thread_lifo_allocator() = default;
+        /** Default constructor */
+        thread_lifo_allocator() = default;
 
-		// disable the copy
-		thread_lifo_allocator(const thread_lifo_allocator & ) = delete;
-		thread_lifo_allocator & operator = (const thread_lifo_allocator &) = delete;
+        // disable the copy
+        thread_lifo_allocator(const thread_lifo_allocator & ) = delete;
+        thread_lifo_allocator & operator = (const thread_lifo_allocator &) = delete;
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined.
                 @param i_block i_mem_size The size of the requested block, in bytes.
@@ -363,7 +363,7 @@ namespace density
             return get_allocator().reallocate(i_block, i_new_mem_size);
         }
 
-		/** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
+        /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
             The address of the block may change. The content of the memory block is preserved up to the exiting extend.
             If the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
@@ -394,28 +394,28 @@ namespace density
         }
     };
 
-	/** A lifo buffer is a block of raw memory allocated from a lifo allocator. */
+    /** A lifo buffer is a block of raw memory allocated from a lifo allocator. */
     template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
         class lifo_buffer : LIFO_ALLOCATOR
     {
     public:
 
-		/** Constructs a lifo_buffer.
-			@param i_mem_size size in bytes of the memory block.
-		The block is aligned at least like std::max_align_t. */
+        /** Constructs a lifo_buffer.
+            @param i_mem_size size in bytes of the memory block.
+        The block is aligned at least like std::max_align_t. */
         lifo_buffer(size_t i_mem_size = 0)
         {
             m_buffer = m_block = get_allocator().allocate(i_mem_size);
             m_mem_size = i_mem_size;
         }
 
-		/** Constructs a lifo_buffer.
-			@param i_mem_size size in bytes of the memory block.
-			@param i_alignment alignment of the block. It must be > 0 and an integer power of 2
-		*/
+        /** Constructs a lifo_buffer.
+            @param i_mem_size size in bytes of the memory block.
+            @param i_alignment alignment of the block. It must be > 0 and an integer power of 2
+        */
         lifo_buffer(size_t i_mem_size, size_t i_alignment)
         {
-			DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+            DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
             // the lifo block is already aligned like std::max_align_t
             auto actual_block_size = i_mem_size;
@@ -428,10 +428,10 @@ namespace density
             m_mem_size = i_mem_size;
         }
 
-		/** Constructs a lifo_buffer.
-			@param i_allocator source to use to copy-construct the allocator
-			@param i_mem_size size in bytes of the memory block.
-		The block is aligned at least like std::max_align_t. */
+        /** Constructs a lifo_buffer.
+            @param i_allocator source to use to copy-construct the allocator
+            @param i_mem_size size in bytes of the memory block.
+        The block is aligned at least like std::max_align_t. */
         lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size)
             : LIFO_ALLOCATOR(i_allocator)
         {
@@ -439,11 +439,11 @@ namespace density
             m_mem_size = i_mem_size;
         }
 
-		/** Constructs a lifo_buffer.
-			@param i_allocator source to use to copy-construct the allocator
-			@param i_mem_size size in bytes of the memory block.
-			@param i_alignment alignment of the block. It must be > 0 and an integer power of 2
-		*/
+        /** Constructs a lifo_buffer.
+            @param i_allocator source to use to copy-construct the allocator
+            @param i_mem_size size in bytes of the memory block.
+            @param i_alignment alignment of the block. It must be > 0 and an integer power of 2
+        */
         lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size, size_t i_alignment)
             : LIFO_ALLOCATOR(i_allocator)
         {
@@ -458,7 +458,7 @@ namespace density
             m_mem_size = i_mem_size;
         }
 
-		// disable the copy
+        // disable the copy
         lifo_buffer(const lifo_buffer &) = delete;
         lifo_buffer & operator = (const lifo_buffer &) = delete;
 
@@ -716,8 +716,8 @@ namespace density
             : m_block(nullptr), m_object(nullptr)
                 { }
 
-		lifo_any(const lifo_any&) = delete;
-		lifo_any & operator = (const lifo_any&) = delete;
+        lifo_any(const lifo_any&) = delete;
+        lifo_any & operator = (const lifo_any&) = delete;
 
         template <typename TARGET_TYPE>
             lifo_any(TARGET_TYPE && i_source)

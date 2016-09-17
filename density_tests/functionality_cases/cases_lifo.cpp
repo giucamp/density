@@ -14,10 +14,10 @@
 
 namespace density_tests
 {
-	using namespace density;
-	using namespace testity;
+    using namespace density;
+    using namespace testity;
 
-	size_t random_alignment(std::mt19937 & i_random)
+    size_t random_alignment(std::mt19937 & i_random)
     {
         size_t log2_max = 0;
         while ((static_cast<size_t>(1) << log2_max) < alignof(std::max_align_t))
@@ -155,21 +155,21 @@ namespace density_tests
 
     struct LifoTestContext
     {
-	private:
+    private:
         std::mt19937 & m_random;
         int m_curr_depth = 0;
         int m_max_depth = 0;
         std::vector< std::unique_ptr< LifoTestItem > > m_tests;
 
-	public:
-		
-		LifoTestContext(std::mt19937 & i_random, int i_max_depth)
-			: m_random(i_random), m_max_depth(i_max_depth)
-		{
+    public:
 
-		}
+        LifoTestContext(std::mt19937 & i_random, int i_max_depth)
+            : m_random(i_random), m_max_depth(i_max_depth)
+        {
 
-		std::mt19937 & random() { return m_random; }
+        }
+
+        std::mt19937 & random() { return m_random; }
 
         template <typename TYPE>
             void push_test(const lifo_array<TYPE> & i_array)
@@ -209,207 +209,207 @@ namespace density_tests
             }
         }
 
-		void lifo_test_push_buffer()
-		{
-			std::uniform_int_distribution<unsigned> rnd(0, 100);
-			lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random));
-			TESTITY_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
-			std::generate(
-				static_cast<unsigned char*>(buffer.data()),
-				static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
-				[this, &rnd] { return static_cast<unsigned char>(rnd(m_random) % 128); });
-			push_test(buffer);
-			lifo_test_push();
-			pop_test();
-		}
+        void lifo_test_push_buffer()
+        {
+            std::uniform_int_distribution<unsigned> rnd(0, 100);
+            lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random));
+            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
+            std::generate(
+                static_cast<unsigned char*>(buffer.data()),
+                static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
+                [this, &rnd] { return static_cast<unsigned char>(rnd(m_random) % 128); });
+            push_test(buffer);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_any_int()
-		{
-			int value = std::uniform_int_distribution<int>(-100, 100)(m_random);
-			lifo_any<> any( value );
+        void lifo_test_push_any_int()
+        {
+            int value = std::uniform_int_distribution<int>(-100, 100)(m_random);
+            lifo_any<> any( value );
 
-			TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
-			push_test(any, value);
-			lifo_test_push();
-			pop_test();
-		}
+            TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
+            push_test(any, value);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_buffer_aligned()
-		{
-			const auto alignment = random_alignment(m_random);
-			std::uniform_int_distribution<unsigned> rnd(0, 100);
-			lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random), alignment);
-			TESTITY_ASSERT(is_address_aligned(buffer.data(), alignment));
-			std::generate(
-				static_cast<unsigned char*>(buffer.data()),
-				static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
-				[this, &rnd] { return static_cast<unsigned char>(rnd(m_random) % 128); });
-			push_test(buffer);
-			lifo_test_push();
-			pop_test();
-		}
+        void lifo_test_push_buffer_aligned()
+        {
+            const auto alignment = random_alignment(m_random);
+            std::uniform_int_distribution<unsigned> rnd(0, 100);
+            lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random), alignment);
+            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignment));
+            std::generate(
+                static_cast<unsigned char*>(buffer.data()),
+                static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
+                [this, &rnd] { return static_cast<unsigned char>(rnd(m_random) % 128); });
+            push_test(buffer);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_char()
-		{
-			std::uniform_int_distribution<unsigned> rnd(0, 100);
-			lifo_array<unsigned char> arr(std::uniform_int_distribution<size_t>(0, 20)(m_random));
-			std::generate(arr.begin(), arr.end(), [this, &rnd] { return static_cast<unsigned char>(rnd(m_random)); });
-			push_test(arr);
-			lifo_test_push();
-			pop_test();
-		}
+        void lifo_test_push_char()
+        {
+            std::uniform_int_distribution<unsigned> rnd(0, 100);
+            lifo_array<unsigned char> arr(std::uniform_int_distribution<size_t>(0, 20)(m_random));
+            std::generate(arr.begin(), arr.end(), [this, &rnd] { return static_cast<unsigned char>(rnd(m_random)); });
+            push_test(arr);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_int()
-		{
-			std::uniform_int_distribution<int> rnd(-1000, 1000);
-			lifo_array<int> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
-			std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
+        void lifo_test_push_int()
+        {
+            std::uniform_int_distribution<int> rnd(-1000, 1000);
+            lifo_array<int> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
+            std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
 
-			push_test(arr);
-			lifo_test_push();
-			pop_test();
-		}
+            push_test(arr);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_wide_alignment()
-		{
-			union alignas(alignof(std::max_align_t) * 2) AlignedType
-			{
-				int m_value;
-				std::max_align_t m_unused[2];
-				bool operator == (const AlignedType & i_other) const
-				{
-					return m_value == i_other.m_value;
-				}
-			};
+        void lifo_test_push_wide_alignment()
+        {
+            union alignas(alignof(std::max_align_t) * 2) AlignedType
+            {
+                int m_value;
+                std::max_align_t m_unused[2];
+                bool operator == (const AlignedType & i_other) const
+                {
+                    return m_value == i_other.m_value;
+                }
+            };
 
-			std::uniform_int_distribution<int> rnd(-1000, 1000);
-			lifo_array<AlignedType> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
-			std::generate(arr.begin(), arr.end(), [this, &rnd] { return AlignedType{ rnd(m_random) }; });
+            std::uniform_int_distribution<int> rnd(-1000, 1000);
+            lifo_array<AlignedType> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
+            std::generate(arr.begin(), arr.end(), [this, &rnd] { return AlignedType{ rnd(m_random) }; });
 
-			push_test(arr);
-			lifo_test_push();
-			pop_test();
-		}
+            push_test(arr);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push_double()
-		{
-			std::uniform_real_distribution<double> rnd(-1000., 1000.);
-			lifo_array<double> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
-			std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
+        void lifo_test_push_double()
+        {
+            std::uniform_real_distribution<double> rnd(-1000., 1000.);
+            lifo_array<double> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
+            std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
 
-			push_test(arr);
-			lifo_test_push();
-			pop_test();
-		}
+            push_test(arr);
+            lifo_test_push();
+            pop_test();
+        }
 
-		void lifo_test_push()
-		{
-			if (m_curr_depth < m_max_depth)
-			{
-				using Func = void(LifoTestContext::*)();
-				Func tests[] = { &LifoTestContext::lifo_test_push_buffer, &LifoTestContext::lifo_test_push_char, 
-					&LifoTestContext::lifo_test_push_int, &LifoTestContext::lifo_test_push_double, 
-					&LifoTestContext::lifo_test_push_wide_alignment, &LifoTestContext::lifo_test_push_any_int };
+        void lifo_test_push()
+        {
+            if (m_curr_depth < m_max_depth)
+            {
+                using Func = void(LifoTestContext::*)();
+                Func tests[] = { &LifoTestContext::lifo_test_push_buffer, &LifoTestContext::lifo_test_push_char,
+                    &LifoTestContext::lifo_test_push_int, &LifoTestContext::lifo_test_push_double,
+                    &LifoTestContext::lifo_test_push_wide_alignment, &LifoTestContext::lifo_test_push_any_int };
 
-				m_curr_depth++;
+                m_curr_depth++;
 
-				const auto iter_count = std::uniform_int_distribution<int>(0, 5)(m_random);
-				for (int i = 0; i < iter_count; i++)
-				{
-					resize(m_random);
+                const auto iter_count = std::uniform_int_distribution<int>(0, 5)(m_random);
+                for (int i = 0; i < iter_count; i++)
+                {
+                    resize(m_random);
 
-					const auto random_index = std::uniform_int_distribution<size_t>(0, sizeof(tests) / sizeof(tests[0]) - 1)(m_random);
-					(this->*tests[random_index])();
+                    const auto random_index = std::uniform_int_distribution<size_t>(0, sizeof(tests) / sizeof(tests[0]) - 1)(m_random);
+                    (this->*tests[random_index])();
 
-					check();
+                    check();
 
-					resize(m_random);
-				}
+                    resize(m_random);
+                }
 
-				m_curr_depth--;
-			}
-		}
+                m_curr_depth--;
+            }
+        }
 
     }; // LifoTestContext
- 
-	void add_lifo_cases(TestTree & i_dest)
-	{
-		using TestFunc = std::function< void(std::mt19937 & i_random)>;
 
-		// lifo_allocator
-		i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
-			
-			// instance a lifo_allocator
-			void_allocator underlying_allocator;
-			lifo_allocator<void_allocator> allocator(underlying_allocator);	
+    void add_lifo_cases(TestTree & i_dest)
+    {
+        using TestFunc = std::function< void(std::mt19937 & i_random)>;
 
-			// for a random number of times....
-			while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
-			{
-				// allocate a block and fill it with progressive numbers
-				auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				auto block = static_cast<unsigned char*>( allocator.allocate(size) );
-				for (size_t index = 0; index < size; index++)
-				{
-					block[index] = static_cast<unsigned char>(index & 0xFF);
-				}
+        // lifo_allocator
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
 
-				// reallocate the block with reallocate_preserve, and check the content
-				auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
-				for (size_t index = 0; index < std::min(size, new_size); index++)
-				{
-					TESTITY_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
-				}
+            // instance a lifo_allocator
+            void_allocator underlying_allocator;
+            lifo_allocator<void_allocator> allocator(underlying_allocator);
 
-				// reallocate the block with reallocate
-				new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+            // for a random number of times....
+            while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+            {
+                // allocate a block and fill it with progressive numbers
+                auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                auto block = static_cast<unsigned char*>( allocator.allocate(size) );
+                for (size_t index = 0; index < size; index++)
+                {
+                    block[index] = static_cast<unsigned char>(index & 0xFF);
+                }
 
-				// done
-				allocator.deallocate(block);
-			}
-		}));
+                // reallocate the block with reallocate_preserve, and check the content
+                auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+                for (size_t index = 0; index < std::min(size, new_size); index++)
+                {
+                    TESTITY_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
+                }
 
-		// thread_lifo_allocator
-		i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
+                // reallocate the block with reallocate
+                new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
 
-			// instance a lifo_allocator
-			thread_lifo_allocator<> allocator;
+                // done
+                allocator.deallocate(block);
+            }
+        }));
 
-			// for a random number of times....
-			while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
-			{
-				// allocate a block and fill it with progressive numbers
-				auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				auto block = static_cast<unsigned char*>(allocator.allocate(size));
-				for (size_t index = 0; index < size; index++)
-				{
-					block[index] = static_cast<unsigned char>(index & 0xFF);
-				}
+        // thread_lifo_allocator
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random) {
 
-				// reallocate the block with reallocate_preserve, and check the content
-				auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
-				for (size_t index = 0; index < std::min(size, new_size); index++)
-				{
-					TESTITY_ASSERT(block[index] == static_cast<unsigned char>(index & 0xFF));
-				}
+            // instance a lifo_allocator
+            thread_lifo_allocator<> allocator;
 
-				// reallocate the block with reallocate
-				new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-				block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+            // for a random number of times....
+            while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+            {
+                // allocate a block and fill it with progressive numbers
+                auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                auto block = static_cast<unsigned char*>(allocator.allocate(size));
+                for (size_t index = 0; index < size; index++)
+                {
+                    block[index] = static_cast<unsigned char>(index & 0xFF);
+                }
 
-				// done
-				allocator.deallocate(block);
-			}
-		}));
+                // reallocate the block with reallocate_preserve, and check the content
+                auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+                for (size_t index = 0; index < std::min(size, new_size); index++)
+                {
+                    TESTITY_ASSERT(block[index] == static_cast<unsigned char>(index & 0xFF));
+                }
 
-		i_dest.add_case(TestFunc([](std::mt19937 & i_random ) {
-			LifoTestContext context(i_random, 4);
-			context.lifo_test_push();
-		}));
-	}
+                // reallocate the block with reallocate
+                new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+                block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+
+                // done
+                allocator.deallocate(block);
+            }
+        }));
+
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random ) {
+            LifoTestContext context(i_random, 4);
+            context.lifo_test_push();
+        }));
+    }
 
 } // namespace density_tests
 

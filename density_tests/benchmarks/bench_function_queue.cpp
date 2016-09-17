@@ -15,7 +15,7 @@
 namespace density_tests
 {
     using namespace density;
-	using namespace testity;
+    using namespace testity;
 
     PerformanceTestGroup make_function_queue_benchmarks_nocapture()
     {
@@ -186,11 +186,11 @@ namespace density_tests
         return group;
     }
 
-	void add_function_queue_benchmarks(TestTree & i_dest)
+    void add_function_queue_benchmarks(TestTree & i_dest)
     {
-		i_dest.add_performance_test(make_function_queue_benchmarks_nocapture());
-		i_dest.add_performance_test(make_function_queue_benchmarks_midcapture());
-		i_dest.add_performance_test(make_function_queue_benchmarks_bigcapture());
+        i_dest.add_performance_test(make_function_queue_benchmarks_nocapture());
+        i_dest.add_performance_test(make_function_queue_benchmarks_midcapture());
+        i_dest.add_performance_test(make_function_queue_benchmarks_bigcapture());
     }
 
 } // namespace density_tests

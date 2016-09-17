@@ -166,47 +166,47 @@ namespace density
             }
 
             struct IteratorBaseImpl
-            {				
-                IteratorBaseImpl() noexcept 
-				#if DENSITY_DEBUG_INTERNAL
-					: m_dbg_index(0), m_dbg_count(0)
-				#endif
-					{ }
+            {
+                IteratorBaseImpl() noexcept
+                #if DENSITY_DEBUG_INTERNAL
+                    : m_dbg_index(0), m_dbg_count(0)
+                #endif
+                    { }
 
-				#if DENSITY_DEBUG_INTERNAL
-					IteratorBaseImpl(const ControlBlock * i_curr_control_block, size_t i_dbg_index, size_t i_dbg_count) noexcept
-						: m_curr_control_block(i_curr_control_block), m_dbg_index(i_dbg_index), m_dbg_count(i_dbg_count)
-						{ }
-				#else
-					IteratorBaseImpl(const ControlBlock * i_curr_control_block) noexcept
-						: m_curr_control_block(i_curr_control_block)
-							{ }
-				#endif
+                #if DENSITY_DEBUG_INTERNAL
+                    IteratorBaseImpl(const ControlBlock * i_curr_control_block, size_t i_dbg_index, size_t i_dbg_count) noexcept
+                        : m_curr_control_block(i_curr_control_block), m_dbg_index(i_dbg_index), m_dbg_count(i_dbg_count)
+                        { }
+                #else
+                    IteratorBaseImpl(const ControlBlock * i_curr_control_block) noexcept
+                        : m_curr_control_block(i_curr_control_block)
+                            { }
+                #endif
 
                 void move_next() noexcept
                 {
-					DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
                     m_curr_control_block++;
-					#if DENSITY_DEBUG_INTERNAL
-						m_dbg_index++;
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        m_dbg_index++;
+                    #endif
                 }
 
                 void * element() const noexcept
                 {
-					DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
                     return m_curr_control_block->m_element;
                 }
 
                 const RUNTIME_TYPE & complete_type() const noexcept
                 {
-					DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
                     return *m_curr_control_block;
                 }
 
                 const ControlBlock * control() const noexcept
                 {
-					DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
+                    DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
                     return m_curr_control_block;
                 }
 
@@ -222,32 +222,32 @@ namespace density
 
                 void operator ++ () noexcept
                 {
-					DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
                     m_curr_control_block++;
-					#if DENSITY_DEBUG_INTERNAL
-						m_dbg_index++;
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        m_dbg_index++;
+                    #endif
                 }
 
             private:
                 const ControlBlock * m_curr_control_block;
-				#if DENSITY_DEBUG_INTERNAL
-					size_t m_dbg_index, m_dbg_count;
-				#endif
+                #if DENSITY_DEBUG_INTERNAL
+                    size_t m_dbg_index, m_dbg_count;
+                #endif
 
             }; // class IteratorBaseImpl
 
             VOID_ALLOCATOR & get_allocator() noexcept { return *this; }
             const VOID_ALLOCATOR & get_allocator() const noexcept { return *this; }
 
-			#if DENSITY_DEBUG_INTERNAL
-				IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks, 0, size() ); }
-				IteratorBaseImpl end() const noexcept { auto array_size = size(); 
-					return IteratorBaseImpl(m_control_blocks + array_size, array_size, array_size); }
-			#else
-				IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks); }
-				IteratorBaseImpl end() const noexcept { return IteratorBaseImpl(m_control_blocks + size()); }
-			#endif
+            #if DENSITY_DEBUG_INTERNAL
+                IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks, 0, size() ); }
+                IteratorBaseImpl end() const noexcept { auto array_size = size();
+                    return IteratorBaseImpl(m_control_blocks + array_size, array_size, array_size); }
+            #else
+                IteratorBaseImpl begin() const noexcept { return IteratorBaseImpl(m_control_blocks); }
+                IteratorBaseImpl end() const noexcept { return IteratorBaseImpl(m_control_blocks + size()); }
+            #endif
 
             size_t get_size_not_empty() const noexcept
             {
@@ -586,19 +586,19 @@ namespace density
 
                     m_control_blocks = builder.control_blocks();
 
-					#if DENSITY_DEBUG_INTERNAL
-						return IteratorBaseImpl(return_control_box, return_control_box - m_control_blocks, size()); 
-					#else
-						return IteratorBaseImpl(return_control_box);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        return IteratorBaseImpl(return_control_box, return_control_box - m_control_blocks, size());
+                    #else
+                        return IteratorBaseImpl(return_control_box);
+                    #endif
                 }
                 catch (...)
                 {
                     /* we iterate this list exactly like we did in the loop interrupted by the exception,
                         but we stop at 'it', the iterator we were using */
                     size_t count_to_insert = i_count_to_insert;
-					auto this_block = this->m_control_blocks;
-					auto this_element = static_cast<void*>( m_control_blocks + size() );
+                    auto this_block = this->m_control_blocks;
+                    auto this_element = static_cast<void*>( m_control_blocks + size() );
 
                     /* in the same loop we iterate over tmp, that is the list that we were creating. The
                         elements that were moved from this list to tmp have to be moved back to this list. The elements
@@ -619,12 +619,12 @@ namespace density
                             }
                             else
                             {
-								this_element = address_upper_align(this_element, this_block->alignment());
+                                this_element = address_upper_align(this_element, this_block->alignment());
 
                                 tmp_it.complete_type().move_construct(this_element,
                                     static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
-								this_element = address_add(this_element, this_block->size());
-								this_block++;
+                                this_element = address_add(this_element, this_block->size());
+                                this_block++;
                             }
                         }
 
@@ -707,11 +707,11 @@ namespace density
                     destroy_impl();
 
                     m_control_blocks = builder.control_blocks();
-					#if DENSITY_DEBUG_INTERNAL
-						return IteratorBaseImpl(return_control_block, return_control_block - m_control_blocks, size()); 
-					#else
-						return IteratorBaseImpl(return_control_block);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        return IteratorBaseImpl(return_control_block, return_control_block - m_control_blocks, size());
+                    #else
+                        return IteratorBaseImpl(return_control_block);
+                    #endif
                 }
             }
 

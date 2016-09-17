@@ -32,7 +32,7 @@ namespace density_tests
     template <typename QUEUE>
         struct QueueTest
     {
-		QUEUE m_queue;
+        QUEUE m_queue;
         ShadowContainer<QUEUE> m_shadow;
     };
 
@@ -43,39 +43,39 @@ namespace density_tests
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
 
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-			QUEUE tmp_queue;
+            QUEUE tmp_queue;
             TESTITY_ASSERT(tmp_queue.empty());
             TESTITY_ASSERT(tmp_queue.begin() == tmp_queue.end());
-            			
-			try
-			{
-				tmp_queue = i_target.m_queue;
-				TESTITY_ASSERT(tmp_queue == i_target.m_queue);
-			}
-			catch (...)
-			{
-				TESTITY_ASSERT(tmp_queue.empty());
-				throw;
-			}
 
-			QUEUE tmp_queue_1(tmp_queue);
+            try
+            {
+                tmp_queue = i_target.m_queue;
+                TESTITY_ASSERT(tmp_queue == i_target.m_queue);
+            }
+            catch (...)
+            {
+                TESTITY_ASSERT(tmp_queue.empty());
+                throw;
+            }
+
+            QUEUE tmp_queue_1(tmp_queue);
             TESTITY_ASSERT(tmp_queue_1 == i_target.m_queue);
 
-			QUEUE tmp_queue_2(std::move(tmp_queue));
+            QUEUE tmp_queue_2(std::move(tmp_queue));
             TESTITY_ASSERT(tmp_queue_2 == i_target.m_queue);
-			TESTITY_ASSERT(tmp_queue.empty());
+            TESTITY_ASSERT(tmp_queue.empty());
 
             tmp_queue = std::move(tmp_queue_2);
             TESTITY_ASSERT(tmp_queue == i_target.m_queue);
-			TESTITY_ASSERT(tmp_queue_2.empty());
+            TESTITY_ASSERT(tmp_queue_2.empty());
 
             tmp_queue.clear();
-			TESTITY_ASSERT(tmp_queue.empty());
+            TESTITY_ASSERT(tmp_queue.empty());
         }));
     }
 
-	template <typename QUEUE>
-	    void add_void_queue_cases(TestTree & i_dest)
+    template <typename QUEUE>
+        void add_void_queue_cases(TestTree & i_dest)
     {
         using TestTarget = QueueTest<QUEUE>;
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
@@ -84,46 +84,46 @@ namespace density_tests
 
         // push(1)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-			try
-			{
-				i_target.m_queue.push(1);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(1);
+            try
+            {
+                i_target.m_queue.push(1);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(1);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
         // push(1.0)
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-			try
-			{
-				i_target.m_queue.push(1.0);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(1.0);
+            try
+            {
+                i_target.m_queue.push(1.0);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(1.0);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
         // push('c')
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-			try
-			{
-				i_target.m_queue.push('c');
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back('c');
+            try
+            {
+                i_target.m_queue.push('c');
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back('c');
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
@@ -131,32 +131,32 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
-			try
-			{
-				i_target.m_queue.push(ElementType(seed));
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(ElementType(seed));
+            try
+            {
+                i_target.m_queue.push(ElementType(seed));
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(ElementType(seed));
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
         // push(CopyableTestClass(seed) as rvalue)
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
-			try
-			{
-				i_target.m_queue.push(CopyableTestClass(seed));
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(CopyableTestClass(seed));
+            try
+            {
+                i_target.m_queue.push(CopyableTestClass(seed));
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(CopyableTestClass(seed));
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
@@ -165,16 +165,16 @@ namespace density_tests
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             using ElementType = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept, 3, 1>;
             const ElementType element(seed);
-			try
-			{
-				i_target.m_queue.push(element);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(element);
+            try
+            {
+                i_target.m_queue.push(element);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(element);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
@@ -182,19 +182,19 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-100, 100)(i_random);
             const CopyableTestClass element(seed);
-			try
-			{
-				i_target.m_queue.push(element);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(element);
+            try
+            {
+                i_target.m_queue.push(element);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(element);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
-		
+
                     /*---- pop ----*/
 
         // pop()
@@ -202,8 +202,8 @@ namespace density_tests
             if (!i_target.m_shadow.empty())
             {
                 i_target.m_queue.pop();
-				i_target.m_shadow.erase_at(0);
-				i_target.m_shadow.check_equal(i_target.m_queue);
+                i_target.m_shadow.erase_at(0);
+                i_target.m_shadow.check_equal(i_target.m_queue);
             }
         }));
     }
@@ -213,7 +213,7 @@ namespace density_tests
     {
         using TestTarget = QueueTest<QUEUE>;
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
-		using BaseType = typename QUEUE::value_type;
+        using BaseType = typename QUEUE::value_type;
 
         static_assert(std::is_convertible<MI_TYPE*, BaseType*>::value,
             "MI_TYPE must be covariant to BaseType");
@@ -225,48 +225,48 @@ namespace density_tests
         // push(BaseType) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-			try
-			{
-				i_target.m_queue.push(BaseType(seed));
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(BaseType(seed));
+            try
+            {
+                i_target.m_queue.push(BaseType(seed));
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(BaseType(seed));
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
         // push(MI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-			try
-			{
-				i_target.m_queue.push(MI_TYPE(seed));
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(MI_TYPE(seed));
+            try
+            {
+                i_target.m_queue.push(MI_TYPE(seed));
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(MI_TYPE(seed));
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
         // push(VMI_TYPE) as rvalue
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
-			try
-			{
-				i_target.m_queue.push(VMI_TYPE(seed));
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(VMI_TYPE(seed));
+            try
+            {
+                i_target.m_queue.push(VMI_TYPE(seed));
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(VMI_TYPE(seed));
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
@@ -274,15 +274,15 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const BaseType element(seed);
-			try
-			{
-				i_target.m_queue.push(element);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
+            try
+            {
+                i_target.m_queue.push(element);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
             i_target.m_shadow.push_back(element);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
@@ -291,16 +291,16 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const MI_TYPE element(seed);
-			try
-			{
-				i_target.m_queue.push(element);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
-			i_target.m_shadow.push_back(element);
+            try
+            {
+                i_target.m_queue.push(element);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
+            i_target.m_shadow.push_back(element);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
 
@@ -308,15 +308,15 @@ namespace density_tests
         i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
             auto const seed = std::uniform_int_distribution<int>(-200, 200)(i_random);
             const VMI_TYPE element(seed);
-			try
-			{
-				i_target.m_queue.push(element);
-			}
-			catch (...)
-			{
-				i_target.m_shadow.check_equal(i_target.m_queue);
-				throw;
-			}
+            try
+            {
+                i_target.m_queue.push(element);
+            }
+            catch (...)
+            {
+                i_target.m_shadow.check_equal(i_target.m_queue);
+                throw;
+            }
             i_target.m_shadow.push_back(element);
             i_target.m_shadow.check_equal(i_target.m_queue);
         }));
@@ -329,13 +329,13 @@ namespace density_tests
             if (!i_target.m_shadow.empty())
             {
                 i_target.m_queue.pop();
-				i_target.m_shadow.erase_at(0);
-				i_target.m_shadow.check_equal(i_target.m_queue);
+                i_target.m_shadow.erase_at(0);
+                i_target.m_shadow.check_equal(i_target.m_queue);
             }
         }));
     }
 
-	void add_heterogeneous_queue_cases(TestTree & i_dest)
+    void add_heterogeneous_queue_cases(TestTree & i_dest)
     {
         auto & void_test = i_dest["void"];
         add_common_queue_cases<HeterogeneousQueue<void>>(void_test);
@@ -350,43 +350,43 @@ namespace density_tests
         using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
             sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
 
-		static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
-		static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
-		static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
+        static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
+        static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
+        static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
 
         auto & typed_test = i_dest["typed"];
         add_common_queue_cases<HeterogeneousQueue<BaseElement>>(typed_test);
         add_typed_queue_cases<HeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
     }
 
-	void add_small_heterogeneous_queue_cases(TestTree & i_dest)
-	{
-		auto & void_test = i_dest["void"];
-		add_common_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
-		add_void_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
+    void add_small_heterogeneous_queue_cases(TestTree & i_dest)
+    {
+        auto & void_test = i_dest["void"];
+        add_common_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
+        add_void_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
 
-		using BaseElement = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-			sizeof(std::max_align_t) * 2, alignof(std::max_align_t), Polymorphic::Yes >;
+        using BaseElement = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t), Polymorphic::Yes >;
 
-		using MI_Element = MultipleInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-			sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
+        using MI_Element = MultipleInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
 
-		using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-			sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
+        using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
+            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
 
-		static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
-		static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
-		static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
+        static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
+        static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
+        static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
 
-		auto & typed_test = i_dest["typed"];
-		add_common_queue_cases<SmallHeterogeneousQueue<BaseElement>>(typed_test);
-		add_typed_queue_cases<SmallHeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
-	}
+        auto & typed_test = i_dest["typed"];
+        add_common_queue_cases<SmallHeterogeneousQueue<BaseElement>>(typed_test);
+        add_typed_queue_cases<SmallHeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
+    }
 
-	void add_queue_cases(TestTree & i_dest)
-	{
-		add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
-		add_small_heterogeneous_queue_cases(i_dest["small_heterogeneous_queue"]);
-	}
+    void add_queue_cases(TestTree & i_dest)
+    {
+        add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
+        add_small_heterogeneous_queue_cases(i_dest["small_heterogeneous_queue"]);
+    }
 
 } // namespace density_tests

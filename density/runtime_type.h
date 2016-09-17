@@ -351,8 +351,8 @@ namespace density
                 @param i_complete_dest pointer to the storage in which the TYPE must be constructed.
                 @param i_base_source pointer to a subobject (of type BASE) of an object whose complete
                     type is TYPE, that is to be used as source of the move.
-                @return pointer to a subobject (of type BASE) of the new object. 
-			The move constructor must be noexcept, otherwise a compile time error is raised. */
+                @return pointer to a subobject (of type BASE) of the new object.
+            The move constructor must be noexcept, otherwise a compile time error is raised. */
         struct move_construct
         {
             using type = void * (*)(void * i_dest, void * i_source);
@@ -361,8 +361,8 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest, void * i_base_source) noexcept
                 {
-					static_assert(std::is_nothrow_move_constructible<TYPE>::value,
-						"The move constructor is required to be noexcept");
+                    static_assert(std::is_nothrow_move_constructible<TYPE>::value,
+                        "The move constructor is required to be noexcept");
 
                     BASE * base_source = static_cast<BASE*>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
@@ -739,13 +739,13 @@ namespace density
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
         runtime_type & operator = (const runtime_type &) noexcept = default;
 
-		/** Destructor. */
-		~runtime_type()
-		{
-			#if DENSITY_DEBUG
-				*reinterpret_cast<size_t*>(&m_table) = 0xBA77;
-			#endif
-		}
+        /** Destructor. */
+        ~runtime_type()
+        {
+            #if DENSITY_DEBUG
+                *reinterpret_cast<size_t*>(&m_table) = 0xBA77;
+            #endif
+        }
 
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }

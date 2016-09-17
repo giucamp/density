@@ -17,7 +17,7 @@
 namespace density_tests
 {
     using namespace testity;
-	using namespace density;
+    using namespace density;
 
     PerformanceTestGroup make_page_allocator_benchmarks()
     {
@@ -115,10 +115,10 @@ namespace density_tests
         return group;
     }
 
-	void add_allocator_benchmarks(TestTree & i_dest)
+    void add_allocator_benchmarks(TestTree & i_dest)
     {
-		i_dest.add_performance_test(make_page_allocator_benchmarks());
-		i_dest.add_performance_test(make_allocation_benchmarks());
+        i_dest.add_performance_test(make_page_allocator_benchmarks());
+        i_dest.add_performance_test(make_allocation_benchmarks());
     }
 
 } // namespace density_tests
