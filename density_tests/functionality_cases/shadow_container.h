@@ -55,7 +55,7 @@ namespace density_tests
             const auto end_it = i_container.end();
             for (const auto it = i_container.begin(); it != end_it; it++ )
             {
-                auto hasher = it->curr_type().template get_feature<type_features::hash>();
+                auto hasher = it->curr_type().template get_feature<density::type_features::hash>();
                 const auto & type_info = it->complete_type().type_info().type_info();
                 m_deque.push_back(Element(type_info, hasher(it->element()) ));
             }
@@ -74,7 +74,7 @@ namespace density_tests
             const auto end_it = i_container.end();
             for (auto it = i_container.begin(); it != end_it; it++)
             {
-                auto hasher = it.complete_type().template get_feature<type_features::hash>();
+                auto hasher = it.complete_type().template get_feature<density::type_features::hash>();
                 const auto & type_info = it.complete_type().type_info();
                 const auto & deq_entry = m_deque[index];
                 const auto hash = hasher(it.element());
@@ -90,7 +90,7 @@ namespace density_tests
         {
             TESTITY_ASSERT(i_at < m_deque.size());
             TESTITY_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
-            const auto element_hash = i_type.template get_feature<type_features::hash>()(i_element);
+            const auto element_hash = i_type.template get_feature<density::type_features::hash>()(i_element);
             TESTITY_ASSERT(element_hash == m_deque[i_at].m_hash);
         }
 
@@ -113,7 +113,7 @@ namespace density_tests
             {
                 using runtime_type = typename DENSE_CONTAINER::runtime_type;
                 const auto type = runtime_type::template make<TYPE>();
-                Element new_element{ &type.type_info(), type.template get_feature<type_features::hash>()(
+                Element new_element{ &type.type_info(), type.template get_feature<density::type_features::hash>()(
                     static_cast<const typename DENSE_CONTAINER::value_type*>(&i_element) ) };
                 m_deque.insert(m_deque.begin() + i_at, i_count, new_element);
             }
@@ -165,5 +165,5 @@ namespace density_tests
     private:
         std::deque<Element> m_deque;
     };
-	
+
 } // namespace density_tests

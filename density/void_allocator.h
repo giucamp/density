@@ -7,7 +7,7 @@
 #pragma once
 #include <cstdlib> // for std::max_align_t
 #include "density_common.h"
-#if DENSITY_DEBUG_INTERNAL
+#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
     #include <mutex>
     #include <unordered_set>
     #include <unordered_map>
@@ -185,7 +185,7 @@ namespace density
                 AlignmentHeader & header = *(static_cast<AlignmentHeader*>(user_block) - 1);
                 header.m_block = complete_block;
             }
-            #if DENSITY_DEBUG_INTERNAL
+            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_block(user_block, i_size, i_alignment);
             #endif
             return user_block;
@@ -207,7 +207,7 @@ namespace density
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-            #if DENSITY_DEBUG_INTERNAL
+			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_block(i_block, i_size, i_alignment);
             #endif
             if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
@@ -259,7 +259,7 @@ namespace density
             {
                 page = allocate_page_impl();
             }
-            #if DENSITY_DEBUG_INTERNAL
+			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
             return page;
@@ -273,7 +273,7 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-            #if DENSITY_DEBUG_INTERNAL
+			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_page(i_page);
             #endif
             auto & page_store = thread_page_store();
@@ -318,7 +318,7 @@ namespace density
             void * m_block;
         };
 
-        #if DENSITY_DEBUG_INTERNAL
+		#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
             class DbgData
             {
             public:
@@ -420,7 +420,7 @@ namespace density
                 static DbgData s_dbg_data;
                 return s_dbg_data;
             }
-        #endif // #if DENSITY_DEBUG_INTERNAL
+        #endif // #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
 
         class PageList
         {

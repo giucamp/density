@@ -226,7 +226,7 @@ namespace density_tests
 		void lifo_test_push_any_int()
 		{
 			int value = std::uniform_int_distribution<int>(-100, 100)(m_random);
-			lifo_any<> any = value;
+			lifo_any<> any( value );
 
 			TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
 			push_test(any, value);

@@ -29,7 +29,7 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::queue) instead of std::small_heterogeneous_queue is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
-            @param VOID_ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
+            @param UNTYPED_ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
@@ -47,15 +47,15 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template <typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class small_heterogeneous_queue final : private VOID_ALLOCATOR
+    template <typename ELEMENT = void, typename UNTYPED_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class small_heterogeneous_queue final : private UNTYPED_ALLOCATOR
     {
     public:
 
         static_assert( std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT,void>::value : true,
             "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )" );
 
-        using allocator_type = VOID_ALLOCATOR;
+        using allocator_type = UNTYPED_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -89,7 +89,7 @@ namespace density
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
-        small_heterogeneous_queue(const VOID_ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
+        small_heterogeneous_queue(const UNTYPED_ALLOCATOR & i_allocator, size_t i_initial_reserved_bytes = 0, size_t i_initial_alignment = 0)
             : allocator_type(i_allocator)
         {
             alloc(detail::size_max(i_initial_reserved_bytes, detail::QueueImpl<RUNTIME_TYPE>::s_initial_mem_reserve),

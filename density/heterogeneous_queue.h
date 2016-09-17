@@ -36,7 +36,7 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::queue) instead of heterogeneous_queue is a better choice.
                 If ELEMENT is not void, it must be noexcept move constructible.
-            @param ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
+            @param VOID_ALLOCATOR Allocator to be used to allocate the memory buffer. The queue may rebind
                 this allocator to a different type, eventually unrelated to ELEMENT.
             @param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
                 This type must meet the requirements of RuntimeType.
@@ -51,8 +51,8 @@ namespace density
                 - If virtual inheritance is involved, dynamic_cast is used. Anyway, in this case, ELEMENT must be
                     a polymorphic type, otherwise there is no way to perform the downcast (in this case a compile-
                     time error is issued). */
-    template < typename ELEMENT = void, typename ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
-        class heterogeneous_queue final : private ALLOCATOR
+    template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
+        class heterogeneous_queue final : private VOID_ALLOCATOR
     {
         struct PageHeader;
 
@@ -61,7 +61,7 @@ namespace density
         static_assert(std::is_same< typename std::decay<ELEMENT>::type, void >::value ? std::is_same<ELEMENT, void>::value : true,
             "If ELEMENT decays to void, it must be void (i.e. use plain 'void', not cv or ref qualified voids, like 'void&' or 'const void' )");
 
-        using allocator_type = ALLOCATOR;
+        using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
         using value_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -806,7 +806,7 @@ namespace density
 
             PageHeader * alloc;
             size_t actual_page_size;
-            const size_t allocator_page_size = ALLOCATOR::page_size();
+            const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
             if (min_page_size <= allocator_page_size)
             {
                 actual_page_size = allocator_page_size;
@@ -832,7 +832,7 @@ namespace density
 
         void delete_page(PageHeader * i_page) noexcept
         {
-            const size_t allocator_page_size = ALLOCATOR::page_size();
+            const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
 
             // assuming that the destructor of an empty QueueImpl is trivial
             DENSITY_ASSERT(i_page->m_queue.empty());

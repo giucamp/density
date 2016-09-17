@@ -8,15 +8,15 @@
 #include "density_common.h"
 #include "runtime_type.h"
 #include "void_allocator.h"
-#include <vector>
+#include <cstring> // for memcpy
 
 namespace density
 {
     /** Class template that provides a typeless LIFO memory management.
 
 		@tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must model both the
-			\ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts. 
-       
+			\ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts.
+
 		Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
 		A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not
@@ -25,14 +25,14 @@ namespace density
         std::max_align_t. \n
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
         The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block. \n
-		lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and 
+		lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and
 		there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
 		an untyped block is allocated from the underlying allocator. \n
 		lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately
 		deallocated. \n
 		lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
         See thread_lifo_allocator for a stateless LIFO allocator. \n
-		
+
 		Note: using a lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
     template <typename VOID_ALLOCATOR = void_allocator >
 		class lifo_allocator : private VOID_ALLOCATOR
@@ -127,7 +127,7 @@ namespace density
                 }
                 // the following line may throw
                 auto const new_block = alloc_new_page(new_actual_size);
-                memcpy(new_block, i_block, size_to_copy);
+                std::memcpy(new_block, i_block, size_to_copy);
                 prev_last_page->free(i_block);
                 return new_block;
             }
@@ -324,7 +324,7 @@ namespace density
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
         Only the calling thread matters.
         When a thread exits all its living block are deallocated. \n
-		
+
 		Note: using thread_lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
     template <typename VOID_ALLOCATOR = void_allocator >
         class thread_lifo_allocator
@@ -336,7 +336,7 @@ namespace density
 
 		/** Default constructor */
 		thread_lifo_allocator() = default;
-		
+
 		// disable the copy
 		thread_lifo_allocator(const thread_lifo_allocator & ) = delete;
 		thread_lifo_allocator & operator = (const thread_lifo_allocator &) = delete;
@@ -485,7 +485,7 @@ namespace density
             m_buffer = address_upper_align(m_block, i_alignment);
             m_mem_size = i_new_mem_size;
         }
-		
+
         void * data() const noexcept
         {
             return m_buffer;
@@ -716,6 +716,9 @@ namespace density
             : m_block(nullptr), m_object(nullptr)
                 { }
 
+		lifo_any(const lifo_any&) = delete;
+		lifo_any & operator = (const lifo_any&) = delete;
+
         template <typename TARGET_TYPE>
             lifo_any(TARGET_TYPE && i_source)
                 : m_type(RUNTIME_TYPE::template make<TARGET_TYPE>())
@@ -743,13 +746,13 @@ namespace density
         bool operator == (const lifo_any & i_other) const noexcept
         {
             return m_type == i_other.m_type &&
-                m_type.get_feature<type_features::equals>()(m_object, i_other.m_object);
+                m_type.template get_feature<type_features::equals>()(m_object, i_other.m_object);
         }
 
         bool operator != (const lifo_any & i_other) const noexcept
         {
             return m_type != i_other.m_type ||
-                m_type.get_feature<type_features::less>()(m_object, i_other.m_object);
+                m_type.template get_feature<type_features::less>()(m_object, i_other.m_object);
         }
 
         const RUNTIME_TYPE & type() const noexcept { return m_type; }

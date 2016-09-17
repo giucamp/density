@@ -1,7 +1,7 @@
 # depslib dependency file v1.0
-1466152499 source:d:\smartgit\density\density_samples\function_queue_sample.cpp
-	"../density/small_queue_function.h"
-	"../density/queue_function.h"
+1474120859 source:d:\smartgit\density\density_samples\function_queue_sample.cpp
+	"../density/small_function_queue.h"
+	"../density/function_queue.h"
 	"../density/lifo.h"
 	<string>
 	<functional>
@@ -14,19 +14,18 @@
 	"detail\queue_impl.h"
 	<memory>
 
-1466164955 d:\smartgit\density\density\detail\queue_impl.h
+1474103504 d:\smartgit\density\density\detail\queue_impl.h
 	"..\density_common.h"
 	"..\runtime_type.h"
 
-1466184890 d:\smartgit\density\density\density_common.h
+1474120287 d:\smartgit\density\density\density_common.h
 	<assert.h>
 	<type_traits>
 	<ostream>
 	<limits>
 	<cstddef>
-	<memory>
 
-1466189198 d:\smartgit\density\density\runtime_type.h
+1474119216 d:\smartgit\density\density\runtime_type.h
 	<type_traits>
 	<limits>
 	<utility>
@@ -46,25 +45,29 @@
 	<memory>
 	<cstddef>
 
-1466316320 d:\smartgit\density\density\lifo.h
+1474122209 d:\smartgit\density\density\lifo.h
 	"density_common.h"
+	"runtime_type.h"
 	"void_allocator.h"
-	<vector>
-	<memory>
+	<cstring>
 
-1465727655 d:\smartgit\density\density\void_allocator.h
+1474120383 d:\smartgit\density\density\void_allocator.h
+	<cstdlib>
 	"density_common.h"
+	<mutex>
+	<unordered_set>
+	<unordered_map>
 
-1466189170 source:d:\smartgit\density\density_samples\lifo_sample.cpp
+1474103504 source:d:\smartgit\density\density_samples\lifo_sample.cpp
 	"../density/lifo.h"
 	<iostream>
 	<string>
 	<algorithm>
 	<cstring>
 
-1466170113 source:d:\smartgit\density\density_samples\misc_samples.cpp
+1474103504 source:d:\smartgit\density\density_samples\misc_samples.cpp
 	"../density/runtime_type.h"
-	"../density/array_any.h"
+	"../density/heterogeneous_array.h"
 	<string>
 	<iostream>
 
@@ -75,9 +78,9 @@
 	<memory>
 	"../runtime_type.h"
 
-1466192948 source:d:\smartgit\density\density_samples\producer_consumer_sample.cpp
-	"../density/small_queue_function.h"
-	"../density/queue_function.h"
+1474103504 source:d:\smartgit\density\density_samples\producer_consumer_sample.cpp
+	"../density/small_function_queue.h"
+	"../density/function_queue.h"
 	"../density/lifo.h"
 	<string>
 	<thread>
@@ -111,7 +114,7 @@
 	<system_error>
 	<windows.h>
 
-1466166661 source:d:\smartgit\density\density_samples\runtime_type_sample.cpp
+1474103504 source:d:\smartgit\density\density_samples\runtime_type_sample.cpp
 	"../density/runtime_type.h"
 	"../density/lifo.h"
 	<iostream>
@@ -1460,4 +1463,128 @@
 	"../testity/testing_utils.h"
 	"container_test.h"
 	<algorithm>
+
+1474103504 d:\smartgit\density\density\small_function_queue.h
+	"small_heterogeneous_queue.h"
+
+1474105951 d:\smartgit\density\density\small_heterogeneous_queue.h
+	"detail\queue_impl.h"
+	"void_allocator.h"
+
+1474103504 d:\smartgit\density\density\function_queue.h
+	"heterogeneous_queue.h"
+
+1474105976 d:\smartgit\density\density\heterogeneous_queue.h
+	<vector>
+	"density_common.h"
+	"void_allocator.h"
+	"detail\queue_impl.h"
+
+1474103504 d:\smartgit\density\density\heterogeneous_array.h
+	"detail\array_impl.h"
+	"void_allocator.h"
+
+1474103504 d:\smartgit\density\density\detail\array_impl.h
+	"../runtime_type.h"
+
+1474103504 source:d:\smartgit\density\density_tests\benchmarks\bench_allocator.cpp
+	"../../density/void_allocator.h"
+	"testity/test_tree.h"
+	<functional>
+	<deque>
+	<queue>
+	<vector>
+	<Windows.h>
+
+1468760942 d:\smartgit\testity\testity\test_tree.h
+	"detail\functionality_test.h"
+	"performance_test.h"
+	<functional>
+
+1470203209 d:\smartgit\testity\testity\detail\functionality_test.h
+	<random>
+	<string>
+	<unordered_map>
+	<memory>
+	<functional>
+
+1468582278 d:\smartgit\testity\testity\performance_test.h
+	<string>
+	<functional>
+	<vector>
+
+1474103504 source:d:\smartgit\density\density_tests\benchmarks\bench_function_queue.cpp
+	"../../density/small_function_queue.h"
+	"../../density/function_queue.h"
+	"testity/test_tree.h"
+	<functional>
+	<deque>
+	<queue>
+	<vector>
+
+1474103504 source:d:\smartgit\density\density_tests\benchmarks\bench_lifo.cpp
+	"../../density/lifo.h"
+	"testity/test_tree.h"
+	<functional>
+	<deque>
+	<queue>
+	<vector>
+
+1474103504 source:d:\smartgit\density\density_tests\benchmarks\bench_queues.cpp
+	"../../density/small_heterogeneous_queue.h"
+	"../../density/heterogeneous_queue.h"
+	"testity/test_tree.h"
+	<functional>
+	<deque>
+	<queue>
+	<vector>
+	<boost\any.hpp>
+
+1474103504 source:d:\smartgit\density\density_tests\functionality_cases\cases_heterogeneous_array.cpp
+	"../../density/heterogeneous_array.h"
+	"testity/testity_common.h"
+	"testity/test_tree.h"
+	"testity/test_classes.h"
+	"shadow_container.h"
+	"test_allocators.h"
+	<algorithm>
+	<array>
+
+1468754345 d:\smartgit\testity\testity\testity_common.h
+	<unordered_map>
+	<functional>
+	<memory>
+	<vector>
+	<iostream>
+	<assert.h>
+
+1474121324 d:\smartgit\testity\testity\test_classes.h
+	<string>
+	<chrono>
+	<stdint.h>
+	<random>
+	<string>
+	"testity_common.h"
+
+1474121954 d:\smartgit\density\density_tests\functionality_cases\shadow_container.h
+	"testity/testity_common.h"
+	<random>
+	<deque>
+	<string>
+	<typeinfo>
+	<iostream>
+
+1474103504 d:\smartgit\density\density_tests\functionality_cases\test_allocators.h
+	"../../density/void_allocator.h"
+	"testity/testity_common.h"
+	"testity/test_allocator.h"
+	"testity/sanitizer_allocator.h"
+
+1474122119 d:\smartgit\testity\testity\test_allocator.h
+	<memory>
+
+1469176680 d:\smartgit\testity\testity\sanitizer_allocator.h
+	<cstddef>
+	<limits>
+	<memory>
 

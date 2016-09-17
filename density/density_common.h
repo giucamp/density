@@ -43,6 +43,12 @@
 
 #define DENSITY_COMPATCT_QUEUE                   1
 
+#if defined(__GNUC__) && defined(__MINGW32__)
+	#define DENSITY_ENV_HAS_THREADING                   0
+#else
+	#define DENSITY_ENV_HAS_THREADING                   1
+#endif
+
 namespace density
 {
     namespace detail
