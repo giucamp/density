@@ -180,7 +180,6 @@ namespace misc_samples
         {
             //! [heterogeneous_array example 4]
             using namespace density;
-            using namespace std;
 
             struct Widget { virtual void draw() { /* ... */ } };
             struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
