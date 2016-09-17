@@ -385,7 +385,7 @@ namespace density
     \endcode
     \image html iterate_dense_list_and_call_virtual_func.png width=10cm
 
-    \section list_iter_bench_sec2 Set some viriables on every widget
+    \section list_iter_bench_sec2 Set some variables on every widget
 
     For every widget some variable is set. Widget are defined with this code:
     \code{.cpp}
