@@ -7,8 +7,9 @@ What's Density
 --------------
 Density is a C++11 header-only library that provides heterogeneous containers and lifo memory management. The key ideas behind density are:
 
-- allocating objects of **heterogeneous** type linearly and tightly in memory: this is beneficial for construction time, access memory locality, and global memory footprint. A very fast function queue is provided, which performs much better than an std::queue of functions (see the [function queue banchmarks](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)). The inplace storage of containers is minimal (for example a heterogeneous_array has the same size of a pointer).
-- superseding the *fixed-then-dynamic storage* pattern, that is: when you need to store N elements, you dedicate a fast-to-allocate fixed-sized storage big M. Then, when using it, if N > M, you allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need. density provides [lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html), a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
+- allocating objects of **heterogeneous** type linearly and tightly in memory: this is beneficial for allocation time, memory locality and footprint. An efficient function queue is provided, which performs much better than an std::queue of std::functions (see the [function queue banchmarks](http://peggysansonetti.it/tech/density/html/func_queue_bench.html)). The inplace storage of containers is minimal (for example a heterogeneous_array has the same size of a pointer).
+- superseding the *fixed-then-dynamic storage* pattern. When you need storage N elements, with N known only at runtime, you may dedicate a fixed-sized storage big M. Then, at runtime, if N > M, you would allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need.  
+density provides [lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html), a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
 - providing at least the **strong exception guarantee** for every single function (that is, if an exception is thrown while executing the function, the call has no visible side effects at all on the calling thread). Exceptions are the easiest, safest and fastest way of handling errors, and applications should have a reliable behavior even in case of exception.
 
 Here is a summary of the containers provided by density:
@@ -25,7 +26,7 @@ Container       | Memory layout      | Replacement for...
 
 
 Heterogeneous containers
-========================
+--------------
 Currently density provides 3 heterogeneous containers, which have a similar template argument list:
 
     template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT> >
@@ -43,7 +44,7 @@ ELEMENT                        | Base type of the elements that are stored in th
 *_ALLOCATOR | For monolithic containers this parameter must model the [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) concept. For paged container, it must model both [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) and [PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html).
 RUNTIME_TYPE | Type responsible of type-erasing the elements. The builtin class [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html) allows to specify which features you want to be exposed by the elements (copy costruction, comparison, or a custom Update(float dt) method) by composition. Anyway, if you already have in your project a reflection or type-erasure mechanism, you can define a custom type modelling the [RuntimeType concept](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html).
 
-Here is an example of heterogeneous_array:
+Here is an example of how an heterogeneous_array can be created and iterated:
 
         struct Widget { virtual void draw() { /* ... */ } };
         struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
@@ -58,11 +59,12 @@ Here is an example of heterogeneous_array:
         widgets.push_back(TextWidget());
 
 Function queues
-========================
-A function queue is a queue in which every element is an object similar to an std::function. function_queue is just a wrapper around a private heterogeneous_queue that use its type-erasure capability to store generic callable objects. Same for small_function_queue, which wraps a small_heterogeneous_queue.
-A function queue may be used as command buffer for a rendering engine, in which every command has a different number (and type) of parameters. Thanks to the dense memory layout, a function_queue is [around four time faster]((http://peggysansonetti.it/tech/density/html/func_queue_bench.html)) than a std::queue< std::function >. 
+--------------
+A function queue is a queue in which every element is an object similar to an std::function. function_queue is just a wrapper around a private heterogeneous_queue that uses its type-erasure capability to store generic callable objects. Same for small_function_queue, which wraps a small_heterogeneous_queue.
 
-Here is a very simple example. For a more realistic exampe see the [producer consumer sample](http://peggysansonetti.it/tech/density/html/producer_consumer_sample.html). 
+A function queue may be used as command buffer for a rendering engine, in which every command has a different number (and type) of parameters. Thanks to the dense memory layout, a function_queue is [around four time faster](http://peggysansonetti.it/tech/density/html/func_queue_bench.html) than a std::queue< std::function >. 
+
+Here is a very simple example of function_queue. For a more realistic example see the [producer consumer sample](http://peggysansonetti.it/tech/density/html/producer_consumer_sample.html). 
 
     auto print_func = [](const char * i_str) { std::cout << i_str; };
     
@@ -80,7 +82,7 @@ Here is a very simple example. For a more realistic exampe see the [producer con
 Note: with gcc, in the above example the line with std::bind raises a compile time error, as the return type is not noexcept-move-constructible, and density imposes that move constructor must be noexcept. This constraint may be relaxed in future versions. Anyway a call to std::bind can always be replaced with a lambda, which is also easier to use.
 
 Monolithic and paged containers
-========================
+--------------
 Inside heterogeneous containers elements are packed together (like they were allocated by a linear allocator). 
 
 Monolithic containers allocate a single memory block (like an std::vector). To perform an insertion sometimes the container must reallocate the block, and the elements have to be moved.
@@ -90,7 +92,7 @@ A paged queue (like heterogeneous_queue or function_queue) pushes as many elemen
 Allocating a fixed-size page is much easier than allocating a dynamic block. As default page allocator, density provides the class [void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1void__allocator.html), that uses a thread-local cache of 4 free pages. Pushing and peeking a page from this cache requires no thread synchronization. This is much better than allocating a memory block (and probably locking a mutex) for every element to push in the queue.
 
 Lifo data structures
-====================
+--------------
 [lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html) is a modern C++ version of variable length automatic array of C99:
 
 		void dijkstra_path_find(const GraphNode * i_nodes, size_t i_node_count, size_t i_initial_node_index)
@@ -138,6 +140,12 @@ A [lifo_buffer](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo
 
         fclose(file);
     }
+
+Concepts
+----------
+- [RuntimeType](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html)
+- [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html)
+- [PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html)
 
 Using density
 ----------
