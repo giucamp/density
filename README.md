@@ -8,7 +8,7 @@ What's Density
 Density is a C++11 header-only library that provides heterogeneous containers and lifo memory management. The key ideas behind density are:
 
 - allocating objects of **heterogeneous** type linearly and tightly in memory: this is beneficial for allocation time, memory locality and footprint. The inplace storage of containers is minimal (in particular in heterogeneous_array, that has the same size of a pointer).
-- superseding the *fixed-then-dynamic storage* pattern. When you need storage N elements, with N known only at runtime, you may dedicate a fixed-sized storage big M. Then, at runtime, if N > M, you would allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and is a very frequent as optimization for production code when a temporary automatic storage is need.  
+- superseding the *fixed-then-dynamic storage* pattern. When you need storage N elements, with N known only at runtime, you may dedicate a fixed-sized storage big M. Then, at runtime, if N > M, you would allocate another storage on dynamic memory with size N, and leave the fixed storage unused. This pattern is used in typical implementation of std::any, std::function, and it is very frequent as optimization for production code when a temporary automatic storage is need.  
 density provides [lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html), a modern replacement for the C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html), similar to C99 variable lenght automatic arrays, but more C++ish.
 - providing at least the **strong exception guarantee** for every single function (that is, if an exception is thrown while executing the function, the call has no visible side effects at all on the calling thread). Exceptions are the easiest, safest and fastest way of handling errors, and applications should have a reliable behavior even in case of exception.
 
@@ -177,13 +177,13 @@ Density is known to compile with:
  
 Anyway it should compile with any C++11 compliant compiler. If you compile density with any other compiler, please let me know.
 
-Important note: density has an extensive test suite, that include an exhaustive test of the exception safeness. Anyway some functions may be still uncovered by the tests.
+Important note: density has an extensive test suite, that includes an exhaustive test of the exception safeness. Anyway some functions may be still uncovered by the tests.
 
 Future development
 ------------------
 - Future version of density may provide an anti-slicing mechanism, to detect at compile-time copy-constructions or copy-assignments using as source a partial-type reference to an element of an heterogeneous containers. This feature will probably require a C++17 compiler.
 - Density currently lacks an heterogeneous_stack and a function_stack.
-- An undocumented lifo_any exists, but is not yet tested enough, and its usage it's not recommended.
+- An undocumented lifo_any exists, but is not yet tested enough, and its usage is not recommended.
 - As reported in the reference documentation, currently heterogeneous_array reallocates its memory block on every change (it does not handle an unused space, unlike std::vector). Any modifying operation on the array has linear complexity, so it is suitable for immutable or almost immutable containers. A major review is planned to make the complexity of most modifying operations constant amortized (like std::vector::push_back).
 
 [Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
