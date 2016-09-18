@@ -233,8 +233,11 @@ namespace density
 
             void * allocate(size_t i_size) noexcept
             {
+				// zero-size blocks can cause problems (empty living pages are not allowed)
+				const auto size = i_size > 0 ? i_size : granularity;
+
                 const auto start_of_block = m_curr_address;
-                const auto end_of_block = address_add(start_of_block, i_size);
+                const auto end_of_block = address_add(start_of_block, size);
                 // check for arithmetic overflow or insufficient space
                 if (end_of_block >= start_of_block && end_of_block <= m_end_address)
                 {
@@ -249,8 +252,11 @@ namespace density
 
             bool reallocate(void * i_block, size_t i_new_size) noexcept
             {
+				// zero-size blocks can cause problems (empty living pages are not allowed)
+				const auto new_size = i_new_size > 0 ? i_new_size : granularity;
+
                 const auto start_of_block = i_block;
-                const auto end_of_block = address_add(i_block, i_new_size);
+                const auto end_of_block = address_add(i_block, new_size);
                 // check for arithmetic overflow or insufficient space
                 if (end_of_block >= start_of_block && end_of_block <= m_end_address)
                 {

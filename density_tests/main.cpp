@@ -42,7 +42,7 @@ int main()
     add_allocator_benchmarks(test_tree["allocator"]);
 
     #ifdef NDEBUG
-        auto const flags = TestFlags::PerformanceTests;
+        auto const flags = TestFlags::PerformanceTests | TestFlags::FunctionalityTest;
     #else
         auto const flags = TestFlags::FunctionalityTest | TestFlags::FunctionalityExceptionTest;
     #endif // _DEBUG
@@ -59,7 +59,7 @@ int main()
                 i_progression.m_remaining_time_extimate.count() << " secs" << endl;
     });
 
-    test_results.save_to("perf_1.txt");
+    test_results.save_to("perf_2.txt");
 
     return 0;
 }
