@@ -21,7 +21,7 @@ Container       | Memory layout      | Replacement for...
 [heterogeneous_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__queue.html)  | Paged | std::queue< std::any >
 [small_heterogeneous_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1small__heterogeneous__queue.html) | Monolithic | std::queue< std::any >
 [heterogeneous_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1heterogeneous__array.html)  | Monolithic | std::list< std::any >
-[lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html) | Lifo monolithic | std::vector 
+[lifo_array](http://peggysansonetti.it/tech/density/html/classdensity_1_1lifo__array.html) | Lifo monolithic | std::vector (on automatic storage) 
 
 
 
