@@ -18,7 +18,9 @@
 *.suo
 *.iobj
 *.ipdb
-doc/
+doc/html
+doc/images
+doc/latex
 testity/performance_test_viewer/obj/
 testity/performance_test_viewer/bin/
 density_tests/vs2015/density_test.VC.db

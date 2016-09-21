@@ -187,6 +187,7 @@ Future development
 - As reported in the reference documentation, currently heterogeneous_array reallocates its memory block on every change (it does not handle an unused space, unlike std::vector). Any modifying operation on the array has linear complexity, so it is suitable for immutable or almost immutable containers. A major review is planned to make the complexity of most modifying operations constant amortized (like std::vector::push_back).
 
 [Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
+[Github Repository](https://github.com/giucamp/density)
 
 For any kind of support or feedback, mail to giu.campana@gmail.com
 

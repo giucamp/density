@@ -11,9 +11,10 @@ namespace density
 {
     template < typename FUNCTION > class function_queue;
 
-    /** \brief Queue of callable objects (or function object).
+    /** Queue of callable objects (or function object).
+
         Every element in the queue is a type-erased callable object (like a std::function). Elements that can be added to
-        the queue include:
+        the queue include:		
             - lambda expressions
             - classes overloading the function call operator
             - the result a std::bind
@@ -38,10 +39,10 @@ namespace density
         function_queue never moves or reallocates its elements, and has both better performances and better behavior
         respect to small_function_queue when the number of elements is not small.
 
-        \n\b Thread safeness: None. The user is responsible to avoid race conditions.
+        \n<b> Thread safeness</b>: None. The user is responsible to avoid race conditions.
         \n<b>Exception safeness</b>: Any function of function_queue is noexcept or provides the strong exception guarantee.
 
-        There is not constant time function that gives the number of elements in a function_queue in constant time,
+        There is not a constant time function that gives the number of elements in a function_queue in constant time,
         but std::distance will do (in linear time). Anyway function_queue::mem_size, function_queue::mem_capacity and
         function_queue::empty work in constant time.
         Insertion is allowed only at the end (with the methods function_queue::push or function_queue::emplace).
@@ -137,18 +138,7 @@ namespace density
             return m_queue.empty();
         }
 
-        /** Reserve the specified space in the queue, reallocating it if necessary.
-                @param i_mem_size space to reserve, in bytes
-
-            \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-            \n\b Complexity: linear in case of reallocation, constant otherwise */
-        void mem_reserve(size_t i_mem_size)
-        {
-            m_queue.mem_reserve(i_mem_size);
-        }
-
-        /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
+		/** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
@@ -158,10 +148,7 @@ namespace density
             return m_queue.mem_capacity();
         }
 
-        /** Returns the used size in bytes. This size is dependant, in an implementation defined way, to the count, the type and
-            the order of the elements present in the queue. The return value is zero if and only if the queue is empty. It is recommended
-            to use the function small_function_queue::empty to check if the queue is empty.
-            \remark There is no way to predict if the next push\emplace will cause a reallocation.
+        /** Returns the used size in bytes.
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
@@ -170,8 +157,7 @@ namespace density
             return m_queue.mem_size();
         }
 
-        /** Returns the free size in bytes. This is equivalent to small_function_queue::mem_capacity decreased by small_function_queue::mem_size.
-            \remark There is no way to predict if the next push\emplace will cause a reallocation.
+        /** Returns the free size in bytes. This is equivalent to function_queue::mem_capacity decreased by function_queue::mem_size.
 
             \n\b Throws: nothing
             \n\b Complexity: constant */
