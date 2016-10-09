@@ -55,6 +55,9 @@
     <ClCompile Include="..\benchmarks\bench_allocator.cpp">
       <Filter>benchmarks</Filter>
     </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_concurrent_function_queue.cpp">
+      <Filter>functionality_cases</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">
@@ -98,6 +101,15 @@
     </ClInclude>
     <ClInclude Include="..\functionality_cases\test_allocators.h">
       <Filter>functionality_cases</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\disposable_concurrent_queue.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_function_queue.h">
+      <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

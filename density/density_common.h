@@ -33,6 +33,10 @@
     #define DENSITY_ASSERT_INTERNAL(bool_expr)
 #endif
 
+#define DENSITY_HANDLE_EXCEPTIONS                  1
+
+#define DENSITY_CONCURRENT_DATA_ALIGNMENT          64
+
 #ifdef _MSC_VER
     #define DENSITY_NO_INLINE                    __declspec(noinline)
     #define DENSITY_STRONG_INLINE                __forceinline
@@ -85,11 +89,22 @@ namespace density
 
     /** Returns true whether the given address has the specified alignment
         @param i_address address to be checked
-        @i_alignment must be > 0 and a power of 2 */
+        @param i_alignment must be > 0 and a power of 2 */
     inline bool is_address_aligned(const void * i_address, size_t i_alignment) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
+    }
+
+    /** Returns true whether the given unsigned integer has the specified alignment
+        @param i_uint integer to be checked
+        @param i_alignment must be > 0 and a power of 2 */
+    template <typename UINT>
+		inline bool is_uint_aligned(UINT i_uint, UINT i_alignment) noexcept
+    {
+		static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        return (i_uint & (i_alignment - 1)) == 0;
     }
 
     /** Adds an offset to a pointer.
