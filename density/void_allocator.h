@@ -88,7 +88,7 @@ namespace density
         <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 
         <tr><td>Static member function: @code static size_t page_size() noexcept; @endcode </td></tr>
-        <td>Returns the size of a page in bytes, . In the same program execution this function must return the same value on every invocation. </td> </tr>
+        <td>Returns the size of a page in bytes. In the same program execution this function must return the same value on every invocation. </td> </tr>
 
         <tr><td>Static member function: @code static size_t page_alignment() noexcept; @endcode </td></tr>
         <td>Returns the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. In the same program execution this function must return the same value on every invocation. </td> </tr>

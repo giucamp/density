@@ -5,7 +5,6 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <vector>
 #include "density_common.h"
 #include "void_allocator.h"
 #include "detail\queue_impl.h"

@@ -7,6 +7,7 @@
 #pragma once
 #include "..\density_common.h"
 #include "..\runtime_type.h"
+#include "void_allocator.h"
 #include <atomic>
 
 namespace density
@@ -19,13 +20,16 @@ namespace density
 			disposable_concurrent_queue is an concurrent lock-free multiple-consumers multiple-producers heterogeneous queue.
 			This container is disposable, in the sense that it does not recycle the space in the buffer, like a ring buffer does. 
 			Every push consumes some capacity. A consume has no effect on the capacity.
+				- Both head and tail are monotonic: there is no wrapping at the end of the buffer 
+				- The capacity is monotonic: if an element does not fit in the available space, it will never do
+			This class is non-copyable and non-movable.
 		*/
-		template <typename INTERNAL_WORD, typename RUNTIME_TYPE, INTERNAL_WORD BUFFER_SIZE, INTERNAL_WORD ALIGNMENT>
+		template <typename INTERNAL_WORD, typename RUNTIME_TYPE, INTERNAL_WORD BUFFER_SIZE, INTERNAL_WORD INTERNAL_ALIGNMENT>
 			class alignas(concurrent_alignment) disposable_concurrent_queue
 		{
 		public:
 			
-			static_assert(ALIGNMENT >= 4, "The alignment must be at least 4");
+			static_assert(INTERNAL_ALIGNMENT >= 4, "The alignment must be at least 4");
 
 			struct ControlBlock
 			{
@@ -67,7 +71,7 @@ namespace density
 					/* the tail is reloaded on every iteration, as a failure in the compare_exchange_weak means that
 						another thread has succeed, so the tail is changed. */
 					tail = m_tail.load();
-					DENSITY_ASSERT_INTERNAL(is_uint_aligned(tail, ALIGNMENT));
+					DENSITY_ASSERT_INTERNAL(is_uint_aligned(tail, INTERNAL_ALIGNMENT));
 					#if DENSITY_DEBUG
 						dbg_original_tail = tail;
 					#endif
@@ -94,7 +98,7 @@ namespace density
 				/* we initialize the size of the next block, to allow future pushes to be synchronized */
 				next_control->m_size.store(0);
 
-				/* now we can commit the tail. This allows the next pushes */
+				/* now we can commit the tail. This allows the other pushes to skip the element we are going to construct */
 				DENSITY_ASSERT_INTERNAL(m_tail.load() == dbg_original_tail);
 				m_tail.store(tail);
 
@@ -108,7 +112,8 @@ namespace density
 				#if DENSITY_HANDLE_EXCEPTIONS
 					catch (...)
 					{
-						/* The second bit of m_size is set to 1, meaning that the state of the element is invalid */
+						/* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the 
+							same time the exclusive access is removed (the first bit) */
 						DENSITY_ASSERT_INTERNAL(control->m_size.load() == i_size + 1);
 						control->m_size.store(i_size + 2);
 						throw;
@@ -127,7 +132,8 @@ namespace density
 					{
 						control->m_type->~RUNTIME_TYPE::RUNTIME_TYPE();
 
-						/* The second bit of m_size is set to 1, meaning that the state of the element is invalid */
+						/* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
+							same time the exclusive access is removed (the first bit) */
 						DENSITY_ASSERT_INTERNAL(control->m_size.load() == i_size + 1);
 						control->m_size.store(i_size + 2);
 						throw;
@@ -144,8 +150,8 @@ namespace density
 			enum class ConsumeResult
 			{
 				Success, 
-				SuccessConsumedLast,
-				NoConsumableElement
+				NoConsumableElement,
+				Empty,
 			};
 
             template <typename OPERATION>
@@ -203,14 +209,8 @@ namespace density
 
 			void * allocate(INTERNAL_WORD * io_pos, INTERNAL_WORD i_size)
 			{
-				DENSITY_ASSERT_INTERNAL(is_uint_aligned(i_size, ALIGNMENT));
-
-				DENSITY_ASSERT_INTERNAL(is_uint_aligned(*io_pos, ALIGNMENT));
-
 				void * res = &m_buffer[*io_pos];
 				*io_pos += i_size;
-				
-				DENSITY_ASSERT_INTERNAL(is_uint_aligned(*io_pos, ALIGNMENT));
 				
 				return res;
 			}
