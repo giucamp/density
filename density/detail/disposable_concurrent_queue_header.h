@@ -174,12 +174,12 @@ namespace density
 				the element from the queue and returns true, even if no element was actually removed.
 				If an exception is raised during the consumption of an element, the element is removed, and the exception is then
 				propagated to the caller. */
-			template <typename OPERATION>
-				bool try_consume(OPERATION && i_operation)
+			template <typename CONSUMER>
+				bool try_consume(CONSUMER && i_consumer)
 			{
 				DENSITY_TEST_RANDOM_WAIT();
 				auto head = m_head.load();
-				#if LF_DEBUG
+				#if DENSITY_DEBUG
 					const INTERNAL_WORD dbg_original_head = head;
 				#endif
 
@@ -194,10 +194,10 @@ namespace density
 					// check if we have reached the tail
 					DENSITY_TEST_RANDOM_WAIT();
 					auto const tail = m_tail.load();
-					LF_ASSERT(tail >= head);
+					DENSITY_ASSERT_INTERNAL(tail >= head);
 					if (head >= tail)
 					{
-						LF_ASSERT(tail == head);
+						DENSITY_ASSERT_INTERNAL(tail == head);
 
 						// no consumable element is available
 						return false;
@@ -247,12 +247,12 @@ namespace density
 						}
 						else
 						{
-							LF_ASSERT((control->m_size.load() & 1) == 1);
-							#if LF_DEBUG
+							DENSITY_ASSERT_INTERNAL((control->m_size.load() & 1) == 1);
+							#if DENSITY_DEBUG
 								const auto prev =
 							#endif
 							--control->m_size;
-							LF_ASSERT((prev & 1) == 0);
+							DENSITY_ASSERT_INTERNAL((prev & 1) == 0);
 
 							tries++;
 						}
@@ -261,24 +261,30 @@ namespace density
 
 				/* we have exclusive access to a non-dead element, so we can consume it */
 				DENSITY_TEST_RANDOM_WAIT();
-				(*control->m_consumer_func)(element);
-				#if LF_DEBUG
-					control->m_consumer_func = reinterpret_cast<ConsumerFunc>(5);
+				std::forward<CONSUMER>(i_consumer)(control->m_type, element);
+
+				/* destroy the type (usually a nop) */
+				control->m_type->RUNTIME_TYPE::~RUNTIME_TYPE();
+				#if DENSITY_DEBUG
+					memset(&control->m_type, 0xB4, sizeof(control->m_type));
 				#endif
 
+				/* drop the exclusive access, and mark the element as dead */
 				DENSITY_TEST_RANDOM_WAIT();
 				control->m_size.store(size + 2);
 
 				return true;
 			}
 
-			/* A page is empty if it has not living, dead or being-consumed elements. Given that no producer threads will edit the page,
+			/* A page is empty if it has no living, dead or being-consumed elements. Given that no producer threads will edit the page,
 				it is an unrecoverable state. It is also objective, that is all the consumer threads observe this state coherently.
 				When the first page becomes empty, consumer threads may still enter it to try to consume, but if it not the last page (that
 				is, producers don't try to push elements), they will surely fail to consume an element. */
 			bool is_empty() const
 			{
-				return m_head.load() == m_tail.load();
+				auto const head = m_head.load();
+				auto const tail = m_tail.load();
+				return head == tail;
 			}
 
 		private:
