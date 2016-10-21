@@ -25,7 +25,7 @@ namespace density_tests
     {
         PerformanceTestGroup group("create array", "density version: " + std::to_string(DENSITY_VERSION));
 
-		group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             lifo_array< Virtual > array(i_cardinality);
         }, __LINE__);
 

@@ -100,9 +100,9 @@ namespace density
         @param i_uint integer to be checked
         @param i_alignment must be > 0 and a power of 2 */
     template <typename UINT>
-		inline bool is_uint_aligned(UINT i_uint, UINT i_alignment) noexcept
+        inline bool is_uint_aligned(UINT i_uint, UINT i_alignment) noexcept
     {
-		static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
+        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         return (i_uint & (i_alignment - 1)) == 0;
     }

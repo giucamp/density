@@ -14,7 +14,7 @@ namespace density
     /** Queue of callable objects (or function object).
 
         Every element in the queue is a type-erased callable object (like a std::function). Elements that can be added to
-        the queue include:		
+        the queue include:
             - lambda expressions
             - classes overloading the function call operator
             - the result a std::bind
@@ -138,7 +138,7 @@ namespace density
             return m_queue.empty();
         }
 
-		/** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
+        /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
             \remark There is no way to predict if the next push\emplace will cause a reallocation.
 
             \n\b Throws: nothing
