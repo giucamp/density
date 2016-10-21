@@ -10,6 +10,7 @@
 #include <string>
 #include <functional> // for std::bind
 #include <iostream>
+#include <utility>
 
 namespace function_queue_sample
 {
@@ -52,5 +53,39 @@ namespace function_queue_sample
             queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
             std::cout << "a + b = " << queue_2.consume_front(40., 2.) << std::endl;
         }
+
+		{
+struct Renderer { int m_draw_calls = 0; };
+
+function_queue<bool (Renderer & )> render_commands;
+			
+// post a command that draws a circle
+float x = 5, y = 6, radius = 3;
+render_commands.push( [x, y, radius] (Renderer & i_renderer) {
+	std::cout << "drawing a circle at (" << x << ", " << y <<
+		") with radius = " << radius << std::endl;
+	i_renderer.m_draw_calls++;
+	return true;
+});
+
+// post a command that loads a texture
+std::string file_name = "hello_world.png";
+int flags = 42;			
+render_commands.push([file_name, flags](Renderer & i_renderer) {
+	std::cout << "loading " << file_name << " with flags " << flags << std::endl;
+	i_renderer.m_draw_calls++;
+	return true;
+});
+
+// execute the commands
+Renderer renderer;
+while (!render_commands.empty())
+{
+	if (!render_commands.consume_front(renderer))
+	{
+		std::cerr << "command failed" << std::endl;
+	}
+}
+		}
     }
 }

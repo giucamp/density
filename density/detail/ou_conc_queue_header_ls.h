@@ -10,24 +10,28 @@
 #include "void_allocator.h"
 #include <atomic>
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4324) // structure was padded due to alignment specifier
+#endif
+
 namespace density
 {
     namespace detail
     {
-		constexpr size_t concurrent_alignment = 64;
-
-		#define DENSITY_TEST_RANDOM_WAIT()
-
-		/** Fixed-size disposable concurrent queue.
-		disposable_concurrent_queue_header is an concurrent lock-free multiple-consumers multiple-producers heterogeneous queue.
-		This container is disposable, in the sense that it does not recycle the space in the buffer, like a ring buffer does.
-		Every push consumes some capacity. A consume has no effect on the capacity.
-		- Both head and tail are monotonic: there is no wrapping at the end of the buffer
-		- The capacity is monotonic: if an element does not fit in the available space, it will never do
-		This class is non-copyable and non-movable.
+		/** Header for a fixed-size disposable concurrent queue. This is a partial specialization of the class template ou_conc_queue_header,
+			Warning: this is a low-level, internal, complex-to-use class. Don't use it directly, use concurrent_heterogeneous_queue and concurrent_function_queue instead.
+			This class assumes that the user space starts from (this + 1) and ends to reinterpret_cast<char*>(this) + PAGE_SIZE.
+			This class handles an concurrent lock-free multiple-consumers multiple-producers heterogeneous queue. This container is disposable, 
+			in the sense that it does not recycle the space in the buffer, like a ring buffer does.
+			Every push consumes some capacity. A consume has no effect on the capacity.
+				- Both head and tail are monotonic: there is no wrapping at the end of the buffer
+				- The capacity is monotonic: if an element does not fit in the available space, it will never do
+			This class is non-copyable and non-movable.
 		*/
 		template <typename INTERNAL_WORD, typename RUNTIME_TYPE, INTERNAL_WORD PAGE_SIZE>
-			class disposable_concurrent_queue_header
+			class ou_conc_queue_header<INTERNAL_WORD, RUNTIME_TYPE, PAGE_SIZE,
+				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>
 		{
 		public:
 
@@ -49,15 +53,15 @@ namespace density
 
 			/** Default constructor, not thread-safe. Head and tail are initialized to sizeof(*this), because they are
 				based on the address of this. Control blocks and elements are allocated from beginning from the address (this +1). */
-			disposable_concurrent_queue_header()
-				: m_head(sizeof(*this)), m_tail(sizeof(*this))
+			ou_conc_queue_header()
+				: m_head(sizeof(*this)), m_tail(sizeof(*this)), m_next(nullptr)
 			{
 				/** The push algorithm requires the control block at m_tail has the m_size member initialized to zero */
 				reinterpret_cast<ControlBlock*>(this + 1)->m_size.store(0);
 			}
 
-			disposable_concurrent_queue_header(const disposable_concurrent_queue_header &) = delete;
-			disposable_concurrent_queue_header & operator = (const disposable_concurrent_queue_header &) = delete;
+			ou_conc_queue_header(const ou_conc_queue_header &) = delete;
+			ou_conc_queue_header & operator = (const ou_conc_queue_header &) = delete;
 
 			/** Pushes a new element on the queue. */
 			template <typename CONSTRUCTOR>
@@ -179,7 +183,7 @@ namespace density
 			{
 				DENSITY_TEST_RANDOM_WAIT();
 				auto head = m_head.load();
-				#if DENSITY_DEBUG
+				#if DENSITY_DEBUG_INTERNAL
 					const INTERNAL_WORD dbg_original_head = head;
 				#endif
 
@@ -302,8 +306,15 @@ namespace density
 		private:
 			alignas(concurrent_alignment) std::atomic<INTERNAL_WORD> m_head;
 			alignas(concurrent_alignment) std::atomic<INTERNAL_WORD> m_tail;
+
+		public:
+			ou_conc_queue_header * m_next; /**< pointer to the next page, or nullptr */
 		};
 
    } // namespace detail
 
 } // namespace density
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

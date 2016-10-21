@@ -108,7 +108,7 @@
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\disposable_concurrent_queue_header.h">
+    <ClInclude Include="..\..\density\detail\ou_conc_queue_header_ls.h">
       <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>

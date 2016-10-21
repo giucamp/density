@@ -14,6 +14,7 @@
 #include <functional> // for std::bind
 #include <iostream>
 #include <atomic>
+#include <vector>
 #ifdef __GNUC__
     #ifdef __MINGW32__
         /* MinGw does not have support for C++11 threading classes. Using the implementation provided by
