@@ -58,6 +58,9 @@
     <ClCompile Include="..\functionality_cases\cases_concurrent_function_queue.cpp">
       <Filter>functionality_cases</Filter>
     </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_concurrent_heterogeneous_queue.cpp">
+      <Filter>functionality_cases</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">

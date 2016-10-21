@@ -11,7 +11,13 @@
 #include <limits>
 #include <cstddef>
 
-#define DENSITY_VERSION            0x0007
+#define DENSITY_VERSION            0x0008
+/**
+    Breaking changes from version 0x0007:
+        - The \ref PagedAllocator_concept "PagedAllocator" concept previously required page_size and page_alignment
+            to be static functions (to avoid using the constexpr keyword). In version 0x0008 page_size and page_alignment
+            are required to be static constexpr variables.
+*/
 
 #if !defined(NDEBUG)
     #define DENSITY_DEBUG                    1

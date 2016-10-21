@@ -6,7 +6,12 @@
 
 #pragma once
 #include "density_common.h"
+#include "density_common.h"
+#include "runtime_type.h"
+#include "void_allocator.h"
 #include <mutex>
+#include <thread>
+#include <atomic>
 
 #define DENSITY_TEST_RANDOM_WAIT()
 
@@ -84,6 +89,9 @@ namespace density
                     but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
                     in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
+            static_assert(PAGE_ALLOCATOR::page_alignment >= 2, "The implementation requires the ");
+                /* Reason: the push algorithm uses the first bit of m_last (which is a pointer to a page) as exclusive-access flag. */
+
             using allocator_type = PAGE_ALLOCATOR;
             using runtime_type = RUNTIME_TYPE;
             using value_type = ELEMENT;
@@ -93,7 +101,7 @@ namespace density
 
             concurrent_heterogeneous_queue()
             {
-                auto first_queue = new(get_allocator_ref().allocate_page()) queue_header();
+                auto first_queue = new_page();
                 m_first.store(first_queue);
                 m_last.store(reinterpret_cast<uintptr_t>(first_queue));
                 m_can_delete_page.clear();
@@ -138,7 +146,7 @@ namespace density
                     {
                         /* Ok, we have set the exclusive flag from 0 to 1. First allocate the page. */
                         DENSITY_TEST_RANDOM_WAIT();
-                        auto const queue = new(get_allocator_ref().allocate_page()) queue_header();
+                        auto const queue = new_page();
 
                         /** Now we can link the prev-last with the new page. This is a non-atomic write. */
                         DENSITY_TEST_RANDOM_WAIT();
@@ -170,7 +178,11 @@ namespace density
             {
             public:
 
-                consumer() = default;
+                consumer()
+                    : m_hazard_page(nullptr), m_next(nullptr), m_target_queue(nullptr)
+                {
+
+                }
 
                 ~consumer()
                 {
@@ -183,12 +195,70 @@ namespace density
                 consumer(const consumer &) = delete;
                 consumer & operator = (const consumer &) = delete;
 
-                consumer(consumer &&) = default;
-                consumer & operator = (consumer &&) = default;
+                consumer(consumer && i_source) noexcept
+                    : m_hazard_page(i_source.m_hazard_page.load()), m_next(i_source.m_next), m_target_queue(i_source.m_target_queue)
+                {
+                    i_source.m_target_queue = nullptr;
+                }
+
+                consumer & operator = (consumer &&) noexcept
+                {
+                    m_hazard_page = i_source.m_hazard_page.load();
+                    m_next = i_source.m_next;
+                    m_target_queue = i_source.m_target_queue;
+                    i_source.m_target_queue = nullptr;
+                    return *this;
+                }
+
+                template <typename CONSUMER_FUNC>
+                    bool try_consume(CONSUMER_FUNC && i_consumer_func)
+                {
+                    DENSITY_ASSERT(m_target_queue != nullptr); /** this consumer is not attached to a queue. This results in undefined behavior!! */
+
+                    bool result;
+                    for (;;)
+                    {
+                        /** loads the first page of the queue, and sets it as hazard page (no consumer thread will delete it). If
+                            the first page changes in the meanwhile, we have to repeat the operation. */
+                        queue_header * first;
+                        do {
+                            first = m_target_queue->m_first.load();
+                            m_hazard_page.store(first);
+                            DENSITY_TEST_RANDOM_WAIT();
+                        } while (first != m_target_queue->m_first.load());
+                        DENSITY_TEST_RANDOM_WAIT();
+
+                        /* try to consume an element. On success, exit the loop */
+                        result = first->try_consume(std::forward<CONSUMER_FUNC>(i_consumer_func));
+						if (result)
+						{
+							break;
+						}
+                        
+                        DENSITY_TEST_RANDOM_WAIT();
+                        auto const last = reinterpret_cast<queue_header*>(m_target_queue->m_last.load() & ~static_cast<uintptr_t>(1));
+                        DENSITY_TEST_RANDOM_WAIT();
+                        if (first == last || !first->is_empty())
+                        {
+                            /** The consume has failed, and we can't delete this page because it is not empty, or because it
+                                is the only page in the queue. */
+                            break;
+                        }
+
+                        /** Try to delete the page */
+                        DENSITY_TEST_RANDOM_WAIT();
+                        try_to_delete_first();
+
+                    }
+                    
+					m_hazard_page.store(nullptr);
+                    return result;
+                }
 
             private:
 
-                consumer(concurrent_heterogeneous_queue & i_target_queue)
+                explicit consumer(concurrent_heterogeneous_queue & i_target_queue)
+                    : m_hazard_page(nullptr), m_next(nullptr), m_target_queue(nullptr)
                 {
                     attach_to_queue(i_target_queue);
                 }
@@ -196,7 +266,7 @@ namespace density
                 void attach_to_queue(concurrent_heterogeneous_queue & i_target_queue)
                 {
                     {
-                        std::lock_guard lock(i_target_queue.m_hazard_pointers_mutex); // note: the lock may throw
+                        std::lock_guard<std::mutex> lock(i_target_queue.m_hazard_pointers_mutex); // note: the lock may throw
                         m_next = i_target_queue.m_first_consumer;
                         i_target_queue.m_first_consumer = this;
                     }
@@ -209,7 +279,7 @@ namespace density
 
                     /* linear search for this in the linked list of consumers associated to this queue. */
                     consumer * prev = nullptr;
-                    for (consumer curr = m_target_queue->m_first_consumer; curr != nullptr; curr = curr->m_next)
+                    for (consumer * curr = m_target_queue->m_first_consumer; curr != nullptr; curr = curr->m_next)
                     {
                         if (curr == this)
                             break;
@@ -219,27 +289,64 @@ namespace density
                     if (prev != nullptr)
                     {
                         // not the first consumer
-                        DENSITY_ASSERT_INTERNAL(target != s_first_hazard_pointer);
-                        DENSITY_ASSERT_INTERNAL(prev->m_next == target);
-                        prev->m_next = target->m_next;
+                        DENSITY_ASSERT_INTERNAL(this != m_target_queue->m_first_consumer);
+                        DENSITY_ASSERT_INTERNAL(prev->m_next == this);
+                        prev->m_next = m_next;
                     }
                     else
                     {
                         // it's the first consumer
-                        DENSITY_ASSERT_INTERNAL(target == s_first_hazard_pointer);
-                        s_first_hazard_pointer = target->m_next;
+                        DENSITY_ASSERT_INTERNAL(this == m_target_queue->m_first_consumer);
+                        m_target_queue->m_first_consumer = m_next;
                     }
 
-                    target->m_next = nullptr;
+                    m_target_queue = nullptr;
+                }
+
+                DENSITY_NO_INLINE void try_to_delete_first()
+                {
+                    m_hazard_page.store(nullptr);
+
+                    if (!m_target_queue->m_can_delete_page.test_and_set())
+                    {
+                        auto const first = m_target_queue->m_first.load();
+                        m_hazard_page.store(first);
+
+                        auto const last = reinterpret_cast<queue_header*>(m_target_queue->m_last.load() & ~static_cast<uintptr_t>(1));
+
+                        if (first != last && first->is_empty())
+                        {
+                            /* This first page is not the last (so it can't have further elements pushed) */
+                            auto const next = first->m_next;
+                            DENSITY_ASSERT_INTERNAL(next != nullptr);
+                            DENSITY_TEST_RANDOM_WAIT();
+                            m_target_queue->m_first.store(next);
+                            m_target_queue->m_can_delete_page.clear();
+
+                            m_hazard_page.store(nullptr);
+
+                            while (!m_target_queue->is_safe_to_free(first))
+                            {
+                                DENSITY_STATS(++g_stats.delete_page_waits);
+                            }
+
+                            m_target_queue->delete_page(first);
+                        }
+                        else
+                        {
+                            m_hazard_page.store(nullptr);
+                            m_target_queue->m_can_delete_page.clear();
+                        }
+                    }
                 }
 
                 friend class concurrent_heterogeneous_queue;
 
             private:
-                std::atomic<queue_header*> m_hazard_page = nullptr; /** pointer to the page currently used by this
+                std::atomic<queue_header*> m_hazard_page; /** pointer to the page currently used by this
                                                                    consumer. This pointer prevents a page to be destroyed by another consumer. */
-                consumer * m_next = nullptr;
-                concurrent_heterogeneous_queue * m_target_queue = nullptr;
+                consumer * m_next;
+                concurrent_heterogeneous_queue * m_target_queue;
             };
 
             consumer make_consumer()
@@ -295,6 +402,34 @@ namespace density
                     auto const result = new(i_dest) ElementCompleteType(i_source);
                     return static_cast<ELEMENT*>(result);
                 });
+            }
+
+            queue_header * new_page()
+            {
+                return new(get_allocator_ref().allocate_page()) queue_header();
+            }
+
+            void delete_page(queue_header * i_page) noexcept
+            {
+                DENSITY_ASSERT_INTERNAL(i_page->is_empty());
+
+                // the destructor of a page header is trivial, so just deallocate it
+                get_allocator_ref().deallocate_page(i_page);
+            }
+
+            bool is_safe_to_free(queue_header* i_page)
+            {
+                std::lock_guard<std::mutex> lock(m_hazard_pointers_mutex);
+
+                for (auto curr = m_first_consumer; curr != nullptr; curr = curr->m_next)
+                {
+                    if (curr->m_hazard_page == i_page)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
         private:

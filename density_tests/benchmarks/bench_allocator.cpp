@@ -42,11 +42,10 @@ namespace density_tests
         // new and delete
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             void * pages[void_allocator::free_page_cache_size];
-            const size_t allocator_page_size = void_allocator::page_size();
             for (size_t i = 0; i < i_cardinality; i++)
             {
                 for (auto & page : pages)
-                    *(int*)(page = operator new (allocator_page_size)) = 0;
+                    *(int*)(page = operator new (void_allocator::page_size)) = 0;
                 for (auto page : pages)
                     operator delete(page);
             }
@@ -91,10 +90,9 @@ namespace density_tests
 
         // new and delete
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            const size_t allocator_page_size = void_allocator::page_size();
             for (size_t i = 0; i < i_cardinality; i++)
             {
-                pages[i] = operator new (allocator_page_size);
+                pages[i] = operator new (void_allocator::page_size);
                 *(int*)pages[i] = 42;
             }
             for (size_t i = 0; i < i_cardinality; i++)

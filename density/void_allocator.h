@@ -87,15 +87,15 @@ namespace density
         <caption id="multi_row">PagedAllocator Requirements</caption>
         <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 
-        <tr><td>Static member function: @code static size_t page_size() noexcept; @endcode </td></tr>
-        <td>Returns the size of a page in bytes. In the same program execution this function must return the same value on every invocation. </td> </tr>
+        <tr><td>Static constexpr member variable: @code static size_t page_size; @endcode </td></tr>
+        <td>Specifies the size of a page in bytes. </td> </tr>
 
-        <tr><td>Static member function: @code static size_t page_alignment() noexcept; @endcode </td></tr>
-        <td>Returns the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. In the same program execution this function must return the same value on every invocation. </td> </tr>
+        <tr><td>Static constexpr member variable: @code static const size_t page_alignment; @endcode </td></tr>
+        <td>Specifies the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. </td> </tr>
 
         <tr><td>Non-static member function: @code void * allocate_page(); @endcode </td></tr>
-            <td>Allocates a memory page large at least \em page_size() bytes. The first byte of the page is aligned at
-            least to \em page_alignment(). On failure this function should throw a
+            <td>Allocates a memory page large at least \em page_size bytes. The first byte of the page is aligned at
+            least to \em page_alignment. On failure this function should throw a
             <a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
         The return value is a pointer to the first byte of the memory page. The content of the page is undefined. \n
         </td></tr>
@@ -237,10 +237,10 @@ namespace density
         }
 
         /** Returns the size (in bytes) of a memory page. */
-        static size_t page_size() noexcept { return 4096; }
+        static constexpr size_t page_size = 4096;
 
         /** Returns the alignment (in bytes) of a memory page. */
-        static size_t page_alignment() noexcept { return alignof(std::max_align_t); }
+        static constexpr size_t page_alignment = alignof(std::max_align_t);
 
         /** Maximum number of free page that a thread can cache */
         static const size_t free_page_cache_size = 4;
@@ -301,13 +301,13 @@ namespace density
 
         static void * allocate_page_impl()
         {
-            return operator new (page_size());
+            return operator new (page_size);
         }
 
         static void deallocate_page_impl(void * i_page) noexcept
         {
             #if __cplusplus >= 201402L
-                operator delete (i_page, page_size()); // since C++14
+                operator delete (i_page, page_size); // since C++14
             #else
                 operator delete (i_page);
             #endif
@@ -437,7 +437,7 @@ namespace density
                 {
                     auto next = curr->m_next;
                     #if __cplusplus >= 201402L
-                        operator delete (curr, page_size()); // since C++14
+                        operator delete (curr, page_size); // since C++14
                     #else
                         operator delete (curr);
                     #endif

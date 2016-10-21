@@ -178,14 +178,12 @@ namespace density
 
         DENSITY_NO_INLINE void * alloc_new_page(size_t i_needed_size)
         {
-            const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
-
             auto needed_page_size = i_needed_size + sizeof(PageHeader);
             void * page_address;
-            if (needed_page_size <= allocator_page_size)
+            if (needed_page_size <= VOID_ALLOCATOR::page_size)
             {
                 page_address = get_underlying_allocator().allocate_page();
-                needed_page_size = allocator_page_size;
+                needed_page_size = VOID_ALLOCATOR::page_size;
             }
             else
             {
@@ -204,13 +202,11 @@ namespace density
 
         void pop_page() noexcept
         {
-            const size_t allocator_page_size = VOID_ALLOCATOR::page_size();
-
             auto const last_page = m_last_page;
             auto const prev_page = last_page->prev_page();
             auto const last_page_size = last_page->capacity() + sizeof(PageHeader);
             last_page->PageHeader::~PageHeader();
-            if (last_page_size <= allocator_page_size)
+            if (last_page_size <= VOID_ALLOCATOR::page_size)
             {
                 get_underlying_allocator().deallocate_page(last_page);
             }
@@ -338,7 +334,7 @@ namespace density
     public:
 
         /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-        static size_t page_alignment() noexcept { return VOID_ALLOCATOR::page_alignment; }
+        static constexpr size_t page_alignment = VOID_ALLOCATOR::page_alignment;
 
         /** Default constructor */
         thread_lifo_allocator() = default;

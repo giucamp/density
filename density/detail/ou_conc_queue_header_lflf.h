@@ -14,9 +14,6 @@
     #error "THIS IS A PRIVATE HEADER OF DENSITY. DO NOT INCLUDE IT DIRECTLY"
 #endif // ! DENSITY_INCLUDING_CONC_QUEUE_DETAIL
 
-#include "..\density_common.h"
-#include "..\runtime_type.h"
-#include "void_allocator.h"
 #include <atomic>
 
 namespace density
@@ -273,7 +270,7 @@ namespace density
                 std::forward<CONSUMER>(i_consumer)(control->m_type, element);
 
                 /* destroy the type (usually a nop) */
-                control->m_type->RUNTIME_TYPE::~RUNTIME_TYPE();
+                control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
                 #if DENSITY_DEBUG
                     memset(&control->m_type, 0xB4, sizeof(control->m_type));
                 #endif

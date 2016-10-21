@@ -230,6 +230,7 @@
     <ClCompile Include="..\benchmarks\bench_lifo.cpp" />
     <ClCompile Include="..\benchmarks\bench_queues.cpp" />
     <ClCompile Include="..\functionality_cases\cases_concurrent_function_queue.cpp" />
+    <ClCompile Include="..\functionality_cases\cases_concurrent_heterogeneous_queue.cpp" />
     <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp" />
     <ClCompile Include="..\functionality_cases\cases_lifo.cpp" />
     <ClCompile Include="..\functionality_cases\cases_queue.cpp" />

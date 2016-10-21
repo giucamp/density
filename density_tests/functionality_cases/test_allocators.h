@@ -37,28 +37,28 @@ namespace density_tests
             m_underlying_allocator.deallocate(i_block, i_size, i_alignment, i_alignment_offset);
         }
 
-        static size_t page_size() noexcept { return void_allocator::page_size(); }
+        static constexpr size_t page_size = void_allocator::page_size;
 
-        static size_t page_alignment() noexcept { return void_allocator::page_alignment(); }
+        static constexpr size_t page_alignment = void_allocator::page_alignment;
 
         static const size_t free_page_cache_size = void_allocator::free_page_cache_size;
 
         void * allocate_page()
         {
             #ifdef _WIN32
-                auto page = m_underlying_allocator.allocate(void_allocator::page_size(), void_allocator::page_alignment(), 0);
+                auto page = m_underlying_allocator.allocate(void_allocator::page_size, void_allocator::page_alignment, 0);
             #else
                 auto page = m_underlying_allocator.allocate_page();
             #endif
-            m_registry.add_block(page, page_size(), page_alignment(), 0);
+            m_registry.add_block(page, page_size, page_alignment, 0);
             return page;
         }
 
         void deallocate_page(void * i_page) noexcept
         {
-            m_registry.remove_block(i_page, page_size(), page_alignment(), 0);
+            m_registry.remove_block(i_page, page_size, page_alignment, 0);
             #ifdef _WIN32
-                m_underlying_allocator.deallocate(i_page, void_allocator::page_size(), void_allocator::page_alignment(), 0);
+                m_underlying_allocator.deallocate(i_page, void_allocator::page_size, void_allocator::page_alignment, 0);
             #else
                 m_underlying_allocator.deallocate_page(i_page);
             #endif
