@@ -12,6 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <list>
 
 #define DENSITY_TEST_RANDOM_WAIT()
 
@@ -75,12 +76,14 @@ namespace density
                 when no longer needed. Using the default (and recommended) allocator, deleted pages are added to a thread-local
                 free-list. When the number of pages in this free-list exceeds a fixed number, a page is added in a global lock-free
                 free-list. See void_allocator for details.
-                See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details. */
+                See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details. 
+				There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
+				*/
         template < typename ELEMENT, typename PAGE_ALLOCATOR, typename RUNTIME_TYPE >
             class concurrent_heterogeneous_queue< ELEMENT, PAGE_ALLOCATOR, RUNTIME_TYPE,
                 SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : private PAGE_ALLOCATOR
         {
-            using queue_header = detail::ou_conc_queue_header<uint64_t, RUNTIME_TYPE, 4096, SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
+            using queue_header = detail::ou_conc_queue_header<uint64_t, RUNTIME_TYPE, PAGE_ALLOCATOR::page_size, SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
 
         public:
 
@@ -89,7 +92,7 @@ namespace density
                     but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
                     in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
-            static_assert(PAGE_ALLOCATOR::page_alignment >= 2, "The implementation requires the ");
+            static_assert(PAGE_ALLOCATOR::page_alignment >= 2, "The implementation requires that guaranteed alignment of the pages is at least 2");
                 /* Reason: the push algorithm uses the first bit of m_last (which is a pointer to a page) as exclusive-access flag. */
 
             using allocator_type = PAGE_ALLOCATOR;
@@ -97,7 +100,8 @@ namespace density
             using value_type = ELEMENT;
             using reference = typename std::add_lvalue_reference< ELEMENT >::type;
             using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
-            using size_type = size_t;
+			static constexpr SynchronizationKind push_sync = SynchronizationKind::LocklessMultiple;
+			static constexpr SynchronizationKind consume_sync = SynchronizationKind::LocklessMultiple;
 
             concurrent_heterogeneous_queue()
             {
@@ -108,8 +112,21 @@ namespace density
                 m_first_consumer = nullptr;
             }
 
+			~concurrent_heterogeneous_queue()
+			{
+				/** detach all the consumers */
+				{
+					std::lock_guard<std::mutex> lock(m_hazard_pointers_mutex);
+					for (auto curr = m_first_consumer; curr != nullptr; curr = curr->m_next)
+					{
+						DENSITY_ASSERT_INTERNAL(curr->m_target_queue == this);
+						curr->detach_from_queue();
+					}
+				}
+			}
+
             template <typename ELEMENT_COMPLETE_TYPE>
-                void push(ELEMENT_COMPLETE_TYPE && i_source)
+				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
             {
                 static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
                     "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
@@ -118,7 +135,7 @@ namespace density
             }
 
             template <typename CONSTRUCTOR>
-                void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
+				DENSITY_STRONG_INLINE void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
             {
                 push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_source_type.size());
             }
@@ -162,27 +179,20 @@ namespace density
             }
 
             template <typename OPERATION>
-                bool manual_consume(OPERATION && i_operation)
+                bool try_consume(OPERATION && i_operation)
             {
-                for (;;)
-                {
-                    auto res = m_head->consume(std::move(i_operation));
-                    if (res == ConsumeResult::Success)
-                    {
-                        return true;
-                    }
-                }
+				return get_impicit_consumer().try_consume(std::forward<OPERATION>(i_operation));
             }
 
             class consumer
             {
             public:
 
-                consumer()
-                    : m_hazard_page(nullptr), m_next(nullptr), m_target_queue(nullptr)
-                {
-
-                }
+				explicit consumer(concurrent_heterogeneous_queue & i_target_queue)
+					: m_hazard_page(nullptr), m_next(nullptr), m_target_queue(nullptr)
+				{
+					attach_to_queue(i_target_queue);
+				}
 
                 ~consumer()
                 {
@@ -194,22 +204,7 @@ namespace density
 
                 consumer(const consumer &) = delete;
                 consumer & operator = (const consumer &) = delete;
-
-                consumer(consumer && i_source) noexcept
-                    : m_hazard_page(i_source.m_hazard_page.load()), m_next(i_source.m_next), m_target_queue(i_source.m_target_queue)
-                {
-                    i_source.m_target_queue = nullptr;
-                }
-
-                consumer & operator = (consumer &&) noexcept
-                {
-                    m_hazard_page = i_source.m_hazard_page.load();
-                    m_next = i_source.m_next;
-                    m_target_queue = i_source.m_target_queue;
-                    i_source.m_target_queue = nullptr;
-                    return *this;
-                }
-
+			
                 template <typename CONSUMER_FUNC>
                     bool try_consume(CONSUMER_FUNC && i_consumer_func)
                 {
@@ -230,11 +225,11 @@ namespace density
 
                         /* try to consume an element. On success, exit the loop */
                         result = first->try_consume(std::forward<CONSUMER_FUNC>(i_consumer_func));
-						if (result)
-						{
-							break;
-						}
-                        
+                        if (result)
+                        {
+                            break;
+                        }
+
                         DENSITY_TEST_RANDOM_WAIT();
                         auto const last = reinterpret_cast<queue_header*>(m_target_queue->m_last.load() & ~static_cast<uintptr_t>(1));
                         DENSITY_TEST_RANDOM_WAIT();
@@ -250,20 +245,14 @@ namespace density
                         try_to_delete_first();
 
                     }
-                    
-					m_hazard_page.store(nullptr);
+
+                    m_hazard_page.store(nullptr);
                     return result;
                 }
 
             private:
 
-                explicit consumer(concurrent_heterogeneous_queue & i_target_queue)
-                    : m_hazard_page(nullptr), m_next(nullptr), m_target_queue(nullptr)
-                {
-                    attach_to_queue(i_target_queue);
-                }
-
-                void attach_to_queue(concurrent_heterogeneous_queue & i_target_queue)
+	            void attach_to_queue(concurrent_heterogeneous_queue & i_target_queue)
                 {
                     {
                         std::lock_guard<std::mutex> lock(i_target_queue.m_hazard_pointers_mutex); // note: the lock may throw
@@ -275,7 +264,7 @@ namespace density
 
                 void detach_from_queue()
                 {
-                    DENSITY_ASSERT_INTERNAL(m_target_queue != nullptr);
+                    DENSITY_ASSERT_INTERNAL(m_target_queue != nullptr && m_hazard_page.load() == nullptr);
 
                     /* linear search for this in the linked list of consumers associated to this queue. */
                     consumer * prev = nullptr;
@@ -301,6 +290,7 @@ namespace density
                     }
 
                     m_target_queue = nullptr;
+					m_next = nullptr;
                 }
 
                 DENSITY_NO_INLINE void try_to_delete_first()
@@ -348,11 +338,6 @@ namespace density
                 consumer * m_next;
                 concurrent_heterogeneous_queue * m_target_queue;
             };
-
-            consumer make_consumer()
-            {
-                return consumer(*this);
-            }
 
             /** Returns a copy of the allocator instance owned by the queue.
                 \n\b Throws: anything that the copy-constructor of the allocator throws
@@ -431,6 +416,33 @@ namespace density
 
                 return true;
             }
+
+			/** Returns a consumer attached to this queue and which is being used for a consume still in progress */
+			consumer & get_impicit_consumer()
+			{
+				static thread_local std::list<consumer> s_implicit_consumers;
+
+				auto const end = s_implicit_consumers.end();
+				consumer * notarget_consumer = nullptr;
+				for (auto it = s_implicit_consumers.begin(); it != end; it++)
+				{
+					if (it->m_target_queue == this && it->m_hazard_page.load() == nullptr)
+					{
+						return *it;
+					}
+					if (it->m_target_queue == nullptr)
+					{
+						notarget_consumer = &*it;
+					}
+				}
+				if (notarget_consumer != nullptr)
+				{
+					notarget_consumer->attach_to_queue(*this);
+					return *notarget_consumer;
+				}
+				s_implicit_consumers.emplace_back(*this);
+				return s_implicit_consumers.back();
+			}
 
         private:
             std::atomic<queue_header*> m_first; /**< Pointer to the first page of the queue. Consumer will try to consume from this page first. */

@@ -45,7 +45,7 @@
 
 #ifdef _MSC_VER
     #define DENSITY_NO_INLINE                    __declspec(noinline)
-    #define DENSITY_STRONG_INLINE                __forceinline
+    #define DENSITY_STRONG_INLINE                //__forceinline
 #else
     #define DENSITY_NO_INLINE
     #define DENSITY_STRONG_INLINE
