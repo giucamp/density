@@ -14,8 +14,6 @@
     #error "THIS IS A PRIVATE HEADER OF DENSITY. DO NOT INCLUDE IT DIRECTLY"
 #endif // ! DENSITY_INCLUDING_CONC_QUEUE_DETAIL
 
-#include <atomic>
-
 namespace density
 {
     namespace detail

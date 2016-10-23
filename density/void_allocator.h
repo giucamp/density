@@ -143,6 +143,15 @@ namespace density
     {
     public:
 
+		/** Size (in bytes) of a memory page. */
+		static constexpr size_t page_size = 4096;
+
+		/** Alignment (in bytes) of a memory page. */
+		static constexpr size_t page_alignment = alignof(std::max_align_t);
+
+		/** Maximum number of free page that a thread can cache */
+		static const size_t free_page_cache_size = 4;
+
         void_allocator() noexcept = default;
         void_allocator(const void_allocator&) noexcept = default;
         void_allocator(void_allocator&&) noexcept = default;
@@ -235,15 +244,6 @@ namespace density
                 }
             }
         }
-
-        /** Returns the size (in bytes) of a memory page. */
-        static constexpr size_t page_size = 4096;
-
-        /** Returns the alignment (in bytes) of a memory page. */
-        static constexpr size_t page_alignment = alignof(std::max_align_t);
-
-        /** Maximum number of free page that a thread can cache */
-        static const size_t free_page_cache_size = 4;
 
         /** Allocates a memory page.
             @return address of the new memory page

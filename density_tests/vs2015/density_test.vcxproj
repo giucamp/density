@@ -239,6 +239,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h" />
     <ClInclude Include="..\..\density\detail\ou_conc_queue_header_lflf.h" />
     <ClInclude Include="..\..\density\small_function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_array.h" />
