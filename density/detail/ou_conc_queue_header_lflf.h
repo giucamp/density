@@ -35,8 +35,6 @@ namespace density
         {
         public:
 
-            static const INTERNAL_WORD internal_alignment = 4;
-
             /** Before each element there is a ControlBlock object */
             struct ControlBlock
             {
@@ -50,6 +48,7 @@ namespace density
                 RUNTIME_TYPE m_type; /** type of the element */
             };
 
+			static constexpr size_t default_alignment = alignof(ControlBlock);
 
             /** Default constructor, not thread-safe. Head and tail are initialized to sizeof(*this), because they are
                 based on the address of this. Control blocks and elements are allocated from beginning from the address (this +1). */
@@ -64,10 +63,10 @@ namespace density
             ou_conc_queue_header & operator = (const ou_conc_queue_header &) = delete;
 
             /** Pushes a new element on the queue. */
-            template <typename CONSTRUCTOR>
-                bool push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, INTERNAL_WORD i_size)
+            template <bool CAN_WAIT, typename CONSTRUCTOR>
+                bool try_push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, INTERNAL_WORD i_size)
             {
-                DENSITY_ASSERT_INTERNAL(i_size > 0 && is_uint_aligned(i_size, internal_alignment));
+                DENSITY_ASSERT_INTERNAL(i_size > 0 && is_uint_aligned(i_size, default_alignment));
 
                 INTERNAL_WORD tail;
                 void * element;
@@ -111,6 +110,14 @@ namespace density
                     INTERNAL_WORD expected = 0;
                     DENSITY_TEST_RANDOM_WAIT();
                     exclusive_access = control->m_size.compare_exchange_strong(expected, i_size + 1);
+
+					bool can_wait = CAN_WAIT; // use a local variable to avoid the warning about the conditional expression being constant
+					if (!can_wait)
+					{
+						if(!exclusive_access)
+							return false;
+					}
+
                 } while ( !exclusive_access );
 
                 /* after gaining exclusive access to the element after tail, we initialize the next control block to zero, to allow
@@ -178,7 +185,7 @@ namespace density
                 the element from the queue and returns true, even if no element was actually removed.
                 If an exception is raised during the consumption of an element, the element is removed, and the exception is then
                 propagated to the caller. */
-            template <typename CONSUMER>
+            template <bool CAN_WAIT, typename CONSUMER>
                 bool try_consume(CONSUMER && i_consumer)
             {
                 DENSITY_TEST_RANDOM_WAIT();
@@ -259,6 +266,12 @@ namespace density
                             DENSITY_ASSERT_INTERNAL((prev & 1) == 0);
 
                             tries++;
+
+							bool can_wait = CAN_WAIT; // use a local variable to avoid the warning about the conditional expression being constant
+							if (!can_wait)
+							{
+								return false;
+							}
                         }
                     }
                 }
@@ -296,8 +309,6 @@ namespace density
             /** Allocates an object with the given size starting from *io_pos, and updates it */
             void * allocate(INTERNAL_WORD * io_pos, INTERNAL_WORD i_size)
             {
-                DENSITY_ASSERT_INTERNAL(is_uint_aligned(i_size, internal_alignment));
-                DENSITY_ASSERT_INTERNAL(is_uint_aligned(*io_pos, internal_alignment));
                 void * res = reinterpret_cast<unsigned char*>(this) + *io_pos;
                 *io_pos += i_size;
                 return res;

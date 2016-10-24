@@ -23,13 +23,31 @@ namespace density_tests
     void add_lifo_array_benchmarks(TestTree & i_dest);
     void add_queue_benchmarks(TestTree & i_dest);
     void add_allocator_benchmarks(TestTree & i_dest);
+
+    void add_concurrent_function_queue_cases(TestTree & i_dest);
+    void tets_concurrent_function_queue(std::mt19937 &);
+
+    void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest);
+    void tets_concurrent_heterogeneous_queue(std::mt19937 &);
+}
+
+namespace function_queue_sample
+{
+    void run();
 }
 
 int main()
 {
+    //////////////////////////////
+    std::mt19937 rand;
+    density_tests::tets_concurrent_heterogeneous_queue(rand);
+    //////////////////////////////
+
     using namespace testity;
     using namespace density_tests;
     using namespace std;
+
+    function_queue_sample::run();
 
     TestTree test_tree("density");
 

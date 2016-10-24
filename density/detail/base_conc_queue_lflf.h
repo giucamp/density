@@ -18,9 +18,18 @@ namespace density
 			class base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, 
 				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : private PAGE_ALLOCATOR
 		{
-            using queue_header = detail::ou_conc_queue_header<uint64_t, RUNTIME_TYPE, PAGE_ALLOCATOR::page_size, SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
+			using internal_word = uint64_t;
+
+			static_assert(PAGE_ALLOCATOR::page_size == static_cast<internal_word>(PAGE_ALLOCATOR::page_size), 
+				"internal_word can't represent the page size");
+
+            using queue_header = detail::ou_conc_queue_header<uint64_t, RUNTIME_TYPE, 
+				static_cast<internal_word>(PAGE_ALLOCATOR::page_size),
+				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
 
         public:
+
+			static constexpr size_t default_alignment = queue_header::default_alignment;
 			
 			base_concurrent_heterogeneous_queue()
             {
@@ -52,7 +61,7 @@ namespace density
                     /* Take the last page, and try to push in it. We can assume that the page will dot be deleted in the meanwhile,
                         because consumer threads can delete a page only if it is not the last one. */
                     auto last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
-                    if (last->push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size))
+                    if (last->try_push<true>(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size))
                     {
                         /* Here the push is successful, so we exit the loop */
                         break;
@@ -126,7 +135,7 @@ namespace density
                         DENSITY_TEST_RANDOM_WAIT();
 
                         /* try to consume an element. On success, exit the loop */
-                        result = first->try_consume(std::forward<CONSUMER_FUNC>(i_consumer_func));
+                        result = first->try_consume<true>(std::forward<CONSUMER_FUNC>(i_consumer_func));
                         if (result)
                         {
                             break;
