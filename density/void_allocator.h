@@ -186,7 +186,7 @@ namespace density
             }
             else
             {
-                // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) = sizeof(void*) )
+                // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
                 size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
                 size_t const actual_size = i_size + extra_size;
                 auto complete_block = operator new (actual_size);
@@ -296,6 +296,31 @@ namespace density
             @return always false. */
         bool operator != (const void_allocator &) const noexcept
             { return false; }
+
+		/** Allocates and constructs an object. The alignment of the object is always respected. 
+				@param i_construction_params argument list to be forwarded to the constructor of the object.
+				@return a pointer to the new object
+
+			Objects created by new_object must be deleted by delete_object. Using the language builtin delete on an object 
+			created by new_object causes undefined behavior. Since all void_allocator objects compares equal, an instance of
+			void_allocator can delete an object created by another instance.
+		*/
+		template <typename TYPE, typename... CONSTRUCTION_PARAMS>
+			TYPE * new_object(CONSTRUCTION_PARAMS && ... i_construction_params)
+		{
+			return new(allocate(sizeof(TYPE), alignof(TYPE))) TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+		}
+
+		/** Deletes an object created with new_object*/
+		template <typename TYPE>
+			void delete_object(TYPE * i_object) noexcept
+		{
+			if (i_object != nullptr)
+			{
+				i_object->~TYPE();
+				deallocate(i_object, sizeof(TYPE), alignof(TYPE));
+			}
+		}
 
     private:
 

@@ -28,13 +28,17 @@
 #endif
 
 #if DENSITY_DEBUG
-    #define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
+	#ifdef _MSC_VER
+		#define DENSITY_ASSERT(bool_expr)              if(!(bool_expr)) { __debugbreak(); } else (void)0
+	#else
+		#define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
+	#endif
 #else
     #define DENSITY_ASSERT(bool_expr)
 #endif
 
 #if DENSITY_DEBUG_INTERNAL
-    #define DENSITY_ASSERT_INTERNAL(bool_expr)     assert((bool_expr))
+    #define DENSITY_ASSERT_INTERNAL(bool_expr)     DENSITY_ASSERT((bool_expr))
 #else
     #define DENSITY_ASSERT_INTERNAL(bool_expr)
 #endif
