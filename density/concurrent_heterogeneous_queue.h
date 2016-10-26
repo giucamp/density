@@ -141,7 +141,7 @@ namespace density
 				return BaseClass::try_consume(std::forward<OPERATION>(i_operation));
             }
 
-			using consumer = typename BaseClass::consumer;
+			using view = typename BaseClass::view;
 
             /** Returns a copy of the allocator instance owned by the queue.
                 \n\b Throws: anything that the copy-constructor of the allocator throws

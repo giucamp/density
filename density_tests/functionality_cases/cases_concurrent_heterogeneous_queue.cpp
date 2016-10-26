@@ -21,14 +21,14 @@ namespace density_tests
         using Queue = concurrent_heterogeneous_queue<>;
         Queue queue;
 
-        const int count = 100000;
-        for (int i = 0; i < 100000; i++)
+        const int64_t count = 100000;
+        for (int64_t i = 0; i < 100000; i++)
             queue.push(i);
 
-		Queue::consumer consumer(queue);
+		Queue::view consumer(queue);
         bool res;
-        int consumed = 0;
-        auto const int_type = Queue::runtime_type::make<int>();
+		int64_t consumed = 0;
+        auto const int_type = Queue::runtime_type::make<int64_t>();
         do {
             res = consumer.try_consume([&int_type, consumed](const Queue::runtime_type & i_complete_type, void * i_element) {
                 TESTITY_ASSERT(i_complete_type == int_type);
@@ -48,13 +48,13 @@ namespace density_tests
 		using Queue = concurrent_heterogeneous_queue<>;
 		Queue queue;
 
-		const int count = 100000;
-		for (int i = 0; i < 100000; i++)
+		const int64_t count = 100000;
+		for (int64_t i = 0; i < 100000; i++)
 			queue.push(i);
 
 		bool res;
-		int consumed = 0;
-		auto const int_type = Queue::runtime_type::make<int>();
+		int64_t consumed = 0;
+		auto const int_type = Queue::runtime_type::make<int64_t>();
 		do {
 			res = queue.try_consume([&int_type, consumed](const Queue::runtime_type & i_complete_type, void * i_element) {
 				TESTITY_ASSERT(i_complete_type == int_type);
