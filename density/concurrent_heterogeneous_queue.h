@@ -112,14 +112,14 @@ namespace density
 			static_assert(detail::PageAllocatorTraits<allocator_type>::page_alignment >= 2, "The implementation requires that guaranteed alignment of the pages is at least 2");
 				/* Reason: the push algorithm uses the first bit of m_last (which is a pointer to a page) as exclusive-access flag. */
 
-            template <typename ELEMENT_COMPLETE_TYPE>
+            /*template <typename ELEMENT_COMPLETE_TYPE>
 				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
             {
                 static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
                     "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
                 push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
                     typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
-            }
+            }*/
 
             template <typename CONSTRUCTOR>
 				DENSITY_STRONG_INLINE void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
@@ -170,7 +170,7 @@ namespace density
         private:
 
             // overload used if i_source is an r-value
-            template <typename ELEMENT_COMPLETE_TYPE>
+            /*template <typename ELEMENT_COMPLETE_TYPE>
                 void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
             {
                 using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
@@ -191,7 +191,7 @@ namespace density
                     auto const result = new(i_dest) ElementCompleteType(i_source);
                     return static_cast<ELEMENT*>(result);
                 }, sizeof(ELEMENT_COMPLETE_TYPE));
-            }
+            }*/
         };
 
     } // namespace experimental

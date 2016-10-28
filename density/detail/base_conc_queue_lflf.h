@@ -43,73 +43,96 @@ namespace density
 			{
 			}
 
-            template <typename CONSTRUCTOR>
-                void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, size_t i_size)
-            {
-                for (;;)
-                {
-                    /* Take the last page, and try to push in it. We can assume that the page will dot be deleted in the meanwhile,
-                        because view threads can delete a page only if it is not the last one. */
-                    auto last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
-                    if (last->try_push<true>(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size))
-                    {
-                        /* Here the push is successful, so we exit the loop */
-                        break;
-                    }
-
-                    /* Now we try to get exclusive access on m_last. If we fail to do that, just continue the loop. */
-                    DENSITY_TEST_RANDOM_WAIT();
-                    auto prev_last = m_last.fetch_or(1);
-                    if ((prev_last & 1) == 0)
-                    {
-                        /* Ok, we have set the exclusive flag from 0 to 1. First allocate the page. */
-                        DENSITY_TEST_RANDOM_WAIT();
-                        auto const queue = new_page();
-
-                        /** Now we can link the prev-last with the new page. This is a non-atomic write. */
-                        DENSITY_TEST_RANDOM_WAIT();
-                        DENSITY_ASSERT_INTERNAL(reinterpret_cast<queue_header*>(prev_last)->m_next == nullptr);
-                        reinterpret_cast<queue_header*>(prev_last)->m_next = queue;
-
-                        /** Finally we update m_last, and continue the loop */
-                        DENSITY_TEST_RANDOM_WAIT();
-                        m_last.store(reinterpret_cast<uintptr_t>(queue));
-                        DENSITY_STATS(++g_stats.allocated_pages);
-                    }
-                }
-            }
+/*
+			template <typename CONSTRUCTOR>
+				void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, size_t i_size)
+			{
+				get_impicit_view().push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size);
+			}
 
             template <typename OPERATION>
                 bool try_consume(OPERATION && i_operation)
             {
 				return get_impicit_view().try_consume(std::forward<OPERATION>(i_operation));
-            }
+            }*/
 
             class view : private HazardPointersStack
             {
             public:
 
 				view()
+					: m_target_queue(nullptr)
 				{
 
-				}
-
-				s_global_hazard_context
+				}							
 
 				explicit view(base_concurrent_heterogeneous_queue & i_target_queue)
-					: m_target_queue(&i_target_queue), m_target_context(&i_target_queue.m_hazard_context)
+					: m_target_queue(&i_target_queue)
 				{
-					m_target_context.register_stack(*this);
+					m_target_queue->m_hazard_context.register_stack(*this);
+				}
+
+				void assign_queue(base_concurrent_heterogeneous_queue * i_target_queue)
+				{
+					if (m_target_queue != nullptr)
+						m_target_queue->m_hazard_context.unregister_stack(*this);
+					m_target_queue = i_target_queue;
+					if (m_target_queue != nullptr)
+						m_target_queue->m_hazard_context.register_stack(*this);
 				}
 
                 ~view()
                 {
-					m_target_context.unregister_stack(*this);
+					if(m_target_queue != nullptr)
+						m_target_queue->m_hazard_context.unregister_stack(*this);
                 }
 
                 view(const view &) = delete;
                 view & operator = (const view &) = delete;
-			
+
+				template <typename NEW_ELEMENT_COMPLETE_TYPE>
+					void push(const NEW_ELEMENT_COMPLETE_TYPE & i_source_element)
+				{
+					DENSITY_ASSERT(m_target_queue != nullptr); /** this view is not attached to a queue. This results in undefined behavior!! */
+
+					auto const hazard_pointer = push_hazard_ptr();
+
+					for (;;)
+					{
+						/** loads the last page of the queue, and sets it as hazard page (no view thread will delete it). If
+							the last page changes has the meanwhile, we have to repeat the operation. */
+						queue_header * last;
+						uintptr_t last_dirt;
+						do {
+							last_dirt = m_target_queue->m_last.load();
+							last = reinterpret_cast<queue_header*>(last_dirt & ~static_cast<uintptr_t>(1));
+							hazard_pointer->store(last);
+							DENSITY_TEST_RANDOM_WAIT();
+							/*  If an ABA sequence occurs (m_last is changed to another value and then is changed back to its prev value), we
+								don't care: all that we need if to check that what we store in the hazard pointer now is the last page. */								
+						} while (last_dirt != m_target_queue->m_last.load());
+						DENSITY_TEST_RANDOM_WAIT();
+
+						/** try to push in the page */
+						{
+							queue_header::Push<true> push_op(*last, sizeof(NEW_ELEMENT_COMPLETE_TYPE), alignof(NEW_ELEMENT_COMPLETE_TYPE));
+							if (auto new_element_ptr = push_op.new_element_ptr())
+							{
+								new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::make<NEW_ELEMENT_COMPLETE_TYPE>());
+								new (push_op.new_element_ptr()) NEW_ELEMENT_COMPLETE_TYPE(i_source_element);
+								push_op.commit();
+								break;
+							}
+						}
+
+						m_target_queue->try_to_add_a_page();
+					}
+
+					/** Todo : exception safeness */
+					pop_hazard_ptr();
+				}
+
+		
                 template <typename CONSUMER_FUNC>
                     bool try_consume(CONSUMER_FUNC && i_consumer_func)
                 {
@@ -117,7 +140,7 @@ namespace density
 
 					auto const hazard_pointer = push_hazard_ptr();
 
-					to do
+					bool result = m_target_queue->impl_try_consume(*hazard_pointer, std::forward<CONSUMER_FUNC>(i_consumer_func));
 
 					/** Todo : exception safeness */
 					pop_hazard_ptr();
@@ -128,7 +151,6 @@ namespace density
 
             private:
                 base_concurrent_heterogeneous_queue * m_target_queue;
-				HazardPointersContext * m_target_context;
             };
 
             /** Returns a reference to the allocator instance owned by the queue.
@@ -148,7 +170,7 @@ namespace density
             }
 
         private:
-			
+
             // overload used if i_source is an r-value
             template <typename ELEMENT_COMPLETE_TYPE>
                 void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
@@ -202,7 +224,7 @@ namespace density
 					queue_header * first;
 					do {
 						first = m_first.load();
-						io_hazard_pointer->store(first);
+						io_hazard_pointer.store(first);
 						DENSITY_TEST_RANDOM_WAIT();
 					} while (first != m_first.load());
 					DENSITY_TEST_RANDOM_WAIT();
@@ -229,6 +251,29 @@ namespace density
 					try_to_delete_first(io_hazard_pointer);
 				}
 				return result;
+			}
+
+			DENSITY_NO_INLINE void try_to_add_a_page()
+			{
+				/* Now we try to get exclusive access on m_last. If we fail to do that, just continue the loop. */
+				DENSITY_TEST_RANDOM_WAIT();
+				auto prev_last = m_last.fetch_or(1);
+				if ((prev_last & 1) == 0)
+				{
+					/* Ok, we have set the exclusive flag from 0 to 1. First allocate the page. */
+					DENSITY_TEST_RANDOM_WAIT();
+					auto const queue = new_page();
+
+					/** Now we can link the prev-last with the new page. This is a non-atomic write. */
+					DENSITY_TEST_RANDOM_WAIT();
+					DENSITY_ASSERT_INTERNAL(reinterpret_cast<queue_header*>(prev_last)->m_next == nullptr);
+					reinterpret_cast<queue_header*>(prev_last)->m_next = queue;
+
+					/** Finally we update m_last, and continue the loop */
+					DENSITY_TEST_RANDOM_WAIT();
+					m_last.store(reinterpret_cast<uintptr_t>(queue));
+					DENSITY_STATS(++g_stats.allocated_pages);
+				}
 			}
 
 			DENSITY_NO_INLINE void try_to_delete_first(std::atomic<void*> & io_hazard_pointer)
