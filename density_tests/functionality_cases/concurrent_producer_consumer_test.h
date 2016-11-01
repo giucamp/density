@@ -24,7 +24,7 @@ namespace density_tests
 
 		/* If i_consumer_count and are both zero, the test runs on a single thread */
 		ConcProdConsTest(size_t i_consumer_count, size_t i_producer_count, size_t i_cell_count)
-			: m_cell_count(i_cell_count)
+			: m_produced(0), m_consumed(0), m_cell_count(i_cell_count)
 		{
 			m_cells = std::make_unique<std::atomic<uint8_t>[]>(i_cell_count);
 			for (size_t i = 0; i < i_cell_count; i++)
@@ -82,11 +82,11 @@ namespace density_tests
 
 		void consumer_procedure(size_t i_cell_count)
 		{
-			auto const int_type = CONTAINER::runtime_type::make<uint64_t>();
+			auto const int_type = CONTAINER::runtime_type::template make<uint64_t>();
 			
 			while (m_consumed.load() < i_cell_count)
 			{
-				bool res = m_container.try_consume([this, &int_type](const CONTAINER::runtime_type & i_complete_type, void * i_element) {
+				bool res = m_container.try_consume([this, &int_type](const typename CONTAINER::runtime_type & i_complete_type, void * i_element) {
 					TESTITY_ASSERT(i_complete_type == int_type);
 					
 					auto value = *static_cast<uint64_t*>(i_element);
@@ -108,8 +108,7 @@ namespace density_tests
 
 	private:
 		std::vector<std::thread> m_threads;
-		std::atomic<uint64_t> m_produced = 0;
-		std::atomic<uint64_t> m_consumed = 0;
+		std::atomic<uint64_t> m_produced, m_consumed;
 		CONTAINER m_container;
 		std::unique_ptr<std::atomic<uint8_t>[]> m_cells;
 		const size_t m_cell_count;

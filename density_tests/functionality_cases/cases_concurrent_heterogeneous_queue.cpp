@@ -28,9 +28,9 @@ namespace density_tests
 
 		bool res;
 		int64_t consumed = 0;
-		auto const int_type = CONTAINER::runtime_type::make<int64_t>();
+		auto const int_type = CONTAINER::runtime_type::template make<int64_t>();
 		do {
-			res = queue.try_consume([&int_type, consumed](const CONTAINER::runtime_type & i_complete_type, void * i_element) {
+			res = queue.try_consume([&int_type, consumed](const typename CONTAINER::runtime_type & i_complete_type, void * i_element) {
 				TESTITY_ASSERT(i_complete_type == int_type);
 				TESTITY_ASSERT(consumed == *static_cast<int*>(i_element));
 			});
@@ -49,7 +49,7 @@ namespace density_tests
 		const size_t producers = 1;
 		ConcProdConsTest<CONTAINER> test(consumers, producers, 10 * 1000 * 1000 );
 
-		auto start_time = std::chrono::high_resolution_clock::now();
+		//auto start_time = std::chrono::high_resolution_clock::now();
 
 		while (!test.is_over())
 		{

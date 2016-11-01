@@ -44,7 +44,7 @@ namespace density
 			{
 				auto const hazard_pointer = PAGE_ALLOCATOR::get_local_hazard().get();
 
-				using ElementType = std::decay<NEW_ELEMENT_COMPLETE_TYPE>::type;
+				using ElementType = typename std::decay<NEW_ELEMENT_COMPLETE_TYPE>::type;
 
 				for (;;)
 				{
@@ -64,16 +64,16 @@ namespace density
 
 					/** try to push in the page */
 					{
-						queue_header::Push push_op;
+						typename queue_header::Push push_op;
 						
-						bool res = push_op.begin<true>(*last, sizeof(ElementType), alignof(ElementType));
+						bool res = push_op.template begin<true>(*last, sizeof(ElementType), alignof(ElementType));
 						
 						*hazard_pointer = nullptr;
 
 						if (res)
 						{
 							auto new_element_ptr = push_op.new_element_ptr();
-							new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::make<ElementType>());
+							new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<ElementType>());
 							new (new_element_ptr) ElementType(std::forward<NEW_ELEMENT_COMPLETE_TYPE>(i_source_element));
 							push_op.commit();
 							break;
@@ -105,8 +105,8 @@ namespace density
 
 					/* try to consume an element. On success, exit the loop */
 					{
-						queue_header::Consume consume_op;
-						result = consume_op.begin<true>(*first);
+						typename queue_header::Consume consume_op;
+						result = consume_op.template begin<true>(*first);
 						if (result)
 						{
 							i_consumer_func(*consume_op.type_ptr(), consume_op.element_ptr());
