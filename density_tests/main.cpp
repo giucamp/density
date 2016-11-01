@@ -28,7 +28,6 @@ namespace density_tests
     void tets_concurrent_function_queue(std::mt19937 &);
 
     void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest);
-    void tets_concurrent_heterogeneous_queue(std::mt19937 &);
 }
 
 namespace function_queue_sample
@@ -38,11 +37,6 @@ namespace function_queue_sample
 
 int main()
 {
-    //////////////////////////////
-    std::mt19937 rand;
-    density_tests::tets_concurrent_heterogeneous_queue(rand);
-    //////////////////////////////
-
     using namespace testity;
     using namespace density_tests;
     using namespace std;
@@ -58,6 +52,11 @@ int main()
     add_lifo_array_benchmarks(test_tree["lifo"]);
     add_function_queue_benchmarks(test_tree["function_queue"]);
     add_allocator_benchmarks(test_tree["allocator"]);
+	add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
+
+	////////////////////////
+	run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
+	////////////////////////
 
     #ifdef NDEBUG
         auto const flags = TestFlags::PerformanceTests | TestFlags::FunctionalityTest;

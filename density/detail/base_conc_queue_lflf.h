@@ -204,12 +204,7 @@ namespace density
                 // the destructor of a page header is trivial, so just deallocate it
                 get_allocator_ref().deallocate_page(i_page);
             }
-
-            bool is_safe_to_free(queue_header* i_page)
-            {
-				return !m_hazard_context.is_hazard_pointer(i_page);
-            }
-
+			
 			template <typename CONSUMER_FUNC>
 				bool impl_try_consume(std::atomic<void*> & io_hazard_pointer, CONSUMER_FUNC && i_consumer_func)
 			{
@@ -260,11 +255,6 @@ namespace density
 
 						io_hazard_pointer.store(nullptr);
 
-                        while (!is_safe_to_free(first))
-                        {
-                            DENSITY_STATS(++g_stats.delete_page_waits);
-                        }
-
                         delete_page(first);
                     }
                     else
@@ -283,17 +273,7 @@ namespace density
                                                 new elements in this page first. */
 
             std::atomic_flag m_can_delete_page; /** Atomic flag used to synchronize view threads that attempt to delete the first page. */
-
-			HazardPointersContext m_hazard_context;
-
-			static HazardPointersContext s_global_hazard_context;
 		};
-
-		// definition of s_global_hazard_context
-		template < typename PAGE_ALLOCATOR, typename RUNTIME_TYPE>
-			HazardPointersContext base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE,
-				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>::s_global_hazard_context;
-						
 	} // namespace detail
 
 } // namespace density

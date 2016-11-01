@@ -6,6 +6,7 @@
 #pragma once
 #include "..\void_allocator.h"
 #include <atomic>
+#include <mutex>
 
 namespace density
 {

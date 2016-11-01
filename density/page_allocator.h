@@ -141,6 +141,9 @@ namespace density
 
         static void deallocate_page_impl(void * i_page) noexcept
         {
+			while (get_hazard_context().is_hazard_pointer(i_page))
+			{
+			}
             #if __cplusplus >= 201402L
                 operator delete (i_page, page_size); // since C++14
             #else

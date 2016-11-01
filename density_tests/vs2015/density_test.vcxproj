@@ -255,6 +255,7 @@
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
+    <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h" />
     <ClInclude Include="..\functionality_cases\shadow_container.h" />
     <ClInclude Include="..\functionality_cases\test_allocators.h" />
   </ItemGroup>

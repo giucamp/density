@@ -7,19 +7,20 @@
 #include "../../density/concurrent_heterogeneous_queue.h"
 #include "testity/test_tree.h"
 #include "testity/testity_common.h"
-#include <iostream>
+#include "concurrent_producer_consumer_test.h"
+#include <chrono>
 
 namespace density_tests
 {
     using namespace density;
     using namespace testity;
 
-	void tets_concurrent_heterogeneous_queue(std::mt19937 &)
+	template <typename CONTAINER>
+		void tets_concurrent_heterogeneous_queue_st(std::mt19937 &)
 	{
 		using namespace density::experimental;
 
-		using Queue = concurrent_heterogeneous_queue<>;
-		Queue queue;
+		CONTAINER queue;
 
 		const int64_t count = 100000;
 		for (int64_t i = 0; i < 100000; i++)
@@ -27,9 +28,9 @@ namespace density_tests
 
 		bool res;
 		int64_t consumed = 0;
-		auto const int_type = Queue::runtime_type::make<int64_t>();
+		auto const int_type = CONTAINER::runtime_type::make<int64_t>();
 		do {
-			res = queue.try_consume([&int_type, consumed](const Queue::runtime_type & i_complete_type, void * i_element) {
+			res = queue.try_consume([&int_type, consumed](const CONTAINER::runtime_type & i_complete_type, void * i_element) {
 				TESTITY_ASSERT(i_complete_type == int_type);
 				TESTITY_ASSERT(consumed == *static_cast<int*>(i_element));
 			});
@@ -37,11 +38,33 @@ namespace density_tests
 		} while (res);
 
 		TESTITY_ASSERT(consumed == count + 1);
-		std::cout << "-----" << std::endl;
+	}
+
+	template <typename CONTAINER>
+		void tets_concurrent_heterogeneous_queue_mt(std::mt19937 &)
+	{
+		using namespace density::experimental;
+
+		const size_t consumers = 2;
+		const size_t producers = 1;
+		ConcProdConsTest<CONTAINER> test(consumers, producers, 10 * 1000 * 1000 );
+
+		auto start_time = std::chrono::high_resolution_clock::now();
+
+		while (!test.is_over())
+		{
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+
+			test.print_stats();
+		}
 	}
 
     void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest)
     {
-        i_dest.add_case(tets_concurrent_heterogeneous_queue);
+		using namespace density;
+		using namespace density::experimental;
+		
+		i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue<>>);
+		i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue<>>);
     }
 }

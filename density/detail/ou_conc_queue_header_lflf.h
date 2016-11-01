@@ -135,8 +135,10 @@ namespace density
 					DENSITY_TEST_RANDOM_WAIT();
 					i_queue.m_tail.store(tail);
 
-					m_size = i_size;
-
+					#if DENSITY_DEBUG_INTERNAL
+						m_dbg_size = i_size;
+					#endif
+											
 					return true;
 				}
 
@@ -148,14 +150,16 @@ namespace density
 				{
 					/* decrementing the size we allow the consumers to process this element (this is an atomic operation) */
 					DENSITY_TEST_RANDOM_WAIT();
-					DENSITY_ASSERT_INTERNAL(m_control->m_size.load() == m_size + 1);
+					DENSITY_ASSERT_INTERNAL(m_control->m_size.load() == m_dbg_size + 1);
 					--m_control->m_size;
 				}
 
 			private:
 				ControlBlock * m_control;
 				void * m_new_element;
-				INTERNAL_WORD m_size;
+				#if DENSITY_DEBUG_INTERNAL
+					INTERNAL_WORD m_dbg_size;
+				#endif
 			};
 
 			class Consume
