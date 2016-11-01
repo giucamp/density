@@ -60,11 +60,7 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            auto page = thread_page_store().peek();
-            if (page == nullptr)
-            {
-                page = allocate_page_impl();
-            }
+            auto page = allocate_page_impl();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
@@ -79,18 +75,20 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-                dbg_data().remove_page(i_page);
+			while (get_hazard_context().is_hazard_pointer(i_page))
+			{
+			}
+			
+			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
+				memset(i_page, 33, page_size);
+				dbg_data().remove_page(i_page);
+			#endif
+
+			#if __cplusplus >= 201402L
+                operator delete (i_page, page_size); // since C++14
+            #else
+                operator delete (i_page);
             #endif
-            auto & page_store = thread_page_store();
-            if (page_store.size() < free_page_cache_size)
-            {
-                page_store.push(i_page);
-            }
-            else
-            {
-                deallocate_page_impl(i_page);
-            }
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
@@ -137,18 +135,6 @@ namespace density
         static void * allocate_page_impl()
         {
             return operator new (page_size);
-        }
-
-        static void deallocate_page_impl(void * i_page) noexcept
-        {
-			while (get_hazard_context().is_hazard_pointer(i_page))
-			{
-			}
-            #if __cplusplus >= 201402L
-                operator delete (i_page, page_size); // since C++14
-            #else
-                operator delete (i_page);
-            #endif
         }
 
         #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
@@ -202,66 +188,6 @@ namespace density
                 return s_dbg_data;
             }
         #endif // #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-
-        class PageList
-        {
-        public:
-
-            PageList() = default;
-            PageList(const PageList &) = delete;
-            PageList & operator = (const PageList &) = delete;
-
-            ~PageList()
-            {
-                auto curr = m_first;
-                while (curr != nullptr)
-                {
-                    auto next = curr->m_next;
-                    #if __cplusplus >= 201402L
-                        operator delete (curr, page_size); // since C++14
-                    #else
-                        operator delete (curr);
-                    #endif
-                    curr = next;
-                }
-            }
-
-            void push(void * i_page) noexcept
-            {
-                Header * page = static_cast<Header*>(i_page);
-                page->m_next = m_first;
-                m_first = page;
-                m_size++;
-            }
-
-            void * peek() noexcept
-            {
-                auto const result = m_first;
-                if (result != nullptr)
-                {
-                    DENSITY_ASSERT_INTERNAL(m_size > 0);
-                    m_first = result->m_next;
-                    m_size--;
-                }
-                return result;
-            }
-
-            size_t size() const noexcept { return m_size; }
-
-        private:
-            struct Header
-            {
-                Header * m_next;
-            };
-            Header * m_first = nullptr;
-            size_t m_size = 0;
-        };
-
-        static PageList & thread_page_store() noexcept
-        {
-            static thread_local PageList s_thread_page_store;
-            return s_thread_page_store;
-        }
 
 		static detail::HazardPointersContext & get_hazard_context()
 		{
