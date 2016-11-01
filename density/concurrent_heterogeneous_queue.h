@@ -8,7 +8,8 @@
 #include "density_common.h"
 #include "density_common.h"
 #include "runtime_type.h"
-#include "void_allocator.h"
+#include "page_allocator.h"
+#include "detail\hazard_pointers.h"
 #include <mutex>
 #include <thread>
 #include <atomic>
@@ -63,8 +64,7 @@ namespace density
     #pragma warning(push)
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
 #endif
-#define DENSITY_INCLUDING_CONC_QUEUE_DETAIL
-	#include "detail\hazard_pointers.h"
+#define DENSITY_INCLUDING_CONC_QUEUE_DETAIL	
     #include "detail\ou_conc_queue_header_lflf.h"
 	#include "detail\base_conc_queue_lflf.h"
 #undef DENSITY_INCLUDING_CONC_QUEUE_DETAIL
@@ -87,7 +87,7 @@ namespace density
                 See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details. 
 				There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
 				*/
-		template < typename ELEMENT = void, typename PAGE_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
+		template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
 			SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
 			SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
 				class concurrent_heterogeneous_queue : public detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
@@ -121,6 +121,14 @@ namespace density
                     typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
             }*/
 
+			template <typename ELEMENT_COMPLETE_TYPE>
+				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
+            {
+                static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+                    "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
+				BaseClass::push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+            }
+
             template <typename CONSTRUCTOR>
 				DENSITY_STRONG_INLINE void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
             {
@@ -140,8 +148,6 @@ namespace density
             {
 				return BaseClass::try_consume(std::forward<OPERATION>(i_operation));
             }
-
-			using view = typename BaseClass::view;
 
             /** Returns a copy of the allocator instance owned by the queue.
                 \n\b Throws: anything that the copy-constructor of the allocator throws

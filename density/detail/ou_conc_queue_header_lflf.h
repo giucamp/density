@@ -62,11 +62,12 @@ namespace density
             ou_conc_queue_header(const ou_conc_queue_header &) = delete;
             ou_conc_queue_header & operator = (const ou_conc_queue_header &) = delete;
 
-			template <bool CAN_WAIT> class Push
+			class Push
 			{
 			public:
 
-				Push(ou_conc_queue_header & i_queue, INTERNAL_WORD i_size, INTERNAL_WORD /*i_alignment*/) noexcept
+				template <bool CAN_WAIT>
+					bool begin(ou_conc_queue_header & i_queue, INTERNAL_WORD i_size, INTERNAL_WORD i_alignment) noexcept
 				{
 					DENSITY_ASSERT_INTERNAL(i_size > 0 && is_uint_aligned(i_size, default_alignment));
 
@@ -93,7 +94,7 @@ namespace density
 
 						/* linearly-allocate the control block and the element, updating tail */
 						m_control = static_cast<ControlBlock*>(i_queue.allocate(&tail, sizeof(ControlBlock)));
-						m_new_element = i_queue.allocate(&tail, i_size);
+						m_new_element = i_queue.allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
 
 						/* linearly-allocate the next control block, setting future_tail to the updated tail */
 						auto future_tail = tail;
@@ -103,8 +104,7 @@ namespace density
 							may still fit in the queue), but this allows a simpler algorithm. */
 						if (future_tail > PAGE_SIZE)
 						{
-							m_new_element = nullptr;
-							return; // the new element does not fit in the queue
+							return false;
 						}
 
 						/* try to commit, setting the size of the block. This is the first change visible to the other threads.
@@ -118,8 +118,7 @@ namespace density
 						{
 							if (!exclusive_access)
 							{
-								m_new_element = nullptr;
-								return;
+								return false;
 							}
 						}
 
@@ -137,9 +136,11 @@ namespace density
 					i_queue.m_tail.store(tail);
 
 					m_size = i_size;
+
+					return true;
 				}
 
-				void * type_ptr() const noexcept { return m_control; }
+				void * type_ptr() const noexcept { return &m_control->m_type; }
 
 				void * new_element_ptr() const noexcept { return m_new_element; }
 
@@ -157,12 +158,12 @@ namespace density
 				INTERNAL_WORD m_size;
 			};
 
-			template <bool CAN_WAIT>
-				class Consume
+			class Consume
 			{
 			public:
 
-				Consume(ou_conc_queue_header & i_queue) noexcept
+				template <bool CAN_WAIT>
+					bool begin(ou_conc_queue_header & i_queue) noexcept
 				{
 					DENSITY_TEST_RANDOM_WAIT();
 					auto head = i_queue.m_head.load();
@@ -172,21 +173,20 @@ namespace density
 
 					/* Try-and-repeat loop. On every iteration we skip an element. We stop when we
 						get exclusive access on a valid element. If we reach m_tail, we exit. */
-					INTERNAL_WORD dirt_size, size;
+					INTERNAL_WORD dirt_size;
 					size_t tries = 0;
 					for(;;)
 					{
 						// check if we have reached the tail
 						DENSITY_TEST_RANDOM_WAIT();
-						auto const tail = m_tail.load();
+						auto const tail = i_queue.m_tail.load();
 						DENSITY_ASSERT_INTERNAL(tail >= head);
 						if (head >= tail)
 						{
 							DENSITY_ASSERT_INTERNAL(tail == head);
 
 							// no consumable element is available
-							m_element = nullptr;
-							return;
+							return false;
 						}
 
 						/* linearly-allocate the control block, updating head */
@@ -197,10 +197,11 @@ namespace density
 							have the nonexclusive access on the content of the element. */
 						DENSITY_TEST_RANDOM_WAIT();
 						dirt_size = m_control->m_size.fetch_or(1);
+						DENSITY_ASSERT_INTERNAL(dirt_size < PAGE_SIZE + 3);
 
 						/* clean up the size and linearly-allocate the element */
-						size = dirt_size & (std::numeric_limits<INTERNAL_WORD>::max() - 3);
-						m_element = i_queue.allocate(&head, size);
+						m_size = dirt_size & (std::numeric_limits<INTERNAL_WORD>::max() - 3);
+						m_element = i_queue.allocate(&head, m_size);
 
 						/*
 							cases for (dirt_size & 3):
@@ -237,7 +238,7 @@ namespace density
 								#if DENSITY_DEBUG
 									const auto prev =
 								#endif
-								--m_element->m_size;
+								--m_control->m_size;
 								DENSITY_ASSERT_INTERNAL((prev & 1) == 0);
 
 								tries++;
@@ -245,32 +246,34 @@ namespace density
 								bool can_wait = CAN_WAIT; // use a local variable to avoid the warning about the conditional expression being constant
 								if (!can_wait)
 								{
-									m_element = nullptr;
-									return;
+									return false;
 								}
 							}
 						}
 					}
+
+					return true;
 				}
 
 				void commit() noexcept
 				{
 		            #if DENSITY_DEBUG
-		                memset(&control->m_type, 0xB4, sizeof(control->m_type));
+		                memset(&m_control->m_type, 0xB4, sizeof(m_control->m_type));
 	                #endif
 
 					/* drop the exclusive access, and mark the element as dead */
 					DENSITY_TEST_RANDOM_WAIT();
-					control->m_size.store(size + 2);
+					m_control->m_size.store(m_size + 2);
 				}
 
-				void * type_ptr() const noexcept { return m_control; }
+				RUNTIME_TYPE * type_ptr() const noexcept { return &m_control->m_type; }
 
 				void * element_ptr() const noexcept { return m_element; }
 
 			private:
 				ControlBlock * m_control;
 				void * m_element;
+				INTERNAL_WORD m_size;
 			};
 
             /** If this function finds an invalid element, that is an element whose construction raised an exception, it removes
@@ -315,6 +318,20 @@ namespace density
                 *io_pos += i_size;
                 return res;
             }
+
+			/** Allocates an object with the given size starting from *io_pos, and updates it */
+			void * allocate(INTERNAL_WORD * io_pos, INTERNAL_WORD i_size, INTERNAL_WORD i_alignment)
+			{
+				DENSITY_ASSERT_INTERNAL(is_uint_aligned(i_size, i_alignment));
+
+				auto curr = address_add(this, *io_pos);
+
+				auto res = address_upper_align(curr, i_alignment);
+				
+				*io_pos += i_size + address_diff(res, curr);
+				
+				return res;
+			}
 
         private:
             alignas(concurrent_alignment) std::atomic<INTERNAL_WORD> m_head;

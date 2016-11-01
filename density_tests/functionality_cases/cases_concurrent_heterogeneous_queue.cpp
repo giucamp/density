@@ -14,37 +14,9 @@ namespace density_tests
     using namespace density;
     using namespace testity;
 
-    void tets_concurrent_heterogeneous_queue_consumer(std::mt19937 &)
-    {
-        using namespace density::experimental;
-
-        using Queue = concurrent_heterogeneous_queue<>;
-        Queue queue;
-
-		Queue::view consumer(queue);
-
-		const int64_t count = 100000;
-		for (int64_t i = 0; i < 100000; i++)
-			consumer.push(i);
-
-        bool res;
-		int64_t consumed = 0;
-        auto const int_type = Queue::runtime_type::make<int64_t>();
-        do {
-            res = consumer.try_consume([&int_type, consumed](const Queue::runtime_type & i_complete_type, void * i_element) {
-                TESTITY_ASSERT(i_complete_type == int_type);
-                TESTITY_ASSERT(consumed == *static_cast<int*>(i_element));
-            });
-            consumed++;
-        } while (res);
-
-        TESTITY_ASSERT(consumed == count + 1);
-        std::cout << "-----" << std::endl;
-    }
-
 	void tets_concurrent_heterogeneous_queue(std::mt19937 &)
 	{
-		/*using namespace density::experimental;
+		using namespace density::experimental;
 
 		using Queue = concurrent_heterogeneous_queue<>;
 		Queue queue;
@@ -65,7 +37,7 @@ namespace density_tests
 		} while (res);
 
 		TESTITY_ASSERT(consumed == count + 1);
-		std::cout << "-----" << std::endl;*/
+		std::cout << "-----" << std::endl;
 	}
 
     void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest)

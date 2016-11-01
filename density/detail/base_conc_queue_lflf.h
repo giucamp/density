@@ -23,7 +23,7 @@ namespace density
 			static_assert(PAGE_ALLOCATOR::page_size == static_cast<internal_word>(PAGE_ALLOCATOR::page_size), 
 				"internal_word can't represent the page size");
 
-            using queue_header = detail::ou_conc_queue_header<uint64_t, RUNTIME_TYPE, 
+            using queue_header = ou_conc_queue_header<uint64_t, RUNTIME_TYPE, 
 				static_cast<internal_word>(PAGE_ALLOCATOR::page_size),
 				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
 
@@ -39,9 +39,103 @@ namespace density
                 m_can_delete_page.clear();
             }
 
-			~base_concurrent_heterogeneous_queue()
+			template <typename NEW_ELEMENT_COMPLETE_TYPE>
+				void push(NEW_ELEMENT_COMPLETE_TYPE && i_source_element)
 			{
+				auto const hazard_pointer = PAGE_ALLOCATOR::get_local_hazard().get();
+
+				using ElementType = std::decay<NEW_ELEMENT_COMPLETE_TYPE>::type;
+
+				for (;;)
+				{
+					/** loads the last page of the queue, and sets it as hazard page (no view thread will delete it). If
+						the last page changes has the meanwhile, we have to repeat the operation. */
+					queue_header * last;
+					uintptr_t last_dirt;
+					do {
+						last_dirt = m_last.load();
+						last = reinterpret_cast<queue_header*>(last_dirt & ~static_cast<uintptr_t>(1));
+						hazard_pointer->store(last);
+						DENSITY_TEST_RANDOM_WAIT();
+						/*  If an ABA sequence occurs (m_last is changed to another value and then is changed back to its prev value), we
+							don't care: all that we need if to check that what we store in the hazard pointer now is the last page. */								
+					} while (last_dirt != m_last.load());
+					DENSITY_TEST_RANDOM_WAIT();
+
+					/** try to push in the page */
+					{
+						queue_header::Push push_op;
+						
+						bool res = push_op.begin<true>(*last, sizeof(ElementType), alignof(ElementType));
+						
+						*hazard_pointer = nullptr;
+
+						if (res)
+						{
+							auto new_element_ptr = push_op.new_element_ptr();
+							new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::make<ElementType>());
+							new (new_element_ptr) ElementType(std::forward<NEW_ELEMENT_COMPLETE_TYPE>(i_source_element));
+							push_op.commit();
+							break;
+						}
+					}
+
+					try_to_add_a_page();
+				}				
 			}
+
+		
+            template <typename CONSUMER_FUNC>
+                bool try_consume(CONSUMER_FUNC && i_consumer_func)
+            {
+                auto const hazard_pointer = PAGE_ALLOCATOR::get_local_hazard().get();
+
+				bool result;
+				for (;;)
+				{
+					/** loads the first page of the queue, and sets it as hazard page (no view thread will delete it). If
+					the first page changes has the meanwhile, we have to repeat the operation. */
+					queue_header * first;
+					do {
+						first = m_first.load();
+						hazard_pointer->store(first);
+						DENSITY_TEST_RANDOM_WAIT();
+					} while (first != m_first.load());
+					DENSITY_TEST_RANDOM_WAIT();
+
+					/* try to consume an element. On success, exit the loop */
+					{
+						queue_header::Consume consume_op;
+						result = consume_op.begin<true>(*first);
+						if (result)
+						{
+							i_consumer_func(*consume_op.type_ptr(), consume_op.element_ptr());
+							consume_op.type_ptr()->destroy(consume_op.element_ptr());
+							consume_op.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
+							consume_op.commit();
+							break;
+						}
+					}
+
+					DENSITY_TEST_RANDOM_WAIT();
+					auto const last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
+					DENSITY_TEST_RANDOM_WAIT();
+					if (first == last || !first->is_empty())
+					{
+						/** The consume has failed, and we can't delete this page because it is not empty, or because it
+						is the only page in the queue. */
+						break;
+					}
+
+					/** Try to delete the page */
+					DENSITY_TEST_RANDOM_WAIT();
+					try_to_delete_first(*hazard_pointer);
+				}
+
+				/** Todo : exception safeness */
+				hazard_pointer->store(nullptr);
+                return result;
+            }
 
 /*
 			template <typename CONSTRUCTOR>
@@ -55,103 +149,6 @@ namespace density
             {
 				return get_impicit_view().try_consume(std::forward<OPERATION>(i_operation));
             }*/
-
-            class view : private HazardPointersStack
-            {
-            public:
-
-				view()
-					: m_target_queue(nullptr)
-				{
-
-				}							
-
-				explicit view(base_concurrent_heterogeneous_queue & i_target_queue)
-					: m_target_queue(&i_target_queue)
-				{
-					m_target_queue->m_hazard_context.register_stack(*this);
-				}
-
-				void assign_queue(base_concurrent_heterogeneous_queue * i_target_queue)
-				{
-					if (m_target_queue != nullptr)
-						m_target_queue->m_hazard_context.unregister_stack(*this);
-					m_target_queue = i_target_queue;
-					if (m_target_queue != nullptr)
-						m_target_queue->m_hazard_context.register_stack(*this);
-				}
-
-                ~view()
-                {
-					if(m_target_queue != nullptr)
-						m_target_queue->m_hazard_context.unregister_stack(*this);
-                }
-
-                view(const view &) = delete;
-                view & operator = (const view &) = delete;
-
-				template <typename NEW_ELEMENT_COMPLETE_TYPE>
-					void push(const NEW_ELEMENT_COMPLETE_TYPE & i_source_element)
-				{
-					DENSITY_ASSERT(m_target_queue != nullptr); /** this view is not attached to a queue. This results in undefined behavior!! */
-
-					auto const hazard_pointer = push_hazard_ptr();
-
-					for (;;)
-					{
-						/** loads the last page of the queue, and sets it as hazard page (no view thread will delete it). If
-							the last page changes has the meanwhile, we have to repeat the operation. */
-						queue_header * last;
-						uintptr_t last_dirt;
-						do {
-							last_dirt = m_target_queue->m_last.load();
-							last = reinterpret_cast<queue_header*>(last_dirt & ~static_cast<uintptr_t>(1));
-							hazard_pointer->store(last);
-							DENSITY_TEST_RANDOM_WAIT();
-							/*  If an ABA sequence occurs (m_last is changed to another value and then is changed back to its prev value), we
-								don't care: all that we need if to check that what we store in the hazard pointer now is the last page. */								
-						} while (last_dirt != m_target_queue->m_last.load());
-						DENSITY_TEST_RANDOM_WAIT();
-
-						/** try to push in the page */
-						{
-							queue_header::Push<true> push_op(*last, sizeof(NEW_ELEMENT_COMPLETE_TYPE), alignof(NEW_ELEMENT_COMPLETE_TYPE));
-							if (auto new_element_ptr = push_op.new_element_ptr())
-							{
-								new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::make<NEW_ELEMENT_COMPLETE_TYPE>());
-								new (push_op.new_element_ptr()) NEW_ELEMENT_COMPLETE_TYPE(i_source_element);
-								push_op.commit();
-								break;
-							}
-						}
-
-						m_target_queue->try_to_add_a_page();
-					}
-
-					/** Todo : exception safeness */
-					pop_hazard_ptr();
-				}
-
-		
-                template <typename CONSUMER_FUNC>
-                    bool try_consume(CONSUMER_FUNC && i_consumer_func)
-                {
-                    DENSITY_ASSERT(m_target_queue != nullptr); /** this view is not attached to a queue. This results in undefined behavior!! */
-
-					auto const hazard_pointer = push_hazard_ptr();
-
-					bool result = m_target_queue->impl_try_consume(*hazard_pointer, std::forward<CONSUMER_FUNC>(i_consumer_func));
-
-					/** Todo : exception safeness */
-					pop_hazard_ptr();
-                    return result;
-                }
-
-                friend class base_concurrent_heterogeneous_queue;
-
-            private:
-                base_concurrent_heterogeneous_queue * m_target_queue;
-            };
 
             /** Returns a reference to the allocator instance owned by the queue.
                 \n\b Throws: nothing
@@ -216,41 +213,6 @@ namespace density
 			template <typename CONSUMER_FUNC>
 				bool impl_try_consume(std::atomic<void*> & io_hazard_pointer, CONSUMER_FUNC && i_consumer_func)
 			{
-				bool result;
-				for (;;)
-				{
-					/** loads the first page of the queue, and sets it as hazard page (no view thread will delete it). If
-					the first page changes has the meanwhile, we have to repeat the operation. */
-					queue_header * first;
-					do {
-						first = m_first.load();
-						io_hazard_pointer.store(first);
-						DENSITY_TEST_RANDOM_WAIT();
-					} while (first != m_first.load());
-					DENSITY_TEST_RANDOM_WAIT();
-
-					/* try to consume an element. On success, exit the loop */
-					result = first->try_consume<true>(std::forward<CONSUMER_FUNC>(i_consumer_func));
-					if (result)
-					{
-						break;
-					}
-
-					DENSITY_TEST_RANDOM_WAIT();
-					auto const last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
-					DENSITY_TEST_RANDOM_WAIT();
-					if (first == last || !first->is_empty())
-					{
-						/** The consume has failed, and we can't delete this page because it is not empty, or because it
-						is the only page in the queue. */
-						break;
-					}
-
-					/** Try to delete the page */
-					DENSITY_TEST_RANDOM_WAIT();
-					try_to_delete_first(io_hazard_pointer);
-				}
-				return result;
 			}
 
 			DENSITY_NO_INLINE void try_to_add_a_page()
@@ -312,41 +274,6 @@ namespace density
                     }
                 }
             }
-
-			/** Returns a view attached to this queue and which is being used for a consume still in progress */
-			view & get_impicit_view()
-			{
-				class ImplicitView : public view
-				{
-				public:
-					ImplicitView()
-					{
-
-					}
-				};
-				static thread_local ImplicitView s_implicit_view;
-
-				auto const end = s_implicit_consumers.end();
-				view * notarget_consumer = nullptr;
-				for (auto it = s_implicit_consumers.begin(); it != end; it++)
-				{
-					if (it->m_target_queue == this && it->m_hazard_page.load() == nullptr)
-					{
-						return *it;
-					}
-					if (it->m_target_queue == nullptr)
-					{
-						notarget_consumer = &*it;
-					}
-				}
-				if (notarget_consumer != nullptr)
-				{
-					notarget_consumer->attach(*this);
-					return *notarget_consumer;
-				}
-				s_implicit_consumers.emplace_back(*this);
-				return s_implicit_consumers.back();
-			}
 
         private:
             std::atomic<queue_header*> m_first; /**< Pointer to the first page of the queue. Consumer will try to consume from this page first. */
