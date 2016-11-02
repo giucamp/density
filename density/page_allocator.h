@@ -6,6 +6,7 @@
 
 #pragma once
 #include <cstdlib> // for std::max_align_t
+#include <atomic>
 #include "density_common.h"
 #include "detail\hazard_pointers.h"
 #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
@@ -16,6 +17,53 @@
 
 namespace density
 {
+	namespace detail
+	{
+		class FreePageStack
+		{
+			struct Entry
+			{
+				Entry * m_next;
+			};
+		public:
+
+			static constexpr size_t min_page_size = sizeof(Entry);
+
+			FreePageStack(const FreePageStack &) = delete;
+
+			FreePageStack & operator = (const FreePageStack &) = delete;
+
+			void push(void * i_page) noexcept
+			{
+				Entry * first;
+				auto new_entry = static_cast<Entry*>(i_page);				
+				do
+				{
+					first = m_first.load(std::memory_order_acquire);
+					new_entry->m_next = first;
+				} while (!m_first.compare_exchange_weak(first, new_entry, std::memory_order_release));
+			}
+
+			void * pop() noexcept
+			{
+				Entry * first, * next;
+				do
+				{
+					first = m_first.load(std::memory_order_acquire);			
+					if (first == nullptr)
+					{
+						break;
+					}
+					next = first->m_next;
+				} while (!m_first.compare_exchange_weak(first, next, std::memory_order_release));
+				return first;
+			}
+
+		private:
+			std::atomic<Entry*> m_first;
+		};
+	}
+
     /** This class encapsulates a memory page allocation service, modeling the \ref PagedAllocator_concept "PagedAllocator" concepts.
 
         page_allocator is stateless. Any instance of page_allocator compares equal to any instance of page_allocator. This implies that
