@@ -22,133 +22,15 @@ namespace density
 
 			static_assert(PAGE_ALLOCATOR::page_size == static_cast<internal_word>(PAGE_ALLOCATOR::page_size), 
 				"internal_word can't represent the page size");
-
-            using queue_header = ou_conc_queue_header<uint64_t, RUNTIME_TYPE, 
-				static_cast<internal_word>(PAGE_ALLOCATOR::page_size),
-				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple>;
-
+			
         public:
 
 			static constexpr size_t default_alignment = queue_header::default_alignment;
 			
 			base_concurrent_heterogeneous_queue()
             {
-                auto first_queue = new_page();
-                m_first.store(first_queue);
-                m_last.store(reinterpret_cast<uintptr_t>(first_queue));
-                m_can_delete_page.clear();
+                
             }
-
-			template <typename NEW_ELEMENT_COMPLETE_TYPE>
-				void push(NEW_ELEMENT_COMPLETE_TYPE && i_source_element)
-			{
-				auto const hazard_pointer = PAGE_ALLOCATOR::get_local_hazard().get();
-
-				using ElementType = typename std::decay<NEW_ELEMENT_COMPLETE_TYPE>::type;
-
-				for (;;)
-				{
-					/** loads the last page of the queue, and sets it as hazard page (no view thread will delete it). If
-						the last page changes has the meanwhile, we have to repeat the operation. */
-					queue_header * last;
-					uintptr_t last_dirt;
-					do {
-						last_dirt = m_last.load();
-						last = reinterpret_cast<queue_header*>(last_dirt & ~static_cast<uintptr_t>(1));
-						hazard_pointer->store(last);
-						DENSITY_TEST_RANDOM_WAIT();
-						/*  If an ABA sequence occurs (m_last is changed to another value and then is changed back to its prev value), we
-							don't care: all that we need if to check that what we store in the hazard pointer now is the last page. */								
-					} while (last_dirt != m_last.load());
-					DENSITY_TEST_RANDOM_WAIT();
-
-					/** try to push in the page */
-					{
-						typename queue_header::Push push_op;
-						
-						bool res = push_op.template begin<true>(*last, sizeof(ElementType), alignof(ElementType));
-						
-						*hazard_pointer = nullptr;
-
-						if (res)
-						{
-							auto new_element_ptr = push_op.new_element_ptr();
-							new (push_op.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<ElementType>());
-							new (new_element_ptr) ElementType(std::forward<NEW_ELEMENT_COMPLETE_TYPE>(i_source_element));
-							push_op.commit();
-							break;
-						}
-					}
-
-					try_to_add_a_page();
-				}				
-			}
-
-		
-            template <typename CONSUMER_FUNC>
-                bool try_consume(CONSUMER_FUNC && i_consumer_func)
-            {
-                auto const hazard_pointer = PAGE_ALLOCATOR::get_local_hazard().get();
-
-				bool result;
-				for (;;)
-				{
-					/** loads the first page of the queue, and sets it as hazard page (no view thread will delete it). If
-					the first page changes has the meanwhile, we have to repeat the operation. */
-					queue_header * first;
-					do {
-						first = m_first.load();
-						hazard_pointer->store(first);
-						DENSITY_TEST_RANDOM_WAIT();
-					} while (first != m_first.load());
-					DENSITY_TEST_RANDOM_WAIT();
-
-					/* try to consume an element. On success, exit the loop */
-					{
-						typename queue_header::Consume consume_op;
-						result = consume_op.template begin<true>(*first);
-						if (result)
-						{
-							i_consumer_func(*consume_op.type_ptr(), consume_op.element_ptr());
-							consume_op.type_ptr()->destroy(consume_op.element_ptr());
-							consume_op.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
-							consume_op.commit();
-							break;
-						}
-					}
-
-					DENSITY_TEST_RANDOM_WAIT();
-					auto const last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
-					DENSITY_TEST_RANDOM_WAIT();
-					if (first == last || !first->is_empty())
-					{
-						/** The consume has failed, and we can't delete this page because it is not empty, or because it
-						is the only page in the queue. */
-						break;
-					}
-
-					/** Try to delete the page */
-					DENSITY_TEST_RANDOM_WAIT();
-					try_to_delete_first(*hazard_pointer);
-				}
-
-				/** Todo : exception safeness */
-				hazard_pointer->store(nullptr);
-                return result;
-            }
-
-/*
-			template <typename CONSTRUCTOR>
-				void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, size_t i_size)
-			{
-				get_impicit_view().push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size);
-			}
-
-            template <typename OPERATION>
-                bool try_consume(OPERATION && i_operation)
-            {
-				return get_impicit_view().try_consume(std::forward<OPERATION>(i_operation));
-            }*/
 
             /** Returns a reference to the allocator instance owned by the queue.
                 \n\b Throws: nothing
@@ -166,31 +48,280 @@ namespace density
                 return *static_cast<const PAGE_ALLOCATOR*>(this);
             }
 
+			template <typename COMPLETE_ELEMENT_TYPE>
+				void push(COMPLETE_ELEMENT_TYPE && i_source)
+			{
+				using ElementType = typename std::decay<COMPLETE_ELEMENT_TYPE>::type;
+				emplace<ElementType>(std::forward<COMPLETE_ELEMENT_TYPE>(i_source));
+			}
+
+			template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
+				void emplace(CONSTRUCTION_PARAMS && i_args)
+			{
+				using ElementType = typename std::decay<COMPLETE_ELEMENT_TYPE>::type;
+
+				for (;;)
+				{
+					PushData push_data = template begin_push<true>(sizeof(ElementType), alignof(ElementType));
+					if (push_data.m_control != nullptr)
+					{
+						try
+						{
+							new(&push_data.m_control.m_type) RUNTIME_TYPE(RUNTIME_TYPE::make<ElementType>());
+						}
+						catch (...)
+						{
+							/* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
+								same time the exclusive access is removed (the first bit) */
+							DENSITY_ASSERT_INTERNAL(control->m_size.load() == sizeof(ElementType) + 1);
+							push_data.m_control->m_size.store(sizeof(ElementType) + 2);
+							throw; // the exception is propagated to the caller, whatever it is
+						}
+
+						try
+						{
+							new(push_data.m_new_element) ElementType(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+						}
+						catch (...)
+						{
+							push_data.m_control->m_type->RUNTIME_TYPE::~RUNTIME_TYPE();
+
+							/* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
+								same time the exclusive access is removed (the first bit) */
+							DENSITY_ASSERT_INTERNAL(control->m_size.load() == i_size + 1);
+							push_data.m_control->m_size.store(i_size + 2);
+							throw; // the exception is propagated to the caller, whatever it is
+						}
+						push_data.commit_push();
+						break;
+					}
+				}
+			}
+
+		private:
+
+			/** Before each element there is a ControlBlock object */
+			struct ControlBlock
+			{
+				std::atomic<size_t> m_size; /** size of the element, plus two additional flags encoded in the least-significant bits.
+													   bit 0: exclusive access flag. The thread that succeeds in setting this flag has exclusive
+													   access on the content of the element.
+													   bit 1: dead element flag. The content of the element is not valid: it has been consumed,
+													   or the constructor threw an exception.
+													   The size of the element (excluding the control block) is given by:
+													   m_size.load() & (std::numeric_limits<m_size>::max - 3). */
+				RUNTIME_TYPE m_type; /** type of the element */
+			};
+
+			struct PushData
+			{
+				ControlBlock * m_control;
+				void * m_element;
+				#if DENSITY_DEBUG_INTERNAL
+					INTERNAL_WORD m_dbg_size;
+				#endif
+			};
+
+			struct ConsumeData
+			{
+				ControlBlock * m_control;
+				void * m_element;
+				size_t m_size;
+			};
+
+			template <bool CAN_WAIT>
+				PushData begin_push(size_t i_size, size_t i_alignment) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_size > 0 && is_uint_aligned(i_size, default_alignment));
+
+				unsigned char * tail;
+				ControlBlock * control, * next_control;
+				void * new_element;
+				#if DENSITY_DEBUG_INTERNAL
+					unsigned char* dbg_original_tail;
+				#endif
+
+				/* The size of the control block we are going to allocate is guaranteed to be zero (see the constructor)
+					We loop until we succeed in changing the size of the control block from zero to i_size + 1.
+					The +1 in the size means that we have exclusive access to the element (needed in order to construct it),
+					Consumer threads can skip the element while we have exclusive access on it. */
+				bool exclusive_access;
+				do {
+
+					/* the tail is reloaded on every iteration, as a failure in the compare_exchange_strong means that
+						another thread has succeed, so the tail is changed. */
+					DENSITY_TEST_RANDOM_WAIT();
+					tail = m_tail.load();
+					auto const end_of_page = address_upper_align(tail, PAGE_ALLOCATOR::page_alignment);
+					#if DENSITY_DEBUG_INTERNAL
+						dbg_original_tail = tail;
+					#endif
+
+					/* linearly-allocate the control block and the element, updating tail */					
+					control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
+					new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
+
+					/* linearly-allocate the next control block, setting future_tail to the updated tail */
+					auto future_tail = tail;
+					next_control = static_cast<ControlBlock*>(allocate(&future_tail, sizeof(ControlBlock)));
+
+					/* If future_tail has overrun the page, we fail. So maybe we are wasting some bytes (as the current element
+						may still fit in the queue), but this allows a simpler algorithm. */
+					if (future_tail > end_of_page)
+					{
+						return PushData{nullptr};
+					}
+
+					/* try to commit, setting the size of the block. This is the first change visible to the other threads.
+						This works because the first block after tail has always the size set to zero. */
+					size_t expected = 0;
+					DENSITY_TEST_RANDOM_WAIT();
+					exclusive_access = m_control->m_size.compare_exchange_weak(expected, i_size + 1);
+
+					bool can_wait = CAN_WAIT; // use a local variable to avoid the warning about the conditional expression being constant
+					if (!can_wait)
+					{
+						if (!exclusive_access)
+						{
+							return PushData{nullptr};
+						}
+					}
+
+				} while ( !exclusive_access );
+
+				/* after gaining exclusive access to the element after tail, we initialize the next control block to zero, to allow
+					future concurrent pushes to play the compare_exchange_strong game (the race to obtain exclusive access). */
+				DENSITY_TEST_RANDOM_WAIT();
+				next_control->m_size.store(0);
+
+				/* now we can commit the tail. This allows the other pushes to skip the element we are going to construct.
+					So the duration of the contention between concurrent pushes is really minimal (two atomic stores). */
+				DENSITY_ASSERT_INTERNAL(m_tail.load() == dbg_original_tail);
+				DENSITY_TEST_RANDOM_WAIT();
+				m_tail.store(tail);
+
+				#if DENSITY_DEBUG_INTERNAL
+					m_dbg_size = i_size;
+				#endif
+											
+				return PushData{control, new_element};
+			}
+
+			void commit_push(PushData i_push_data) noexcept
+			{
+				/* decrementing the size we allow the consumers to process this element (this is an atomic operation) */
+				DENSITY_TEST_RANDOM_WAIT();
+				DENSITY_ASSERT_INTERNAL(i_push_data.m_control->m_size.load() == i_push_data.m_dbg_size + 1);
+				--(i_push_data.m_control->m_size);
+			}
+
+			template <bool CAN_WAIT>
+				ConsumeData begin_consume() noexcept
+			{
+				DENSITY_TEST_RANDOM_WAIT();
+				auto head = m_head.load();
+				#if DENSITY_DEBUG_INTERNAL
+					const INTERNAL_WORD dbg_original_head = head;
+				#endif
+
+				/* Try-and-repeat loop. On every iteration we skip an element. We stop when we
+					get exclusive access on a valid element. If we reach m_tail, we exit. */
+				size_t dirt_size;
+				size_t tries = 0;
+				ControlBlock * control;
+				void * new_element;
+				for(;;)
+				{
+					// check if we have reached the tail
+					DENSITY_TEST_RANDOM_WAIT();
+					auto const tail = m_tail.load();
+					DENSITY_ASSERT_INTERNAL(tail >= head);
+					if (head >= tail)
+					{
+						DENSITY_ASSERT_INTERNAL(tail == head);
+
+						// no consumable element is available
+						return false;
+					}
+
+					/* linearly-allocate the control block, updating head */
+					control = static_cast<ControlBlock*>(allocate(&head, sizeof(ControlBlock)));
+
+					/* atomically load the size of the block and set the first bit to 1. If the
+						first bit was already set, we are going to repeat the loop. Otherwise we
+						have the exclusive access on the content of the element. */
+					DENSITY_TEST_RANDOM_WAIT();
+					dirt_size = control->m_size.fetch_or(1);
+					DENSITY_ASSERT_INTERNAL(dirt_size < PAGE_SIZE + 3);
+
+					/* clean up the size and linearly-allocate the element */
+					m_size = dirt_size & (std::numeric_limits<INTERNAL_WORD>::max() - 3);
+					new_element = allocate(&head, m_size);
+
+					/*
+						cases for (dirt_size & 3):
+
+							0 -> we have got exclusive access to a living element - exit the loop
+							1 -> the element is living, but we don't have access - skip and continue
+							2 -> we have got exclusive access to a dead element - if this is the first iteration, remove it
+							3 -> dead element, and we don't have access to it - skip and continue
+					*/
+
+					if ((dirt_size & 3) == 0)
+					{
+						/* We have obtained exclusive access on a valid element. Exit the loop. */
+						break;
+					}
+
+					if ((dirt_size & 1) != 0)
+					{
+						/* someone else has the exclusive access on the element, continue with the next one. */
+						tries++;
+					}
+					else
+					{
+						/* We have the exclusive access to a dead element, and this is the first iteration, we can
+							advance the head. Only the thread with exclusive access can do this, so we can do it safely */
+						DENSITY_TEST_RANDOM_WAIT();
+						if (tries == 0)
+						{
+							m_head.store(head);
+						}
+						else
+						{
+							DENSITY_ASSERT_INTERNAL((m_control->m_size.load() & 1) == 1);
+							#if DENSITY_DEBUG
+								const auto prev =
+							#endif
+							--control->m_size;
+							DENSITY_ASSERT_INTERNAL((prev & 1) == 0);
+
+							tries++;
+
+							bool can_wait = CAN_WAIT; // use a local variable to avoid the warning about the conditional expression being constant
+							if (!can_wait)
+							{
+								return false;
+							}
+						}
+					}
+				}
+
+				return true;
+			}
+
+			void commit() noexcept
+			{
+		        #if DENSITY_DEBUG
+		            memset(&m_control->m_type, 0xB4, sizeof(m_control->m_type));
+	            #endif
+
+				/* drop the exclusive access, and mark the element as dead */
+				DENSITY_TEST_RANDOM_WAIT();
+				m_control->m_size.store(m_size + 2);
+			}
+
         private:
-
-            // overload used if i_source is an r-value
-            template <typename ELEMENT_COMPLETE_TYPE>
-                void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
-            {
-                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-                push(runtime_type::template make<ElementCompleteType>(),
-                    [&i_source](const runtime_type &, void * i_dest) {
-                    auto const result = new(i_dest) ElementCompleteType(std::move(i_source));
-                    return static_cast<ELEMENT*>(result);
-                });
-            }
-
-            // overload used if i_source is an l-value
-            template <typename ELEMENT_COMPLETE_TYPE>
-                void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
-            {
-                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-                push(runtime_type::template make<ElementCompleteType>(),
-                    [&i_source](const runtime_type &, void * i_dest) {
-                    auto const result = new(i_dest) ElementCompleteType(i_source);
-                    return static_cast<ELEMENT*>(result);
-                });
-            }
 
             queue_header * new_page()
             {
@@ -204,75 +335,24 @@ namespace density
                 // the destructor of a page header is trivial, so just deallocate it
                 get_allocator_ref().deallocate_page(i_page);
             }
-			
-			template <typename CONSUMER_FUNC>
-				bool impl_try_consume(std::atomic<void*> & io_hazard_pointer, CONSUMER_FUNC && i_consumer_func)
+
+			static void * allocate(unsigned char * * io_ptr, size_t i_size)
 			{
+				auto res = *io_ptr;
+				*io_ptr += i_size;
+				return *io_ptr;
 			}
 
-			DENSITY_NO_INLINE void try_to_add_a_page()
+			static void * allocate(unsigned char * * io_ptr, size_t i_size, size_t i_alignment)
 			{
-				/* Now we try to get exclusive access on m_last. If we fail to do that, just continue the loop. */
-				DENSITY_TEST_RANDOM_WAIT();
-				auto prev_last = m_last.fetch_or(1);
-				if ((prev_last & 1) == 0)
-				{
-					/* Ok, we have set the exclusive flag from 0 to 1. First allocate the page. */
-					DENSITY_TEST_RANDOM_WAIT();
-					auto const queue = new_page();
-
-					/** Now we can link the prev-last with the new page. This is a non-atomic write. */
-					DENSITY_TEST_RANDOM_WAIT();
-					DENSITY_ASSERT_INTERNAL(reinterpret_cast<queue_header*>(prev_last)->m_next == nullptr);
-					reinterpret_cast<queue_header*>(prev_last)->m_next = queue;
-
-					/** Finally we update m_last, and continue the loop */
-					DENSITY_TEST_RANDOM_WAIT();
-					m_last.store(reinterpret_cast<uintptr_t>(queue));
-					DENSITY_STATS(++g_stats.allocated_pages);
-				}
+				*io_ptr = static_cast<unsigned char *>(address_upper_align(*io_ptr, i_alignment));
+				auto res = *io_ptr;				
+				*io_ptr += i_size;
+				return *io_ptr;
 			}
-
-			DENSITY_NO_INLINE void try_to_delete_first(std::atomic<void*> & io_hazard_pointer)
-            {
-				io_hazard_pointer.store(nullptr);
-
-                if (!m_can_delete_page.test_and_set())
-                {
-                    auto const first = m_first.load();
-					io_hazard_pointer.store(first);
-
-                    auto const last = reinterpret_cast<queue_header*>(m_last.load() & ~static_cast<uintptr_t>(1));
-
-                    if (first != last && first->is_empty())
-                    {
-                        /* This first page is not the last (so it can't have further elements pushed) */
-                        auto const next = first->m_next;
-                        DENSITY_ASSERT_INTERNAL(next != nullptr);
-                        DENSITY_TEST_RANDOM_WAIT();
-                        m_first.store(next);
-                        m_can_delete_page.clear();
-
-						io_hazard_pointer.store(nullptr);
-
-                        delete_page(first);
-                    }
-                    else
-                    {
-						io_hazard_pointer.store(nullptr);
-                        m_can_delete_page.clear();
-                    }
-                }
-            }
 
         private:
-            std::atomic<queue_header*> m_first; /**< Pointer to the first page of the queue. Consumer will try to consume from this page first. */
-            std::atomic<uintptr_t> m_last; /**< Pointer to the first page of the queue, plus the exclusive-access flag (the least significant bit).
-                                                A thread gets exclusive-access on this pointer if it succeeds in setting this bit to 1.
-                                                The address of the page is obtained by masking away the first bit. Producer threads try to push
-                                                new elements in this page first. */
-
-            std::atomic_flag m_can_delete_page; /** Atomic flag used to synchronize view threads that attempt to delete the first page. */
+            std::atomic<unsigned char*> m_head, m_tail;
 		};
 	} // namespace detail
 

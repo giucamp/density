@@ -19,6 +19,7 @@ namespace density
 {
 	namespace detail
 	{
+		/** This stack is flawed by the ABA problem */
 		class FreePageStack
 		{
 			struct Entry
@@ -108,6 +109,7 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
+			DENSITY_ASSERT_INTERNAL(false); // to do: align pages
             auto page = allocate_page_impl();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);

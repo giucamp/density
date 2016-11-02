@@ -111,9 +111,6 @@
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\ou_conc_queue_header_lflf.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h">
       <Filter>density\detail</Filter>
     </ClInclude>
