@@ -89,7 +89,7 @@ namespace density
 		static constexpr size_t page_size = 4096;
 
 		/** Alignment (in bytes) of a memory page. */
-		static constexpr size_t page_alignment = alignof(std::max_align_t);
+		static constexpr size_t page_alignment = page_size;
 
 		/** Maximum number of free page that a thread can cache */
 		static const size_t free_page_cache_size = 4;
@@ -108,8 +108,7 @@ namespace density
             All the pages have the same size and alignment requirement (see page_size and page_alignment).
             The content of the newly allocated page is undefined. */
         void * allocate_page()
-        {
-			DENSITY_ASSERT_INTERNAL(false); // to do: align pages
+        {			
             auto page = allocate_page_impl();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
@@ -184,7 +183,7 @@ namespace density
 
         static void * allocate_page_impl()
         {
-            return operator new (page_size);
+            return _aligned_malloc(page_size, page_alignment);
         }
 
         #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING

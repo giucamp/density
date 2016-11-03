@@ -37,8 +37,13 @@ namespace density
 			
 			base_concurrent_heterogeneous_queue()
             {
-                
+				auto const first_page = reinterpret_cast<unsigned char*>(new_page());
+				m_head.store(first_page);
+				m_tail.store(first_page);
             }
+
+			base_concurrent_heterogeneous_queue(const base_concurrent_heterogeneous_queue&) = delete;
+			base_concurrent_heterogeneous_queue & operator = (const base_concurrent_heterogeneous_queue&) = delete;
 
             /** Returns a reference to the allocator instance owned by the queue.
                 \n\b Throws: nothing
@@ -105,6 +110,10 @@ namespace density
 						commit_push(push_data);
 						break;
 					}
+
+					// allocater page
+					break;
+
 				}
 			}
 
@@ -167,7 +176,7 @@ namespace density
 						another thread has succeed, so the tail is changed. */
 					DENSITY_TEST_RANDOM_WAIT();
 					tail = m_tail.load();
-					auto const end_of_page = address_upper_align(tail, PAGE_ALLOCATOR::page_alignment);
+					auto const end_of_page = reinterpret_cast<unsigned char *>(reinterpret_cast<uintptr_t>(tail) | static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1) );
 					#if DENSITY_DEBUG_INTERNAL
 						dbg_original_tail = tail;
 					#endif
@@ -332,7 +341,9 @@ namespace density
 
             void * new_page()
             {
-                return get_allocator_ref().allocate_page();
+                auto const result = get_allocator_ref().allocate_page();
+				static_cast<ControlBlock*>(result)->m_next.store(0);
+				return result;
             }
 
             void delete_page(void * i_page) noexcept
