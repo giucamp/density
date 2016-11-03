@@ -65,7 +65,6 @@ namespace density
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
 #endif
 #define DENSITY_INCLUDING_CONC_QUEUE_DETAIL	
-    #include "detail\ou_conc_queue_header_lflf.h"
 	#include "detail\base_conc_queue_lflf.h"
 #undef DENSITY_INCLUDING_CONC_QUEUE_DETAIL
 #ifdef _MSC_VER
