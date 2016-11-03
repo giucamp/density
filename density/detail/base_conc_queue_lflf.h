@@ -302,8 +302,9 @@ namespace density
 							advance the head. Only the thread with exclusive access can do this, so we can do it safely */
 						DENSITY_TEST_RANDOM_WAIT();
 						if (tries == 0)
-						{							
-							m_head.store(reinterpret_cast<unsigned char *>(next));
+						{					
+							head = reinterpret_cast<unsigned char *>(next);
+							m_head.store(head);
 						}
 						else
 						{
@@ -334,7 +335,7 @@ namespace density
 
 				/* drop the exclusive access, and mark the element as dead */
 				DENSITY_TEST_RANDOM_WAIT();
-				i_data.m_control->m_next.store(reinterpret_cast<uintptr_t>(i_data.m_next_control));
+				i_data.m_control->m_next.store(reinterpret_cast<uintptr_t>(i_data.m_next_control) + 2);
 			}
 
         private:
