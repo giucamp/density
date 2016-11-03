@@ -81,13 +81,13 @@ namespace density
         };
 
 		// size_min: avoid including <algorithm> just to use std::min<size_t>
-		inline size_t size_min(size_t i_first, size_t i_second) noexcept
+		constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
 		{
 			return i_first < i_second ? i_first : i_second;
 		}
 
         // size_max: avoid including <algorithm> just to use std::max<size_t>
-        inline size_t size_max(size_t i_first, size_t i_second) noexcept
+		constexpr inline size_t size_max(size_t i_first, size_t i_second) noexcept
         {
             return i_first > i_second ? i_first : i_second;
         }

@@ -89,7 +89,7 @@ namespace density
 		template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
 			SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
 			SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
-				class concurrent_heterogeneous_queue : public detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
+				class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
         {
 			using BaseClass = detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
 
@@ -108,39 +108,29 @@ namespace density
 			static constexpr SynchronizationKind push_sync = PUSH_SYNC;
 			static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
 
-			static_assert(detail::PageAllocatorTraits<allocator_type>::page_alignment >= 2, "The implementation requires that guaranteed alignment of the pages is at least 2");
-				/* Reason: the push algorithm uses the first bit of m_last (which is a pointer to a page) as exclusive-access flag. */
+			
+			static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size, 
+					"The size and alignment of the pages must be the same (and not too small)");
 
-            /*template <typename ELEMENT_COMPLETE_TYPE>
-				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
-            {
-                static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
-                    "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
-                push_impl(std::forward<ELEMENT_COMPLETE_TYPE>(i_source),
-                    typename std::is_rvalue_reference<ELEMENT_COMPLETE_TYPE&&>::type());
-            }*/
+			template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
+				void emplace(CONSTRUCTION_PARAMS &&... i_args)
+			{
+				static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, ELEMENT*>::value,
+					"ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
+
+				BaseClass::emplace<COMPLETE_ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+			}
 
 			template <typename ELEMENT_COMPLETE_TYPE>
 				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
             {
-                static_assert(std::is_convertible< typename std::decay<ELEMENT_COMPLETE_TYPE>::type*, ELEMENT*>::value,
+				using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+
+                static_assert(std::is_convertible< ElementCompleteType*, ELEMENT*>::value,
                     "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
-				BaseClass::push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+
+				BaseClass::emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
             }
-
-            template <typename CONSTRUCTOR>
-				DENSITY_STRONG_INLINE void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor)
-            {
-				BaseClass::push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_source_type.size());
-            }
-
-            template <typename CONSTRUCTOR>
-				void push(const RUNTIME_TYPE & i_source_type, CONSTRUCTOR && i_constructor, size_t i_size)
-			{
-				DENSITY_ASSERT(i_source_type.size() == i_size); // inconsistent element size?
-
-				BaseClass::push(i_source_type, std::forward<CONSTRUCTOR>(i_constructor), i_size);
-			}
 
             template <typename OPERATION>
                 bool try_consume(OPERATION && i_operation)
@@ -153,7 +143,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type get_allocator() const
             {
-				return BaseClass::get_allocator_ref();
+				return *static_cast<PAGE_ALLOCATOR*>(this);
             }
 
             /** Returns a reference to the allocator instance owned by the queue.
@@ -161,7 +151,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type & get_allocator_ref() noexcept
             {
-				return BaseClass::get_allocator_ref();
+				return *static_cast<PAGE_ALLOCATOR*>(this);
             }
 
             /** Returns a const reference to the allocator instance owned by the queue.
@@ -169,34 +159,8 @@ namespace density
                 \n\b Complexity: constant */
             const allocator_type & get_allocator_ref() const noexcept
             {
-				return BaseClass::get_allocator_ref();
+				return *static_cast<PAGE_ALLOCATOR*>(this);
             }
-
-        private:
-
-            // overload used if i_source is an r-value
-            /*template <typename ELEMENT_COMPLETE_TYPE>
-                void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::true_type)
-            {
-                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-                BaseClass::push(runtime_type::template make<ElementCompleteType>(),
-                    [&i_source](const runtime_type &, void * i_dest) {
-                    auto const result = new(i_dest) ElementCompleteType(std::move(i_source));
-                    return static_cast<ELEMENT*>(result);
-                }, sizeof(ELEMENT_COMPLETE_TYPE));
-            }
-
-            // overload used if i_source is an l-value
-            template <typename ELEMENT_COMPLETE_TYPE>
-                void push_impl(ELEMENT_COMPLETE_TYPE && i_source, std::false_type)
-            {
-                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-				BaseClass::push(runtime_type::template make<ElementCompleteType>(),
-                    [&i_source](const runtime_type &, void * i_dest) {
-                    auto const result = new(i_dest) ElementCompleteType(i_source);
-                    return static_cast<ELEMENT*>(result);
-                }, sizeof(ELEMENT_COMPLETE_TYPE));
-            }*/
         };
 
     } // namespace experimental

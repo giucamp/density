@@ -41,7 +41,7 @@ int main()
     using namespace density_tests;
     using namespace std;
 
-    function_queue_sample::run();
+    //function_queue_sample::run();
 
     TestTree test_tree("density");
 
