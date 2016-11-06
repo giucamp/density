@@ -45,7 +45,7 @@ namespace density_tests
 	{
 		using namespace density::experimental;
 
-		const size_t consumers = 2;
+		const size_t consumers = 1;
 		const size_t producers = 1;
 		ConcProdConsTest<CONTAINER> test(consumers, producers, 10 * 1000 * 1000 );
 
@@ -53,9 +53,9 @@ namespace density_tests
 
 		while (!test.is_over())
 		{
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-
 			test.print_stats();
+
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 	}
 

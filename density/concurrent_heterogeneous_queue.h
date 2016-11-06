@@ -49,14 +49,6 @@ namespace density
 		template < typename PAGE_ALLOCATOR, typename RUNTIME_TYPE,
 			SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
 				class base_concurrent_heterogeneous_queue;
-
-		/** Due to private inheritance, c++ name lookup rules makes the public members of PAGE_ALLOCATOR not accessible 
-			by concurrent_heterogeneous_queue. This template workarounds for problem. */
-		template <typename PAGE_ALLOCATOR> struct PageAllocatorTraits
-		{
-			static constexpr size_t page_size = PAGE_ALLOCATOR::page_size;
-			static constexpr size_t page_alignment = PAGE_ALLOCATOR::page_alignment;
-		};
     }
 }
 

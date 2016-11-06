@@ -725,7 +725,7 @@ namespace density
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior. */
-        runtime_type() = default;
+        runtime_type() noexcept = default;
 
         /** Move-constructs a runtime_type */
         runtime_type(runtime_type && ) noexcept = default;
@@ -739,11 +739,11 @@ namespace density
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
         runtime_type & operator = (const runtime_type &) noexcept = default;
 
-        /** Destructor. */
+        /** Destructor */
         ~runtime_type()
         {
             #if DENSITY_DEBUG
-                *reinterpret_cast<size_t*>(&m_table) = 0xBA77;
+                *reinterpret_cast<uintptr_t*>(&m_table) ^= std::numeric_limits<uintptr_t>::max();
             #endif
         }
 

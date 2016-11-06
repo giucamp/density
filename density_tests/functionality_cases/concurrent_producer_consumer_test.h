@@ -48,9 +48,11 @@ namespace density_tests
 
 		void print_stats()
 		{
+			auto const produced = static_cast<int64_t>( m_produced.load() );
+			auto const consumed = static_cast<int64_t>( m_consumed.load() );
 			std::cout << "Completed: " << static_cast<int>(0.5 + (m_consumed.load() / static_cast<double>(m_cell_count)) * 100.);
-			std::cout << "%, Produced: " << m_produced.load();
-			std::cout << ", Consumed: " << m_consumed.load() << std::endl;
+			std::cout << "%, Produced: " << produced;
+			std::cout << ", To consume: " << produced - consumed << std::endl;
 		}
 
 		~ConcProdConsTest()
