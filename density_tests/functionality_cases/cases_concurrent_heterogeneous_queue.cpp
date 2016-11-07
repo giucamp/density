@@ -45,8 +45,8 @@ namespace density_tests
 	{
 		using namespace density::experimental;
 
-		const size_t consumers = 1;
-		const size_t producers = 1;
+		const size_t consumers = 2;
+		const size_t producers = 2;
 		ConcProdConsTest<CONTAINER> test(consumers, producers, 10 * 1000 * 1000 );
 
 		//auto start_time = std::chrono::high_resolution_clock::now();

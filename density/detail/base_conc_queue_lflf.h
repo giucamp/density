@@ -40,7 +40,7 @@ namespace density
 			/** Constructor. At least one page in always alive */
 			base_concurrent_heterogeneous_queue()
             {
-				auto const first_page = allocate_page();
+				auto const first_page = PAGE_ALLOCATOR::allocate_page();
 				m_head.store(reinterpret_cast<uintptr_t>(first_page));
 				m_tail_for_alloc.store(first_page);
 				m_tail_for_consume.store(first_page);
@@ -49,67 +49,6 @@ namespace density
 			base_concurrent_heterogeneous_queue(const base_concurrent_heterogeneous_queue&) = delete;
 			base_concurrent_heterogeneous_queue & operator = (const base_concurrent_heterogeneous_queue&) = delete;
 
-			template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-				void emplace(CONSTRUCTION_PARAMS &&... i_args)
-			{
-				auto push_data = begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
-				
-				try
-				{
-					// construct the type
-					new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
-				}
-				catch (...)
-				{
-					// this call release the exclusive access and set the dead flag 
-					cancel_push(push_data.m_control);
-
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
-
-				try
-				{
-					// construct the element
-					new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
-				}
-				catch (...)
-				{
-					// destroy the type (which is probably a no-operation)
-					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
-
-					// this call release the exclusive access and set the dead flag
-					cancel_push(push_data.m_control);
-					
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
-
-				commit_push(push_data);
-			}
-
-			template <typename CONSUMER_FUNC>
-				bool try_consume(CONSUMER_FUNC && i_consumer_func)
-			{
-				auto consume_data = begin_consume();
-				if (consume_data.m_control != nullptr)
-				{
-					auto const type = &consume_data.m_control->m_type;
-					auto const element = consume_data.m_control + 1;
-					i_consumer_func(*type, element);
-					type->destroy(element);
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-					commit_consume(consume_data);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-
-		private:
-			
 			struct PushData
 			{
 				ControlBlock * m_control;
@@ -131,7 +70,7 @@ namespace density
 				auto original_tail = i_tail;
 				if (m_tail_for_alloc.compare_exchange_weak(original_tail, reinterpret_cast<void*>(last_byte)))
 				{
-					auto const new_page = allocate_page();
+					auto const new_page = PAGE_ALLOCATOR::allocate_page();
 					auto control = static_cast<ControlBlock*>(i_tail);
 					new (&control->m_type) RUNTIME_TYPE();
 					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
@@ -174,6 +113,11 @@ namespace density
 					// try to update m_tail_for_alloc
 					if (m_tail_for_alloc.compare_exchange_weak(original_tail, tail, std::memory_order_release))
 					{
+						bool can_wait = CAN_WAIT;
+						if (!can_wait)
+						{
+							return PushData{ nullptr };
+						}
 						break;
 					}
 				}
@@ -282,7 +226,7 @@ namespace density
 								#endif								
 								if (control->m_type.empty())
 								{
-									deallocate_page(reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1)));
+									PAGE_ALLOCATOR::deallocate_page(reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1)));
 								}
 								good_head = head = dirt_next - 2;
 								continue;
@@ -290,7 +234,7 @@ namespace density
 							else
 							{
 								// unlock
-								control->m_next.store(dirt_next - 1, std::memory_order_relaxed);
+								control->m_next.store(dirt_next, std::memory_order_relaxed);
 							}
 						}
 					}

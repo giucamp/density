@@ -106,10 +106,17 @@ namespace density
             using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
 			static constexpr SynchronizationKind push_sync = PUSH_SYNC;
 			static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
-
 			
 			static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size, 
 					"The size and alignment of the pages must be the same (and not too small)");
+
+			template <typename ELEMENT_COMPLETE_TYPE>
+				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
+            {
+				using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+				
+				emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+            }
 
 			template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
 				void emplace(CONSTRUCTION_PARAMS &&... i_args)
@@ -117,25 +124,61 @@ namespace density
 				static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, ELEMENT*>::value,
 					"ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
 
-				BaseClass::emplace<COMPLETE_ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+				auto push_data = BaseClass:: template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
+				
+				try
+				{
+					// construct the type
+					new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
+				}
+				catch (...)
+				{
+					// this call release the exclusive access and set the dead flag 
+					BaseClass::cancel_push(push_data.m_control);
+
+					// the exception is propagated to the caller, whatever it is
+					throw;
+				}
+
+				try
+				{
+					// construct the element
+					new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+				}
+				catch (...)
+				{
+					// destroy the type (which is probably a no-operation)
+					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
+
+					// this call release the exclusive access and set the dead flag
+					BaseClass::cancel_push(push_data.m_control);
+					
+					// the exception is propagated to the caller, whatever it is
+					throw;
+				}
+
+				BaseClass::commit_push(push_data);
 			}
 
-			template <typename ELEMENT_COMPLETE_TYPE>
-				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
-            {
-				using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-
-                static_assert(std::is_convertible< ElementCompleteType*, ELEMENT*>::value,
-                    "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
-
-				BaseClass::emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
-            }
-
-            template <typename OPERATION>
-                bool try_consume(OPERATION && i_operation)
-            {
-				return BaseClass::try_consume(std::forward<OPERATION>(i_operation));
-            }
+			template <typename CONSUMER_FUNC>
+				bool try_consume(CONSUMER_FUNC && i_consumer_func)
+			{
+				auto consume_data = BaseClass::begin_consume();
+				if (consume_data.m_control != nullptr)
+				{
+					auto const type = &consume_data.m_control->m_type;
+					auto const element = consume_data.m_control + 1;
+					i_consumer_func(*type, element);
+					type->destroy(element);
+					type->RUNTIME_TYPE::~RUNTIME_TYPE();
+					BaseClass::commit_consume(consume_data);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
 
             /** Returns a copy of the allocator instance owned by the queue.
                 \n\b Throws: anything that the copy-constructor of the allocator throws
