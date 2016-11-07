@@ -124,20 +124,12 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-			while (get_hazard_context().is_hazard_pointer(i_page))
-			{
-			}
-			
 			#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
 				memset(i_page, 33, page_size);
 				dbg_data().remove_page(i_page);
 			#endif
 
-			#if __cplusplus >= 201402L
-                operator delete (i_page, page_size); // since C++14
-            #else
-                operator delete (i_page);
-            #endif
+			_aligned_free(i_page);
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.

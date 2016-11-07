@@ -14,8 +14,15 @@
 #include <thread>
 #include <atomic>
 #include <list>
+#include <random>
 
-#define DENSITY_TEST_RANDOM_WAIT()
+inline size_t get_rand(size_t i_max)
+{
+	static thread_local std::mt19937 rand{ std::random_device()() };
+	return std::uniform_int_distribution<size_t>(0, i_max)(rand);
+}
+
+#define DENSITY_TEST_RANDOM_WAIT() //if(get_rand(7) == 3) { std::this_thread::sleep_for(std::chrono::nanoseconds(get_rand(65336) ) ); }
 
 #define DENSITY_STATS(expr)
 

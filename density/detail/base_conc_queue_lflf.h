@@ -135,7 +135,7 @@ namespace density
 					auto control = static_cast<ControlBlock*>(i_tail);
 					new (&control->m_type) RUNTIME_TYPE();
 					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
-
+					
 					m_tail_for_alloc.store(new_page);
 				}
 				else
@@ -160,7 +160,7 @@ namespace density
 					// linearly-allocate the control block and the element, updating tail
 					control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
 					new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
-					
+										
 					auto const end_of_page = ( reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1) ) + 1;
 					auto const limit = reinterpret_cast<void*>(end_of_page - sizeof(ControlBlock) );
 					if (tail > limit)
@@ -177,8 +177,6 @@ namespace density
 						break;
 					}
 				}
-
-				std::this_thread::sleep_for(std::chrono::seconds(10));
 
 				/* Now we can initialize control->m_next, and set the exclusive-access flag in it (the +1).
 				   Other producers can allocate space in the meanwhile (moving m_tail_for_alloc forward). 
@@ -269,7 +267,7 @@ namespace density
 						if ((dirt_next & 2) == 0)
 						{
 							// living object							
-							m_head.store(head, std::memory_order_release);
+							m_head.store(good_head, std::memory_order_release);
 							return ConsumeData{ control };
 						}
 						else
@@ -279,11 +277,15 @@ namespace density
 							{
 								DENSITY_ASSERT_INTERNAL( (dirt_next & 3) == 2 );
 
+								#if DENSITY_DEBUG_INTERNAL
+									control->m_next.store(37, std::memory_order_relaxed);
+								#endif								
 								if (control->m_type.empty())
 								{
 									deallocate_page(reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1)));
 								}
-								head = dirt_next - 2;
+								good_head = head = dirt_next - 2;
+								continue;
 							}
 							else
 							{
