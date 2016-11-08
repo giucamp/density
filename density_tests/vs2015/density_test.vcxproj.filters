@@ -123,5 +123,8 @@
     <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\any.h">
+      <Filter>density</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

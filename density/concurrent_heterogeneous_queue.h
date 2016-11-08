@@ -8,8 +8,7 @@
 #include "density_common.h"
 #include "density_common.h"
 #include "runtime_type.h"
-#include "page_allocator.h"
-#include "detail\hazard_pointers.h"
+#include "void_allocator.h"
 #include <mutex>
 #include <thread>
 #include <atomic>
@@ -49,11 +48,7 @@ namespace density
     {
         constexpr size_t concurrent_alignment = 64;
 
-        template <typename INTERNAL_WORD, typename RUNTIME_TYPE, INTERNAL_WORD PAGE_SIZE,
-            SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC>
-                class ou_conc_queue_header;
-
-		template < typename PAGE_ALLOCATOR, typename RUNTIME_TYPE,
+		template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE,
 			SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
 				class base_concurrent_heterogeneous_queue;
     }
@@ -85,12 +80,12 @@ namespace density
                 See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details. 
 				There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
 				*/
-		template < typename ELEMENT = void, typename PAGE_ALLOCATOR = page_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
+		template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
 			SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
 			SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
-				class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
+				class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
         {
-			using BaseClass = detail::base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
+			using BaseClass = detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
 
         public:
 
@@ -99,7 +94,7 @@ namespace density
                     but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
                     in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
-            using allocator_type = PAGE_ALLOCATOR;
+            using allocator_type = VOID_ALLOCATOR;
             using runtime_type = RUNTIME_TYPE;
             using value_type = ELEMENT;
             using reference = typename std::add_lvalue_reference< ELEMENT >::type;
@@ -185,7 +180,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type get_allocator() const
             {
-				return *static_cast<PAGE_ALLOCATOR*>(this);
+				return *static_cast<VOID_ALLOCATOR*>(this);
             }
 
             /** Returns a reference to the allocator instance owned by the queue.
@@ -193,7 +188,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type & get_allocator_ref() noexcept
             {
-				return *static_cast<PAGE_ALLOCATOR*>(this);
+				return *static_cast<VOID_ALLOCATOR*>(this);
             }
 
             /** Returns a const reference to the allocator instance owned by the queue.
@@ -201,7 +196,7 @@ namespace density
                 \n\b Complexity: constant */
             const allocator_type & get_allocator_ref() const noexcept
             {
-				return *static_cast<PAGE_ALLOCATOR*>(this);
+				return *static_cast<VOID_ALLOCATOR*>(this);
             }
         };
 

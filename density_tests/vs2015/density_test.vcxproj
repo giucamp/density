@@ -237,6 +237,7 @@
     <ClCompile Include="..\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\density\any.h" />
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h" />

@@ -13,33 +13,6 @@
 
 namespace density
 {
-    /*
-        Runtime Type Synopsis
-
-        class runtime_type
-        {
-            public:
-
-                template <typename COMPLETE_TYPE> static runtime_type make() noexcept;
-
-                runtime_type(const runtime_type &) noexcept;
-                runtime_type(runtime_type &&) noexcept;
-                ~runtime_type();
-
-                size_t size() const noexcept;
-                size_t alignment() const noexcept;
-
-                // optional
-                void * copy_construct(void * i_dest_element, const void * i_source_element) const;
-
-                // optional
-                void * move_construct(void * i_dest_element, void * i_source_element) const noexcept;
-
-                void destroy(void * i_element) const noexcept;
-        };
-
-    */
-
     namespace type_features
     {
         /** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
@@ -455,14 +428,16 @@ namespace density
                 @param i_base_dest pointer to the object to be destroyed. */
         struct destroy
         {
-            using type = void(*)(void * i_dest);
+            using type = void * (*)(void * i_dest);
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static void invoke(void * i_base_dest) noexcept
+                static void * invoke(void * i_base_dest) noexcept
                 {
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    detail::down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
+					const auto derived = detail::down_cast<TYPE*>(base_dest);
+					derived->TYPE::~TYPE();
+					return derived;
                 }
                 static const uintptr_t value;
             };
@@ -652,8 +627,8 @@ namespace density
                         std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) ); @endcode </td>
         </tr>
         <tr>
-            <td>Member function: @code void destroy(base_type * i_dest) const noexcept @endcode</td>
-            <td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE(); @endcode </td>
+            <td>Member function: @code void * destroy(base_type * i_dest) const noexcept @endcode</td>
+            <td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE();\nreturn dynamic_cast<TARGET_TYPE*>(i_dest); @endcode </td>
         </tr>
         <tr>
             <td>Member function: @code const std::type_info & type_info() const noexcept @endcode</td>
@@ -883,18 +858,22 @@ namespace density
             The effect of this function is the same of this code:
                 @code
                     dynamic_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
+					return dynamic_cast<TARGET_TYPE*>(i_source);
                 @endcode
             where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
+
+			@return pointer to the complete object that has been destroyed. This pointer can be used
+				to deallocate a memory block on the heap.
 
             \n\b Requires:
                 - the feature type_features::destroy must be included in the FEATURE_LIST
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. Destructors are required to be noexcept. */
-        void destroy(base_type * i_dest) const noexcept
+        void * destroy(base_type * i_dest) const noexcept
         {
             DENSITY_ASSERT(!empty());
-            get_feature<type_features::destroy>()(i_dest);
+            return get_feature<type_features::destroy>()(i_dest);
         }
 
         /** Returns the std::type_info associated to the target type.

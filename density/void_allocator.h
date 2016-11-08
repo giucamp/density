@@ -147,7 +147,7 @@ namespace density
 		static constexpr size_t page_size = 4096;
 
 		/** Alignment (in bytes) of a memory page. */
-		static constexpr size_t page_alignment = alignof(std::max_align_t);
+		static constexpr size_t page_alignment = page_size;
 
 		/** Maximum number of free page that a thread can cache */
 		static const size_t free_page_cache_size = 4;
@@ -193,6 +193,8 @@ namespace density
                 user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
                 AlignmentHeader & header = *(static_cast<AlignmentHeader*>(user_block) - 1);
                 header.m_block = complete_block;
+				DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
+					address_add(user_block, i_size) <= address_add(complete_block, actual_size));
             }
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_block(user_block, i_size, i_alignment);
@@ -215,6 +217,10 @@ namespace density
         void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+
+			////////////////
+			memset(i_block, 0xb0, 128);
+			////////////////
 
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_block(i_block, i_size, i_alignment);
@@ -254,11 +260,12 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            auto page = thread_page_store().peek();
+            /*auto page = thread_page_store().peek();
             if (page == nullptr)
             {
                 page = allocate_page_impl();
-            }
+            }*/
+			auto page = allocate_page_impl();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
@@ -276,7 +283,7 @@ namespace density
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_page(i_page);
             #endif
-            auto & page_store = thread_page_store();
+            /*auto & page_store = thread_page_store();
             if (page_store.size() < free_page_cache_size)
             {
                 page_store.push(i_page);
@@ -284,7 +291,9 @@ namespace density
             else
             {
                 deallocate_page_impl(i_page);
-            }
+            }*/
+
+			deallocate_page_impl(i_page);
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
@@ -322,20 +331,17 @@ namespace density
 			}
 		}
 
-    private:
 
-        static void * allocate_page_impl()
+    ///////////////////private:
+
+        void * allocate_page_impl()
         {
-            return operator new (page_size);
+			return allocate(page_size, page_alignment);
         }
 
-        static void deallocate_page_impl(void * i_page) noexcept
+        void deallocate_page_impl(void * i_page) noexcept
         {
-            #if __cplusplus >= 201402L
-                operator delete (i_page, page_size); // since C++14
-            #else
-                operator delete (i_page);
-            #endif
+			return deallocate(i_page, page_size, page_alignment);
         }
 
         struct AlignmentHeader

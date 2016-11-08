@@ -14,9 +14,15 @@ namespace density
 {
 	namespace detail
 	{
-		template < typename PAGE_ALLOCATOR, typename RUNTIME_TYPE>
-			class base_concurrent_heterogeneous_queue<PAGE_ALLOCATOR, RUNTIME_TYPE, 
-				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : public PAGE_ALLOCATOR
+		template <typename TYPE>
+			DENSITY_STRONG_INLINE bool set_if_equal_weak(std::atomic<TYPE> & io_atomic, TYPE i_if_equal, TYPE i_set_to, std::memory_order i_memory_order)
+		{
+			return io_atomic.compare_exchange_weak(i_if_equal, i_set_to, i_memory_order);
+		}
+
+		template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
+			class base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, 
+				SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : public VOID_ALLOCATOR
 		{
 			/** This is the alignment of ControlBlock's and the minimum alignment of the elements. Since the
 				ControlBlock uses the least-significant bits as flags, this can't be less than 4. */
@@ -40,7 +46,8 @@ namespace density
 			/** Constructor. At least one page in always alive */
 			base_concurrent_heterogeneous_queue()
             {
-				auto const first_page = PAGE_ALLOCATOR::allocate_page();
+				auto const first_page = VOID_ALLOCATOR::allocate_page();
+				DENSITY_ASSERT(is_address_aligned(first_page, VOID_ALLOCATOR::page_alignment));
 				m_head.store(reinterpret_cast<uintptr_t>(first_page));
 				m_tail_for_alloc.store(first_page);
 				m_tail_for_consume.store(first_page);
@@ -48,12 +55,6 @@ namespace density
 
 			base_concurrent_heterogeneous_queue(const base_concurrent_heterogeneous_queue&) = delete;
 			base_concurrent_heterogeneous_queue & operator = (const base_concurrent_heterogeneous_queue&) = delete;
-
-			struct PushData
-			{
-				ControlBlock * m_control;
-				void * m_element;
-			};
 
 			struct ConsumeData
 			{
@@ -65,24 +66,43 @@ namespace density
 				/* The first thread that succeed in setting m_tail_for_alloc to last_byte is the one that allocates a new page.
 					It's very important to set m_tail_for_alloc to the last byte of the page and not to the end of the page, because
 					the latter is in another pages, and incoming producers would write out of the page.*/
-				auto last_byte = reinterpret_cast<uintptr_t>(i_tail) | static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1);
-				
+				auto last_byte = reinterpret_cast<uintptr_t>(i_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1);
+
 				auto original_tail = i_tail;
-				if (m_tail_for_alloc.compare_exchange_weak(original_tail, reinterpret_cast<void*>(last_byte)))
+				if (original_tail != reinterpret_cast<void*>(last_byte) &&
+					set_if_equal_weak(m_tail_for_alloc, original_tail, reinterpret_cast<void*>(last_byte), std::memory_order_acq_rel))
 				{
-					auto const new_page = PAGE_ALLOCATOR::allocate_page();
+					auto const new_page = VOID_ALLOCATOR::allocate_page();
+					DENSITY_ASSERT(is_address_aligned(new_page, VOID_ALLOCATOR::page_alignment));
 					auto control = static_cast<ControlBlock*>(i_tail);
 					new (&control->m_type) RUNTIME_TYPE();
 					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
 					
 					m_tail_for_alloc.store(new_page);
+
+					while (!set_if_equal_weak(m_tail_for_consume, original_tail, new_page, std::memory_order_release))
+					{
+						std::this_thread::yield();
+					}			
 				}
 				else
 				{
 					std::this_thread::yield();
 				}
 			}
+
+			struct PushData
+			{
+				ControlBlock * m_control;
+				void * m_element;
+			};
+
+			static constexpr bool element_fits_in_a_page(size_t i_size, size_t i_alignment)
+			{
+				return i_size + i_alignment < ( VOID_ALLOCATOR::page_size - sizeof(ControlBlock) );
+			}
 			
+			/** This function begins a push, returning */
 			template <bool CAN_WAIT>
 				PushData begin_push(size_t i_size, size_t i_alignment)
 			{
@@ -100,8 +120,9 @@ namespace density
 					control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
 					new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
 										
-					auto const end_of_page = ( reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1) ) + 1;
+					auto const end_of_page = ( reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1) ) + 1;
 					auto const limit = reinterpret_cast<void*>(end_of_page - sizeof(ControlBlock) );
+					
 					if (tail > limit)
 					{
 						/* There is no place to allocate another ControlBlock after the new element. 
@@ -111,14 +132,15 @@ namespace density
 					}
 
 					// try to update m_tail_for_alloc
-					if (m_tail_for_alloc.compare_exchange_weak(original_tail, tail, std::memory_order_release))
+					if (set_if_equal_weak(m_tail_for_alloc, original_tail, tail, std::memory_order_release))
 					{
-						bool can_wait = CAN_WAIT;
-						if (!can_wait)
-						{
-							return PushData{ nullptr };
-						}
 						break;
+					}
+
+					bool can_wait = CAN_WAIT;
+					if (!can_wait)
+					{
+						return PushData{ nullptr };
 					}
 				}
 
@@ -135,7 +157,7 @@ namespace density
 					Note: we have not yet constructed neither the type object, nor the element. The caller will do after begin_push exits.
 					The next atomic operation needs at least the release semantic (consumers must see what 
 					we have written in control->m_next). */
-				while (!m_tail_for_consume.compare_exchange_weak(original_tail, tail, std::memory_order_acq_rel))
+				while (!set_if_equal_weak(m_tail_for_consume, original_tail, tail, std::memory_order_release))
 				{
 					// this can happen only if slower consumer thread allocate space in m_tail_for_alloc before a faster consumer thread
 					std::this_thread::yield();
@@ -155,13 +177,13 @@ namespace density
 				same time the exclusive access is removed (the first bit) */
 				i_control_block->m_next.fetch_xor(3, std::memory_order::memory_order_relaxed);
 
-				/** Consumers should see what we have done (while producers are not interested). Anyway, if they 
-					don't, no inconsistency occurs: soon or later they will see the change in i_control_block->m_next,
-					and they will understand that the element is ready to be consumed. So we have three options:
-					1) do nothing: consumers will see that the element can be consumed with a delay.
-					2) do an atomic operation to m_tail_for_consume with release semantic
-					3) put a memory fence
-					Let's do 2) by now. */
+				/** Consumers should see what we have done (while producers are not interested). Anyway, if they
+				don't, no inconsistency occurs: soon or later they will see the change in i_control_block->m_next,
+				and they will understand that the element is ready to be consumed. So we have three options:
+				1) do nothing: consumers will see that the element can be consumed with a delay.
+				2) do an atomic operation to m_tail_for_consume with release semantic
+				3) put a memory fence
+				Let's do 2) by now. */
 				m_tail_for_consume.fetch_add(0, std::memory_order::memory_order_release);
 			}
 
@@ -170,7 +192,7 @@ namespace density
 				DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next.load() & 3) == 1);
 
 				/* decrementing the size we allow the consumers to process this element (this is an atomic operation)
-					To do: this is a read-write operation. Make it a write-only op.
+				To do: this is a read-write operation. Make it a write-only op.
 				*/
 				DENSITY_TEST_RANDOM_WAIT();
 				i_push_data.m_control->m_next.fetch_sub(1, std::memory_order::memory_order_relaxed);
@@ -194,17 +216,19 @@ namespace density
 				auto good_head = head;
 				
 				unsigned skip_count = 0;
+				
 				for(;;)
 				{
 					// check if we have reached the end of the queue
-					if (reinterpret_cast<void*>(head) == m_tail_for_consume.load(std::memory_order_acquire))
+					auto const tail_for_consume = m_tail_for_consume.load(std::memory_order_acquire);
+					if (reinterpret_cast<void*>(head) == tail_for_consume)
 					{
 						m_head.store(good_head, std::memory_order_release);
 						return ConsumeData{ nullptr };
 					}
 
 					auto const control = reinterpret_cast<ControlBlock*>(head);
-					auto const dirt_next = control->m_next.fetch_or(1, std::memory_order_relaxed);
+					auto const dirt_next = control->m_next.fetch_or(1);
 					if ((dirt_next & 1) == 0)
 					{
 						// exclusive access
@@ -222,11 +246,13 @@ namespace density
 								DENSITY_ASSERT_INTERNAL( (dirt_next & 3) == 2 );
 
 								#if DENSITY_DEBUG_INTERNAL
-									control->m_next.store(37, std::memory_order_relaxed);
+									control->m_next.store(37);
 								#endif								
 								if (control->m_type.empty())
 								{
-									PAGE_ALLOCATOR::deallocate_page(reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment - 1)));
+									auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1));
+									DENSITY_ASSERT(is_address_aligned(page, VOID_ALLOCATOR::page_alignment));
+									VOID_ALLOCATOR::deallocate_page(page);
 								}
 								good_head = head = dirt_next - 2;
 								continue;
@@ -234,11 +260,11 @@ namespace density
 							else
 							{
 								// unlock
-								control->m_next.store(dirt_next, std::memory_order_relaxed);
+								control->m_next.store(dirt_next);
 							}
 						}
 					}
-
+					
 					// Move to the next element, which may be in another page
 					head = dirt_next & ~static_cast<uintptr_t>(3);
 					skip_count++;
@@ -261,7 +287,7 @@ namespace density
 			static bool are_same_page(void * i_first, void * i_second)
 			{
 				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
-					~static_cast<uintptr_t>(PAGE_ALLOCATOR::page_alignment)) == 0;
+					~static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1)) == 0;
 			}
 
 			static void * allocate(void * * io_ptr, size_t i_size)
