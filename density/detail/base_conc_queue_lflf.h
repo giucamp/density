@@ -14,10 +14,12 @@ namespace density
 {
 	namespace detail
 	{
+		/** This function is like compare_exchange_weak, but does not return the previous value of the atomic (so the
+			parameter i_expected is not a reference. */
 		template <typename TYPE>
-			DENSITY_STRONG_INLINE bool set_if_equal_weak(std::atomic<TYPE> & io_atomic, TYPE i_if_equal, TYPE i_set_to, std::memory_order i_memory_order)
+			DENSITY_STRONG_INLINE bool set_if_equal_weak(std::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, std::memory_order i_memory_order)
 		{
-			return io_atomic.compare_exchange_weak(i_if_equal, i_set_to, i_memory_order);
+			return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_memory_order);
 		}
 
 		template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
@@ -33,9 +35,10 @@ namespace density
 			{
 				std::atomic<uintptr_t> m_next; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
 										bit 0: exclusive access flag. The thread that succeeds in setting this flag has exclusive
-										access on the content of the element.
+										access on the content of the element. Other threads can always skip it.
 										bit 1: dead element flag. The content of the element is not valid: it has been consumed,
-										or the constructor threw an exception.
+										or the constructor threw an exception. Elements with this bit set don't require a the
+										destructor to be called.
 										The address of the next control block is given by:
 											m_next.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
 				RUNTIME_TYPE m_type; /** type of the element */
@@ -43,7 +46,7 @@ namespace density
 						
         public:
 
-			/** Constructor. At least one page in always alive */
+			// Constructor. At least one page in always alive
 			base_concurrent_heterogeneous_queue()
             {
 				auto const first_page = VOID_ALLOCATOR::allocate_page();
@@ -56,45 +59,15 @@ namespace density
 			base_concurrent_heterogeneous_queue(const base_concurrent_heterogeneous_queue&) = delete;
 			base_concurrent_heterogeneous_queue & operator = (const base_concurrent_heterogeneous_queue&) = delete;
 
-			struct ConsumeData
-			{
-				ControlBlock * m_control;
-			};
-
-			DENSITY_NO_INLINE void handle_end_of_page(void * i_tail)
-			{
-				/* The first thread that succeed in setting m_tail_for_alloc to last_byte is the one that allocates a new page.
-					It's very important to set m_tail_for_alloc to the last byte of the page and not to the end of the page, because
-					the latter is in another pages, and incoming producers would write out of the page.*/
-				auto last_byte = reinterpret_cast<uintptr_t>(i_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1);
-
-				auto original_tail = i_tail;
-				if (original_tail != reinterpret_cast<void*>(last_byte) &&
-					set_if_equal_weak(m_tail_for_alloc, original_tail, reinterpret_cast<void*>(last_byte), std::memory_order_acq_rel))
-				{
-					auto const new_page = VOID_ALLOCATOR::allocate_page();
-					DENSITY_ASSERT(is_address_aligned(new_page, VOID_ALLOCATOR::page_alignment));
-					auto control = static_cast<ControlBlock*>(i_tail);
-					new (&control->m_type) RUNTIME_TYPE();
-					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
-					
-					m_tail_for_alloc.store(new_page);
-
-					while (!set_if_equal_weak(m_tail_for_consume, original_tail, new_page, std::memory_order_release))
-					{
-						std::this_thread::yield();
-					}			
-				}
-				else
-				{
-					std::this_thread::yield();
-				}
-			}
-
 			struct PushData
 			{
 				ControlBlock * m_control;
 				void * m_element;
+
+				DENSITY_STRONG_INLINE void * element() const { return m_element; }
+
+				DENSITY_STRONG_INLINE const RUNTIME_TYPE & type() const
+					{ return m_control->m_type(); }
 			};
 
 			static constexpr bool element_fits_in_a_page(size_t i_size, size_t i_alignment)
@@ -102,7 +75,7 @@ namespace density
 				return i_size + i_alignment < ( VOID_ALLOCATOR::page_size - sizeof(ControlBlock) );
 			}
 			
-			/** This function begins a push, returning */
+			/** This function begins a push, returning a pointer to the element and a pointer*/
 			template <bool CAN_WAIT>
 				PushData begin_push(size_t i_size, size_t i_alignment)
 			{
@@ -137,6 +110,7 @@ namespace density
 						break;
 					}
 
+					// if you CAN_WAIT is false, we can't retry
 					bool can_wait = CAN_WAIT;
 					if (!can_wait)
 					{
@@ -169,6 +143,36 @@ namespace density
 				return PushData{control, new_element};
 			}
 
+			DENSITY_NO_INLINE void handle_end_of_page(void * i_tail)
+			{
+				/* The first thread that succeed in setting m_tail_for_alloc to last_byte is the one that allocates a new page.
+				It's very important to set m_tail_for_alloc to the last byte of the page and not to the end of the page, because
+				the latter is in another pages, and incoming producers would write out of the page.*/
+				auto last_byte = reinterpret_cast<uintptr_t>(i_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1);
+
+				auto original_tail = i_tail;
+				if (original_tail != reinterpret_cast<void*>(last_byte) &&
+					set_if_equal_weak(m_tail_for_alloc, original_tail, reinterpret_cast<void*>(last_byte), std::memory_order_acq_rel))
+				{
+					auto const new_page = VOID_ALLOCATOR::allocate_page();
+					DENSITY_ASSERT(is_address_aligned(new_page, VOID_ALLOCATOR::page_alignment));
+					auto control = static_cast<ControlBlock*>(i_tail);
+					new (&control->m_type) RUNTIME_TYPE();
+					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
+
+					m_tail_for_alloc.store(new_page);
+
+					while (!set_if_equal_weak(m_tail_for_consume, original_tail, new_page, std::memory_order_release))
+					{
+						std::this_thread::yield();
+					}
+				}
+				else
+				{
+					std::this_thread::yield();
+				}
+			}
+
 			void cancel_push(ControlBlock * i_control_block) noexcept
 			{
 				DENSITY_ASSERT_INTERNAL((i_control_block->m_next.load() & 3) == 1);
@@ -199,6 +203,23 @@ namespace density
 
 				m_tail_for_consume.fetch_add(0, std::memory_order::memory_order_release);
 			}
+
+			struct ConsumeData
+			{
+				ControlBlock * m_control;
+
+				DENSITY_STRONG_INLINE void * element() const
+				{ 
+					return address_upper_align(m_control + 1, m_control->m_type.alignment());
+				}
+
+				DENSITY_STRONG_INLINE void * element_unaligned() const { return m_control + 1; }
+
+				DENSITY_STRONG_INLINE const RUNTIME_TYPE & type() const
+				{
+					return m_control->m_type();
+				}
+			};
 
 			ConsumeData begin_consume() noexcept
 			{
