@@ -126,5 +126,8 @@
     <ClInclude Include="..\..\density\any.h">
       <Filter>density</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\density_config.h">
+      <Filter>density</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

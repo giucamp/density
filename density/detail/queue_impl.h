@@ -5,8 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "..\density_common.h"
-#include "..\runtime_type.h"
+#include <density/density_common.h>
+#include <density/runtime_type.h>
 
 namespace density
 {

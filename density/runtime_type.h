@@ -9,7 +9,7 @@
 #include <limits>
 #include <utility>
 #include <typeinfo>
-#include "density_common.h"
+#include <density/density_common.h>
 
 namespace density
 {
@@ -435,9 +435,9 @@ namespace density
                 static void * invoke(void * i_base_dest) noexcept
                 {
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
-					const auto derived = detail::down_cast<TYPE*>(base_dest);
-					derived->TYPE::~TYPE();
-					return derived;
+                    const auto derived = detail::down_cast<TYPE*>(base_dest);
+                    derived->TYPE::~TYPE();
+                    return derived;
                 }
                 static const uintptr_t value;
             };
@@ -858,12 +858,12 @@ namespace density
             The effect of this function is the same of this code:
                 @code
                     dynamic_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
-					return dynamic_cast<TARGET_TYPE*>(i_source);
+                    return dynamic_cast<TARGET_TYPE*>(i_source);
                 @endcode
             where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
 
-			@return pointer to the complete object that has been destroyed. This pointer can be used
-				to deallocate a memory block on the heap.
+            @return pointer to the complete object that has been destroyed. This pointer can be used
+                to deallocate a memory block on the heap.
 
             \n\b Requires:
                 - the feature type_features::destroy must be included in the FEATURE_LIST

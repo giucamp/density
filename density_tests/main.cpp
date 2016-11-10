@@ -6,8 +6,8 @@
 
 #include <iostream>
 #include <vector>
-#include "testity\test_tree.h"
-#include "testity\test_session.h"
+#include <testity/test_tree.h>
+#include <testity/test_session.h>
 
 namespace density_tests
 {
@@ -52,11 +52,11 @@ int main()
     add_lifo_array_benchmarks(test_tree["lifo"]);
     add_function_queue_benchmarks(test_tree["function_queue"]);
     add_allocator_benchmarks(test_tree["allocator"]);
-	add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
+    add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
 
-	////////////////////////
-	run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
-	////////////////////////
+    ////////////////////////
+    run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
+    ////////////////////////
 
     #ifdef NDEBUG
         auto const flags = TestFlags::PerformanceTests | TestFlags::FunctionalityTest;

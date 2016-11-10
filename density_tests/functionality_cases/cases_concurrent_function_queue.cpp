@@ -5,8 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 
-#include "../../density/concurrent_function_queue.h"
-#include "testity/test_tree.h"
+#include <density/concurrent_function_queue.h>
+#include <testity/test_tree.h>
 
 namespace density_tests
 {

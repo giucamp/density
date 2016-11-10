@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/runtime_type.h"
-#include "../density/heterogeneous_array.h"
+#include <density/runtime_type.h>
+#include <density/heterogeneous_array.h>
 #include <string>
 #include <iostream>
 

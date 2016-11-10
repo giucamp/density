@@ -4,9 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../../density/lifo.h"
-#include "testity/testity_common.h"
-#include "testity/test_tree.h"
+#include <density/lifo.h>
+#include <testity/testity_common.h>
+#include <testity/test_tree.h>
 #include <random>
 #include <vector>
 #include <algorithm>

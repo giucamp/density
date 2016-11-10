@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "testity/testity_common.h"
+#include <testity/testity_common.h>
 #include <random>
 #include <deque>
 #include <string>

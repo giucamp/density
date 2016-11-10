@@ -128,7 +128,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|Win32'">
@@ -136,7 +136,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -144,7 +144,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|x64'">
@@ -154,7 +154,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CLanguageStandard>Default</CLanguageStandard>
       <CppLanguageStandard>c++11</CppLanguageStandard>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -165,7 +165,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -180,7 +180,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -195,7 +195,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -211,7 +211,7 @@
       <SDLCheck>true</SDLCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CppLanguageStandard>c++11</CppLanguageStandard>
-      <AdditionalIncludeDirectories>..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -240,6 +240,7 @@
     <ClInclude Include="..\..\density\any.h" />
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h" />
     <ClInclude Include="..\..\density\detail\hazard_pointers.h" />
     <ClInclude Include="..\..\density\page_allocator.h" />

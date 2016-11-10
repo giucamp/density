@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "density_common.h"
+#include <density/density_common.h>
 
 #define DENSITY_POINTER_OVERFLOW_SAFE        1
 

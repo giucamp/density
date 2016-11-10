@@ -5,20 +5,15 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "density_common.h"
-#include "density_common.h"
-#include "runtime_type.h"
-#include "void_allocator.h"
-#include <mutex>
-#include <thread>
-#include <atomic>
-#include <list>
+#include <density/density_common.h>
+#include <density/runtime_type.h>
+#include <density/void_allocator.h>
 #include <random>
 
 inline size_t get_rand(size_t i_max)
 {
-	static thread_local std::mt19937 rand{ std::random_device()() };
-	return std::uniform_int_distribution<size_t>(0, i_max)(rand);
+    static thread_local std::mt19937 rand{ std::random_device()() };
+    return std::uniform_int_distribution<size_t>(0, i_max)(rand);
 }
 
 #define DENSITY_TEST_RANDOM_WAIT() //if(get_rand(7) == 3) { std::this_thread::sleep_for(std::chrono::nanoseconds(get_rand(65336) ) ); }
@@ -48,9 +43,9 @@ namespace density
     {
         constexpr size_t concurrent_alignment = 64;
 
-		template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE,
-			SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
-				class base_concurrent_heterogeneous_queue;
+        template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE,
+            SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
+                class base_concurrent_heterogeneous_queue;
     }
 }
 
@@ -58,8 +53,8 @@ namespace density
     #pragma warning(push)
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
 #endif
-#define DENSITY_INCLUDING_CONC_QUEUE_DETAIL	
-	#include "detail\base_conc_queue_lflf.h"
+#define DENSITY_INCLUDING_CONC_QUEUE_DETAIL
+    #include <density/detail\base_conc_queue_lflf.h>
 #undef DENSITY_INCLUDING_CONC_QUEUE_DETAIL
 #ifdef _MSC_VER
     #pragma warning(pop)
@@ -69,7 +64,7 @@ namespace density
 {
     namespace experimental
     {
-		/**
+        /**
             The queues always keep at least an allocated page. Therefore the constructor allocates a page. The reason is to allow
                 producer to assume that the page in which the push is tried (the last one) doesn't get deallocated while the push
                 is in progress.
@@ -77,15 +72,15 @@ namespace density
                 when no longer needed. Using the default (and recommended) allocator, deleted pages are added to a thread-local
                 free-list. When the number of pages in this free-list exceeds a fixed number, a page is added in a global lock-free
                 free-list. See void_allocator for details.
-                See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details. 
-				There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
-				*/
-		template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
-			SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
-			SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
-				class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
+                See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details.
+                There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
+                */
+        template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
+            SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
+            SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
+                class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
         {
-			using BaseClass = detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
+            using BaseClass = detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
 
         public:
 
@@ -99,88 +94,88 @@ namespace density
             using value_type = ELEMENT;
             using reference = typename std::add_lvalue_reference< ELEMENT >::type;
             using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
-			static constexpr SynchronizationKind push_sync = PUSH_SYNC;
-			static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
-			
-			static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size, 
-					"The size and alignment of the pages must be the same (and not too small)");
+            static constexpr SynchronizationKind push_sync = PUSH_SYNC;
+            static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
 
-			template <typename ELEMENT_COMPLETE_TYPE>
-				DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
+            static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size,
+                    "The size and alignment of the pages must be the same (and not too small)");
+
+            template <typename ELEMENT_COMPLETE_TYPE>
+                DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
             {
-				using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-				
-				emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
+
+                emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
             }
 
-			template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-				void emplace(CONSTRUCTION_PARAMS &&... i_args)
-			{
-				static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, ELEMENT*>::value,
-					"ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
+            template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
+                void emplace(CONSTRUCTION_PARAMS &&... i_args)
+            {
+                static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, ELEMENT*>::value,
+                    "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
 
-				auto push_data = BaseClass:: template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
-				
-				try
-				{
-					// construct the type
-					new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
-				}
-				catch (...)
-				{
-					// this call release the exclusive access and set the dead flag 
-					BaseClass::cancel_push(push_data.m_control);
+                auto push_data = BaseClass:: template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
 
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
+                try
+                {
+                    // construct the type
+                    new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
+                }
+                catch (...)
+                {
+                    // this call release the exclusive access and set the dead flag
+                    BaseClass::cancel_push(push_data.m_control);
 
-				try
-				{
-					// construct the element
-					new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
-				}
-				catch (...)
-				{
-					// destroy the type (which is probably a no-operation)
-					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
+                    // the exception is propagated to the caller, whatever it is
+                    throw;
+                }
 
-					// this call release the exclusive access and set the dead flag
-					BaseClass::cancel_push(push_data.m_control);
-					
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
+                try
+                {
+                    // construct the element
+                    new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+                }
+                catch (...)
+                {
+                    // destroy the type (which is probably a no-operation)
+                    push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
 
-				BaseClass::commit_push(push_data);
-			}
+                    // this call release the exclusive access and set the dead flag
+                    BaseClass::cancel_push(push_data.m_control);
 
-			template <typename CONSUMER_FUNC>
-				bool try_consume(CONSUMER_FUNC && i_consumer_func)
-			{
-				auto consume_data = BaseClass::begin_consume();
-				if (consume_data.m_control != nullptr)
-				{
-					auto const type = &consume_data.m_control->m_type;
-					auto const element = consume_data.m_control + 1;
-					i_consumer_func(*type, element);
-					type->destroy(element);
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-					BaseClass::commit_consume(consume_data);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
+                    // the exception is propagated to the caller, whatever it is
+                    throw;
+                }
+
+                BaseClass::commit_push(push_data);
+            }
+
+            template <typename CONSUMER_FUNC>
+                bool try_consume(CONSUMER_FUNC && i_consumer_func)
+            {
+                auto consume_data = BaseClass::begin_consume();
+                if (consume_data.m_control != nullptr)
+                {
+                    auto const type = &consume_data.m_control->m_type;
+                    auto const element = consume_data.m_control + 1;
+                    i_consumer_func(*type, element);
+                    type->destroy(element);
+                    type->RUNTIME_TYPE::~RUNTIME_TYPE();
+                    BaseClass::commit_consume(consume_data);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
             /** Returns a copy of the allocator instance owned by the queue.
                 \n\b Throws: anything that the copy-constructor of the allocator throws
                 \n\b Complexity: constant */
             allocator_type get_allocator() const
             {
-				return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<VOID_ALLOCATOR*>(this);
             }
 
             /** Returns a reference to the allocator instance owned by the queue.
@@ -188,7 +183,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type & get_allocator_ref() noexcept
             {
-				return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<VOID_ALLOCATOR*>(this);
             }
 
             /** Returns a const reference to the allocator instance owned by the queue.
@@ -196,7 +191,7 @@ namespace density
                 \n\b Complexity: constant */
             const allocator_type & get_allocator_ref() const noexcept
             {
-				return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<VOID_ALLOCATOR*>(this);
             }
         };
 

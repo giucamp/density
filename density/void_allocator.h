@@ -6,7 +6,7 @@
 
 #pragma once
 #include <cstdlib> // for std::max_align_t
-#include "density_common.h"
+#include <density/density_common.h>
 #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
     #include <mutex>
     #include <unordered_set>
@@ -143,14 +143,14 @@ namespace density
     {
     public:
 
-		/** Size (in bytes) of a memory page. */
-		static constexpr size_t page_size = 4096;
+        /** Size (in bytes) of a memory page. */
+        static constexpr size_t page_size = 4096;
 
-		/** Alignment (in bytes) of a memory page. */
-		static constexpr size_t page_alignment = page_size;
+        /** Alignment (in bytes) of a memory page. */
+        static constexpr size_t page_alignment = page_size;
 
-		/** Maximum number of free page that a thread can cache */
-		static const size_t free_page_cache_size = 4;
+        /** Maximum number of free page that a thread can cache */
+        static const size_t free_page_cache_size = 4;
 
         void_allocator() noexcept = default;
         void_allocator(const void_allocator&) noexcept = default;
@@ -193,8 +193,8 @@ namespace density
                 user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
                 AlignmentHeader & header = *(static_cast<AlignmentHeader*>(user_block) - 1);
                 header.m_block = complete_block;
-				DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
-					address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+                DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
+                    address_add(user_block, i_size) <= address_add(complete_block, actual_size));
             }
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_block(user_block, i_size, i_alignment);
@@ -218,9 +218,9 @@ namespace density
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-			////////////////
-			memset(i_block, 0xb0, 128);
-			////////////////
+            ////////////////
+            memset(i_block, 0xb0, 128);
+            ////////////////
 
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_block(i_block, i_size, i_alignment);
@@ -265,7 +265,7 @@ namespace density
             {
                 page = allocate_page_impl();
             }*/
-			auto page = allocate_page_impl();
+            auto page = allocate_page_impl();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
@@ -293,7 +293,7 @@ namespace density
                 deallocate_page_impl(i_page);
             }*/
 
-			deallocate_page_impl(i_page);
+            deallocate_page_impl(i_page);
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
@@ -306,42 +306,42 @@ namespace density
         bool operator != (const void_allocator &) const noexcept
             { return false; }
 
-		/** Allocates and constructs an object. The alignment of the object is always respected. 
-				@param i_construction_params argument list to be forwarded to the constructor of the object.
-				@return a pointer to the new object
+        /** Allocates and constructs an object. The alignment of the object is always respected.
+                @param i_construction_params argument list to be forwarded to the constructor of the object.
+                @return a pointer to the new object
 
-			Objects created by new_object must be deleted by delete_object. Using the language builtin delete on an object 
-			created by new_object causes undefined behavior. Since all void_allocator objects compares equal, an instance of
-			void_allocator can delete an object created by another instance.
-		*/
-		template <typename TYPE, typename... CONSTRUCTION_PARAMS>
-			TYPE * new_object(CONSTRUCTION_PARAMS && ... i_construction_params)
-		{
-			return new(allocate(sizeof(TYPE), alignof(TYPE))) TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
-		}
+            Objects created by new_object must be deleted by delete_object. Using the language builtin delete on an object
+            created by new_object causes undefined behavior. Since all void_allocator objects compares equal, an instance of
+            void_allocator can delete an object created by another instance.
+        */
+        template <typename TYPE, typename... CONSTRUCTION_PARAMS>
+            TYPE * new_object(CONSTRUCTION_PARAMS && ... i_construction_params)
+        {
+            return new(allocate(sizeof(TYPE), alignof(TYPE))) TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+        }
 
-		/** Deletes an object created with new_object*/
-		template <typename TYPE>
-			void delete_object(TYPE * i_object) noexcept
-		{
-			if (i_object != nullptr)
-			{
-				i_object->~TYPE();
-				deallocate(i_object, sizeof(TYPE), alignof(TYPE));
-			}
-		}
+        /** Deletes an object created with new_object*/
+        template <typename TYPE>
+            void delete_object(TYPE * i_object) noexcept
+        {
+            if (i_object != nullptr)
+            {
+                i_object->~TYPE();
+                deallocate(i_object, sizeof(TYPE), alignof(TYPE));
+            }
+        }
 
 
     ///////////////////private:
 
         void * allocate_page_impl()
         {
-			return allocate(page_size, page_alignment);
+            return allocate(page_size, page_alignment);
         }
 
         void deallocate_page_impl(void * i_page) noexcept
         {
-			return deallocate(i_page, page_size, page_alignment);
+            return deallocate(i_page, page_size, page_alignment);
         }
 
         struct AlignmentHeader
@@ -356,7 +356,7 @@ namespace density
 
                 void add_page(void * i_page)
                 {
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
                         try
@@ -375,7 +375,7 @@ namespace density
 
                 void remove_page(void * i_page) noexcept
                 {
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    std::lock_guard<sync::mutex> lock(m_mutex);
                     auto const removed = m_pages.erase(i_page);
                     if (m_enable)
                     {
@@ -385,7 +385,7 @@ namespace density
 
                 void add_block(void * i_block, size_t i_size, size_t i_alignment)
                 {
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
                         try
@@ -404,7 +404,7 @@ namespace density
 
                 void remove_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
                 {
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
                         auto const it = m_blocks.find(i_block);
@@ -416,7 +416,7 @@ namespace density
 
                 void check_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
                 {
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
                         auto const it = m_blocks.find(i_block);
@@ -440,7 +440,7 @@ namespace density
                 };
 
             private:
-                std::mutex m_mutex;
+                sync::mutex m_mutex;
                 std::unordered_set<void*> m_pages;
                 std::unordered_map<void*, BlockInfo> m_blocks;
                 bool m_enable = true;

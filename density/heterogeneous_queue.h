@@ -5,9 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "density_common.h"
-#include "void_allocator.h"
-#include "detail\queue_impl.h"
+#include <density/density_common.h>
+#include <density/void_allocator.h>
+#include <density/detail/queue_impl.h>
 
 namespace density
 {

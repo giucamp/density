@@ -4,10 +4,10 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../../density/heterogeneous_array.h"
-#include "testity/testity_common.h"
-#include "testity/test_tree.h"
-#include "testity/test_classes.h"
+#include <density/heterogeneous_array.h>
+#include <testity/testity_common.h>
+#include <testity/test_tree.h>
+#include <testity/test_classes.h>
 #include "shadow_container.h"
 #include "test_allocators.h"
 #include <algorithm>

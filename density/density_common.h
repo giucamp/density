@@ -5,7 +5,6 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <assert.h>
 #include <type_traits>
 #include <ostream>
 #include <limits>
@@ -19,49 +18,7 @@
             are required to be static constexpr variables.
 */
 
-#if !defined(NDEBUG)
-    #define DENSITY_DEBUG                    1
-    #define DENSITY_DEBUG_INTERNAL           1
-#else
-    #define DENSITY_DEBUG                    0
-    #define DENSITY_DEBUG_INTERNAL           0
-#endif
-
-#if DENSITY_DEBUG
-	#ifdef _MSC_VER
-		#define DENSITY_ASSERT(bool_expr)              if(!(bool_expr)) { __debugbreak(); } else (void)0
-	#else
-		#define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
-	#endif
-#else
-    #define DENSITY_ASSERT(bool_expr)
-#endif
-
-#if DENSITY_DEBUG_INTERNAL
-    #define DENSITY_ASSERT_INTERNAL(bool_expr)     DENSITY_ASSERT((bool_expr))
-#else
-    #define DENSITY_ASSERT_INTERNAL(bool_expr)
-#endif
-
-#define DENSITY_HANDLE_EXCEPTIONS                  1
-
-#define DENSITY_CONCURRENT_DATA_ALIGNMENT          64
-
-#ifdef _MSC_VER
-    #define DENSITY_NO_INLINE                    __declspec(noinline)
-    #define DENSITY_STRONG_INLINE                //__forceinline
-#else
-    #define DENSITY_NO_INLINE
-    #define DENSITY_STRONG_INLINE
-#endif
-
-#define DENSITY_COMPATCT_QUEUE                   1
-
-#if defined(__GNUC__) && defined(__MINGW32__)
-    #define DENSITY_ENV_HAS_THREADING                   0
-#else
-    #define DENSITY_ENV_HAS_THREADING                   1
-#endif
+#include <density/density_config.h>
 
 namespace density
 {
@@ -80,14 +37,14 @@ namespace density
             inline static type apply(void * /*i_ptr*/) {}
         };
 
-		// size_min: avoid including <algorithm> just to use std::min<size_t>
-		constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
-		{
-			return i_first < i_second ? i_first : i_second;
-		}
+        // size_min: avoid including <algorithm> just to use std::min<size_t>
+        constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
+        {
+            return i_first < i_second ? i_first : i_second;
+        }
 
         // size_max: avoid including <algorithm> just to use std::max<size_t>
-		constexpr inline size_t size_max(size_t i_first, size_t i_second) noexcept
+        constexpr inline size_t size_max(size_t i_first, size_t i_second) noexcept
         {
             return i_first > i_second ? i_first : i_second;
         }

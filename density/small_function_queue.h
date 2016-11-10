@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "small_heterogeneous_queue.h"
+#include <density/small_heterogeneous_queue.h>
 
 namespace density
 {

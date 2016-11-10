@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/runtime_type.h"
-#include "../density/lifo.h"
+#include <density/runtime_type.h>
+#include <density/lifo.h>
 #include <iostream>
 #include <string>
 

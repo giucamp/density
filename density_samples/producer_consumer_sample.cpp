@@ -4,9 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "../density/small_function_queue.h"
-#include "../density/function_queue.h"
-#include "../density/lifo.h"
+#include <density/small_function_queue.h>
+#include <density/function_queue.h>
+#include <density/lifo.h>
 #include <string>
 #include <thread>
 #include <mutex>
