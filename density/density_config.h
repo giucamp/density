@@ -68,6 +68,12 @@ namespace density
         using std::lock_guard;
         using std::atomic;
         namespace this_thread = std::this_thread;
+
+		constexpr std::memory_order hint_memory_order_relaxed = std::memory_order_relaxed;
+		constexpr std::memory_order hint_memory_order_acquire = std::memory_order_acquire;
+		constexpr std::memory_order hint_memory_order_release = std::memory_order_release;
+		constexpr std::memory_order hint_memory_order_acq_rel = std::memory_order_acq_rel;
+		constexpr std::memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
     }
 }
 

@@ -122,6 +122,68 @@ namespace density
         void_allocator models the PagedAllocator concept.
     */
 
+	namespace detail
+	{
+		class FreePageStack
+		{
+			struct Entry
+			{
+				uintptr_t m_next;
+			};
+
+		public:
+
+			static constexpr size_t min_page_size = sizeof(Entry);
+
+			FreePageStack(const FreePageStack &) = delete;
+
+			FreePageStack & operator = (const FreePageStack &) = delete;
+
+			FreePageStack()
+				: m_first(0)
+			{
+			}
+
+			void push(void * i_page) noexcept
+			{
+				auto const new_entry = static_cast<Entry*>(i_page);
+
+				uintptr_t first;
+				do {
+					first = m_first.fetch_or(1, sync::hint_memory_order_acquire);
+				} while (first & 1);
+
+				new_entry->m_next = first;
+
+				m_first.store(reinterpret_cast<uintptr_t>(new_entry), sync::hint_memory_order_release);
+			}
+
+			void * pop() noexcept
+			{
+				uintptr_t first;
+				do {
+					first = m_first.fetch_or(1, sync::hint_memory_order_acquire);
+				} while (first & 1);
+
+				auto new_page = reinterpret_cast<Entry*>(first);
+				if (new_page)
+				{
+					m_first.store(new_page->m_next, sync::hint_memory_order_release);
+					return new_page;
+				}
+				else
+				{
+					m_first.store(0, sync::hint_memory_order_release);
+					return nullptr;
+				}
+			}
+
+		private:
+			sync::atomic<uintptr_t> m_first;
+		};	
+
+	} // namespace detail
+
     /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 

@@ -243,7 +243,6 @@
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h" />
     <ClInclude Include="..\..\density\detail\hazard_pointers.h" />
-    <ClInclude Include="..\..\density\page_allocator.h" />
     <ClInclude Include="..\..\density\small_function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_array.h" />
     <ClInclude Include="..\..\density\small_heterogeneous_queue.h" />

@@ -117,9 +117,6 @@
     <ClInclude Include="..\..\density\detail\hazard_pointers.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\page_allocator.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
