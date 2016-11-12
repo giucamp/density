@@ -18,6 +18,7 @@ namespace density_tests
     void add_lifo_cases(TestTree & i_dest);
     void add_queue_cases(TestTree & i_dest);
     void add_function_queue_benchmarks(TestTree & i_dest);
+	void add_any_cases(TestTree & i_dest);
 
     // benchmarks
     void add_lifo_array_benchmarks(TestTree & i_dest);
@@ -25,7 +26,7 @@ namespace density_tests
     void add_allocator_benchmarks(TestTree & i_dest);
 
     void add_concurrent_function_queue_cases(TestTree & i_dest);
-    void tets_concurrent_function_queue(std::mt19937 &);
+    void test_concurrent_function_queue(std::mt19937 &);
 
     void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest);
 }
@@ -52,9 +53,11 @@ int main()
     add_lifo_array_benchmarks(test_tree["lifo"]);
     add_function_queue_benchmarks(test_tree["function_queue"]);
     add_allocator_benchmarks(test_tree["allocator"]);
-    add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
+    add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);	
+	add_any_cases(test_tree["any"]);
 
     ////////////////////////
+	run_session(test_tree["any"], TestFlags::FunctionalityTest);
     run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
     ////////////////////////
 

@@ -16,7 +16,7 @@ namespace density
     {
         /** This function is like compare_exchange_weak, but does not return the previous value of the atomic (so the
 			parameter i_expected is not a reference. 
-			The signature of compare_exchange_weak is fine for classic lockless algorithms, but here we are not interested 
+			The imterface of compare_exchange_weak is fine for classic lockless algorithms, but here we are not interested 
 			on the previous value of the atomic variable. */
         template <typename TYPE>
             DENSITY_STRONG_INLINE bool compare_and_set(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, std::memory_order i_memory_order) noexcept

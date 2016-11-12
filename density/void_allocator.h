@@ -280,10 +280,6 @@ namespace density
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-            ////////////////
-            memset(i_block, 0xb0, 128);
-            ////////////////
-
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().remove_block(i_block, i_size, i_alignment);
             #endif
@@ -394,7 +390,7 @@ namespace density
         }
 
 
-    ///////////////////private:
+    private:
 
         void * allocate_page_impl()
         {

@@ -69,11 +69,22 @@ namespace density
         using std::atomic;
         namespace this_thread = std::this_thread;
 
-		constexpr std::memory_order hint_memory_order_relaxed = std::memory_order_relaxed;
-		constexpr std::memory_order hint_memory_order_acquire = std::memory_order_acquire;
-		constexpr std::memory_order hint_memory_order_release = std::memory_order_release;
-		constexpr std::memory_order hint_memory_order_acq_rel = std::memory_order_acq_rel;
-		constexpr std::memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
+		/* concurrent data structures has been tested on x86-x64, but not on architectures with weak
+			memory ordering. If you are willing to contribute to density, running the tests on other
+			architectures, you can change these constants. */
+		#if defined(_M_IX86) || defined(_M_X64)
+			constexpr std::memory_order hint_memory_order_relaxed = std::memory_order_relaxed;
+			constexpr std::memory_order hint_memory_order_acquire = std::memory_order_acquire;
+			constexpr std::memory_order hint_memory_order_release = std::memory_order_release;
+			constexpr std::memory_order hint_memory_order_acq_rel = std::memory_order_acq_rel;
+			constexpr std::memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
+		#else
+			constexpr std::memory_order hint_memory_order_relaxed = std::memory_order_seq_cst;
+			constexpr std::memory_order hint_memory_order_acquire = std::memory_order_seq_cst;
+			constexpr std::memory_order hint_memory_order_release = std::memory_order_seq_cst;
+			constexpr std::memory_order hint_memory_order_acq_rel = std::memory_order_seq_cst;
+			constexpr std::memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
+		#endif
     }
 }
 
