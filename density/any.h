@@ -18,9 +18,17 @@ namespace density
     {
     public:
 
+		using common_type = COMMON_TYPE;
         using allocator_type = VOID_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
 
+		/** Creates an any bound to an instance of TYPE, constructing it in place with the provided construction arguments.
+				@param i_args construction arguments to forward to the constructor of TYPE
+				@return an instance of any bound to an instance of TYPE
+			\n\b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).		
+		Example:
+			\snippet misc_samples.cpp any make example 1 */
 		template <typename TYPE, typename ... CONSTRUCTION_ARGS>
             static any make(CONSTRUCTION_ARGS && ...i_args)
         {
@@ -41,15 +49,72 @@ namespace density
 			}
         }
 
-		/**
-			Throws: anything the default constructor of the allocator throws.
-		*/
+		/** Creates an any bound to an instance of TYPE, constructing it in place with the provided construction arguments.
+				@param i_allocator source to use to copy-construct the allocator of the result
+				@param i_args construction arguments to forward to the constructor of TYPE
+				@return an instance of any bound to an instance of TYPE
+			\n\b Throws: unspecified
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects).		
+		Example:
+			\snippet misc_samples.cpp any make example 2 */
+		template <typename TYPE, typename ... CONSTRUCTION_ARGS>
+            static any make_with_alloc(const allocator_type & i_allocator, CONSTRUCTION_ARGS && ...i_args)
+        {
+			auto allocator = i_allocator;
+			auto const memory_block = allocator.allocate(sizeof(TYPE), alignof(TYPE));
+			try
+			{
+				COMMON_TYPE * const object = new(memory_block) TYPE(std::forward<CONSTRUCTION_ARGS>(i_args)...);
+				return any(
+					object,
+					RUNTIME_TYPE::template make<TYPE>(),
+					std::move(allocator));
+			}
+			catch (...)
+			{
+				allocator.deallocate(memory_block, sizeof(TYPE), alignof(TYPE));
+				throw;
+			}
+        }
+
+		/** Creates an any bound to an instance of TYPE, constructing it in place with the provided construction arguments.
+				@param i_allocator source to use to move-construct the allocator of the result
+				@param i_args construction arguments to forward to the constructor of TYPE
+				@return an instance of any bound to an instance of TYPE
+			\n\b Throws: unspecified
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+		Example:
+			\snippet misc_samples.cpp any make example 3 */
+		template <typename TYPE, typename ... CONSTRUCTION_ARGS>
+            static any make_with_alloc(allocator_type && i_allocator, CONSTRUCTION_ARGS && ...i_args)
+        {
+			auto const memory_block = i_allocator.allocate(sizeof(TYPE), alignof(TYPE));
+			try
+			{
+				COMMON_TYPE * const object = new(memory_block) TYPE(std::forward<CONSTRUCTION_ARGS>(i_args)...);
+				return any(
+					object,
+					RUNTIME_TYPE::template make<TYPE>(),
+					std::move(i_allocator));
+			}
+			catch (...)
+			{
+				i_allocator.deallocate(memory_block, sizeof(TYPE), alignof(TYPE));
+				throw;
+			}
+        }
+
+		/** Default constructor. A default constructed any is empty.
+			\n\b Throws: anything the default constructor of the allocator throws.
+			\n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
         any()
             : m_object(nullptr)
         {
         }
 
-		/** Copy constructor */
+		/** Copy constructor. The constructed any is bound to a copy of the object bound to source.st
+			\n\b Throws: anything the default constructor of the allocator throws.
+			\n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
         any(const any & i_source)
             : VOID_ALLOCATOR(static_cast<const VOID_ALLOCATOR&>(i_source)), m_type(i_source.m_type)
         {
@@ -140,7 +205,7 @@ namespace density
 			return m_object == nullptr;
 		}
 
-		COMMON_TYPE * object() const noexcept
+		COMMON_TYPE * object_ptr() const noexcept
 		{
 			return m_object;
 		}

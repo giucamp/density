@@ -6,8 +6,10 @@
 
 #include <density/runtime_type.h>
 #include <density/heterogeneous_array.h>
+#include <density/any.h>
 #include <string>
 #include <iostream>
+#include <vector>
 
 namespace misc_samples
 {
@@ -142,23 +144,23 @@ namespace misc_samples
 
         {
             //! [heterogeneous_array example 1]
-            using namespace density;
-            const auto list = heterogeneous_array<>::make(1, std::string("abc"), 2.5);
+using namespace density;
+const auto list = heterogeneous_array<>::make(1, std::string("abc"), 2.5);
 
-            struct Base {};
-            struct Derived1 : Base {};
-            struct Derived2 : Base {};
-            const auto list1 = heterogeneous_array<Base>::make(Derived1(), Derived2(), Derived1());
+struct Base {};
+struct Derived1 : Base {};
+struct Derived2 : Base {};
+const auto list1 = heterogeneous_array<Base>::make(Derived1(), Derived2(), Derived1());
             //! [heterogeneous_array example 1]
         }
 
         {
             //! [heterogeneous_array example 2]
-            using namespace density;
-            struct Base {};
-            struct Derived1 : Base {};
-            struct Derived2 : Base {};
-            const auto list = heterogeneous_array<Base>::make_with_alloc(void_allocator(), Derived1(), Derived2(), Derived1());
+using namespace density;
+struct Base {};
+struct Derived1 : Base {};
+struct Derived2 : Base {};
+const auto list = heterogeneous_array<Base>::make_with_alloc(void_allocator(), Derived1(), Derived2(), Derived1());
             //! [heterogeneous_array example 2]
         }
 
@@ -166,34 +168,63 @@ namespace misc_samples
 
         {
             //! [heterogeneous_array example 3]
-            using namespace density;
-            using namespace std;
-            auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
-            list.push_front(wstring(L"ABC"));
-            for (auto it = list.begin(); it != list.end(); it++)
-            {
-                cout << it.complete_type().type_info().name() << endl;
-            }
+using namespace density;
+using namespace std;
+auto list = heterogeneous_array<>::make(3 + 5, string("abc"), 42.f);
+list.push_front(wstring(L"ABC"));
+for (auto it = list.begin(); it != list.end(); it++)
+{
+cout << it.complete_type().type_info().name() << endl;
+}
             //! [heterogeneous_array example 3]
         }
 
         {
             //! [heterogeneous_array example 4]
-            using namespace density;
+using namespace density;
 
-            struct Widget { virtual void draw() { /* ... */ } };
-            struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
-            struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
+struct Widget { virtual void draw() { /* ... */ } };
+struct TextWidget : Widget { virtual void draw() override { /* ... */ } };
+struct ImageWidget : Widget { virtual void draw() override { /* ... */ } };
 
-            auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
-            for (auto & widget : widgets)
-            {
-                widget.draw();
-            }
+auto widgets = heterogeneous_array<Widget>::make(TextWidget(), ImageWidget(), TextWidget());
+for (auto & widget : widgets)
+{
+widget.draw();
+}
 
-            widgets.push_back(TextWidget());
+widgets.push_back(TextWidget());
             //! [heterogeneous_array example 4]
         }
+
+		{
+			//! [any make example 1]
+using Any = density::any<>;
+auto a_zero = Any::make<int>();
+auto a_one = Any::make<int>(1);
+auto ten_numbers = Any::make<std::vector<double>>(0.42, 10);
+			//! [any make example 1]
+		}
+
+		{
+			//! [any make example 2]
+using Any = density::any<>;
+Any::allocator_type allocator;
+auto a_zero = Any::make_with_alloc<int>(allocator);
+auto a_one = Any::make_with_alloc<int>(allocator, 1);
+auto ten_numbers = Any::make_with_alloc<std::vector<double>>(allocator, 0.42, 10);
+			//! [any make example 2]
+		}
+
+		{
+			//! [any make example 3]
+using Allocator = density::void_allocator;
+using Any = density::any<void, Allocator>;
+auto a_zero = Any::make_with_alloc<int>(Allocator());
+auto a_one = Any::make_with_alloc<int>(Allocator(), 1);
+auto ten_numbers = Any::make_with_alloc<std::vector<double>>(Allocator(), 0.42, 10);
+			//! [any make example 3]
+		}
     }
 } // namespace misc_samples
 
