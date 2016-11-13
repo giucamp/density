@@ -459,6 +459,7 @@ namespace density
             {
                 static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
                 {
+                    DENSITY_ASSERT(i_first_base_object != nullptr && i_second_base_object != nullptr);
                     auto const base_first = static_cast<const BASE*>(i_first_base_object);
                     auto const base_second = static_cast<const BASE*>(i_second_base_object);
                     auto const complete_first = detail::down_cast<const TYPE*>(base_first);
@@ -486,6 +487,7 @@ namespace density
             {
                 static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
                 {
+                    DENSITY_ASSERT(i_first_base_object != nullptr && i_second_base_object != nullptr);
                     auto const base_first = static_cast<const BASE*>(i_first_base_object);
                     auto const base_second = static_cast<const BASE*>(i_second_base_object);
                     auto const complete_first = detail::down_cast<const TYPE*>(base_first);
@@ -700,7 +702,8 @@ namespace density
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior. */
-        runtime_type() noexcept = default;
+        runtime_type() noexcept
+            : m_table(nullptr) { }
 
         /** Move-constructs a runtime_type */
         runtime_type(runtime_type && ) noexcept = default;

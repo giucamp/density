@@ -100,21 +100,21 @@ namespace density
             static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size,
                     "The size and alignment of the pages must be the same (and not too small)");
 
-			/** Adds an element at the end of the queue. The operation may require the allocation of a new page.
-				@param i_source object to be used as source to construct of new element.
-					- If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
-					- If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+            /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
+                @param i_source object to be used as source to construct of new element.
+                    - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+                    - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
-				\n\b Requires:
-					- the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
-					- an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
-					- an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
-						(this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
-						base of ELEMENT_COMPLETE_TYPE).
+                \n\b Requires:
+                    - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                    - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
+                    - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
+                        (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
+                        base of ELEMENT_COMPLETE_TYPE).
 
-				\n\b Throws: anything that the constructor of the new element throws
-				\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-				\n\b Complexity: constant */
+                \n\b Throws: anything that the constructor of the new element throws
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+                \n\b Complexity: constant */
             template <typename ELEMENT_COMPLETE_TYPE>
                 DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
             {

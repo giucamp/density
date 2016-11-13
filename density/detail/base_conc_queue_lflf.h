@@ -15,16 +15,16 @@ namespace density
     namespace detail
     {
         /** This function is like compare_exchange_weak, but does not return the previous value of the atomic (so the
-			parameter i_expected is not a reference. 
-			The imterface of compare_exchange_weak is fine for classic lockless algorithms, but here we are not interested 
-			on the previous value of the atomic variable. */
+            parameter i_expected is not a reference.
+            The imterface of compare_exchange_weak is fine for classic lockless algorithms, but here we are not interested
+            on the previous value of the atomic variable. */
         template <typename TYPE>
             DENSITY_STRONG_INLINE bool compare_and_set(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, std::memory_order i_memory_order) noexcept
         {
             return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_memory_order);
         }
 
-		template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
+        template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
             class base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE,
                 SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : public VOID_ALLOCATOR
         {
@@ -98,8 +98,8 @@ namespace density
                     control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
                     new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
 
-					/* Check for end of page. We need to make sure that not only the ControlBlock and the element fit in the page,
-						but also an extra ControlBlock, that eventually we use as link to the next page. */
+                    /* Check for end of page. We need to make sure that not only the ControlBlock and the element fit in the page,
+                        but also an extra ControlBlock, that eventually we use as link to the next page. */
                     auto const end_of_page = ( reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1) ) + 1;
                     auto const limit = reinterpret_cast<void*>(end_of_page - sizeof(ControlBlock) );
                     if (tail > limit)
@@ -152,38 +152,38 @@ namespace density
             DENSITY_NO_INLINE void handle_end_of_page(void * const i_original_tail)
             {
                 /* The first thread that succeed in setting m_tail_for_alloc to last_byte is the one that allocates a new page.
-					It's very important to set m_tail_for_alloc to the last byte of the page and not to the end of the page, because
-					the latter is in another pages, and incoming producers go beyond the page.*/
+                    It's very important to set m_tail_for_alloc to the last byte of the page and not to the end of the page, because
+                    the latter is in another pages, and incoming producers go beyond the page.*/
                 auto const last_byte = reinterpret_cast<uintptr_t>(i_original_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1);
                 if (i_original_tail != reinterpret_cast<void*>(last_byte) &&
                     compare_and_set(m_tail_for_alloc, i_original_tail, reinterpret_cast<void*>(last_byte), sync::hint_memory_order_acq_rel))
                 {
-					void * new_page;
-					try
-					{
-						// allocate the page - this may throw
-						new_page = VOID_ALLOCATOR::allocate_page();
-						DENSITY_ASSERT(is_address_aligned(new_page, VOID_ALLOCATOR::page_alignment));
-					} 
-					catch (...)
-					{
-						DENSITY_ASSERT(m_tail_for_alloc.load() == i_original_tail);
-						m_tail_for_alloc.store(i_original_tail);
-						throw;
-					}
-					// from now on nothing can throw
+                    void * new_page;
+                    try
+                    {
+                        // allocate the page - this may throw
+                        new_page = VOID_ALLOCATOR::allocate_page();
+                        DENSITY_ASSERT(is_address_aligned(new_page, VOID_ALLOCATOR::page_alignment));
+                    }
+                    catch (...)
+                    {
+                        DENSITY_ASSERT(m_tail_for_alloc.load() == i_original_tail);
+                        m_tail_for_alloc.store(i_original_tail);
+                        throw;
+                    }
+                    // from now on nothing can throw
 
-					// setup a ControlBox with the dead flag
-					auto const control = static_cast<ControlBlock*>(i_original_tail);
-					new (&control->m_type) RUNTIME_TYPE();
-					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
+                    // setup a ControlBox with the dead flag
+                    auto const control = static_cast<ControlBlock*>(i_original_tail);
+                    new (&control->m_type) RUNTIME_TYPE();
+                    control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
 
-					// now we can move the tail to the next page
-					m_tail_for_alloc.store(new_page);
-					while (!compare_and_set(m_tail_for_consume, i_original_tail, new_page, sync::hint_memory_order_release))
-					{
-						std::this_thread::yield();
-					}
+                    // now we can move the tail to the next page
+                    m_tail_for_alloc.store(new_page);
+                    while (!compare_and_set(m_tail_for_consume, i_original_tail, new_page, sync::hint_memory_order_release))
+                    {
+                        std::this_thread::yield();
+                    }
                 }
                 else
                 {
@@ -194,26 +194,26 @@ namespace density
             void cancel_push(ControlBlock * i_control_block) noexcept
             {
                 /* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
-				   same time the exclusive access is removed (the first bit) */
-				DENSITY_ASSERT_INTERNAL((i_control_block->m_next.load(sync::hint_memory_order_relaxed) & 3) == 1);
-				i_control_block->m_next.fetch_xor(3, sync::hint_memory_order_relaxed);
+                   same time the exclusive access is removed (the first bit) */
+                DENSITY_ASSERT_INTERNAL((i_control_block->m_next.load(sync::hint_memory_order_relaxed) & 3) == 1);
+                i_control_block->m_next.fetch_xor(3, sync::hint_memory_order_relaxed);
 
                 /** Consumers should see what we have done (while producers are not interested). So we do a
-					release operation on m_tail_for_consume. */
+                    release operation on m_tail_for_consume. */
                 m_tail_for_consume.fetch_add(0, sync::hint_memory_order_release);
             }
 
             void commit_push(PushData i_push_data) noexcept
             {
                 /* decrementing the size we allow the consumers to process this element (this is an atomic operation)
-					To do: this is a read-write operation. Make it a write-only op. */
+                    To do: this is a read-write operation. Make it a write-only op. */
                 DENSITY_TEST_RANDOM_WAIT();
-				DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next.load() & 3) == 1);
-				i_push_data.m_control->m_next.fetch_sub(1, sync::hint_memory_order_relaxed);
+                DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next.load() & 3) == 1);
+                i_push_data.m_control->m_next.fetch_sub(1, sync::hint_memory_order_relaxed);
 
-				/** Consumers should see what we have done (while producers are not interested). So we do a
-					release operation on m_tail_for_consume. */
-				m_tail_for_consume.fetch_add(0, sync::hint_memory_order_release);
+                /** Consumers should see what we have done (while producers are not interested). So we do a
+                    release operation on m_tail_for_consume. */
+                m_tail_for_consume.fetch_add(0, sync::hint_memory_order_release);
             }
 
             struct ConsumeData

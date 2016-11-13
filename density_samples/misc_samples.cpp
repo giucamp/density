@@ -197,34 +197,34 @@ widgets.push_back(TextWidget());
             //! [heterogeneous_array example 4]
         }
 
-		{
-			//! [any make example 1]
+        {
+            //! [any make example 1]
 using Any = density::any<>;
 auto a_zero = Any::make<int>();
 auto a_one = Any::make<int>(1);
-auto ten_numbers = Any::make<std::vector<double>>(0.42, 10);
-			//! [any make example 1]
-		}
+auto ten_numbers = Any::make<std::vector<double>>(10, 0.42);
+            //! [any make example 1]
+        }
 
-		{
-			//! [any make example 2]
+        {
+            //! [any make example 2]
 using Any = density::any<>;
 Any::allocator_type allocator;
 auto a_zero = Any::make_with_alloc<int>(allocator);
 auto a_one = Any::make_with_alloc<int>(allocator, 1);
-auto ten_numbers = Any::make_with_alloc<std::vector<double>>(allocator, 0.42, 10);
-			//! [any make example 2]
-		}
+auto ten_numbers = Any::make_with_alloc<std::vector<double>>(allocator, 10, 0.42);
+            //! [any make example 2]
+        }
 
-		{
-			//! [any make example 3]
+        {
+            //! [any make example 3]
 using Allocator = density::void_allocator;
 using Any = density::any<void, Allocator>;
 auto a_zero = Any::make_with_alloc<int>(Allocator());
 auto a_one = Any::make_with_alloc<int>(Allocator(), 1);
-auto ten_numbers = Any::make_with_alloc<std::vector<double>>(Allocator(), 0.42, 10);
-			//! [any make example 3]
-		}
+auto ten_numbers = Any::make_with_alloc<std::vector<double>>(Allocator(), 10, 0.42);
+            //! [any make example 3]
+        }
     }
 } // namespace misc_samples
 
