@@ -44,7 +44,7 @@ namespace density
         constexpr size_t concurrent_alignment = 64;
 
         template < typename ALLOCATOR_TYPE, typename RUNTIME_TYPE,
-            SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
+            SynchronizationKind PRODUCE_SYNC, SynchronizationKind CONSUME_SYNC >
                 class BaseConcurrentHeterogeneousQueue;
     }
 }
@@ -52,6 +52,7 @@ namespace density
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
+	#pragma warning(disable:4359) // alignment specifier is less than actual alignment (X), and will be ignored.
 #endif
 #define DENSITY_INCLUDING_CONC_QUEUE_DETAIL
     #include <density/detail\base_conc_queue_lflf.h>
@@ -76,12 +77,10 @@ namespace density
                 There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
                 */
         template < typename COMMON_TYPE = void, typename ALLOCATOR_TYPE = void_allocator, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>,
-            SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
+            SynchronizationKind PRODUCE_SYNC = SynchronizationKind::LocklessMultiple,
             SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
-                class concurrent_heterogeneous_queue : private detail::BaseConcurrentHeterogeneousQueue<ALLOCATOR_TYPE, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
+                class concurrent_heterogeneous_queue : private ALLOCATOR_TYPE
         {
-            using BaseClass = detail::BaseConcurrentHeterogeneousQueue<ALLOCATOR_TYPE, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
-
         public:
 
 			static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value, 
@@ -100,8 +99,15 @@ namespace density
             using value_type = COMMON_TYPE;
             using reference = typename std::add_lvalue_reference< COMMON_TYPE >::type;
             using const_reference = typename std::add_lvalue_reference< const COMMON_TYPE>::type;
-            static constexpr SynchronizationKind push_sync = PUSH_SYNC;
+            static constexpr SynchronizationKind produce_sync = PRODUCE_SYNC;
             static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
+
+			concurrent_heterogeneous_queue()
+			{
+				auto const first_page = allocate_page();
+				m_tail.initialize(this, first_page);
+				m_head.initialize(this, first_page, m_tail.get_tail_for_consumers());
+			}
 			
             /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
 				This operation is thread safe. The construction of an element can run in parallel with the construction of other 
@@ -134,10 +140,10 @@ namespace density
                 static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, COMMON_TYPE*>::value,
                     "ELEMENT_TYPE must be covariant to (i.e. must derive from) COMMON_TYPE, or COMMON_TYPE must be void");
 
-				static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
+				static_assert(decltype(m_tail)::element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
 					"currently ELEMENT_TYPE must fit in a page");
 
-				auto push_data = BaseClass::template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
+				auto push_data = m_tail.template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
 				try
 				{
 					// construct the type
@@ -146,7 +152,7 @@ namespace density
 				catch (...)
 				{
 					// this call release the exclusive access and set the dead flag
-					BaseClass::cancel_push(push_data.m_control);
+					m_tail.cancel_push(push_data.m_control);
 
 					// the exception is propagated to the caller, whatever it is
 					throw;
@@ -163,19 +169,19 @@ namespace density
 					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
 
 					// this call release the exclusive access and set the dead flag
-					BaseClass::cancel_push(push_data.m_control);
+					m_tail.cancel_push(push_data.m_control);
 
 					// the exception is propagated to the caller, whatever it is
 					throw;
 				}
 
-				BaseClass::commit_push(push_data);
+				m_tail.commit_push(push_data);
             }
 
             template <typename CONSUMER_FUNC>
                 bool try_consume(CONSUMER_FUNC && i_consumer_func)
             {
-                auto consume_data = BaseClass::begin_consume();
+                auto consume_data = m_head.begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
                     auto const & type = consume_data.type();
@@ -183,7 +189,7 @@ namespace density
                     i_consumer_func(type, element);
                     type.destroy(element);
                     type.RUNTIME_TYPE::~RUNTIME_TYPE();
-                    BaseClass::commit_consume(consume_data);
+					m_head.commit_consume(consume_data);
                     return true;
                 }
                 else
@@ -195,14 +201,14 @@ namespace density
             template <typename CONSUMER_FUNC>
                 bool try_consume_manual_align_destroy(CONSUMER_FUNC && i_consumer_func)
             {
-                auto consume_data = BaseClass::begin_consume();
+                auto consume_data = m_head.begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
 					auto const & type = consume_data.type();
                     auto const unaligned_element = consume_data.unaligned_element();
                     i_consumer_func(*type, unaligned_element);
                     type->RUNTIME_TYPE::~RUNTIME_TYPE();
-                    BaseClass::commit_consume(consume_data);
+					m_head.commit_consume(consume_data);
                     return true;
                 }
                 else
@@ -234,6 +240,10 @@ namespace density
             {
                 return *static_cast<alocator_type*>(this);
             }
+
+		private:
+			detail::conc_queue::Head<void_allocator, runtime_type, consume_sync > m_head;
+			detail::conc_queue::Tail<void_allocator, runtime_type, produce_sync > m_tail;
         };
 
     } // namespace experimental
