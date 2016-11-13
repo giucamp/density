@@ -221,7 +221,7 @@ namespace density
                     DENSITY_ASSERT(result);
                     (void)result;
 
-                    control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(source_element) );
+                    control->destroy( static_cast<typename RUNTIME_TYPE::common_type*>(source_element) );
                     control->ControlBlock::~ControlBlock();
                 }
                 // set the source as empty
@@ -288,7 +288,7 @@ namespace density
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest)
                 {
-                    return i_element_type.copy_construct(i_dest, static_cast<const typename RUNTIME_TYPE::base_type*>(m_source) );
+                    return i_element_type.copy_construct(i_dest, static_cast<const typename RUNTIME_TYPE::common_type*>(m_source) );
                 }
             };
 
@@ -301,7 +301,7 @@ namespace density
 
                 void * operator () (const RUNTIME_TYPE & i_element_type, void * i_dest) noexcept
                 {
-                    return i_element_type.move_construct(i_dest, static_cast<typename RUNTIME_TYPE::base_type*>(m_source));
+                    return i_element_type.move_construct(i_dest, static_cast<typename RUNTIME_TYPE::common_type*>(m_source));
                 }
             };
 
@@ -413,7 +413,7 @@ namespace density
                 ControlBlock * first_control = m_head;
                 void * const element_ptr = first_control->element();
                 m_head = first_control->next();
-                first_control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(element_ptr) );
+                first_control->destroy( static_cast<typename RUNTIME_TYPE::common_type*>(element_ptr) );
                 first_control->ControlBlock::~ControlBlock();
             }
 
@@ -451,7 +451,7 @@ namespace density
                     auto const element = it.element(); // get_complete_type(it.control());
                     ++it;
 
-                    control->destroy( static_cast<typename RUNTIME_TYPE::base_type*>(element) );
+                    control->destroy( static_cast<typename RUNTIME_TYPE::common_type*>(element) );
                     control->ControlBlock::~ControlBlock();
                 }
                 // restart from m_buffer_start, with an empty queue

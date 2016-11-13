@@ -293,7 +293,7 @@ namespace density
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
                     const auto element_base = i_element_info.copy_construct(complete_new_element,
-                        static_cast<const typename RUNTIME_TYPE::base_type*>(i_source) );
+                        static_cast<const typename RUNTIME_TYPE::common_type*>(i_source) );
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -319,7 +319,7 @@ namespace density
                         dbg_check_range(complete_new_element, address_add(complete_new_element, i_element_info.size()));
                     #endif
                     const auto element_base = i_element_info.move_construct(complete_new_element,
-                        static_cast<typename RUNTIME_TYPE::base_type*>(i_source));
+                        static_cast<typename RUNTIME_TYPE::common_type*>(i_source));
                     // from now on, for the whole function, we cant except
                     m_end_of_elements = address_add(complete_new_element, i_element_info.size());
 
@@ -361,7 +361,7 @@ namespace density
                     {
                         for (ControlBlock * element_info = m_control_blocks; element_info < m_end_of_control_blocks; element_info++)
                         {
-                            element_info->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(element_info->m_element));
+                            element_info->destroy(static_cast<typename RUNTIME_TYPE::common_type*>(element_info->m_element));
                             element_info->~ControlBlock();
                         }
                         i_allocator.deallocate(reinterpret_cast<Header*>(m_control_blocks) - 1, i_buffer_size + sizeof(Header), i_buffer_alignment, sizeof(Header));
@@ -403,7 +403,7 @@ namespace density
                         dense_size = (dense_size + alignment_mask) & ~alignment_mask;
                         dense_size += control_block->size();
                         dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
-                        control_block->destroy(static_cast<typename RUNTIME_TYPE::base_type*>(it.element()));
+                        control_block->destroy(static_cast<typename RUNTIME_TYPE::common_type*>(it.element()));
                         control_block->ControlBlock::~ControlBlock();
                     }
 
@@ -614,7 +614,7 @@ namespace density
                         {
                             if (this_block == i_position && count_to_insert > 0)
                             {
-                                tmp_it.complete_type().destroy(static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
+                                tmp_it.complete_type().destroy(static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element()));
                                 count_to_insert--;
                             }
                             else
@@ -622,7 +622,7 @@ namespace density
                                 this_element = address_upper_align(this_element, this_block->alignment());
 
                                 tmp_it.complete_type().move_construct(this_element,
-                                    static_cast<typename RUNTIME_TYPE::base_type*>(tmp_it.element()));
+                                    static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element()));
                                 this_element = address_add(this_element, this_block->size());
                                 this_block++;
                             }

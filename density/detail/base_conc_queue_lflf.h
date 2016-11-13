@@ -25,7 +25,7 @@ namespace density
         }
 
         template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
-            class base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE,
+            class BaseConcurrentHeterogeneousQueue<VOID_ALLOCATOR, RUNTIME_TYPE,
                 SynchronizationKind::LocklessMultiple, SynchronizationKind::LocklessMultiple> : public VOID_ALLOCATOR
         {
             /** This is the alignment of ControlBlock's and the minimum alignment of the elements. Since the
@@ -49,7 +49,7 @@ namespace density
         public:
 
             // Constructor. At least one page in always alive
-            base_concurrent_heterogeneous_queue()
+            BaseConcurrentHeterogeneousQueue()
             {
                 auto const first_page = VOID_ALLOCATOR::allocate_page();
                 DENSITY_ASSERT(is_address_aligned(first_page, VOID_ALLOCATOR::page_alignment));
@@ -58,8 +58,8 @@ namespace density
                 m_tail_for_consume.store(first_page);
             }
 
-            base_concurrent_heterogeneous_queue(const base_concurrent_heterogeneous_queue&) = delete;
-            base_concurrent_heterogeneous_queue & operator = (const base_concurrent_heterogeneous_queue&) = delete;
+            BaseConcurrentHeterogeneousQueue(const BaseConcurrentHeterogeneousQueue&) = delete;
+            BaseConcurrentHeterogeneousQueue & operator = (const BaseConcurrentHeterogeneousQueue&) = delete;
 
             struct PushData
             {
@@ -229,7 +229,7 @@ namespace density
 
                 DENSITY_STRONG_INLINE const RUNTIME_TYPE & type() const
                 {
-                    return m_control->m_type();
+                    return m_control->m_type;
                 }
             };
 

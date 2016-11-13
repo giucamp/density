@@ -43,9 +43,9 @@ namespace density
     {
         constexpr size_t concurrent_alignment = 64;
 
-        template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE,
+        template < typename ALLOCATOR_TYPE, typename RUNTIME_TYPE,
             SynchronizationKind PUSH_SYNC, SynchronizationKind CONSUME_SYNC >
-                class base_concurrent_heterogeneous_queue;
+                class BaseConcurrentHeterogeneousQueue;
     }
 }
 
@@ -65,7 +65,7 @@ namespace density
     namespace experimental
     {
         /**
-            The queues always keep at least an allocated page. Therefore the constructor allocates a page. The reason is to allow
+            The queue always keep at least an allocated page. Therefore the constructor allocates a page. The reason is to allow
                 producer to assume that the page in which the push is tried (the last one) doesn't get deallocated while the push
                 is in progress.
                 The consume algorithm uses hazard pointers to safely delete the pages. Pages are deleted immediately by consumers
@@ -75,92 +75,101 @@ namespace density
                 See "Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects" of Maged M. Michael for details.
                 There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
                 */
-        template < typename ELEMENT = void, typename VOID_ALLOCATOR = void_allocator, typename RUNTIME_TYPE = runtime_type<ELEMENT>,
+        template < typename COMMON_TYPE = void, typename ALLOCATOR_TYPE = void_allocator, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>,
             SynchronizationKind PUSH_SYNC = SynchronizationKind::LocklessMultiple,
             SynchronizationKind CONSUME_SYNC = SynchronizationKind::LocklessMultiple >
-                class concurrent_heterogeneous_queue : private detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
+                class concurrent_heterogeneous_queue : private detail::BaseConcurrentHeterogeneousQueue<ALLOCATOR_TYPE, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>
         {
-            using BaseClass = detail::base_concurrent_heterogeneous_queue<VOID_ALLOCATOR, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
+            using BaseClass = detail::BaseConcurrentHeterogeneousQueue<ALLOCATOR_TYPE, RUNTIME_TYPE, PUSH_SYNC, CONSUME_SYNC>;
 
         public:
 
-            static_assert(std::is_same<ELEMENT, void>::value, "Currently only fully-heterogeneous elements are supported");
+			static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value, 
+				"COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you declare a type heter_cont<A,runtime_type<B>>?)");
+
+            static_assert(std::is_same<COMMON_TYPE, void>::value, "Currently only fully-heterogeneous elements are supported");
                 /* Reason: casting from a derived class is often a trivial operation (the value of the pointer does not change),
                     but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
                     in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
-            using allocator_type = VOID_ALLOCATOR;
+			static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
+				"The size and alignment of the pages must be the same (and not too small)");
+
+            using allocator_type = ALLOCATOR_TYPE;
             using runtime_type = RUNTIME_TYPE;
-            using value_type = ELEMENT;
-            using reference = typename std::add_lvalue_reference< ELEMENT >::type;
-            using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
+            using value_type = COMMON_TYPE;
+            using reference = typename std::add_lvalue_reference< COMMON_TYPE >::type;
+            using const_reference = typename std::add_lvalue_reference< const COMMON_TYPE>::type;
             static constexpr SynchronizationKind push_sync = PUSH_SYNC;
             static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
-
-            static_assert(allocator_type::page_size > sizeof(void*) * 8 && allocator_type::page_alignment == allocator_type::page_size,
-                    "The size and alignment of the pages must be the same (and not too small)");
-
+			
             /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
+				This operation is thread safe. The construction of an element can run in parallel with the construction of other 
+				elements and with the consumption of elements. Threads synchronizes only at the beginning of the push (before the
+				constructor is invoked). 
                 @param i_source object to be used as source to construct of new element.
                     - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                     - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
                 \n\b Requires:
-                    - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
-                    - an ELEMENT_COMPLETE_TYPE * must be implicitly convertible to ELEMENT *
-                    - an ELEMENT * must be convertible to an ELEMENT_COMPLETE_TYPE * with a static_cast or a dynamic_cast
-                        (this requirement is not met for example if ELEMENT is a non-polymorphic (direct or indirect) virtual
-                        base of ELEMENT_COMPLETE_TYPE).
+                    - the type ELEMENT_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
+                    - an ELEMENT_TYPE * must be implicitly convertible to COMMON_TYPE *
+                    - an COMMON_TYPE * must be convertible to an ELEMENT_TYPE * with a static_cast or a dynamic_cast
+                        (this requirement is not met for example if COMMON_TYPE is a non-polymorphic (direct or indirect) virtual
+                        base of ELEMENT_TYPE).
 
                 \n\b Throws: anything that the constructor of the new element throws
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
                 \n\b Complexity: constant */
-            template <typename ELEMENT_COMPLETE_TYPE>
-                DENSITY_STRONG_INLINE void push(ELEMENT_COMPLETE_TYPE && i_source)
+            template <typename ELEMENT_TYPE>
+                DENSITY_STRONG_INLINE void push(ELEMENT_TYPE && i_source)
             {
-                using ElementCompleteType = typename std::decay<ELEMENT_COMPLETE_TYPE>::type;
-                emplace<ElementCompleteType>(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+                using ElementCompleteType = typename std::decay<ELEMENT_TYPE>::type;
+                emplace<ElementCompleteType>(std::forward<ELEMENT_TYPE>(i_source));
             }
 
             template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
                 void emplace(CONSTRUCTION_PARAMS &&... i_args)
             {
-                static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, ELEMENT*>::value,
-                    "ELEMENT_COMPLETE_TYPE must be covariant to (i.e. must derive from) ELEMENT, or ELEMENT must be void");
+                static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, COMMON_TYPE*>::value,
+                    "ELEMENT_TYPE must be covariant to (i.e. must derive from) COMMON_TYPE, or COMMON_TYPE must be void");
 
-                auto push_data = BaseClass:: template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
-                try
-                {
-                    // construct the type
-                    new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
-                }
-                catch (...)
-                {
-                    // this call release the exclusive access and set the dead flag
-                    BaseClass::cancel_push(push_data.m_control);
+				static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
+					"currently ELEMENT_TYPE must fit in a page");
 
-                    // the exception is propagated to the caller, whatever it is
-                    throw;
-                }
+				auto push_data = BaseClass::template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
+				try
+				{
+					// construct the type
+					new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
+				}
+				catch (...)
+				{
+					// this call release the exclusive access and set the dead flag
+					BaseClass::cancel_push(push_data.m_control);
 
-                try
-                {
-                    // construct the element
-                    new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
-                }
-                catch (...)
-                {
-                    // destroy the type (which is probably a no-operation)
-                    push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
+					// the exception is propagated to the caller, whatever it is
+					throw;
+				}
 
-                    // this call release the exclusive access and set the dead flag
-                    BaseClass::cancel_push(push_data.m_control);
+				try
+				{
+					// construct the element
+					new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+				}
+				catch (...)
+				{
+					// destroy the type (which is probably a no-operation)
+					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
 
-                    // the exception is propagated to the caller, whatever it is
-                    throw;
-                }
+					// this call release the exclusive access and set the dead flag
+					BaseClass::cancel_push(push_data.m_control);
 
-                BaseClass::commit_push(push_data);
+					// the exception is propagated to the caller, whatever it is
+					throw;
+				}
+
+				BaseClass::commit_push(push_data);
             }
 
             template <typename CONSUMER_FUNC>
@@ -169,10 +178,29 @@ namespace density
                 auto consume_data = BaseClass::begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-                    auto const type = &consume_data.m_control->m_type;
-                    auto const element = consume_data.m_control + 1;
-                    i_consumer_func(*type, element);
-                    type->destroy(element);
+                    auto const & type = consume_data.type();
+                    auto const element = consume_data.element();
+                    i_consumer_func(type, element);
+                    type.destroy(element);
+                    type.RUNTIME_TYPE::~RUNTIME_TYPE();
+                    BaseClass::commit_consume(consume_data);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            template <typename CONSUMER_FUNC>
+                bool try_consume_manual_align_destroy(CONSUMER_FUNC && i_consumer_func)
+            {
+                auto consume_data = BaseClass::begin_consume();
+                if (consume_data.m_control != nullptr)
+                {
+					auto const & type = consume_data.type();
+                    auto const unaligned_element = consume_data.unaligned_element();
+                    i_consumer_func(*type, unaligned_element);
                     type->RUNTIME_TYPE::~RUNTIME_TYPE();
                     BaseClass::commit_consume(consume_data);
                     return true;
@@ -188,7 +216,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type get_allocator() const
             {
-                return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<alocator_type*>(this);
             }
 
             /** Returns a reference to the allocator instance owned by the queue.
@@ -196,7 +224,7 @@ namespace density
                 \n\b Complexity: constant */
             allocator_type & get_allocator_ref() noexcept
             {
-                return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<alocator_type*>(this);
             }
 
             /** Returns a const reference to the allocator instance owned by the queue.
@@ -204,7 +232,7 @@ namespace density
                 \n\b Complexity: constant */
             const allocator_type & get_allocator_ref() const noexcept
             {
-                return *static_cast<VOID_ALLOCATOR*>(this);
+                return *static_cast<alocator_type*>(this);
             }
         };
 

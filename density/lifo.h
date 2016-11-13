@@ -759,12 +759,12 @@ namespace density
 
         const RUNTIME_TYPE & type() const noexcept { return m_type; }
 
-        const typename RUNTIME_TYPE::base_type * data() const noexcept
+        const typename RUNTIME_TYPE::common_type * data() const noexcept
         {
             return m_object;
         }
 
-        typename RUNTIME_TYPE::base_type * data() noexcept
+        typename RUNTIME_TYPE::common_type * data() noexcept
         {
             return m_object;
         }
@@ -782,16 +782,16 @@ namespace density
     private:
 
         template <typename TARGET_TYPE>
-            typename RUNTIME_TYPE::base_type * construct_impl(void * i_dest, TARGET_TYPE && i_source, std::true_type)
+            typename RUNTIME_TYPE::common_type * construct_impl(void * i_dest, TARGET_TYPE && i_source, std::true_type)
         {
-            typename RUNTIME_TYPE::base_type * base_ptr = &i_source;
+            typename RUNTIME_TYPE::common_type * base_ptr = &i_source;
             return m_type.move_construct(i_dest, base_ptr);
         }
 
         template <typename TARGET_TYPE>
-            typename RUNTIME_TYPE::base_type * construct_impl(void * i_dest, const TARGET_TYPE & i_source, std::false_type)
+            typename RUNTIME_TYPE::common_type * construct_impl(void * i_dest, const TARGET_TYPE & i_source, std::false_type)
         {
-            const typename RUNTIME_TYPE::base_type * base_ptr = &i_source;
+            const typename RUNTIME_TYPE::common_type * base_ptr = &i_source;
             return m_type.copy_construct(i_dest, base_ptr);
         }
 
@@ -826,7 +826,7 @@ namespace density
     private:
         RUNTIME_TYPE m_type;
         void * m_block;
-        typename RUNTIME_TYPE::base_type * m_object;
+        typename RUNTIME_TYPE::common_type * m_object;
     };
 
 } // namespace density
