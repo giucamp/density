@@ -8,17 +8,6 @@
 #include <density/density_common.h>
 #include <density/runtime_type.h>
 #include <density/void_allocator.h>
-#include <random>
-
-inline size_t get_rand(size_t i_max)
-{
-    static thread_local std::mt19937 rand{ std::random_device()() };
-    return std::uniform_int_distribution<size_t>(0, i_max)(rand);
-}
-
-#define DENSITY_TEST_RANDOM_WAIT() //if(get_rand(7) == 3) { std::this_thread::sleep_for(std::chrono::nanoseconds(get_rand(65336) ) ); }
-
-#define DENSITY_STATS(expr)
 
 namespace density
 {
@@ -38,21 +27,12 @@ namespace density
         LocklessSingle, /**< The implementation is based on a lock-free algorithm. If multiple threads do the same operation concurrently,
                             with no external synchronization, the program is incurring in a data race, therefore the behavior is undefined. */
     };
-
-    namespace detail
-    {
-        constexpr size_t concurrent_alignment = 64;
-
-        template < typename ALLOCATOR_TYPE, typename RUNTIME_TYPE,
-            SynchronizationKind PRODUCE_SYNC, SynchronizationKind CONSUME_SYNC >
-                class BaseConcurrentHeterogeneousQueue;
-    }
 }
 
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
-	#pragma warning(disable:4359) // alignment specifier is less than actual alignment (X), and will be ignored.
+    #pragma warning(disable:4359) // alignment specifier is less than actual alignment (X), and will be ignored.
 #endif
 #define DENSITY_INCLUDING_CONC_QUEUE_DETAIL
     #include <density/detail\base_conc_queue_lflf.h>
@@ -83,16 +63,16 @@ namespace density
         {
         public:
 
-			static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value, 
-				"COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you declare a type heter_cont<A,runtime_type<B>>?)");
+            static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
+                "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you declare a type heter_cont<A,runtime_type<B>>?)");
 
             static_assert(std::is_same<COMMON_TYPE, void>::value, "Currently only fully-heterogeneous elements are supported");
                 /* Reason: casting from a derived class is often a trivial operation (the value of the pointer does not change),
                     but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
                     in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
-			static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
-				"The size and alignment of the pages must be the same (and not too small)");
+            static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
+                "The size and alignment of the pages must be the same (and not too small)");
 
             using allocator_type = ALLOCATOR_TYPE;
             using runtime_type = RUNTIME_TYPE;
@@ -102,17 +82,17 @@ namespace density
             static constexpr SynchronizationKind produce_sync = PRODUCE_SYNC;
             static constexpr SynchronizationKind consume_sync = CONSUME_SYNC;
 
-			concurrent_heterogeneous_queue()
-			{
-				auto const first_page = allocate_page();
-				m_tail.initialize(this, first_page);
-				m_head.initialize(this, first_page, m_tail.get_tail_for_consumers());
-			}
-			
+            concurrent_heterogeneous_queue()
+            {
+                auto const first_page = allocator_type::allocate_page();
+                m_tail.initialize(this, first_page);
+                m_head.initialize(this, first_page, m_tail.get_tail_for_consumers());
+            }
+
             /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
-				This operation is thread safe. The construction of an element can run in parallel with the construction of other 
-				elements and with the consumption of elements. Threads synchronizes only at the beginning of the push (before the
-				constructor is invoked). 
+                This operation is thread safe. The construction of an element can run in parallel with the construction of other
+                elements and with the consumption of elements. Threads synchronizes only at the beginning of the push (before the
+                constructor is invoked).
                 @param i_source object to be used as source to construct of new element.
                     - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
                     - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
@@ -140,42 +120,42 @@ namespace density
                 static_assert(std::is_convertible< COMPLETE_ELEMENT_TYPE*, COMMON_TYPE*>::value,
                     "ELEMENT_TYPE must be covariant to (i.e. must derive from) COMMON_TYPE, or COMMON_TYPE must be void");
 
-				static_assert(decltype(m_tail)::element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
-					"currently ELEMENT_TYPE must fit in a page");
+                static_assert(decltype(m_tail)::element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
+                    "currently ELEMENT_TYPE must fit in a page");
 
-				auto push_data = m_tail.template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
-				try
-				{
-					// construct the type
-					new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
-				}
-				catch (...)
-				{
-					// this call release the exclusive access and set the dead flag
-					m_tail.cancel_push(push_data.m_control);
+                auto push_data = m_tail.template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
+                try
+                {
+                    // construct the type
+                    new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
+                }
+                catch (...)
+                {
+                    // this call release the exclusive access and set the dead flag
+                    m_tail.cancel_push(push_data.m_control);
 
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
+                    // the exception is propagated to the caller, whatever it is
+                    throw;
+                }
 
-				try
-				{
-					// construct the element
-					new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
-				}
-				catch (...)
-				{
-					// destroy the type (which is probably a no-operation)
-					push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
+                try
+                {
+                    // construct the element
+                    new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+                }
+                catch (...)
+                {
+                    // destroy the type (which is probably a no-operation)
+                    push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
 
-					// this call release the exclusive access and set the dead flag
-					m_tail.cancel_push(push_data.m_control);
+                    // this call release the exclusive access and set the dead flag
+                    m_tail.cancel_push(push_data.m_control);
 
-					// the exception is propagated to the caller, whatever it is
-					throw;
-				}
+                    // the exception is propagated to the caller, whatever it is
+                    throw;
+                }
 
-				m_tail.commit_push(push_data);
+                m_tail.commit_push(push_data);
             }
 
             template <typename CONSUMER_FUNC>
@@ -189,7 +169,7 @@ namespace density
                     i_consumer_func(type, element);
                     type.destroy(element);
                     type.RUNTIME_TYPE::~RUNTIME_TYPE();
-					m_head.commit_consume(consume_data);
+                    m_head.commit_consume(consume_data);
                     return true;
                 }
                 else
@@ -204,11 +184,11 @@ namespace density
                 auto consume_data = m_head.begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-					auto const & type = consume_data.type();
+                    auto const & type = consume_data.type();
                     auto const unaligned_element = consume_data.unaligned_element();
                     i_consumer_func(*type, unaligned_element);
                     type->RUNTIME_TYPE::~RUNTIME_TYPE();
-					m_head.commit_consume(consume_data);
+                    m_head.commit_consume(consume_data);
                     return true;
                 }
                 else
@@ -241,9 +221,9 @@ namespace density
                 return *static_cast<alocator_type*>(this);
             }
 
-		private:
-			detail::conc_queue::Head<void_allocator, runtime_type, consume_sync > m_head;
-			detail::conc_queue::Tail<void_allocator, runtime_type, produce_sync > m_tail;
+        private:
+            detail::conc_queue::Head<void_allocator, runtime_type, consume_sync > m_head;
+            detail::conc_queue::Tail<void_allocator, runtime_type, produce_sync > m_tail;
         };
 
     } // namespace experimental

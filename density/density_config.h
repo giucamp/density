@@ -58,6 +58,8 @@
 
 namespace density
 {
+    constexpr size_t concurrent_alignment = 64;
+
     /** Aliases for the synchronization classes.
         By default density uses the C++11 standard synchronization support. Anyway you can change these aliases
         to use another synchronization library, given that it is conforming to the standard one. */

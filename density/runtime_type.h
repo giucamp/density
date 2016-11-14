@@ -787,7 +787,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the default constructor of the target type throws. */
-		common_type * default_construct(void * i_dest) const
+        common_type * default_construct(void * i_dest) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -816,7 +816,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: anything that the copy constructor of the target type throws. */
-		common_type * copy_construct(void * i_dest, const common_type * i_source) const
+        common_type * copy_construct(void * i_dest, const common_type * i_source) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -845,7 +845,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. Move constructors are required to be noexcept. */
-		common_type * move_construct(void * i_dest, common_type * i_source) const noexcept
+        common_type * move_construct(void * i_dest, common_type * i_source) const noexcept
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
