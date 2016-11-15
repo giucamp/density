@@ -16,16 +16,16 @@ namespace density
     {
         namespace conc_queue
         {
-            /** To do: remove this function
-                A CompareAndSwap (CAS) function based on compare_exchange_weak.
-                This function is like compare_exchange_weak, but in case of failure does not return the previous value of the
-                atomic (so the parameter i_expected is not a reference.
-                The interface of compare_exchange_weak is fine for classic lockless algorithms, but here we are not interested
-                on the previous value of the atomic variable. */
+            /** A CompareAndSwap (CAS) function based on compare_exchange_weak.
+                The difference between compare_and_set_weak and compare_exchange_weak is that compare_and_set_weak takes the expected
+				value by value. Therefore, in case of failure, so the caller can't see the previous value of the atomic.
+				The interface compare_exchange_weak is fine in many cases, but it is not very comfortable if we are not interested in 
+				the previous value of the atomic. */
             template <typename TYPE>
-                DENSITY_STRONG_INLINE bool compare_and_set(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, std::memory_order i_memory_order) noexcept
+                DENSITY_STRONG_INLINE bool compare_and_set_weak(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, 
+					sync::memory_order i_success_memory_order) noexcept
             {
-                return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_memory_order);
+                return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_success_memory_order, sync::hint_memory_order_relaxed);
             }
 
             /*inline size_t get_rand(size_t i_max)
@@ -129,16 +129,22 @@ namespace density
                 template <bool CAN_WAIT>
                     PushData begin_push(size_t i_size, size_t i_alignment)
                 {
-                    void * original_tail, * tail;
                     ControlBlock * control;
                     void * new_element;
+					void * tail;
 
-                    original_tail = m_tail_for_alloc.load(sync::hint_memory_order_acquire);
-
-                    // this loop allocates the type and the element, updating m_tail_for_alloc and tail
-                    for(;;)
+					/* We start reading m_tail_for_alloc, that is the pointer consumer threads use to make their
+						linear allocation in the page. Until we update m_tail_for_consumers, we do not need
+						any acquire/release ordering.
+						Then we compute tail, that is the next value we want to set in m_tail_for_alloc, and
+						we hope that when we try to set it, m_tail_for_alloc is still equal to original_tail.
+						If m_tail_for_alloc is changed in the meanwhile, we retry from scratch. Note that
+						compare_exchange_weak will reload the value of m_tail_for_alloc in original_tail,
+						so we load explicitly it only once. */
+                    auto original_tail = m_tail_for_alloc.load(sync::hint_memory_order_relaxed);
+					for(;;)
                     {
-                        // linearly-allocate the control block and the element, updating tail
+                        // Linearly-allocate the control block and the element, updating tail
                         tail = original_tail;
                         control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
                         new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
@@ -155,9 +161,9 @@ namespace density
                             continue;
                         }
 
-                        // try to update m_tail_for_alloc
-                        // on failure original_tail is set with the actual value of m_tail_for_alloc
-                        if (m_tail_for_alloc.compare_exchange_weak(original_tail, tail, sync::hint_memory_order_release))
+                        /* Try to update m_tail_for_alloc.
+							On failure original_tail is set with the actual value of m_tail_for_alloc. */
+                        if (m_tail_for_alloc.compare_exchange_weak(original_tail, tail, sync::hint_memory_order_relaxed, sync::hint_memory_order_relaxed))
                         {
                             break;
                         }
@@ -180,10 +186,10 @@ namespace density
                         but we have exclusive access on it (the first bit of control->m_next is set).
                         If other consumers have allocated space (i.e. modified m_tail_for_alloc), now we are going to synchronize
                         with them: consumers will exit from the next loop in the exact order they succeeded in updating m_tail_for_alloc.
-                        Note: we have not yet constructed neither the type object, nor the element. The caller will do after begin_push exits.
-                        The next atomic operation needs at least the release semantic (consumers must see what
+                        Note: we have not yet constructed neither the type object, nor the element. The caller will do after thsi function returns.
+                        The next CAS operation on success needs at least the release semantic (consumers must see what
                         we have written in control->m_next). */
-                    while (!compare_and_set(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_release))
+                    while (!compare_and_set_weak(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_release))
                     {
                         // this can happen only if slower consumer thread allocate space in m_tail_for_alloc before a faster consumer thread
                         std::this_thread::yield();
@@ -205,7 +211,7 @@ namespace density
                         the latter is in another pages, and incoming producers go beyond the page.*/
                     auto const last_byte = reinterpret_cast<uintptr_t>(i_original_tail) | static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1);
                     if (i_original_tail != reinterpret_cast<void*>(last_byte) &&
-                        compare_and_set(m_tail_for_alloc, i_original_tail, reinterpret_cast<void*>(last_byte), sync::hint_memory_order_acq_rel))
+                        compare_and_set_weak(m_tail_for_alloc, i_original_tail, reinterpret_cast<void*>(last_byte), sync::hint_memory_order_relaxed))
                     {
                         void * new_page;
                         try
@@ -229,7 +235,7 @@ namespace density
 
                         // now we can move the tail to the next page
                         m_tail_for_alloc.store(new_page);
-                        while (!compare_and_set(m_tail_for_consumers, i_original_tail, new_page, sync::hint_memory_order_release))
+                        while (!compare_and_set_weak(m_tail_for_consumers, i_original_tail, new_page, sync::hint_memory_order_relaxed))
                         {
                             std::this_thread::yield();
                         }
@@ -239,7 +245,7 @@ namespace density
                     else
                     {
                         std::this_thread::yield();
-                        return m_tail_for_alloc.load(sync::hint_memory_order_acquire);
+                        return m_tail_for_alloc.load(sync::hint_memory_order_relaxed);
                     }
                 }
 
