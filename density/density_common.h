@@ -115,7 +115,7 @@ namespace density
     /** Computes the unsigned difference between two pointers. The first must be above or equal to the second.
         @param i_end_address first address
         @param i_start_address second address
-        @return i_end_address minus i_start_address    */
+        @return i_end_address minus i_start_address */
     inline uintptr_t address_diff( const void * i_end_address, const void * i_start_address ) noexcept
     {
         DENSITY_ASSERT( i_end_address >= i_start_address );
@@ -237,7 +237,7 @@ namespace density
             return address_add( i_second, i_second_size ) > i_first;
     }
 
-    /** Returns true whether the given pair of pointers enclose a valid array of objects of the type. This function is intended to validate
+    /** Returns true whether the given pair of pointers encloses a valid array of objects of the type. This function is intended to validate
             an input array.
         @param i_objects_start inclusive lower bound of the array
         @param i_objects_end exclusive upper bound of the array
@@ -260,7 +260,7 @@ namespace density
         {
             return false;
         }
-        const uintptr_t diff = reinterpret_cast<uintptr_t>(i_objects_end) -  reinterpret_cast<uintptr_t>(i_objects_start);
+        uintptr_t const diff = address_diff(i_objects_end, i_objects_start);
         if (diff % sizeof(TYPE) != 0)
         {
             return false;
@@ -268,25 +268,38 @@ namespace density
         return true;
     }
 
-    /** Finds the aligned storage for a block with the specified size and alignment, such that it is
-            >= *io_top_pointer, and sets *io_top_pointer to the end of the block. The actual pointed memory is not read\written.
-        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block. After
-            the function exits, *io_top_pointer will point to the first address after the new block.
+    /** Allocates an object with the given size and alignment starting from a reference pointer, and update
+            it to the end of the allocation.
+        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block
         @param i_size size (in bytes) of the block to allocate
         @param i_alignment alignment (in bytes) of the block to allocate (must be a positive power of 2).
         @return address of the new block. */
-    inline void * linear_alloc(void * * io_top_pointer, size_t i_size, size_t i_alignment)
+    inline void * linear_alloc(void * & io_top_pointer, size_t i_size, size_t i_alignment)
     {
-        DENSITY_ASSERT(is_power_of_2(i_alignment));
-
-        auto top = *io_top_pointer;
-        auto new_block = top = address_upper_align(top, i_alignment);
+        DENSITY_ASSERT(is_power_of_2(i_alignment) && is_uint_aligned(i_size, i_alignment));
+        auto top = io_top_pointer;
+        auto const new_block = top = address_upper_align(top, i_alignment);
         top = address_add(top, i_size);
-        *io_top_pointer = top;
+        io_top_pointer = top;
         return new_block;
     }
 
-    inline void * linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
+    /** Allocates an object with the given size starting from a reference pointer, and update
+            it to the end of the allocation.
+        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block
+        @param i_size size (in bytes) of the block to allocate
+        @param i_alignment alignment (in bytes) of the block to allocate (must be a positive power of 2).
+        @return address of the new block. */
+    inline void * linear_alloc(void * & io_top_pointer, size_t i_size)
+    {
+        auto top = io_top_pointer;
+        auto const new_block = top;
+        top = address_add(top, i_size);
+        io_top_pointer = top;
+        return new_block;
+    }
+
+    inline void * safe_linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 

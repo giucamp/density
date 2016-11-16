@@ -18,47 +18,35 @@ namespace density
         {
             /** A CompareAndSwap (CAS) function based on compare_exchange_weak.
                 The difference between compare_and_set_weak and compare_exchange_weak is that compare_and_set_weak takes the expected
-				value by value. Therefore, in case of failure, so the caller can't see the previous value of the atomic.
-				The interface compare_exchange_weak is fine in many cases, but it is not very comfortable if we are not interested in 
-				the previous value of the atomic. */
+                value by value. Therefore, in case of failure, so the caller can't see the previous value of the atomic.
+                The interface compare_exchange_weak is fine in many cases, but it is not very comfortable if we are not interested in
+                the previous value of the atomic. */
             template <typename TYPE>
-                DENSITY_STRONG_INLINE bool compare_and_set_weak(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to, 
-					sync::memory_order i_success_memory_order) noexcept
+                DENSITY_STRONG_INLINE bool compare_and_set_weak(sync::atomic<TYPE> & io_atomic, TYPE i_expected, TYPE i_set_to,
+                    sync::memory_order i_success_memory_order) noexcept
             {
                 return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_success_memory_order, sync::hint_memory_order_relaxed);
             }
 
-            /*inline size_t get_rand(size_t i_max)
+            template <typename VOID_ALLOCATOR>
+                struct AllocatorUtils
             {
-                static thread_local std::mt19937 rand{ std::random_device()() };
-                return std::uniform_int_distribution<size_t>(0, i_max)(rand);
-            }*/
+                static bool are_same_page(void * i_first, void * i_second)
+                {
+                    return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
+                        ~static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1)) == 0;
+                }
+            };
+        }
+    }
+}
 
-            #define DENSITY_TEST_RANDOM_WAIT() //if(get_rand(7) == 3) { std::this_thread::sleep_for(std::chrono::nanoseconds(get_rand(65336) ) ); }
-
-            #define DENSITY_STATS(expr)
-
-            /*inline bool are_same_page(void * i_first, void * i_second)
-            {
-                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
-                    ~static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1)) == 0;
-            }*/
-
-            inline void * allocate(void * * io_ptr, size_t i_size)
-            {
-                auto const res = *io_ptr;
-                *reinterpret_cast<unsigned char**>(io_ptr) += i_size;
-                return res;
-            }
-
-            inline void * allocate(void * * io_ptr, size_t i_size, size_t i_alignment)
-            {
-                *io_ptr = address_upper_align(*io_ptr, i_alignment);
-                auto const res = *io_ptr;
-                *reinterpret_cast<unsigned char**>(io_ptr) += i_size;
-                return res;
-            }
-
+namespace density
+{
+    namespace detail
+    {
+        namespace conc_queue
+        {
             /* Before each element there is a ControlBlock object. Since in the data member m_next the 2 least
                 significant bit are used as flags, the address of a ControlBlock must be mutiple of 4.
                 The alignas specifiers imply that this class is aligned at least at 4 bytes, but it may have
@@ -100,6 +88,8 @@ namespace density
                     return i_size + i_alignment < (VOID_ALLOCATOR::page_size - sizeof(ControlBlock) * 2);
                 }
 
+                /** Use an initialize function instead of a constructor because the allocator is a subobject of
+                    the queue, and it would use its 'this' pointer in the initializer list. */
                 void initialize(VOID_ALLOCATOR * i_allocator, void * i_first_page)
                 {
                     m_allocator = i_allocator;
@@ -131,23 +121,23 @@ namespace density
                 {
                     ControlBlock * control;
                     void * new_element;
-					void * tail;
+                    void * tail;
 
-					/* We start reading m_tail_for_alloc, that is the pointer consumer threads use to make their
-						linear allocation in the page. Until we update m_tail_for_consumers, we do not need
-						any acquire/release ordering.
-						Then we compute tail, that is the next value we want to set in m_tail_for_alloc, and
-						we hope that when we try to set it, m_tail_for_alloc is still equal to original_tail.
-						If m_tail_for_alloc is changed in the meanwhile, we retry from scratch. Note that
-						compare_exchange_weak will reload the value of m_tail_for_alloc in original_tail,
-						so we load explicitly it only once. */
+                    /* We start reading m_tail_for_alloc, that is the pointer consumer threads use to make their
+                        linear allocation in the page. Until we update m_tail_for_consumers, we do not need
+                        any acquire/release ordering.
+                        Then we compute tail, that is the next value we want to set in m_tail_for_alloc, and
+                        we hope that when we try to set it, m_tail_for_alloc is still equal to original_tail.
+                        If m_tail_for_alloc is changed in the meanwhile, we retry from scratch. Note that
+                        compare_exchange_weak will reload the value of m_tail_for_alloc in original_tail,
+                        so we load explicitly it only once. */
                     auto original_tail = m_tail_for_alloc.load(sync::hint_memory_order_relaxed);
-					for(;;)
+                    for(;;)
                     {
                         // Linearly-allocate the control block and the element, updating tail
                         tail = original_tail;
-                        control = static_cast<ControlBlock*>(allocate(&tail, sizeof(ControlBlock)));
-                        new_element = allocate(&tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
+                        control = static_cast<ControlBlock*>(linear_alloc(tail, sizeof(ControlBlock)));
+                        new_element = linear_alloc(tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
 
                         /* Check for end of page. We need to make sure that not only the ControlBlock and the element fit in the page,
                             but also an extra ControlBlock, that eventually we use as link to the next page. */
@@ -162,7 +152,7 @@ namespace density
                         }
 
                         /* Try to update m_tail_for_alloc.
-							On failure original_tail is set with the actual value of m_tail_for_alloc. */
+                            On failure original_tail is set with the actual value of m_tail_for_alloc. */
                         if (m_tail_for_alloc.compare_exchange_weak(original_tail, tail, sync::hint_memory_order_relaxed, sync::hint_memory_order_relaxed))
                         {
                             break;
@@ -249,6 +239,8 @@ namespace density
                     }
                 }
 
+                /** Used when a begin_push has been called, but an exception was thrown during the construction of the element
+                    (or the type). This function marks the element as dead, and performs a release operation on m_tail_for_consumers. */
                 void cancel_push(ControlBlock * i_control_block) noexcept
                 {
                     /* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
@@ -261,11 +253,12 @@ namespace density
                     m_tail_for_consumers.fetch_add(0, sync::hint_memory_order_release);
                 }
 
+                /** Used when a begin_push has been called, and both the type and the elements has been constructed. This
+                    function performs a release operation on m_tail_for_consumers. */
                 void commit_push(PushData i_push_data) noexcept
                 {
                     /* decrementing the size we allow the consumers to process this element (this is an atomic operation)
                         To do: this is a read-write operation. Make it a write-only op. */
-                    DENSITY_TEST_RANDOM_WAIT();
                     DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next.load() & 3) == 1);
                     i_push_data.m_control->m_next.fetch_sub(1, sync::hint_memory_order_relaxed);
 
@@ -293,6 +286,8 @@ namespace density
 
                 using ControlBlock = ControlBlock<RUNTIME_TYPE>;
 
+                /** Use an initialize function instead of a constructor because the allocator is a subobject of
+                    the queue, and it would use its 'this' pointer in the initializer list. */
                 void initialize(VOID_ALLOCATOR * i_allocator, void * i_first_page, const sync::atomic<void*> * i_tail_for_consumers)
                 {
                     m_allocator = i_allocator;
@@ -329,14 +324,12 @@ namespace density
                         }
                     } while (head == 0);
 
-                    // this is the value of head we are going to set when we have finished
-                    auto good_head = head;
-
-                    unsigned skip_count = 0;
-
+                    /** Now we loop the elements from the head on, trying to get exclusive access on one. If we find a
+                        dead element soon after the head, we obliterate it: that is, we move the head after it. */
+                    auto good_head = head; // this is the value of head we are going to set when we have finished
                     for(;;)
                     {
-                        // check if we have reached the end of the queue
+                        // Check if we have reached the end of the queue
                         auto const tail_for_consume = m_tail_for_consumers->load(sync::hint_memory_order_acquire);
                         if (reinterpret_cast<void*>(head) == tail_for_consume)
                         {
@@ -344,31 +337,36 @@ namespace density
                             return ConsumeData{ nullptr };
                         }
 
+                        // Try to get exclusive access on the element, setting the first bit in m_next
                         auto const control = reinterpret_cast<ControlBlock*>(head);
-                        auto const dirt_next = control->m_next.fetch_or(1);
+                        auto const dirt_next = control->m_next.fetch_or(1, sync::hint_memory_order_relaxed);
                         if ((dirt_next & 1) == 0)
                         {
-                            // exclusive access
-                            if ((dirt_next & 2) == 0)
+                            // we have the exclusive access on the element
+                            bool const living_element = (dirt_next & 2) == 0;
+                            if (living_element)
                             {
-                                // living object
+                                // release the head and return it
                                 m_head.store(good_head, sync::hint_memory_order_release);
                                 return ConsumeData{ control };
                             }
                             else
                             {
-                                // dead element
-                                if (skip_count == 0)
+                                // This is a dead element. We can obliterate only if it is the first after the head
+                                bool const can_obliterate = good_head == head;
+                                if (can_obliterate)
                                 {
                                     DENSITY_ASSERT_INTERNAL( (dirt_next & 3) == 2 );
-
                                     #if DENSITY_DEBUG_INTERNAL
                                         control->m_next.store(37);
                                     #endif
+
+                                    // Check if this is a link ControlBlock, in which case we are leaving the page
                                     if (control->m_type.empty())
                                     {
                                         auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(VOID_ALLOCATOR::page_alignment - 1));
                                         DENSITY_ASSERT(is_address_aligned(page, VOID_ALLOCATOR::page_alignment));
+                                        DENSITY_ASSERT(!AllocatorUtils<VOID_ALLOCATOR>::are_same_page(page, reinterpret_cast<void*>(dirt_next - 2)));
                                         m_allocator->deallocate_page(page);
                                     }
                                     good_head = head = dirt_next - 2;
@@ -376,15 +374,15 @@ namespace density
                                 }
                                 else
                                 {
-                                    // unlock
-                                    control->m_next.store(dirt_next);
+                                    /* this is a dead element, but we can't move the head after it, because there are
+                                        non-dead elements before it */
+                                    control->m_next.store(dirt_next, sync::hint_memory_order_release);
                                 }
                             }
                         }
 
                         // Move to the next element, which may be in another page
                         head = dirt_next & ~static_cast<uintptr_t>(3);
-                        skip_count++;
                     }
                 }
 

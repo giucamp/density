@@ -32,7 +32,6 @@ namespace density
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
-    #pragma warning(disable:4359) // alignment specifier is less than actual alignment (X), and will be ignored.
 #endif
 #define DENSITY_INCLUDING_CONC_QUEUE_DETAIL
     #include <density/detail\base_conc_queue_lflf.h>

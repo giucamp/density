@@ -500,12 +500,12 @@ namespace density
 
                 auto const prev_tail = io_tail;
 
-                auto start_of_block = linear_alloc(io_tail, i_size, i_alignment);
+                auto start_of_block = safe_linear_alloc(io_tail, i_size, i_alignment);
                 if (io_tail > m_buffer_end)
                 {
                     // wrap to the start...
                     io_tail = m_buffer_start;
-                    start_of_block = linear_alloc(io_tail, i_size, i_alignment);
+                    start_of_block = safe_linear_alloc(io_tail, i_size, i_alignment);
                     if (io_tail >= m_head)
                     {
                         // ...not enough space before the head, failed!
