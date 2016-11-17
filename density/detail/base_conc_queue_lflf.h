@@ -18,7 +18,7 @@ namespace density
         {
             /** A CompareAndSwap (CAS) function based on compare_exchange_weak.
                 The difference between compare_and_set_weak and compare_exchange_weak is that compare_and_set_weak takes the expected
-                value by value. Therefore, in case of failure, so the caller can't see the previous value of the atomic.
+                value by value. Therefore, in case of failure, the caller can't get the previous value of the atomic.
                 The interface compare_exchange_weak is fine in many cases, but it is not very comfortable if we are not interested in
                 the previous value of the atomic. */
             template <typename TYPE>
@@ -104,11 +104,11 @@ namespace density
                     ControlBlock * m_control;
                     void * m_element;
 
-                    DENSITY_STRONG_INLINE void * element() const { return m_element; }
+                    DENSITY_STRONG_INLINE void * element_ptr() const { return m_element; }
 
-                    DENSITY_STRONG_INLINE const RUNTIME_TYPE * type() const
+                    DENSITY_STRONG_INLINE RUNTIME_TYPE * type_ptr() const
                     {
-                        return &m_control->m_type();
+                        return &m_control->m_type;
                     }
                 };
 
@@ -299,16 +299,16 @@ namespace density
                 {
                     ControlBlock * m_control;
 
-                    DENSITY_STRONG_INLINE void * element() const
+                    DENSITY_STRONG_INLINE void * element_ptr() const
                     {
                         return address_upper_align(m_control + 1, m_control->m_type.alignment());
                     }
 
-                    DENSITY_STRONG_INLINE void * element_unaligned() const { return m_control + 1; }
+                    DENSITY_STRONG_INLINE void * element_unaligned_ptr() const { return m_control + 1; }
 
-                    DENSITY_STRONG_INLINE const RUNTIME_TYPE & type() const
+                    DENSITY_STRONG_INLINE const RUNTIME_TYPE * type_ptr() const
                     {
-                        return m_control->m_type;
+                        return &m_control->m_type;
                     }
                 };
 

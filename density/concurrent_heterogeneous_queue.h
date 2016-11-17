@@ -27,6 +27,41 @@ namespace density
         LocklessSingle, /**< The implementation is based on a lock-free algorithm. If multiple threads do the same operation concurrently,
                             with no external synchronization, the program is incurring in a data race, therefore the behavior is undefined. */
     };
+
+	namespace detail
+	{
+		template <typename SCOPE_EXIT_ACTION>
+			class ScopeExit
+		{
+		public:
+
+			ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+				: m_scope_exit_action(std::move(i_scope_exit_action))
+			{
+				static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
+			}
+
+			~ScopeExit()
+			{
+				m_scope_exit_action();
+			}
+
+			ScopeExit(const ScopeExit &) = delete;
+			ScopeExit & operator = (const ScopeExit &) = delete;
+
+			ScopeExit(ScopeExit &&) noexcept = default;
+			ScopeExit & operator = (ScopeExit &&) noexcept = default;
+
+		private:
+			SCOPE_EXIT_ACTION m_scope_exit_action;
+		};
+
+		template <typename SCOPE_EXIT_ACTION>
+			inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+		{
+			return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
+		}
+	}
 }
 
 #ifdef _MSC_VER
@@ -112,6 +147,38 @@ namespace density
                 using ElementCompleteType = typename std::decay<ELEMENT_TYPE>::type;
                 emplace<ElementCompleteType>(std::forward<ELEMENT_TYPE>(i_source));
             }
+			
+            void push_by_copy(runtime_type i_runtime_type, const void * i_source)
+            {
+                static_assert(decltype(m_tail)::element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
+                    "currently ELEMENT_TYPE must fit in a page");
+
+                auto push_data = m_tail.template begin_push<true>(i_runtime_type.size(), i_runtime_type.alignment());
+
+				// construct the type
+				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
+				new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type));
+
+                try
+                {
+                    // construct the element
+                    new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+                }
+                catch (...)
+                {
+                    // destroy the type (which is probably a no-operation)
+                    push_data.type_ptr().RUNTIME_TYPE::~RUNTIME_TYPE();
+
+                    // this call release the exclusive access and set the dead flag
+                    m_tail.cancel_push(push_data.m_control);
+
+                    // the exception is propagated to the caller, whatever it is
+                    throw;
+                }
+
+                m_tail.commit_push(push_data);
+            }
+
 
             template <typename COMPLETE_ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
                 void emplace(CONSTRUCTION_PARAMS &&... i_args)
@@ -123,19 +190,11 @@ namespace density
                     "currently ELEMENT_TYPE must fit in a page");
 
                 auto push_data = m_tail.template begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
-                try
-                {
-                    // construct the type
-                    new(&push_data.m_control->m_type) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
-                }
-                catch (...)
-                {
-                    // this call release the exclusive access and set the dead flag
-                    m_tail.cancel_push(push_data.m_control);
 
-                    // the exception is propagated to the caller, whatever it is
-                    throw;
-                }
+				// construct the type - This expression can throw
+				static_assert(noexcept(RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>())),
+					"both runtime_type::make and the move constructor of runtime_type must be noexcept");
+				new(push_data.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
 
                 try
                 {
@@ -145,7 +204,7 @@ namespace density
                 catch (...)
                 {
                     // destroy the type (which is probably a no-operation)
-                    push_data.m_control->m_type.RUNTIME_TYPE::~RUNTIME_TYPE();
+                    push_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                     // this call release the exclusive access and set the dead flag
                     m_tail.cancel_push(push_data.m_control);
@@ -163,12 +222,12 @@ namespace density
                 auto consume_data = m_head.begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-                    auto const & type = consume_data.type();
-                    auto const element = consume_data.element();
-                    i_consumer_func(type, element);
-                    type.destroy(element);
-                    type.RUNTIME_TYPE::~RUNTIME_TYPE();
-                    m_head.commit_consume(consume_data);
+					auto scope_exit = detail::at_scope_exit([this, consume_data] () noexcept {
+						consume_data.type_ptr()->destroy(consume_data.element_ptr());
+						consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
+						m_head.commit_consume(consume_data);
+					});
+					i_consumer_func(*consume_data.type_ptr(), consume_data.element_ptr());
                     return true;
                 }
                 else
@@ -183,11 +242,11 @@ namespace density
                 auto consume_data = m_head.begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-                    auto const & type = consume_data.type();
-                    auto const unaligned_element = consume_data.unaligned_element();
-                    i_consumer_func(*type, unaligned_element);
-                    type->RUNTIME_TYPE::~RUNTIME_TYPE();
-                    m_head.commit_consume(consume_data);
+					auto scope_exit = detail::at_scope_exit([this, consume_data]() noexcept {
+						consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
+						m_head.commit_consume(consume_data);
+					});
+					i_consumer_func(*consume_data.type_ptr(), consume_data.unaligned_element());
                     return true;
                 }
                 else
