@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/concurrent_heterogeneous_queue.h>
+#include <density/concurrent_heterogeneous_queue_lf.h>
 #include <testity/test_tree.h>
 #include <testity/testity_common.h>
 #include "concurrent_producer_consumer_test.h"
@@ -45,8 +45,8 @@ namespace density_tests
     {
         using namespace density::experimental;
 
-        const size_t consumers = 2;
-        const size_t producers = 2;
+        const size_t consumers = 6;
+        const size_t producers = 6;
         ConcProdConsTest<CONTAINER> test(consumers, producers, 10 * 1000 * 1000 );
 
         //auto start_time = std::chrono::high_resolution_clock::now();
@@ -64,7 +64,7 @@ namespace density_tests
         using namespace density;
         using namespace density::experimental;
 
-        i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue<>>);
-        i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue<>>);
+        i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<>>);
+        i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<>>);
     }
 }

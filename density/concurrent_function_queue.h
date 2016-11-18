@@ -5,5 +5,5 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/concurrent_heterogeneous_queue.h>
+#include <density/concurrent_heterogeneous_queue_lf.h>
 
