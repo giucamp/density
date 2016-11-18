@@ -48,6 +48,38 @@ namespace density
         {
             return i_first > i_second ? i_first : i_second;
         }
+
+		template <typename SCOPE_EXIT_ACTION>
+			class ScopeExit
+		{
+		public:
+
+			ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+				: m_scope_exit_action(std::move(i_scope_exit_action))
+			{
+				static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
+			}
+
+			~ScopeExit()
+			{
+				m_scope_exit_action();
+			}
+
+			ScopeExit(const ScopeExit &) = delete;
+			ScopeExit & operator = (const ScopeExit &) = delete;
+
+			ScopeExit(ScopeExit &&) noexcept = default;
+			ScopeExit & operator = (ScopeExit &&) noexcept = default;
+
+		private:
+			SCOPE_EXIT_ACTION m_scope_exit_action;
+		};
+
+		template <typename SCOPE_EXIT_ACTION>
+			inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+		{
+			return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
+		}
     }
 
                 // address functions

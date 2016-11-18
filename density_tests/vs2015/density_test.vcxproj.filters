@@ -108,17 +108,8 @@
     <ClInclude Include="..\functionality_cases\test_allocators.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
       <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\base_conc_queue_lflf.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\hazard_pointers.h">
-      <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h">
       <Filter>functionality_cases</Filter>
@@ -127,6 +118,12 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\density_config.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_spsc.h">
       <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>

@@ -17,7 +17,7 @@ namespace density_tests
     {
         using namespace density::experimental;
 
-        concurrent_heterogeneous_queue<> queue;
+        concurrent_heterogeneous_queue_lf<> queue;
 
         for(int i = 0; i < 100000; i++)
             queue.push(i);
