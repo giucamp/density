@@ -104,7 +104,7 @@ namespace density
 					: m_control(i_control_block), m_element(reinterpret_cast<COMMON_TYPE*>(
 						reinterpret_cast<uintptr_t>(i_control_block) + (i_control_block->m_control_word >> half_size_bits)))
 				{
-					DENSITY_ASSERT_INTERNAL(is_address_aligned(m_element, i_control_block->m_type.alignment()));
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_element, i_control_block->m_type.alignment()));
 				}
 
 				bool is_valid() const noexcept { return m_control != nullptr; }
@@ -217,7 +217,7 @@ namespace density
 
             using allocator_type = ALLOCATOR_TYPE;
             using runtime_type = RUNTIME_TYPE;
-            using value_type = COMMON_TYPE;
+            using common_type = COMMON_TYPE;
             using reference = typename std::add_lvalue_reference< COMMON_TYPE >::type;
             using const_reference = typename std::add_lvalue_reference< const COMMON_TYPE>::type;
 
@@ -292,7 +292,9 @@ namespace density
                 static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
                     "currently ELEMENT_TYPE must fit in a page");
 
-                auto push_data = begin_push<true>(i_runtime_type.size(), i_runtime_type.alignment());
+				auto const alignment = detail::size_max(alignof(ControlBlock), i_runtime_type.alignment());
+				auto const size = uint_upper_align(size, alignof(ControlBlock));
+                auto const push_data = begin_push<true>(size, alignment);
 
 				// construct the type
 				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
@@ -324,7 +326,9 @@ namespace density
 				static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
 					"currently ELEMENT_TYPE must fit in a page");
 
-				auto push_data = begin_push<true>(i_runtime_type.size(), i_runtime_type.alignment());
+				auto const alignment = detail::size_max(alignof(ControlBlock), i_runtime_type.alignment());
+				auto const size = uint_upper_align(size, alignof(ControlBlock));
+				auto const push_data = begin_push<true>(size, alignment);
 
 				// construct the type
 				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
@@ -361,7 +365,9 @@ namespace density
                 static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
                     "currently ELEMENT_TYPE must fit in a page");
 
-                auto push_data = begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
+				auto const alignment = detail::size_max(alignof(ControlBlock), alignof(COMPLETE_ELEMENT_TYPE));
+				auto const size = uint_upper_align(sizeof(COMPLETE_ELEMENT_TYPE), alignof(ControlBlock));
+                auto push_data = begin_push<true>(size, alignment);
 
 				// construct the type - This expression can throw
 				static_assert(noexcept(RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>())),
@@ -495,10 +501,16 @@ namespace density
 			/** Allocates space for a RUNTIME_TYPE and for an element, returning a pair of pointers to them.
 				The caller should construct the type and the element, and then it should call commit_push().
 				If an exception is thrown during the construction, cancel_push must be called.
-				If an exception is thrown by begin_push, the call has no effect. */
+				If an exception is thrown by begin_push, the call has no effect.
+				@param i_size size of the element in bytes. It must be a multiple of i_alignment. It may be zero.
+				@param i_alignment alignment of the element. It must be >= alignof(ControlBlock), an integer power of 2
+			*/
 			template <bool CAN_WAIT>
 				PushData begin_push(size_t i_size, size_t i_alignment)
 			{
+				DENSITY_ASSERT(i_alignment >= alignof(ControlBlock) && is_power_of_2(i_alignment));
+				DENSITY_ASSERT(uint_is_aligned(i_size, i_alignment));
+
 				ControlBlock * control;
 				void * new_element;
 				void * tail;
@@ -588,7 +600,7 @@ namespace density
 					{
 						// allocate the page - this may throw
 						new_page = ALLOCATOR_TYPE::allocate_page();
-						DENSITY_ASSERT(is_address_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+						DENSITY_ASSERT(address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
 					}
 					catch (...)
 					{
@@ -698,7 +710,7 @@ namespace density
                                 if (control->m_type.empty())
                                 {
                                     auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
-                                    DENSITY_ASSERT(is_address_aligned(page, ALLOCATOR_TYPE::page_alignment));
+                                    DENSITY_ASSERT(address_is_aligned(page, ALLOCATOR_TYPE::page_alignment));
                                     DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(control_word - 2)));
 									ALLOCATOR_TYPE::deallocate_page(page);
 									good_head = head = control_word - 2;
@@ -763,7 +775,7 @@ namespace density
 							{
 								// deallocate the page
 								auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
-								DENSITY_ASSERT(is_address_aligned(page, ALLOCATOR_TYPE::page_alignment));
+								DENSITY_ASSERT(address_is_aligned(page, ALLOCATOR_TYPE::page_alignment));
 								DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(dirt_next - 2)));
 								ALLOCATOR_TYPE::deallocate_page(page);
 							}

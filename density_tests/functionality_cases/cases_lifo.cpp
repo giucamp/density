@@ -42,7 +42,7 @@ namespace density_tests
         LifoTestArray(const lifo_array<TYPE> & i_array)
             : m_array(i_array)
         {
-            TESTITY_ASSERT( is_address_aligned( i_array.data(), alignof(TYPE) ) );
+            TESTITY_ASSERT( address_is_aligned( i_array.data(), alignof(TYPE) ) );
             m_vector.insert(m_vector.end(), i_array.begin(), i_array.end());
         }
 
@@ -93,7 +93,7 @@ namespace density_tests
             {
                 const auto alignment = random_alignment(i_random);
                 m_buffer.resize(new_size, alignment);
-                TESTITY_ASSERT(is_address_aligned(m_buffer.data(), alignment));
+                TESTITY_ASSERT(address_is_aligned(m_buffer.data(), alignment));
             }
             else
             {
@@ -213,7 +213,7 @@ namespace density_tests
         {
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random));
-            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignof(std::max_align_t)));
+            TESTITY_ASSERT(address_is_aligned(buffer.data(), alignof(std::max_align_t)));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),
@@ -228,7 +228,7 @@ namespace density_tests
             int value = std::uniform_int_distribution<int>(-100, 100)(m_random);
             lifo_any<> any( value );
 
-            TESTITY_ASSERT(is_address_aligned(any.data(), alignof(std::max_align_t)));
+            TESTITY_ASSERT(address_is_aligned(any.data(), alignof(std::max_align_t)));
             push_test(any, value);
             lifo_test_push();
             pop_test();
@@ -239,7 +239,7 @@ namespace density_tests
             const auto alignment = random_alignment(m_random);
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random), alignment);
-            TESTITY_ASSERT(is_address_aligned(buffer.data(), alignment));
+            TESTITY_ASSERT(address_is_aligned(buffer.data(), alignment));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.mem_size(),

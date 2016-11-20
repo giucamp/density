@@ -95,7 +95,7 @@ namespace density
     /** Returns true whether the given address has the specified alignment
         @param i_address address to be checked
         @param i_alignment must be > 0 and a power of 2 */
-    inline bool is_address_aligned(const void * i_address, size_t i_alignment) noexcept
+    inline bool address_is_aligned(const void * i_address, size_t i_alignment) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
@@ -105,7 +105,7 @@ namespace density
         @param i_uint integer to be checked
         @param i_alignment must be > 0 and a power of 2 */
     template <typename UINT>
-        inline bool is_uint_aligned(UINT i_uint, UINT i_alignment) noexcept
+        inline bool uint_is_aligned(UINT i_uint, UINT i_alignment) noexcept
     {
         static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
@@ -124,7 +124,7 @@ namespace density
     inline const void * address_add( const void * i_address, size_t i_offset ) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-        return reinterpret_cast< void * >( uint_pointer + i_offset );
+        return reinterpret_cast< const void * >( uint_pointer + i_offset );
     }
 
     /** Subtracts an offset from a pointer
@@ -141,7 +141,7 @@ namespace density
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
         DENSITY_ASSERT( uint_pointer >= i_offset );
-        return reinterpret_cast< void * >( uint_pointer - i_offset );
+        return reinterpret_cast< const void * >( uint_pointer - i_offset );
     }
 
     /** Computes the unsigned difference between two pointers. The first must be above or equal to the second.
@@ -234,6 +234,15 @@ namespace density
         return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
     }
 
+	template <typename UINT>
+		inline UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
+	{
+		static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
+		DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+		auto const mask = i_alignment - 1;
+		return (i_uint + mask) & ~mask;
+	}
+
     /** Returns the smallest address greater than the first parameter, such that i_address + i_alignment_offset is aligned
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
@@ -284,11 +293,11 @@ namespace density
         {
             return false;
         }
-        if( !is_address_aligned(i_objects_start, std::alignment_of<TYPE>::value) )
+        if( !address_is_aligned(i_objects_start, std::alignment_of<TYPE>::value) )
         {
             return false;
         }
-        if( !is_address_aligned(i_objects_end, std::alignment_of<TYPE>::value))
+        if( !address_is_aligned(i_objects_end, std::alignment_of<TYPE>::value))
         {
             return false;
         }
@@ -308,7 +317,7 @@ namespace density
         @return address of the new block. */
     inline void * linear_alloc(void * & io_top_pointer, size_t i_size, size_t i_alignment)
     {
-        DENSITY_ASSERT(is_power_of_2(i_alignment) && is_uint_aligned(i_size, i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment) && uint_is_aligned(i_size, i_alignment));
         auto top = io_top_pointer;
         auto const new_block = top = address_upper_align(top, i_alignment);
         top = address_add(top, i_size);

@@ -947,7 +947,7 @@ namespace density
             // the feature alignment is included in FEATURE_LIST
             void check_alignment(void * i_buff, std::true_type) const noexcept
             {
-                DENSITY_ASSERT(is_address_aligned(i_buff, alignment()));
+                DENSITY_ASSERT(address_is_aligned(i_buff, alignment()));
             }
 
             // the feature alignment is not included in FEATURE_LIST, the alignment can't be checked

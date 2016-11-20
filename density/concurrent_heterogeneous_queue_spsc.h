@@ -317,7 +317,7 @@ namespace density
 			{
 				// allocate the page - this may throw
 				auto const new_page = allocate_page();
-				DENSITY_ASSERT(is_address_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+				DENSITY_ASSERT(address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
 
 				// from now on nothing can throw
 
@@ -422,7 +422,7 @@ namespace density
                                 if (control->m_type.empty())
                                 {
                                     auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
-                                    DENSITY_ASSERT(is_address_aligned(page, ALLOCATOR_TYPE::page_alignment));
+                                    DENSITY_ASSERT(address_is_aligned(page, ALLOCATOR_TYPE::page_alignment));
                                     DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(dirt_next - 2)));
                                     deallocate_page(page);
                                 }
