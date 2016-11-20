@@ -43,6 +43,12 @@ namespace density_tests
     template <typename CONTAINER>
         void tets_concurrent_heterogeneous_queue_mt(std::mt19937 &)
     {
+		for (size_t i = 0; i < std::numeric_limits<size_t>::digits; i++)
+		{
+			auto const size = static_cast<size_t>(1) << i;
+			TESTITY_ASSERT(density::detail::size_log2(size) == i);
+		}
+
         using namespace density::experimental;
 
         const size_t consumers = 6;
@@ -66,5 +72,7 @@ namespace density_tests
 
         i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<>>);
         i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<>>);
+		//i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<int64_t>>);
+		//i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<int64_t>>);
     }
 }

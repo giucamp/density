@@ -16,6 +16,173 @@
 
 namespace density
 {
+	namespace detail
+	{
+		/** Computes the base2 logarithm of a size_t. If the argument is zero or is
+			not a power of 2, the behavior is undefined. */
+		constexpr size_t size_log2(size_t i_size)
+		{
+			return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
+		}
+
+        /* Before each element there is a ControlBlock object. Since in the data member m_control_word the 2 least
+            significant bit are used as flags, the address of a ControlBlock must be mutiple of 4.
+            The alignas specifiers imply that this class is aligned at least at 4 bytes, but it may have
+            a stricter (larger) alignment, probably 8 on 64-bit platforms (see http://en.cppreference.com/w/cpp/language/alignas). */
+		template < typename COMMON_TYPE, typename RUNTIME_TYPE, size_t PAGE_SIZE>
+			struct alignas(4) alignas(sync::atomic<uintptr_t>) alignas(RUNTIME_TYPE) ControlBlock
+		{
+			sync::atomic<uintptr_t> m_control_word; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
+												bit 0: exclusive access flag. The thread that succeeds in setting this flag has exclusive
+												access on the content of the element. Other threads can always skip it.
+												bit 1: dead element flag. The content of the element is not valid: it has been consumed,
+												or the constructor threw an exception. Elements with this bit set don't require a the
+												destructor to be called.
+												The address of the next control block is given by:
+												m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
+			RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
+
+			static const size_t log2_page_size = size_log2(PAGE_SIZE);
+			static const size_t size_t_bits = std::numeric_limits<size_t>::digits;
+			static const uintptr_t half_size_mask = (static_cast<uintptr_t>(1) << (size_t_bits / 2)) - 1;
+
+			static_assert(std::numeric_limits<size_t>::radix == 2, "size_t must be binary");
+			static_assert(size_t_bits >= log2_page_size * 2, "The size of a page can't exceed 1 << ((bits in size_t) / 2)");
+
+			DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_next >= this + 1 && (reinterpret_cast<uintptr_t>(i_next) & 3) == 0);
+				auto const relative_address = reinterpret_cast<uintptr_t>(i_next) - reinterpret_cast<uintptr_t>(this);
+				DENSITY_ASSERT_INTERNAL(relative_address <= half_size_mask);
+				m_control_word.store(relative_address + 1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(COMMON_TYPE * i_element) noexcept
+			{
+				#if DENSITY_DEBUG_INTERNAL
+					auto const dbg_prev_next = m_control_word.load(sync::hint_memory_order_relaxed);
+					DENSITY_ASSERT_INTERNAL((dbg_prev_next & 3) == 1 && (dbg_prev_next & ~half_size_mask) == 0);
+				#endif
+
+				DENSITY_ASSERT_INTERNAL( static_cast<void*>(i_element) >= this + 1);
+				auto const relative_address = reinterpret_cast<uintptr_t>(i_element) - reinterpret_cast<uintptr_t>(this);
+				DENSITY_ASSERT_INTERNAL(relative_address <= half_size_mask);
+				m_control_word.fetch_add((relative_address << (size_t_bits / 2)) - 1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed() noexcept
+			{
+				DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
+				m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word)
+			{
+				return reinterpret_cast<uintptr_t>(this) + (i_control_word & (half_size_mask - 3));
+			}
+
+			struct ConsumeData
+			{
+				ControlBlock * const m_control;
+				COMMON_TYPE * m_element;
+
+				ConsumeData() noexcept
+					: m_control(nullptr)
+				{
+					
+				}
+
+				ConsumeData(ControlBlock * i_control_block) noexcept
+					: m_control(i_control_block), m_element(reinterpret_cast<COMMON_TYPE*>(
+						reinterpret_cast<uintptr_t>(i_control_block) + (i_control_block->m_control_word >> (size_t_bits / 2))))
+				{
+					DENSITY_ASSERT_INTERNAL(is_address_aligned(m_element, i_control_block->m_type.alignment()));
+				}
+
+				bool is_valid() const noexcept { return m_control != nullptr; }
+
+				DENSITY_STRONG_INLINE COMMON_TYPE * element_ptr() const noexcept
+				{
+					return m_element;
+				}
+
+				DENSITY_STRONG_INLINE void * element_unaligned_ptr() const noexcept { return m_element; }
+
+				DENSITY_STRONG_INLINE const RUNTIME_TYPE * type_ptr() const noexcept
+				{
+					return &m_control->m_type;
+				}
+			};
+		};
+
+		template <typename RUNTIME_TYPE, size_t PAGE_SIZE>
+			struct alignas(4) alignas(sync::atomic<uintptr_t>) alignas(RUNTIME_TYPE) ControlBlock<void, RUNTIME_TYPE, PAGE_SIZE>
+		{
+			sync::atomic<uintptr_t> m_control_word; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
+												bit 0: exclusive access flag. The thread that succeeds in setting this flag has exclusive
+												access on the content of the element. Other threads can always skip it.
+												bit 1: dead element flag. The content of the element is not valid: it has been consumed,
+												or the constructor threw an exception. Elements with this bit set don't require a the
+												destructor to be called.
+												The address of the next control block is given by:
+												m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
+			RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
+
+			DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next)
+			{
+				DENSITY_ASSERT_INTERNAL(i_next >= this + 1 && (reinterpret_cast<uintptr_t>(i_next) & 3) == 0);
+				m_control_word.store(reinterpret_cast<uintptr_t>(i_next) + 1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(void *)
+			{
+				DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
+				m_control_word.fetch_sub(1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed()
+			{
+				DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
+				m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
+			}
+
+			DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word)
+			{
+				return i_control_word & ~static_cast<uintptr_t>(3);
+			}
+
+			struct ConsumeData
+			{
+				ControlBlock * const m_control;
+
+				ConsumeData() noexcept
+					: m_control(nullptr)
+				{
+				}
+
+				ConsumeData(ControlBlock * i_control_block) noexcept
+					: m_control(i_control_block)
+				{
+				}
+
+				bool is_valid() const noexcept { return m_control != nullptr; }
+
+				DENSITY_STRONG_INLINE void * element_ptr() const
+				{
+					return address_upper_align(m_control + 1, m_control->m_type.alignment());
+				}
+
+				DENSITY_STRONG_INLINE void * element_unaligned_ptr() const { return m_control + 1; }
+
+				DENSITY_STRONG_INLINE const RUNTIME_TYPE * type_ptr() const
+				{
+					return &m_control->m_type;
+				}
+			};
+		};
+
+	}
+
     namespace experimental
     {
         /**
@@ -36,11 +203,6 @@ namespace density
 
             static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
                 "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you declare a type heter_cont<A,runtime_type<B>>?)");
-
-            static_assert(std::is_same<COMMON_TYPE, void>::value, "Currently only fully-heterogeneous elements are supported");
-                /* Reason: casting from a derived class is often a trivial operation (the value of the pointer does not change),
-                    but sometimes it may require offsetting the pointer, or it may also require a memory indirection. Most containers
-                    in this library store the result of this cast implicitly in the overhead data of the elements, but currently this container doesn't. */
 
             static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
                 "The size and alignment of the pages must be the same (and not too small)");
@@ -128,10 +290,11 @@ namespace density
 				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
 				new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type));
 
+				COMMON_TYPE * element;
                 try
                 {
                     // construct the element
-					i_runtime_type.copy_contruct(push_data.element_ptr(), i_source);
+					element = i_runtime_type.copy_contruct(push_data.element_ptr(), i_source);
                 }
                 catch (...)
                 {
@@ -145,7 +308,7 @@ namespace density
                     throw;
                 }
 
-                commit_push(push_data);
+                commit_push(push_data, element);
             }
 
 			void push_by_move(runtime_type i_runtime_type, void * i_source)
@@ -159,10 +322,11 @@ namespace density
 				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
 				new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type));
 
+				COMMON_TYPE * element;
 				try
 				{
 					// construct the element
-					i_runtime_type.move_contruct(push_data.element_ptr(), i_source);
+					element = i_runtime_type.move_contruct(push_data.element_ptr(), i_source);
 				}
 				catch (...)
 				{
@@ -176,7 +340,7 @@ namespace density
 					throw;
 				}
 
-				commit_push(push_data);
+				commit_push(push_data, element);
 			}
 
 
@@ -196,10 +360,11 @@ namespace density
 					"both runtime_type::make and the move constructor of runtime_type must be noexcept");
 				new(push_data.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
 
+				COMMON_TYPE * element;
                 try
                 {
                     // construct the element
-                    new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
+					element = new(push_data.m_element) COMPLETE_ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_args)...);
                 }
                 catch (...)
                 {
@@ -213,7 +378,7 @@ namespace density
                     throw;
                 }
 
-                commit_push(push_data);
+                commit_push(push_data, element);
             }
 
             template <typename CONSUMER_FUNC>
@@ -281,22 +446,7 @@ namespace density
 
 		private:
 
-            /* Before each element there is a ControlBlock object. Since in the data member m_next the 2 least
-                significant bit are used as flags, the address of a ControlBlock must be mutiple of 4.
-                The alignas specifiers imply that this class is aligned at least at 4 bytes, but it may have
-                a stricter (larger) alignment, probably 8 on 64-bit platforms (see http://en.cppreference.com/w/cpp/language/alignas). */
-			struct alignas(4) alignas(sync::atomic<uintptr_t>) alignas(RUNTIME_TYPE) ControlBlock
-			{
-				sync::atomic<uintptr_t> m_next; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
-												bit 0: exclusive access flag. The thread that succeeds in setting this flag has exclusive
-												access on the content of the element. Other threads can always skip it.
-												bit 1: dead element flag. The content of the element is not valid: it has been consumed,
-												or the constructor threw an exception. Elements with this bit set don't require a the
-												destructor to be called.
-												The address of the next control block is given by:
-												m_next.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
-				RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
-			};
+			using ControlBlock = detail::ControlBlock<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE::page_size>;
 
 			static constexpr bool element_fits_in_a_page(size_t i_size, size_t i_alignment)
 			{
@@ -324,9 +474,9 @@ namespace density
 			struct PushData
 			{
 				ControlBlock * m_control;
-				void * m_element;
+				COMMON_TYPE * m_element;
 
-				DENSITY_STRONG_INLINE void * element_ptr() const { return m_element; }
+				DENSITY_STRONG_INLINE COMMON_TYPE * element_ptr() const { return m_element; }
 
 				DENSITY_STRONG_INLINE RUNTIME_TYPE * type_ptr() const
 				{
@@ -388,19 +538,19 @@ namespace density
 					}
 				}
 
-				/* Now we can initialize control->m_next, and set the exclusive-access flag in it (the +1).
+				/* Now we can initialize control->m_control_word, and set the exclusive-access flag in it (the +1).
 				   Other producers can allocate space in the meanwhile (moving m_tail_for_producers forward).
 				  Consumers are not allowed no read after m_tail_for_consumers, which we still did not update,
 				  therefore the current page can't be deallocated. */
-				control->m_next.store(reinterpret_cast<uintptr_t>(tail) + 1, sync::hint_memory_order_relaxed);
+				control->lock_and_set_next_and_relaxed(tail);
 
-				/* Now the 'slot' we have allocated is ready: it can be skipped (control->m_next) is valid,
-				   but we have exclusive access on it (the first bit of control->m_next is set).
+				/* Now the 'slot' we have allocated is ready: it can be skipped (control->m_control_word) is valid,
+				   but we have exclusive access on it (the first bit of control->m_control_word is set).
 				   If other consumers have allocated space (i.e. modified m_tail_for_producers), now we are going to synchronize
 				   with them: consumers will exit from the next loop in the exact order they succeeded in updating m_tail_for_producers.
 				   Note: we have not yet constructed neither the type object, nor the element. The caller will do after thsi function returns.
 				   The next CAS operation on success needs at least the release semantic (consumers must see what
-				   we have written in control->m_next). */
+				   we have written in control->m_control_word). */
 				while (!compare_and_set_weak(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_release))
 				{
 					// this can happen only if slower consumer thread allocate space in m_tail_for_producers before a faster consumer thread
@@ -409,8 +559,8 @@ namespace density
 
 				/* Done. Now the caller can construct the type and the element concurrently with consumers and other producers.
 				   The current page won't be deallocated until cancel_push or commit_push is called, because we have set the exclusive access
-				   flag in control->m_next. */
-				return PushData{ control, new_element };
+				   flag in control->m_control_word. */
+				return PushData{ control, static_cast<COMMON_TYPE*>(new_element) };
 			}
 
 			/** Tries to allocate a new page. This operation may fail because many producer threads can try it concurrently, so they
@@ -443,7 +593,7 @@ namespace density
 					// setup a ControlBox with the dead flag
 					auto const control = static_cast<ControlBlock*>(i_original_tail);
 					new (&control->m_type) RUNTIME_TYPE();
-					control->m_next.store(reinterpret_cast<uintptr_t>(new_page) + 2);
+					control->m_control_word.store(reinterpret_cast<uintptr_t>(new_page) + 2);
 
 					// now we can move the tail to the next page
 					m_tail_for_producers.store(new_page);
@@ -467,8 +617,7 @@ namespace density
 			{
 				/* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
 				   same time the exclusive access is removed (the first bit) */
-				DENSITY_ASSERT_INTERNAL((i_control_block->m_next.load(sync::hint_memory_order_relaxed) & 3) == 1);
-				i_control_block->m_next.fetch_xor(3, sync::hint_memory_order_relaxed);
+				i_control_block->set_dead_and_unlock_relaxed();
 
 				/** Consumers should see what we have done (while producers are not interested). So we do a
 				    release operation on m_tail_for_consumers. */
@@ -477,36 +626,18 @@ namespace density
 
 			/** Used when a begin_push has been called, and both the type and the elements has been constructed. This
 			    function performs a release operation on m_tail_for_consumers. */
-			void commit_push(PushData i_push_data) noexcept
+			DENSITY_STRONG_INLINE void commit_push(PushData i_push_data, COMMON_TYPE * i_element) noexcept
 			{
 				/* decrementing the size we allow the consumers to process this element (this is an atomic operation)
 				   To do: this is a read-write operation. Make it a write-only op. */
-				DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next.load() & 3) == 1);
-				i_push_data.m_control->m_next.fetch_sub(1, sync::hint_memory_order_relaxed);
+				i_push_data.m_control->set_element_and_unlock_relaxed(i_element);
 
 				/** Consumers should see what we have done (while producers are not interested). So we do a
 				    release operation on m_tail_for_consumers. */
 				m_tail_for_consumers.fetch_add(0, sync::hint_memory_order_release);
 			}
 
-            struct ConsumeData
-            {
-                ControlBlock * m_control;
-
-                DENSITY_STRONG_INLINE void * element_ptr() const
-                {
-                    return address_upper_align(m_control + 1, m_control->m_type.alignment());
-                }
-
-                DENSITY_STRONG_INLINE void * element_unaligned_ptr() const { return m_control + 1; }
-
-                DENSITY_STRONG_INLINE const RUNTIME_TYPE * type_ptr() const
-                {
-                    return &m_control->m_type;
-                }
-            };
-
-            ConsumeData begin_consume() noexcept
+            typename ControlBlock::ConsumeData begin_consume() noexcept
             {
                 // Get exclusive access on m_head, setting it to zero
                 uintptr_t head;
@@ -528,21 +659,21 @@ namespace density
                     if (reinterpret_cast<void*>(head) == tail_for_consume)
                     {
                         m_head.store(good_head, sync::hint_memory_order_release);
-                        return ConsumeData{ nullptr };
+                        return typename ControlBlock::ConsumeData();
                     }
 
-                    // Try to get exclusive access on the element, setting the first bit in m_next
+                    // Try to get exclusive access on the element, setting the first bit in m_control_word
                     auto const control = reinterpret_cast<ControlBlock*>(head);
-                    auto const dirt_next = control->m_next.fetch_or(1, sync::hint_memory_order_relaxed);
-                    if ((dirt_next & 1) == 0)
+                    auto const control_word = control->m_control_word.fetch_or(1, sync::hint_memory_order_relaxed);
+                    if ((control_word & 1) == 0)
                     {
                         // we have the exclusive access on the element
-                        bool const living_element = (dirt_next & 2) == 0;
+                        bool const living_element = (control_word & 2) == 0;
                         if (living_element)
                         {
                             // release the head and return it
                             m_head.store(good_head, sync::hint_memory_order_release);
-                            return ConsumeData{ control };
+							return typename ControlBlock::ConsumeData(control);
                         }
                         else
                         {
@@ -550,9 +681,9 @@ namespace density
                             bool const can_obliterate = good_head == head;
                             if (can_obliterate)
                             {
-                                DENSITY_ASSERT_INTERNAL( (dirt_next & 3) == 2 );
+                                DENSITY_ASSERT_INTERNAL( (control_word & 3) == 2 );
                                 #if DENSITY_DEBUG_INTERNAL
-                                    control->m_next.store(37);
+                                    control->m_control_word.store(37);
                                 #endif
 
                                 // Check if this is a link ControlBlock, in which case we are leaving the page
@@ -560,33 +691,37 @@ namespace density
                                 {
                                     auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
                                     DENSITY_ASSERT(is_address_aligned(page, ALLOCATOR_TYPE::page_alignment));
-                                    DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(dirt_next - 2)));
+                                    DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(control_word - 2)));
 									ALLOCATOR_TYPE::deallocate_page(page);
+									good_head = head = control_word - 2;
                                 }
-                                good_head = head = dirt_next - 2;
+								else
+								{
+									good_head = head = control->get_next_from_control_word(control_word);
+								}
                                 continue;
                             }
                             else
                             {
                                 /* this is a dead element, but we can't move the head after it, because there are
                                     non-dead elements before it */
-                                control->m_next.store(dirt_next, sync::hint_memory_order_release);
+                                control->m_control_word.store(control_word, sync::hint_memory_order_release);
                             }
                         }
                     }
 
                     // Move to the next element, which may be in another page
-                    head = dirt_next & ~static_cast<uintptr_t>(3);
+                    head = control->get_next_from_control_word(control_word);
                 }
             }
 
-            void commit_consume(ConsumeData i_consume_data) noexcept
+            void commit_consume(typename ControlBlock::ConsumeData i_consume_data) noexcept
             {
                 #if DENSITY_DEBUG
                     memset(&(i_consume_data.m_control->m_type), 0xB4, sizeof(i_consume_data.m_control->m_type));
                 #endif
 
-                i_consume_data.m_control->m_next.fetch_xor(3, sync::hint_memory_order_relaxed);
+				i_consume_data.m_control->set_dead_and_unlock_relaxed();
 
                 m_head.fetch_add(0, sync::hint_memory_order_release);
             }
@@ -605,7 +740,7 @@ namespace density
 					while (head != tail)
 					{
 						auto const control = reinterpret_cast<ControlBlock*>(head);
-						auto const next = control->m_next.load(sync::hint_memory_order_relaxed);
+						auto const next = control->m_control_word.load(sync::hint_memory_order_relaxed);
 						DENSITY_ASSERT( (next & 1) == 0 ); // someone has exclusive access?
 						if ((next & 2) == 0)
 						{
