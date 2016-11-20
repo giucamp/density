@@ -42,12 +42,11 @@ namespace density
 												m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
 			RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
 
-			static const size_t log2_page_size = size_log2(PAGE_SIZE);
-			static const size_t size_t_bits = std::numeric_limits<size_t>::digits;
-			static const uintptr_t half_size_mask = (static_cast<uintptr_t>(1) << (size_t_bits / 2)) - 1;
+			static const uintptr_t half_size_bits = size_log2(PAGE_SIZE) / 2;
+			static const uintptr_t half_size_mask = (static_cast<uintptr_t>(1) << half_size_bits) - 1;
 
 			static_assert(std::numeric_limits<size_t>::radix == 2, "size_t must be binary");
-			static_assert(size_t_bits >= log2_page_size * 2, "The size of a page can't exceed 1 << ((bits in size_t) / 2)");
+			static_assert(std::numeric_limits<uintptr_t>::digits >= half_size_bits * 2, "The size of a page can't exceed 1 << ((bits in size_t) / 2)");
 
 			DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next) noexcept
 			{
@@ -67,7 +66,7 @@ namespace density
 				DENSITY_ASSERT_INTERNAL( static_cast<void*>(i_element) >= this + 1);
 				auto const relative_address = reinterpret_cast<uintptr_t>(i_element) - reinterpret_cast<uintptr_t>(this);
 				DENSITY_ASSERT_INTERNAL(relative_address <= half_size_mask);
-				m_control_word.fetch_add((relative_address << (size_t_bits / 2)) - 1, sync::hint_memory_order_relaxed);
+				m_control_word.fetch_add((relative_address << half_size_bits) - 1, sync::hint_memory_order_relaxed);
 			}
 
 			DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed() noexcept
@@ -78,7 +77,16 @@ namespace density
 
 			DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word)
 			{
-				return reinterpret_cast<uintptr_t>(this) + (i_control_word & (half_size_mask - 3));
+				auto const low_part = i_control_word & (half_size_mask - 3);
+				if (low_part == 0)
+				{
+					// this is a link to another page
+					return i_control_word & (std::numeric_limits<uintptr_t>::max() - 3);
+				}
+				else
+				{
+					return reinterpret_cast<uintptr_t>(this) + (low_part);
+				}
 			}
 
 			struct ConsumeData
@@ -94,7 +102,7 @@ namespace density
 
 				ConsumeData(ControlBlock * i_control_block) noexcept
 					: m_control(i_control_block), m_element(reinterpret_cast<COMMON_TYPE*>(
-						reinterpret_cast<uintptr_t>(i_control_block) + (i_control_block->m_control_word >> (size_t_bits / 2))))
+						reinterpret_cast<uintptr_t>(i_control_block) + (i_control_block->m_control_word >> half_size_bits)))
 				{
 					DENSITY_ASSERT_INTERNAL(is_address_aligned(m_element, i_control_block->m_type.alignment()));
 				}

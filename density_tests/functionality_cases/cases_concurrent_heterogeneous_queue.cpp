@@ -72,7 +72,7 @@ namespace density_tests
 
         i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<>>);
         i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<>>);
-		//i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<int64_t>>);
-		//i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<int64_t>>);
+		i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<int64_t>>);
+		i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<int64_t>>);
     }
 }
