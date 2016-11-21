@@ -49,37 +49,37 @@ namespace density
             return i_first > i_second ? i_first : i_second;
         }
 
-		template <typename SCOPE_EXIT_ACTION>
-			class ScopeExit
-		{
-		public:
+        template <typename SCOPE_EXIT_ACTION>
+            class ScopeExit
+        {
+        public:
 
-			ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-				: m_scope_exit_action(std::move(i_scope_exit_action))
-			{
-				static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
-			}
+            ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+                : m_scope_exit_action(std::move(i_scope_exit_action))
+            {
+                static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
+            }
 
-			~ScopeExit()
-			{
-				m_scope_exit_action();
-			}
+            ~ScopeExit()
+            {
+                m_scope_exit_action();
+            }
 
-			ScopeExit(const ScopeExit &) = delete;
-			ScopeExit & operator = (const ScopeExit &) = delete;
+            ScopeExit(const ScopeExit &) = delete;
+            ScopeExit & operator = (const ScopeExit &) = delete;
 
-			ScopeExit(ScopeExit &&) noexcept = default;
-			ScopeExit & operator = (ScopeExit &&) noexcept = default;
+            ScopeExit(ScopeExit &&) noexcept = default;
+            ScopeExit & operator = (ScopeExit &&) noexcept = default;
 
-		private:
-			SCOPE_EXIT_ACTION m_scope_exit_action;
-		};
+        private:
+            SCOPE_EXIT_ACTION m_scope_exit_action;
+        };
 
-		template <typename SCOPE_EXIT_ACTION>
-			inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-		{
-			return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
-		}
+        template <typename SCOPE_EXIT_ACTION>
+            inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+        {
+            return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
+        }
     }
 
                 // address functions
@@ -234,14 +234,14 @@ namespace density
         return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
     }
 
-	template <typename UINT>
-		inline UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
-	{
-		static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
-		DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-		auto const mask = i_alignment - 1;
-		return (i_uint + mask) & ~mask;
-	}
+    template <typename UINT>
+        inline UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
+    {
+        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        auto const mask = i_alignment - 1;
+        return (i_uint + mask) & ~mask;
+    }
 
     /** Returns the smallest address greater than the first parameter, such that i_address + i_alignment_offset is aligned
         @param i_address address to be aligned

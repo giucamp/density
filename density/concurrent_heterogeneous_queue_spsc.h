@@ -30,7 +30,7 @@ namespace density
                 There is no requirement on the type of the elements: they can be non-trivially movable, copyable and destructible.
                 */
         template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
-			class concurrent_heterogeneous_queue_spsc : private ALLOCATOR_TYPE
+            class concurrent_heterogeneous_queue_spsc : private ALLOCATOR_TYPE
         {
         public:
 
@@ -54,9 +54,9 @@ namespace density
             concurrent_heterogeneous_queue_spsc()
             {
                 auto const first_page = allocator_type::allocate_page();
-				m_tail_for_alloc.store(first_page);
-				m_tail_for_consumers.store(first_page);
-				m_head.store(reinterpret_cast<uintptr_t>(first_page));
+                m_tail_for_alloc.store(first_page);
+                m_tail_for_consumers.store(first_page);
+                m_head.store(reinterpret_cast<uintptr_t>(first_page));
             }
 
             /** Adds an element at the end of the queue. The operation may require the allocation of a new page.
@@ -83,7 +83,7 @@ namespace density
                 using ElementCompleteType = typename std::decay<ELEMENT_TYPE>::type;
                 emplace<ElementCompleteType>(std::forward<ELEMENT_TYPE>(i_source));
             }
-			
+
             void push_by_copy(runtime_type i_runtime_type, const void * i_source)
             {
                 static_assert(element_fits_in_a_page(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE)),
@@ -91,9 +91,9 @@ namespace density
 
                 auto push_data = begin_push<true>(i_runtime_type.size(), i_runtime_type.alignment());
 
-				// construct the type
-				static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
-				new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type));
+                // construct the type
+                static_assert(new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type)));
+                new(push_data.type_ptr()) runtime_type(std::move(i_runtime_type));
 
                 try
                 {
@@ -127,10 +127,10 @@ namespace density
 
                 auto push_data = begin_push<true>(sizeof(COMPLETE_ELEMENT_TYPE), alignof(COMPLETE_ELEMENT_TYPE));
 
-				// construct the type - This expression can throw
-				static_assert(noexcept(RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>())),
-					"both runtime_type::make and the move constructor of runtime_type must be noexcept");
-				new(push_data.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
+                // construct the type - This expression can throw
+                static_assert(noexcept(RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>())),
+                    "both runtime_type::make and the move constructor of runtime_type must be noexcept");
+                new(push_data.type_ptr()) RUNTIME_TYPE(RUNTIME_TYPE::template make<COMPLETE_ELEMENT_TYPE>());
 
                 try
                 {
@@ -158,12 +158,12 @@ namespace density
                 auto consume_data = begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-					auto scope_exit = detail::at_scope_exit([this, consume_data] () noexcept {
-						consume_data.type_ptr()->destroy(consume_data.element_ptr());
-						consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
-						commit_consume(consume_data);
-					});
-					i_consumer_func(*consume_data.type_ptr(), consume_data.element_ptr());
+                    auto scope_exit = detail::at_scope_exit([this, consume_data] () noexcept {
+                        consume_data.type_ptr()->destroy(consume_data.element_ptr());
+                        consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
+                        commit_consume(consume_data);
+                    });
+                    i_consumer_func(*consume_data.type_ptr(), consume_data.element_ptr());
                     return true;
                 }
                 else
@@ -178,11 +178,11 @@ namespace density
                 auto consume_data = begin_consume();
                 if (consume_data.m_control != nullptr)
                 {
-					auto scope_exit = detail::at_scope_exit([this, consume_data]() noexcept {
-						consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
-						commit_consume(consume_data);
-					});
-					i_consumer_func(*consume_data.type_ptr(), consume_data.unaligned_element());
+                    auto scope_exit = detail::at_scope_exit([this, consume_data]() noexcept {
+                        consume_data.type_ptr()->RUNTIME_TYPE::~RUNTIME_TYPE();
+                        commit_consume(consume_data);
+                    });
+                    i_consumer_func(*consume_data.type_ptr(), consume_data.unaligned_element());
                     return true;
                 }
                 else
@@ -215,36 +215,36 @@ namespace density
                 return *static_cast<alocator_type*>(this);
             }
 
-		private:
+        private:
 
             /* Before each element there is a ControlBlock object. Since in the data member m_next the 2 least
                 significant bit are used as flags, the address of a ControlBlock must be mutiple of 4.
                 The alignas specifiers imply that this class is aligned at least at 4 bytes, but it may have
                 a stricter (larger) alignment, probably 8 on 64-bit platforms (see http://en.cppreference.com/w/cpp/language/alignas). */
-			struct alignas(4) alignas(sync::atomic<uintptr_t>) alignas(RUNTIME_TYPE) ControlBlock
-			{
-				uintptr_t m_next; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
-										bit 0: not used
-										bit 1: dead element flag. The content of the element is not valid: it has been consumed,
-										or the constructor threw an exception. Elements with this bit set don't require a the
-										destructor to be called.
-										The address of the next control block is given by:
-										m_next & (std::numeric_limits<uintptr_t>::max() - 3). */
-				RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
-			};
+            struct alignas(4) alignas(sync::atomic<uintptr_t>) alignas(RUNTIME_TYPE) ControlBlock
+            {
+                uintptr_t m_next; /** pointer to the next control block, plus two additional flags encoded in the least-significant bits.
+                                        bit 0: not used
+                                        bit 1: dead element flag. The content of the element is not valid: it has been consumed,
+                                        or the constructor threw an exception. Elements with this bit set don't require a the
+                                        destructor to be called.
+                                        The address of the next control block is given by:
+                                        m_next & (std::numeric_limits<uintptr_t>::max() - 3). */
+                RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
+            };
 
-			static constexpr bool element_fits_in_a_page(size_t i_size, size_t i_alignment)
-			{
-				return i_size + i_alignment < (ALLOCATOR_TYPE::page_size - sizeof(ControlBlock) * 2);
-			}
+            static constexpr bool element_fits_in_a_page(size_t i_size, size_t i_alignment)
+            {
+                return i_size + i_alignment < (ALLOCATOR_TYPE::page_size - sizeof(ControlBlock) * 2);
+            }
 
-			static bool are_same_page(void * i_first, void * i_second)
-			{
-				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
-					~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1)) == 0;
-			}
+            static bool are_same_page(void * i_first, void * i_second)
+            {
+                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
+                    ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1)) == 0;
+            }
 
-			/** A CompareAndSwap (CAS) function based on compare_exchange_weak.
+            /** A CompareAndSwap (CAS) function based on compare_exchange_weak.
                 The difference between compare_and_set_weak and compare_exchange_weak is that compare_and_set_weak takes the expected
                 value by value. Therefore, in case of failure, the caller can't get the previous value of the atomic.
                 The interface compare_exchange_weak is fine in many cases, but it is not very comfortable if we are not interested in
@@ -256,107 +256,107 @@ namespace density
                 return io_atomic.compare_exchange_weak(i_expected, i_set_to, i_success_memory_order, sync::hint_memory_order_relaxed);
             }
 
-			struct PushData
-			{
-				ControlBlock * m_control;
-				void * m_element;
+            struct PushData
+            {
+                ControlBlock * m_control;
+                void * m_element;
 
-				DENSITY_STRONG_INLINE void * element_ptr() const { return m_element; }
+                DENSITY_STRONG_INLINE void * element_ptr() const { return m_element; }
 
-				DENSITY_STRONG_INLINE RUNTIME_TYPE * type_ptr() const
-				{
-					return &m_control->m_type;
-				}
-			};
+                DENSITY_STRONG_INLINE RUNTIME_TYPE * type_ptr() const
+                {
+                    return &m_control->m_type;
+                }
+            };
 
-			/** Allocates space for a RUNTIME_TYPE and for an element, returning a pair of pointers to them.
-				The caller should construct the type and the element, and then it should call commit_push().
-				If an exception is thrown during the construction, cancel_push must be called.
-				If an exception is thrown by begin_push, the call has no effect. */
-			template <bool CAN_WAIT>
-				PushData begin_push(size_t i_size, size_t i_alignment)
-			{
-				ControlBlock * control;
-				void * new_element;
-				void * tail;
+            /** Allocates space for a RUNTIME_TYPE and for an element, returning a pair of pointers to them.
+                The caller should construct the type and the element, and then it should call commit_push().
+                If an exception is thrown during the construction, cancel_push must be called.
+                If an exception is thrown by begin_push, the call has no effect. */
+            template <bool CAN_WAIT>
+                PushData begin_push(size_t i_size, size_t i_alignment)
+            {
+                ControlBlock * control;
+                void * new_element;
+                void * tail;
 
-				for (;;)
-				{
-					tail = m_tail.load(sync::hint_memory_order_relaxed);
+                for (;;)
+                {
+                    tail = m_tail.load(sync::hint_memory_order_relaxed);
 
-					control = static_cast<ControlBlock*>(linear_alloc(tail, sizeof(ControlBlock)));
-					new_element = linear_alloc(tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
+                    control = static_cast<ControlBlock*>(linear_alloc(tail, sizeof(ControlBlock)));
+                    new_element = linear_alloc(tail, i_size, i_alignment > alignof(ControlBlock) ? i_alignment : alignof(ControlBlock));
 
-					/* Check for end of page. We need to make sure that not only the ControlBlock and the element fit in the page,
-					   but also an extra ControlBlock, that eventually we use as link to the next page. */
-					auto const end_of_page = (reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1)) + 1;
-					auto const limit = reinterpret_cast<void*>(end_of_page - sizeof(ControlBlock));
-					if (tail > limit)
-					{
-						/* There is no place to allocate another ControlBlock after the new element.
-						We must setup this ControlBock as link for a new page. */
-						handle_end_of_page(); // if this throws, no change is done in the queue
-						continue;
-					}
-				}
+                    /* Check for end of page. We need to make sure that not only the ControlBlock and the element fit in the page,
+                       but also an extra ControlBlock, that eventually we use as link to the next page. */
+                    auto const end_of_page = (reinterpret_cast<uintptr_t>(original_tail) | static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1)) + 1;
+                    auto const limit = reinterpret_cast<void*>(end_of_page - sizeof(ControlBlock));
+                    if (tail > limit)
+                    {
+                        /* There is no place to allocate another ControlBlock after the new element.
+                        We must setup this ControlBock as link for a new page. */
+                        handle_end_of_page(); // if this throws, no change is done in the queue
+                        continue;
+                    }
+                }
 
-				/* Now we can initialize control->m_next. Consumers are not allowed no read after m_tail, which we still did not update,
-					therefore the current page can't be deallocated. */
-				control->m_next = reinterpret_cast<uintptr_t>(tail);
-				
-				/* Done. Now the caller can construct the type and the element concurrently with consumers and other producers.
-				   The current page won't be deallocated until cancel_push or commit_push is called, because we have set the exclusive access
-				   flag in control->m_next. */
-				return PushData{ control, new_element };
-			}
+                /* Now we can initialize control->m_next. Consumers are not allowed no read after m_tail, which we still did not update,
+                    therefore the current page can't be deallocated. */
+                control->m_next = reinterpret_cast<uintptr_t>(tail);
 
-			/** Tries to allocate a new page. This operation may fail because many producer threads can try it concurrently, so they
-			    have to synchronize to avoid multiple allocations.
-			    Returns m_tail_for_alloc.load(sync::hint_memory_order_acquire) */
-			DENSITY_NO_INLINE void handle_end_of_page()
-			{
-				// allocate the page - this may throw
-				auto const new_page = allocate_page();
-				DENSITY_ASSERT(address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+                /* Done. Now the caller can construct the type and the element concurrently with consumers and other producers.
+                   The current page won't be deallocated until cancel_push or commit_push is called, because we have set the exclusive access
+                   flag in control->m_next. */
+                return PushData{ control, new_element };
+            }
 
-				// from now on nothing can throw
+            /** Tries to allocate a new page. This operation may fail because many producer threads can try it concurrently, so they
+                have to synchronize to avoid multiple allocations.
+                Returns m_tail_for_alloc.load(sync::hint_memory_order_acquire) */
+            DENSITY_NO_INLINE void handle_end_of_page()
+            {
+                // allocate the page - this may throw
+                auto const new_page = allocate_page();
+                DENSITY_ASSERT(address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
 
-				// setup a ControlBox with the dead flag
-				auto tail = m_tail.load(sync::hint_memory_order_relaxed);
-				auto const control = static_cast<ControlBlock*>(tail);
-				new (&control->m_type) RUNTIME_TYPE();
-				control->m_next = reinterpret_cast<uintptr_t>(new_page) + 2;
+                // from now on nothing can throw
 
-				// now we can move the tail to the next page
-				tail.store(new_page, sync::hint_memory_order_release);
-			}
+                // setup a ControlBox with the dead flag
+                auto tail = m_tail.load(sync::hint_memory_order_relaxed);
+                auto const control = static_cast<ControlBlock*>(tail);
+                new (&control->m_type) RUNTIME_TYPE();
+                control->m_next = reinterpret_cast<uintptr_t>(new_page) + 2;
 
-			/** Used when a begin_push has been called, but an exception was thrown during the construction of the element
-			    (or the type). This function marks the element as dead, and performs a release operation on m_tail_for_consumers. */
-			void cancel_push(ControlBlock * i_control_block) noexcept
-			{
-				/* The second bit of m_size is set to 1, meaning that the state of the element is invalid */
-				DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 0);
-				i_control_block->m_next |= 2;
+                // now we can move the tail to the next page
+                tail.store(new_page, sync::hint_memory_order_release);
+            }
 
-				/** Consumers should see what we have done (while producers are not interested). So we do a
-				    release operation on m_tail_for_consumers. */
-				m_tail.fetch_add(0, sync::hint_memory_order_release);
-			}
+            /** Used when a begin_push has been called, but an exception was thrown during the construction of the element
+                (or the type). This function marks the element as dead, and performs a release operation on m_tail_for_consumers. */
+            void cancel_push(ControlBlock * i_control_block) noexcept
+            {
+                /* The second bit of m_size is set to 1, meaning that the state of the element is invalid */
+                DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 0);
+                i_control_block->m_next |= 2;
 
-			/** Used when a begin_push has been called, and both the type and the elements has been constructed. This
-			    function performs a release operation on m_tail_for_consumers. */
-			void commit_push(PushData i_push_data) noexcept
-			{
-				/* decrementing the size we allow the consumers to process this element (this is an atomic operation)
-				   To do: this is a read-write operation. Make it a write-only op. */
-				DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next & 3) == 1);
-				i_push_data.m_control->m_next--;
+                /** Consumers should see what we have done (while producers are not interested). So we do a
+                    release operation on m_tail_for_consumers. */
+                m_tail.fetch_add(0, sync::hint_memory_order_release);
+            }
 
-				/** Consumers should see what we have done (while producers are not interested). So we do a
-				    release operation on m_tail_for_consumers. */
-				m_tail.fetch_add(0, sync::hint_memory_order_release);
-			}
+            /** Used when a begin_push has been called, and both the type and the elements has been constructed. This
+                function performs a release operation on m_tail_for_consumers. */
+            void commit_push(PushData i_push_data) noexcept
+            {
+                /* decrementing the size we allow the consumers to process this element (this is an atomic operation)
+                   To do: this is a read-write operation. Make it a write-only op. */
+                DENSITY_ASSERT_INTERNAL((i_push_data.m_control->m_next & 3) == 1);
+                i_push_data.m_control->m_next--;
+
+                /** Consumers should see what we have done (while producers are not interested). So we do a
+                    release operation on m_tail_for_consumers. */
+                m_tail.fetch_add(0, sync::hint_memory_order_release);
+            }
 
             struct ConsumeData
             {
@@ -377,15 +377,15 @@ namespace density
 
             ConsumeData begin_consume() noexcept
             {
-				// Get exclusive access on m_head, setting it to zero
-				auto head = m_head.load(sync::hint_memory_order_relaxed);
+                // Get exclusive access on m_head, setting it to zero
+                auto head = m_head.load(sync::hint_memory_order_relaxed);
 
-				// Check if we have reached the end of the queue
-				auto const tail = m_tail.load(sync::hint_memory_order_acquire);
-				if (reinterpret_cast<void*>(head) == tail)
-				{
-					return ConsumeData{ nullptr };
-				}
+                // Check if we have reached the end of the queue
+                auto const tail = m_tail.load(sync::hint_memory_order_acquire);
+                if (reinterpret_cast<void*>(head) == tail)
+                {
+                    return ConsumeData{ nullptr };
+                }
 
                 /** Now we loop the elements from the head on, trying to get exclusive access on one. If we find a
                     dead element soon after the head, we obliterate it: that is, we move the head after it. */
@@ -455,8 +455,8 @@ namespace density
             }
 
         private:
-			alignas(concurrent_alignment) sync::atomic<void*> m_tail;
-			alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head;
+            alignas(concurrent_alignment) sync::atomic<void*> m_tail;
+            alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head;
         };
 
     } // namespace experimental
@@ -464,5 +464,5 @@ namespace density
 } // namespace density
 
 #ifdef _MSC_VER
-	#pragma warning(pop)
+    #pragma warning(pop)
 #endif
