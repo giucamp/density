@@ -20,7 +20,7 @@ namespace density
     {
         /** Computes the base2 logarithm of a size_t. If the argument is zero or is
             not a power of 2, the behavior is undefined. */
-        constexpr size_t size_log2(size_t i_size)
+        constexpr size_t size_log2(size_t i_size) noexcept
         {
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
@@ -42,8 +42,8 @@ namespace density
                                                 m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
             RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
 
-            static const uintptr_t half_size_bits = size_log2(PAGE_SIZE);
-            static const uintptr_t half_size_mask = (static_cast<uintptr_t>(1) << half_size_bits) - 1;
+            static constexpr uintptr_t half_size_bits = size_log2(PAGE_SIZE);
+            static constexpr uintptr_t half_size_mask = (static_cast<uintptr_t>(1) << half_size_bits) - 1;
 
             static_assert(std::numeric_limits<size_t>::radix == 2, "size_t must be binary");
             static_assert(std::numeric_limits<uintptr_t>::digits >= half_size_bits * 2, "The size of a page can't exceed 1 << ((bits in size_t) / 2)");
@@ -75,7 +75,7 @@ namespace density
                 m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word)
+            DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word) noexcept
             {
                 auto const low_part = i_control_word & (half_size_mask - 3);
                 if (low_part == 0)
@@ -136,25 +136,25 @@ namespace density
                                                 m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
             RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
 
-            DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next)
+            DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_next >= this + 1 && (reinterpret_cast<uintptr_t>(i_next) & 3) == 0);
                 m_control_word.store(reinterpret_cast<uintptr_t>(i_next) + 1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(void *)
+            DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(void *) noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
                 m_control_word.fetch_sub(1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed()
+            DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed() noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
                 m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word)
+            DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word) noexcept
             {
                 return i_control_word & ~static_cast<uintptr_t>(3);
             }

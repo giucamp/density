@@ -7,6 +7,7 @@
 #include <density/concurrent_heterogeneous_queue_lf.h>
 #include <testity/test_tree.h>
 #include <testity/testity_common.h>
+#include <testity/test_classes.h>
 #include "concurrent_producer_consumer_test.h"
 #include <chrono>
 
@@ -105,7 +106,7 @@ namespace density_tests
             Base(int64_t i_value) : m_value(i_value) {}
         };
 
-        struct Der_1 : Dummy, virtual Base
+        struct Der_1 : Dummy, Base
         {
             float m_a_float = 42.f;
 
@@ -119,6 +120,22 @@ namespace density_tests
             Der_2(int64_t i_value) : Base(i_value) {}
         };
 
+		struct Der_3 : testity::TestClass<testity::FeatureKind::Supported, testity::FeatureKind::Supported, testity::FeatureKind::SupportedNoExcept, 512, 32>, 
+			virtual Base
+		{
+			double m_a_souble = 42.f;
+
+			Der_3(int64_t i_value) : Base(i_value) {}
+		};
+
+		struct Der_4 : testity::TestClass<testity::FeatureKind::Supported, testity::FeatureKind::Supported, testity::FeatureKind::SupportedNoExcept, 64, 64>,
+			virtual Base
+		{
+			double m_a_souble = 42.f;
+
+			Der_4(int64_t i_value) : Base(i_value) {}
+		};
+
     } // namespace queue_test
 
     void tets_concurrent_heterogeneous_queue_base_mt(std::mt19937 &)
@@ -130,7 +147,7 @@ namespace density_tests
         ConcProdConsTest<Queue> test(10 * 1000 * 1000 );
         using CommonType = Queue::common_type;
 
-        test.add_test<Der_1>(
+		test.add_test<Der_1>(
             [](Queue & i_queue, int64_t i_id, std::mt19937 & ) { i_queue.push(Der_1(i_id)); },
             [](CommonType * i_element)->int64_t {
                 TESTITY_ASSERT(i_element->m_check_word == 333);
@@ -138,8 +155,7 @@ namespace density_tests
 
         test.add_test<Der_1>(
             [](Queue & i_queue, int64_t i_id, std::mt19937 & ) {
-                Der_1 obj(i_id);
-                i_queue.push(obj); },
+                Der_1 obj(i_id); i_queue.push(obj); },
             [](CommonType * i_element)->int64_t {
                 TESTITY_ASSERT(i_element->m_check_word == 333);
                 return i_element->m_value; });
@@ -156,8 +172,32 @@ namespace density_tests
                 TESTITY_ASSERT(i_element->m_check_word == 333);
                 return i_element->m_value; });
 
-        const size_t consumers = 1;
-        const size_t producers = 1;
+		test.add_test<Der_3>(
+			[](Queue & i_queue, int64_t i_id, std::mt19937 &) { i_queue.push(Der_3(i_id)); },
+			[](CommonType * i_element)->int64_t {
+			TESTITY_ASSERT(i_element->m_check_word == 333);
+			return i_element->m_value; });
+
+		test.add_test<Der_3>(
+			[](Queue & i_queue, int64_t i_id, std::mt19937 &) { Der_3 obj(i_id); i_queue.push(obj); },
+			[](CommonType * i_element)->int64_t {
+			TESTITY_ASSERT(i_element->m_check_word == 333);
+			return i_element->m_value; });
+
+		test.add_test<Der_4>(
+			[](Queue & i_queue, int64_t i_id, std::mt19937 &) { i_queue.push(Der_4(i_id)); },
+			[](CommonType * i_element)->int64_t {
+			TESTITY_ASSERT(i_element->m_check_word == 333);
+			return i_element->m_value; });
+
+		test.add_test<Der_4>(
+			[](Queue & i_queue, int64_t i_id, std::mt19937 &) { Der_4 obj(i_id); i_queue.push(obj); },
+			[](CommonType * i_element)->int64_t {
+			TESTITY_ASSERT(i_element->m_check_word == 333);
+			return i_element->m_value; });
+
+        const size_t consumers = 6;
+        const size_t producers = 6;
         test.run(consumers, producers);
     }
 

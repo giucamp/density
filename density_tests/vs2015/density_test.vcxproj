@@ -197,6 +197,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
