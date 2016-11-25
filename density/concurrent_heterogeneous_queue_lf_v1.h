@@ -226,8 +226,7 @@ namespace density
                 auto const first_page = allocator_type::allocate_page();
                 m_tail_for_producers.store(first_page);
                 m_tail_for_consumers.store(first_page);
-                m_head_for_consumers.store(reinterpret_cast<uintptr_t>(first_page));
-				m_head_for_obliterate.store(reinterpret_cast<uintptr_t>(first_page));
+                m_head.store(reinterpret_cast<uintptr_t>(first_page));
             }
 
             /** copy not supported */
@@ -240,13 +239,11 @@ namespace density
             concurrent_heterogeneous_queue_lf(concurrent_heterogeneous_queue_lf && i_source) noexcept
                 : m_tail_for_producers(i_source.m_tail_for_producers.load()),
                   m_tail_for_consumers(i_source.m_tail_for_consumers.load()),
-				  m_head_for_consumers(i_source.m_head_for_consumers.load()),
-				  m_head_for_obliterate(i_source.m_head_for_obliterate.load())
+                  m_head(i_source.m_head.load())
             {
                 i_source.m_tail_for_producers.load(nullptr);
                 i_source.m_tail_for_consumers.load(nullptr);
-                i_source.m_head_for_consumers.store(0);
-				i_source.m_head_for_obliterate.store(0);
+                i_source.m_head.store(0);
             }
 
             /** Move assignment. Not thread safe. The source of a move operation can't be used for push and consumes. */
@@ -257,12 +254,10 @@ namespace density
                     destroy();
                     m_tail_for_producers.store(i_source.m_tail_for_producers.load());
                     m_tail_for_consumers.store(i_source.m_tail_for_consumers.load());
-					m_head_for_consumers= i_source.store(m_head_for_consumers.load());
-                    m_head_for_obliterate = i_source.store(m_head_for_obliterate.load());
+                    m_head = i_source.store(m_head.load());
                     i_source.m_tail_for_producers.load(nullptr);
                     i_source.m_tail_for_consumers.load(nullptr);
-					i_source.m_head_for_consumers.store(0);
-					i_source.m_head_for_obliterate.store(0);
+                    i_source.m_head.store(0);
                 }
                 return *this;
             }
@@ -664,46 +659,80 @@ namespace density
 
             typename ControlBlock::ConsumeData begin_consume() noexcept
             {
-				for (;;)
-				{
-					auto const tail = reinterpret_cast<uintptr_t>(m_tail_for_consumers.load(sync::hint_memory_order_acquire));
+                // Get exclusive access on m_head, setting it to zero
+                uintptr_t head;
+                do {
+                    head = m_head.fetch_and(0, sync::hint_memory_order_acquire);
+                    if (head == 0)
+                    {
+                        std::this_thread::yield();
+                    }
+                } while (head == 0);
 
-					// get exclusive access on m_head_for_consumers
-					uintptr_t head_for_consumers;
-					do {
-						head_for_consumers = m_head_for_consumers.fetch_or(1, sync::hint_memory_order_relaxed);
-					} while (head_for_consumers & 1);
+                /** Now we loop the elements from the head on, trying to get exclusive access on one. If we find a
+                    dead element soon after the head, we obliterate it: that is, we move the head after it. */
+                auto good_head = head; // this is the value of head we are going to set when we have finished
+                for(;;)
+                {
+                    // Check if we have reached the end of the queue
+                    auto const tail_for_consume = m_tail_for_consumers.load(sync::hint_memory_order_acquire);
+                    if (reinterpret_cast<void*>(head) == tail_for_consume)
+                    {
+                        m_head.store(good_head, sync::hint_memory_order_release);
+                        return typename ControlBlock::ConsumeData();
+                    }
 
-					// access the control block to get the control_word
-					auto const control = reinterpret_cast<ControlBlock *>(head_for_consumers);
-					auto const control_word = control->m_control_word.fetch_or(1, sync::hint_memory_order_acquire);
-					auto const next = control->get_next_from_control_word(control_word);
+                    // Try to get exclusive access on the element, setting the first bit in m_control_word
+                    auto const control = reinterpret_cast<ControlBlock*>(head);
+                    auto const control_word = control->m_control_word.fetch_or(1, sync::hint_memory_order_relaxed);
+                    if ((control_word & 1) == 0)
+                    {
+                        // we have the exclusive access on the element
+                        bool const living_element = (control_word & 2) == 0;
+                        if (living_element)
+                        {
+                            // release the head and return it
+                            m_head.store(good_head, sync::hint_memory_order_release);
+                            return typename ControlBlock::ConsumeData(control);
+                        }
+                        else
+                        {
+                            // This is a dead element. We can obliterate only if it is the first after the head
+                            bool const can_obliterate = good_head == head;
+                            if (can_obliterate)
+                            {
+                                DENSITY_ASSERT_INTERNAL( (control_word & 3) == 2 );
+                                #if DENSITY_DEBUG_INTERNAL
+                                    control->m_control_word.store(37);
+                                #endif
 
-					// acquire the result of commit_push or cancel_push
-					if (head_for_consumers != tail)
-					{
-						if ((control_word & 3) == 0)
-						{
-							// living element, and no one has exclusive access on it
-							m_head_for_consumers.store(next, sync::hint_memory_order_relaxed);
-							return typename ControlBlock::ConsumeData(control);
-						}
+                                // Check if this is a link ControlBlock, in which case we are leaving the page
+                                if (control->m_type.empty())
+                                {
+                                    auto const page = reinterpret_cast<void*>(head & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
+                                    DENSITY_ASSERT(address_is_aligned(page, ALLOCATOR_TYPE::page_alignment));
+                                    DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(control_word - 2)));
+                                    ALLOCATOR_TYPE::deallocate_page(page);
+                                    good_head = head = control_word - 2;
+                                }
+                                else
+                                {
+                                    good_head = head = control->get_next_from_control_word(control_word);
+                                }
+                                continue;
+                            }
+                            else
+                            {
+                                /* this is a dead element, but we can't move the head after it, because there are
+                                    non-dead elements before it */
+                                control->m_control_word.store(control_word, sync::hint_memory_order_release);
+                            }
+                        }
+                    }
 
-						m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
-
-						if ((control_word & 1) != 0)
-						{
-							// no element to pick
-							return typename ControlBlock::ConsumeData();
-						}
-					}
-					else
-					{
-						// no element to pick
-						m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
-						return typename ControlBlock::ConsumeData();
-					}
-				}
+                    // Move to the next element, which may be in another page
+                    head = control->get_next_from_control_word(control_word);
+                }
             }
 
             void commit_consume(typename ControlBlock::ConsumeData i_consume_data) noexcept
@@ -712,53 +741,15 @@ namespace density
                     memset(&(i_consume_data.m_control->m_type), 0xB4, sizeof(i_consume_data.m_control->m_type));
                 #endif
 
-				// mark the element as dead
-				DENSITY_ASSERT_INTERNAL( (i_consume_data.m_control->m_control_word & 3) == 0 );
-				i_consume_data.m_control->m_control_word.fetch_add(2, sync::hint_memory_order_release);
+                i_consume_data.m_control->set_dead_and_unlock_relaxed();
 
-				uintptr_t head_for_obliterate;
-				for (;;)
-				{
-					// get exclusive access on m_head_for_obliterate			
-					do {
-						head_for_obliterate = m_head_for_obliterate.fetch_or(1, sync::hint_memory_order_relaxed);
-					} while (head_for_obliterate & 1);
-
-					// acquire the result of commit_push or cancel_push
-					if (head_for_obliterate == m_head_for_consumers.load(sync::hint_memory_order_acquire))
-					{
-						// no element to pick
-						break;
-					}
-
-					// access the control block to get the control_word
-					auto const control = reinterpret_cast<ControlBlock *>(head_for_obliterate);
-					auto const control_word = control->m_control_word.load(sync::hint_memory_order_relaxed);
-					auto const next = control->get_next_from_control_word(control_word);
-
-					bool const living_element = (control_word & 2) == 0;
-					if (living_element)
-					{
-						break;
-					}
-					else
-					{
-						m_head_for_obliterate.store(next);
-					}					
-				}
-
-				DENSITY_ASSERT_INTERNAL(m_head_for_obliterate.load() == head_for_obliterate + 1);
-				m_head_for_obliterate.fetch_sub(1);
+                m_head.fetch_add(0, sync::hint_memory_order_release);
             }
 
             void destroy() noexcept
-            {				
-                auto head = m_head_for_obliterate.load(sync::hint_memory_order_release);
+            {
+                auto head = m_head.load(sync::hint_memory_order_release);
                 auto const tail = m_tail_for_producers.load(sync::hint_memory_order_release);
-
-				// this function is not thread safe
-				DENSITY_ASSERT(head == m_head_for_consumers.load(sync::hint_memory_order_relaxed););
-				DENSITY_ASSERT(tail == m_tail_for_consumers.load(sync::hint_memory_order_relaxed););
 
                 // this operation is not thread safe, so check some invariance
                 DENSITY_ASSERT( (head != 0) == (tail != nullptr) &&
@@ -795,12 +786,9 @@ namespace density
             }
 
         private:
-            
-			alignas(concurrent_alignment) sync::atomic<void*> m_tail_for_producers; /**< Pointer to the end of the last element allocated in the queue. */
+            alignas(concurrent_alignment) sync::atomic<void*> m_tail_for_producers; /**< Pointer to the end of the last element allocated in the queue. */
             sync::atomic<void*> m_tail_for_consumers;
-            
-			alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head_for_consumers;
-			sync::atomic<uintptr_t> m_head_for_obliterate;
+            alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head;
         };
 
     } // namespace experimental
