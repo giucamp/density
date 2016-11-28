@@ -242,8 +242,10 @@
     <ClInclude Include="..\..\density\any.h" />
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf.h" />
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf_v1.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_spsc.h" />
     <ClInclude Include="..\..\density\density_config.h" />
+    <ClInclude Include="..\..\density\detail\page_allocator_imp.h" />
     <ClInclude Include="..\..\density\small_function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_array.h" />
     <ClInclude Include="..\..\density\small_heterogeneous_queue.h" />

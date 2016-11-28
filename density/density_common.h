@@ -86,9 +86,9 @@ namespace density
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
         @param i_number must be > 0, otherwise the behavior is undefined */
-    inline bool is_power_of_2(size_t i_number) noexcept
+    inline constexpr bool is_power_of_2(size_t i_number) noexcept
     {
-        DENSITY_ASSERT(i_number > 0);
+        //DENSITY_ASSERT(i_number > 0);
         return (i_number & (i_number - 1)) == 0;
     }
 

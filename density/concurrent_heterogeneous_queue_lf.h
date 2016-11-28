@@ -56,7 +56,7 @@ namespace density
                 m_control_word.store(relative_address + 1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(COMMON_TYPE * i_element) noexcept
+            DENSITY_STRONG_INLINE void set_element_and_unlock_release(COMMON_TYPE * i_element) noexcept
             {
                 #if DENSITY_DEBUG_INTERNAL
                     auto const dbg_prev_next = m_control_word.load(sync::hint_memory_order_relaxed);
@@ -69,7 +69,7 @@ namespace density
                 m_control_word.fetch_add((relative_address << half_size_bits) - 1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed() noexcept
+            DENSITY_STRONG_INLINE void set_dead_and_unlock_release() noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
                 m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
@@ -142,16 +142,16 @@ namespace density
                 m_control_word.store(reinterpret_cast<uintptr_t>(i_next) + 1, sync::hint_memory_order_relaxed);
             }
 
-            DENSITY_STRONG_INLINE void set_element_and_unlock_relaxed(void *) noexcept
+            DENSITY_STRONG_INLINE void set_element_and_unlock_release(void *) noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
-                m_control_word.fetch_sub(1, sync::hint_memory_order_relaxed);
+                m_control_word.fetch_sub(1, sync::hint_memory_order_release);
             }
 
-            DENSITY_STRONG_INLINE void set_dead_and_unlock_relaxed() noexcept
+            DENSITY_STRONG_INLINE void set_dead_and_unlock_release() noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
-                m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
+                m_control_word.fetch_add(1, sync::hint_memory_order_release);
             }
 
             DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word) noexcept
@@ -227,7 +227,7 @@ namespace density
                 m_tail_for_producers.store(first_page);
                 m_tail_for_consumers.store(first_page);
                 m_head_for_consumers.store(reinterpret_cast<uintptr_t>(first_page));
-				m_head_for_obliterate.store(reinterpret_cast<uintptr_t>(first_page));
+                m_head_for_obliterate.store(reinterpret_cast<uintptr_t>(first_page));
             }
 
             /** copy not supported */
@@ -240,13 +240,13 @@ namespace density
             concurrent_heterogeneous_queue_lf(concurrent_heterogeneous_queue_lf && i_source) noexcept
                 : m_tail_for_producers(i_source.m_tail_for_producers.load()),
                   m_tail_for_consumers(i_source.m_tail_for_consumers.load()),
-				  m_head_for_consumers(i_source.m_head_for_consumers.load()),
-				  m_head_for_obliterate(i_source.m_head_for_obliterate.load())
+                  m_head_for_consumers(i_source.m_head_for_consumers.load()),
+                  m_head_for_obliterate(i_source.m_head_for_obliterate.load())
             {
                 i_source.m_tail_for_producers.load(nullptr);
                 i_source.m_tail_for_consumers.load(nullptr);
                 i_source.m_head_for_consumers.store(0);
-				i_source.m_head_for_obliterate.store(0);
+                i_source.m_head_for_obliterate.store(0);
             }
 
             /** Move assignment. Not thread safe. The source of a move operation can't be used for push and consumes. */
@@ -257,12 +257,12 @@ namespace density
                     destroy();
                     m_tail_for_producers.store(i_source.m_tail_for_producers.load());
                     m_tail_for_consumers.store(i_source.m_tail_for_consumers.load());
-					m_head_for_consumers= i_source.store(m_head_for_consumers.load());
+                    m_head_for_consumers= i_source.store(m_head_for_consumers.load());
                     m_head_for_obliterate = i_source.store(m_head_for_obliterate.load());
                     i_source.m_tail_for_producers.load(nullptr);
                     i_source.m_tail_for_consumers.load(nullptr);
-					i_source.m_head_for_consumers.store(0);
-					i_source.m_head_for_obliterate.store(0);
+                    i_source.m_head_for_consumers.store(0);
+                    i_source.m_head_for_obliterate.store(0);
                 }
                 return *this;
             }
@@ -576,10 +576,10 @@ namespace density
                    Note: we have not yet constructed neither the type object, nor the element. The caller will do after thsi function returns.
                    The next CAS operation on success needs at least the release semantic (consumers must see what
                    we have written in control->m_control_word). */
-                while (!compare_and_set_weak(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_release))
+                while (!compare_and_set_weak(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_relaxed))
                 {
                     // this can happen only if slower consumer thread allocate space in m_tail_for_producers before a faster consumer thread
-                    std::this_thread::yield();
+                    sync::this_thread::yield();
                 }
 
                 /* Done. Now the caller can construct the type and the element concurrently with consumers and other producers.
@@ -624,14 +624,14 @@ namespace density
                     m_tail_for_producers.store(new_page);
                     while (!compare_and_set_weak(m_tail_for_consumers, i_original_tail, new_page, sync::hint_memory_order_relaxed))
                     {
-                        std::this_thread::yield();
+                        sync::this_thread::yield();
                     }
 
                     return new_page;
                 }
                 else
                 {
-                    std::this_thread::yield();
+                    sync::this_thread::yield();
                     return m_tail_for_producers.load(sync::hint_memory_order_relaxed);
                 }
             }
@@ -642,11 +642,7 @@ namespace density
             {
                 /* The second bit of m_size is set to 1, meaning that the state of the element is invalid. At the
                    same time the exclusive access is removed (the first bit) */
-                i_control_block->set_dead_and_unlock_relaxed();
-
-                /** Consumers should see what we have done (while producers are not interested). So we do a
-                    release operation on m_tail_for_consumers. */
-                m_tail_for_consumers.fetch_add(0, sync::hint_memory_order_release);
+                i_control_block->set_dead_and_unlock_release();
             }
 
             /** Used when a begin_push has been called, and both the type and the elements has been constructed. This
@@ -655,55 +651,51 @@ namespace density
             {
                 /* decrementing the size we allow the consumers to process this element (this is an atomic operation)
                    To do: this is a read-write operation. Make it a write-only op. */
-                i_push_data.m_control->set_element_and_unlock_relaxed(i_element);
-
-                /** Consumers should see what we have done (while producers are not interested). So we do a
-                    release operation on m_tail_for_consumers. */
-                m_tail_for_consumers.fetch_add(0, sync::hint_memory_order_release);
+                i_push_data.m_control->set_element_and_unlock_release(i_element);
             }
 
             typename ControlBlock::ConsumeData begin_consume() noexcept
             {
-				for (;;)
-				{
-					auto const tail = reinterpret_cast<uintptr_t>(m_tail_for_consumers.load(sync::hint_memory_order_acquire));
+                auto const tail = reinterpret_cast<uintptr_t>(m_tail_for_consumers.load(sync::hint_memory_order_relaxed));
 
-					// get exclusive access on m_head_for_consumers
-					uintptr_t head_for_consumers;
-					do {
-						head_for_consumers = m_head_for_consumers.fetch_or(1, sync::hint_memory_order_relaxed);
-					} while (head_for_consumers & 1);
+                // get exclusive access on m_head_for_consumers
+                uintptr_t head_for_consumers;
+                do {
+                    head_for_consumers = m_head_for_consumers.fetch_or(1, sync::hint_memory_order_relaxed);
+                } while (head_for_consumers & 1);
 
-					// access the control block to get the control_word
-					auto const control = reinterpret_cast<ControlBlock *>(head_for_consumers);
-					auto const control_word = control->m_control_word.fetch_or(1, sync::hint_memory_order_acquire);
-					auto const next = control->get_next_from_control_word(control_word);
+                for (;;)
+                {
+                    // access the control block to get the control_word
+                    auto const control = reinterpret_cast<ControlBlock *>(head_for_consumers);
+                    auto const control_word = control->m_control_word.load(sync::hint_memory_order_acquire);
+                    auto const next = control->get_next_from_control_word(control_word);
 
-					// acquire the result of commit_push or cancel_push
-					if (head_for_consumers != tail)
-					{
-						if ((control_word & 3) == 0)
-						{
-							// living element, and no one has exclusive access on it
-							m_head_for_consumers.store(next, sync::hint_memory_order_relaxed);
-							return typename ControlBlock::ConsumeData(control);
-						}
+                    // check of we are gone too far
+                    if (head_for_consumers == tail)
+                    {
+                        // no element to pick
+                        m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
+                        return typename ControlBlock::ConsumeData();
+                    }
 
-						m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
+                    // check if we reach an element under construction - in this case we exit
+                    if ((control_word & 1) != 0)
+                    {
+                        // no element to pick
+                        m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
+                        return typename ControlBlock::ConsumeData();
+                    }
 
-						if ((control_word & 1) != 0)
-						{
-							// no element to pick
-							return typename ControlBlock::ConsumeData();
-						}
-					}
-					else
-					{
-						// no element to pick
-						m_head_for_consumers.store(head_for_consumers, sync::hint_memory_order_relaxed);
-						return typename ControlBlock::ConsumeData();
-					}
-				}
+                    if ((control_word & 3) == 0)
+                    {
+                        // living element, and no one has exclusive access on it
+                        m_head_for_consumers.store(next, sync::hint_memory_order_relaxed);
+                        return typename ControlBlock::ConsumeData(control);
+                    }
+
+                    head_for_consumers = next;
+                }
             }
 
             void commit_consume(typename ControlBlock::ConsumeData i_consume_data) noexcept
@@ -712,53 +704,58 @@ namespace density
                     memset(&(i_consume_data.m_control->m_type), 0xB4, sizeof(i_consume_data.m_control->m_type));
                 #endif
 
-				// mark the element as dead
-				DENSITY_ASSERT_INTERNAL( (i_consume_data.m_control->m_control_word & 3) == 0 );
-				i_consume_data.m_control->m_control_word.fetch_add(2, sync::hint_memory_order_release);
+                // mark the element as dead
+                DENSITY_ASSERT_INTERNAL( (i_consume_data.m_control->m_control_word & 3) == 0 );
+                i_consume_data.m_control->m_control_word.fetch_add(2, sync::hint_memory_order_release);
 
-				uintptr_t head_for_obliterate;
-				for (;;)
-				{
-					// get exclusive access on m_head_for_obliterate			
-					do {
-						head_for_obliterate = m_head_for_obliterate.fetch_or(1, sync::hint_memory_order_relaxed);
-					} while (head_for_obliterate & 1);
+                uintptr_t head_for_obliterate;
+                for (;;)
+                {
+                    // get exclusive access on m_head_for_obliterate
+                    do {
+                        head_for_obliterate = m_head_for_obliterate.fetch_or(1, sync::hint_memory_order_relaxed);
+                    } while (head_for_obliterate & 1);
 
-					// acquire the result of commit_push or cancel_push
-					if (head_for_obliterate == m_head_for_consumers.load(sync::hint_memory_order_acquire))
-					{
-						// no element to pick
-						break;
-					}
+                    if (head_for_obliterate == m_head_for_consumers.load(sync::hint_memory_order_relaxed))
+                    {
+                        // no element to pick
+                        break;
+                    }
 
-					// access the control block to get the control_word
-					auto const control = reinterpret_cast<ControlBlock *>(head_for_obliterate);
-					auto const control_word = control->m_control_word.load(sync::hint_memory_order_relaxed);
-					auto const next = control->get_next_from_control_word(control_word);
+                    // access the control block to get the control_word
+                    auto const control = reinterpret_cast<ControlBlock *>(head_for_obliterate);
+                    auto const control_word = control->m_control_word.load(sync::hint_memory_order_acquire);
+                    auto const next = control->get_next_from_control_word(control_word);
 
-					bool const living_element = (control_word & 2) == 0;
-					if (living_element)
-					{
-						break;
-					}
-					else
-					{
-						m_head_for_obliterate.store(next);
-					}					
-				}
+                    bool const living_element = (control_word & 2) == 0;
+                    if (living_element)
+                    {
+                        break;
+                    }
 
-				DENSITY_ASSERT_INTERNAL(m_head_for_obliterate.load() == head_for_obliterate + 1);
-				m_head_for_obliterate.fetch_sub(1);
+                    if (control->m_type.empty())
+                    {
+                        auto const page = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(control) & ~static_cast<uintptr_t>(ALLOCATOR_TYPE::page_alignment - 1));
+                        DENSITY_ASSERT(address_is_aligned(page, ALLOCATOR_TYPE::page_alignment));
+                        DENSITY_ASSERT(!are_same_page(page, reinterpret_cast<void*>(next)));
+                        ALLOCATOR_TYPE::deallocate_page(page);
+                    }
+
+                    m_head_for_obliterate.store(next);
+                }
+
+                DENSITY_ASSERT_INTERNAL(m_head_for_obliterate.load() == head_for_obliterate + 1);
+                m_head_for_obliterate.fetch_sub(1);
             }
 
             void destroy() noexcept
-            {				
+            {
                 auto head = m_head_for_obliterate.load(sync::hint_memory_order_release);
                 auto const tail = m_tail_for_producers.load(sync::hint_memory_order_release);
 
-				// this function is not thread safe
-				DENSITY_ASSERT(head == m_head_for_consumers.load(sync::hint_memory_order_relaxed););
-				DENSITY_ASSERT(tail == m_tail_for_consumers.load(sync::hint_memory_order_relaxed););
+                // this function is not thread safe
+                DENSITY_ASSERT(head == m_head_for_consumers.load(sync::hint_memory_order_relaxed););
+                DENSITY_ASSERT(tail == m_tail_for_consumers.load(sync::hint_memory_order_relaxed););
 
                 // this operation is not thread safe, so check some invariance
                 DENSITY_ASSERT( (head != 0) == (tail != nullptr) &&
@@ -795,12 +792,12 @@ namespace density
             }
 
         private:
-            
-			alignas(concurrent_alignment) sync::atomic<void*> m_tail_for_producers; /**< Pointer to the end of the last element allocated in the queue. */
+
+            alignas(concurrent_alignment) sync::atomic<void*> m_tail_for_producers; /**< Pointer to the end of the last element allocated in the queue. */
             sync::atomic<void*> m_tail_for_consumers;
-            
-			alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head_for_consumers;
-			sync::atomic<uintptr_t> m_head_for_obliterate;
+
+            alignas(concurrent_alignment) sync::atomic<uintptr_t> m_head_for_consumers;
+            sync::atomic<uintptr_t> m_head_for_obliterate;
         };
 
     } // namespace experimental

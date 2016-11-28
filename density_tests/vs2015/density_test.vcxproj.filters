@@ -126,5 +126,11 @@
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_spsc.h">
       <Filter>density</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf_v1.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\page_allocator_imp.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
