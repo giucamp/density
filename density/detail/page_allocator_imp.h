@@ -10,7 +10,7 @@ namespace density
 {
     namespace detail
     {
-        /** Lock-free concurrent stack of free pages. */
+        /** Lock-free concurrent stack of free pages */
         class FreePageStack
         {
             struct Entry
@@ -31,10 +31,14 @@ namespace density
             {
             }
 
-            /** Pushes a page. The page must be large at least like an uintptr_t, or the behavior is undefined */
+            /** Pushes a page. The page must be large at least min_page_size, or the behavior is undefined */
             void push(void * i_page) noexcept
             {
                 auto const new_entry = static_cast<Entry*>(i_page);
+
+				/*auto first = m_first.load(sync::hint_memory_order_relaxed);
+				new_entry->m_next = first;
+				while (!m_first.compare_exchange_weak(new_entry->m_next, new_entry, sync::hint_memory_order_release, sync::hint_memory_order_relaxed));*/
 
                 uintptr_t first;
                 do {
@@ -71,6 +75,8 @@ namespace density
             sync::atomic<uintptr_t> m_first;
         };
 
+		/** This class allocates a memory region with malloc, and then provides an irreversible allocation service (there is an allocate_page,
+			but not a deallocate_page). */
         template <size_t PAGE_SIZE>
             class PageRegion
         {
@@ -99,18 +105,18 @@ namespace density
                     {
                         if (region_size == min_region_size)
                         {
-                            throw std::bad_alloc;
+                            throw std::bad_alloc();
                         }
                         region_size /= 2;
                     }
                 }
 
                 m_start = region;
-                m_curr = address_upper_align(region, PAGE_SIZE);
+                m_curr = reinterpret_cast<uintptr_t>(address_upper_align(region, PAGE_SIZE));
                 m_end = reinterpret_cast<uintptr_t>(address_lower_align(address_add(m_start, region_size), PAGE_SIZE));
             }
 
-            void * alloc_page() noexcept
+            void * allocate_page() noexcept
             {
                 uintptr_t curr, next;
                 curr = m_curr.load(sync::hint_memory_order_relaxed);
@@ -126,17 +132,17 @@ namespace density
 
             ~PageRegion()
             {
-                if (m_start != nullptr)
-                {
-                    std::free(m_start);
-                }
+				std::free(m_start);
             }
+
+			PageRegion * next() noexcept { return m_next; }
+			void set_next(PageRegion * i_next) noexcept { m_next = i_next; }
 
         private:
             uintptr_t m_end;
             sync::atomic<uintptr_t> m_curr;
             void * m_start;
-            sync::atomic<PageRegion*> m_next;
+            PageRegion * m_next;
         };
 
         template <size_t PAGE_SIZE>
@@ -144,12 +150,15 @@ namespace density
         {
         public:
 
+			static constexpr size_t region_size = PAGE_SIZE * 64;
+
             PageAllocator()
             {
-
+				m_first_region = new PageRegion<PAGE_SIZE>(region_size);
+				m_last_region.store(m_first_region);
             }
 
-            void * alloc_page() noexcept
+            void * allocate_page()
             {
                 auto page = m_free_stack.pop();
                 if (page != nullptr)
@@ -157,22 +166,62 @@ namespace density
                     return page;
                 }
 
-                std::lock_guard<sync::mutex> lock(m_ragion_mutex);
+				page = m_last_region.load()->allocate_page();
+				if (page != nullptr)
+				{
+					return page;
+				}
 
-                page = m_last_region.load()->alloc_page();
-                if (page != nullptr)
-                {
-                    return page;
-                }
-
-                return nullptr;
+				return allocate_slow_path();
             }
+
+			void deallocate_page(void * i_page) noexcept
+			{
+				m_free_stack.push(i_page);
+			}
+
+			~PageAllocator()
+			{
+				DENSITY_ASSERT_INTERNAL(m_last_region.load()->next() == nullptr);
+
+				for( auto curr_region = m_first_region; curr_region != nullptr; )
+				{
+					auto const next = curr_region->next();
+					delete curr_region;
+					curr_region = next;
+				}
+			}
+
+		private:
+
+			void * allocate_slow_path()
+			{
+				std::lock_guard<sync::mutex> lock(m_ragion_mutex);
+
+				DENSITY_ASSERT_INTERNAL(m_last_region.load()->next() == nullptr);
+
+				auto last_region = m_last_region.load();
+
+				auto page = last_region->allocate_page();
+				if (page != nullptr)
+				{
+					return page;
+				}
+
+				auto new_region = new PageRegion<PAGE_SIZE>(region_size);
+				last_region->set_next(new_region);
+				page = new_region->allocate_page();
+				DENSITY_ASSERT_INTERNAL(page != nullptr);
+				m_last_region.store(new_region);
+
+				return page;
+			}
 
         private:
             FreePageStack m_free_stack;
-
-            sync::mutex m_ragion_mutex;
-            PageRegion* m_last_region, m_first_region;
+			sync::atomic<PageRegion<PAGE_SIZE>*> m_last_region;
+            sync::mutex m_ragion_mutex;			
+			PageRegion<PAGE_SIZE> * m_first_region;
         };
 
     } // namespace detail
