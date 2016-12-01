@@ -48,12 +48,12 @@ namespace density
             static_assert(std::numeric_limits<size_t>::radix == 2, "size_t must be binary");
             static_assert(std::numeric_limits<uintptr_t>::digits >= half_size_bits * 2, "The size of a page can't exceed 1 << ((bits in size_t) / 2)");
 
-            DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next) noexcept
+            DENSITY_STRONG_INLINE void lock_and_set_next_and_release(void * i_next) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_next >= this + 1 && (reinterpret_cast<uintptr_t>(i_next) & 3) == 0);
                 auto const relative_address = reinterpret_cast<uintptr_t>(i_next) - reinterpret_cast<uintptr_t>(this);
                 DENSITY_ASSERT_INTERNAL(relative_address <= half_size_mask);
-                m_control_word.store(relative_address + 1, sync::hint_memory_order_relaxed);
+                m_control_word.store(relative_address + 1, sync::hint_memory_order_release);
             }
 
             DENSITY_STRONG_INLINE void set_element_and_unlock_release(COMMON_TYPE * i_element) noexcept
@@ -66,13 +66,13 @@ namespace density
                 DENSITY_ASSERT_INTERNAL( static_cast<void*>(i_element) >= this + 1);
                 auto const relative_address = reinterpret_cast<uintptr_t>(i_element) - reinterpret_cast<uintptr_t>(this);
                 DENSITY_ASSERT_INTERNAL(relative_address <= half_size_mask);
-                m_control_word.fetch_add((relative_address << half_size_bits) - 1, sync::hint_memory_order_relaxed);
+                m_control_word.fetch_add((relative_address << half_size_bits) - 1, sync::hint_memory_order_release);
             }
 
             DENSITY_STRONG_INLINE void set_dead_and_unlock_release() noexcept
             {
                 DENSITY_ASSERT_INTERNAL((m_control_word.load(sync::hint_memory_order_relaxed) & 3) == 1);
-                m_control_word.fetch_add(1, sync::hint_memory_order_relaxed);
+                m_control_word.fetch_add(1, sync::hint_memory_order_release);
             }
 
             DENSITY_STRONG_INLINE uintptr_t get_next_from_control_word(uintptr_t i_control_word) noexcept
@@ -136,10 +136,10 @@ namespace density
                                                 m_control_word.load() & (std::numeric_limits<uintptr_t>::max() - 3). */
             RUNTIME_TYPE m_type; /** Type of the element. It usually has the same size of a pointer. */
 
-            DENSITY_STRONG_INLINE void lock_and_set_next_and_relaxed(void * i_next) noexcept
+            DENSITY_STRONG_INLINE void lock_and_set_next_and_release(void * i_next) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_next >= this + 1 && (reinterpret_cast<uintptr_t>(i_next) & 3) == 0);
-                m_control_word.store(reinterpret_cast<uintptr_t>(i_next) + 1, sync::hint_memory_order_relaxed);
+                m_control_word.store(reinterpret_cast<uintptr_t>(i_next) + 1, sync::hint_memory_order_release);
             }
 
             DENSITY_STRONG_INLINE void set_element_and_unlock_release(void *) noexcept
@@ -567,7 +567,7 @@ namespace density
                    Other producers can allocate space in the meanwhile (moving m_tail_for_producers forward).
                   Consumers are not allowed no read after m_tail_for_consumers, which we still did not update,
                   therefore the current page can't be deallocated. */
-                control->lock_and_set_next_and_relaxed(tail);
+                control->lock_and_set_next_and_release(tail);
 
                 /* Now the 'slot' we have allocated is ready: it can be skipped (control->m_control_word) is valid,
                    but we have exclusive access on it (the first bit of control->m_control_word is set).
@@ -579,7 +579,7 @@ namespace density
                 while (!compare_and_set_weak(m_tail_for_consumers, original_tail, tail, sync::hint_memory_order_relaxed))
                 {
                     // this can happen only if slower consumer thread allocate space in m_tail_for_producers before a faster consumer thread
-                    sync::this_thread::yield();
+                    // sync::this_thread::yield();
                 }
 
                 /* Done. Now the caller can construct the type and the element concurrently with consumers and other producers.
@@ -624,14 +624,14 @@ namespace density
                     m_tail_for_producers.store(new_page);
                     while (!compare_and_set_weak(m_tail_for_consumers, i_original_tail, new_page, sync::hint_memory_order_relaxed))
                     {
-                        sync::this_thread::yield();
+                        // sync::this_thread::yield();
                     }
 
                     return new_page;
                 }
                 else
                 {
-                    sync::this_thread::yield();
+                    // sync::this_thread::yield();
                     return m_tail_for_producers.load(sync::hint_memory_order_relaxed);
                 }
             }
@@ -656,13 +656,13 @@ namespace density
 
             typename ControlBlock::ConsumeData begin_consume() noexcept
             {
-                auto const tail = reinterpret_cast<uintptr_t>(m_tail_for_consumers.load(sync::hint_memory_order_relaxed));
-
                 // get exclusive access on m_head_for_consumers
                 uintptr_t head_for_consumers;
                 do {
                     head_for_consumers = m_head_for_consumers.fetch_or(1, sync::hint_memory_order_relaxed);
                 } while (head_for_consumers & 1);
+
+                auto const tail = reinterpret_cast<uintptr_t>(m_tail_for_consumers.load(sync::hint_memory_order_relaxed));
 
                 for (;;)
                 {
@@ -716,7 +716,8 @@ namespace density
                         head_for_obliterate = m_head_for_obliterate.fetch_or(1, sync::hint_memory_order_relaxed);
                     } while (head_for_obliterate & 1);
 
-                    if (head_for_obliterate == m_head_for_consumers.load(sync::hint_memory_order_relaxed))
+                    auto const head_for_consumers = m_head_for_consumers.load(sync::hint_memory_order_relaxed) & ~static_cast<uintptr_t>(1);
+                    if (head_for_obliterate == head_for_consumers)
                     {
                         // no element to pick
                         break;
@@ -741,6 +742,7 @@ namespace density
                         ALLOCATOR_TYPE::deallocate_page(page);
                     }
 
+                    DENSITY_ASSERT_INTERNAL(next >= ALLOCATOR_TYPE::page_size);
                     m_head_for_obliterate.store(next);
                 }
 
