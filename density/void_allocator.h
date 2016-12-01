@@ -262,7 +262,7 @@ namespace density
             {
                 page = allocate_page_impl();
             }*/
-            auto page = allocate_page_impl();
+            auto page = page_allocator().allocate_page();
             #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
                 dbg_data().add_page(page);
             #endif
@@ -290,7 +290,7 @@ namespace density
                 deallocate_page_impl(i_page);
             }*/
 
-            deallocate_page_impl(i_page);
+            page_allocator().deallocate_page(i_page);
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
@@ -331,14 +331,10 @@ namespace density
 
     private:
 
-        void * allocate_page_impl()
+        static detail::PageAllocator<page_size> & page_allocator()
         {
-            return allocate(page_size, page_alignment);
-        }
-
-        void deallocate_page_impl(void * i_page) noexcept
-        {
-            return deallocate(i_page, page_size, page_alignment);
+            static detail::PageAllocator<page_size> page_alloc;
+            return page_alloc;
         }
 
         struct AlignmentHeader
@@ -504,11 +500,11 @@ namespace density
             size_t m_size = 0;
         };
 
-        static PageList & thread_page_store() noexcept
+        /*static PageList & thread_page_store() noexcept
         {
             static thread_local PageList s_thread_page_store;
             return s_thread_page_store;
-        }
+        }*/
     };
 
 } // namespace density
