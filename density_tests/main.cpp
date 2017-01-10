@@ -22,7 +22,7 @@ namespace density_tests
 
     // benchmarks
     void add_lifo_array_benchmarks(TestTree & i_dest);
-    void add_queue_benchmarks(TestTree & i_dest);
+    //void add_queue_benchmarks(TestTree & i_dest);
     void add_allocator_benchmarks(TestTree & i_dest);
 
     void add_concurrent_function_queue_cases(TestTree & i_dest);
@@ -41,14 +41,14 @@ int main()
     using namespace testity;
     using namespace density_tests;
     using namespace std;
-
+	
     //function_queue_sample::run();
 
     TestTree test_tree("density");
 
     add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
     add_queue_cases(test_tree["queue"]);
-    add_queue_benchmarks(test_tree["queue"]);
+    //add_queue_benchmarks(test_tree["queue"]);
     add_lifo_cases(test_tree["lifo"]);
     add_lifo_array_benchmarks(test_tree["lifo"]);
     add_function_queue_benchmarks(test_tree["function_queue"]);

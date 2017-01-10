@@ -31,6 +31,9 @@
     #define DENSITY_ASSERT_INTERNAL(bool_expr)
 #endif
 
+#define DENSITY_LIKELY(bool_expr)					(bool_expr)
+#define DENSITY_UNLIKELY(bool_expr)					(bool_expr)
+
 #define DENSITY_HANDLE_EXCEPTIONS                  1
 
 #define DENSITY_CONCURRENT_DATA_ALIGNMENT          64

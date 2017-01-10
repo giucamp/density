@@ -145,7 +145,7 @@ namespace density
     public:
 
         /** Size (in bytes) of a memory page. */
-        static constexpr size_t page_size = 4096;
+        static constexpr size_t page_size = 1024 * 4;
 
         /** Alignment (in bytes) of a memory page. */
         static constexpr size_t page_alignment = page_size;

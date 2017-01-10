@@ -132,5 +132,8 @@
     <ClInclude Include="..\..\density\detail\page_allocator_imp.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -49,6 +49,13 @@ namespace density
             return i_first > i_second ? i_first : i_second;
         }
 
+		/** Computes the base2 logarithm of a size_t. If the argument is zero or is
+			not a power of 2, the behavior is undefined. */
+		constexpr size_t size_log2(size_t i_size) noexcept
+		{
+			return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
+		}
+
         template <typename SCOPE_EXIT_ACTION>
             class ScopeExit
         {

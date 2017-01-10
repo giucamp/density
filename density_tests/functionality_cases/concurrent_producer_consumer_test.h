@@ -53,7 +53,7 @@ namespace density_tests
             {
                 print_stats();
 
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::this_thread::sleep_for(std::chrono::seconds(4));
             }
 
             for (auto & thread : threads)

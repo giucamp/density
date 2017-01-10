@@ -18,13 +18,6 @@ namespace density
 {
     namespace detail
     {
-        /** Computes the base2 logarithm of a size_t. If the argument is zero or is
-            not a power of 2, the behavior is undefined. */
-        constexpr size_t size_log2(size_t i_size) noexcept
-        {
-            return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
-        }
-
         /* Before each element there is a ControlBlock object. Since in the data member m_control_word the 2 least
             significant bit are used as flags, the address of a ControlBlock must be mutiple of 4.
             The alignas specifiers imply that this class is aligned at least at 4 bytes, but it may have
