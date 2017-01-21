@@ -114,7 +114,7 @@ namespace density_tests
                 using runtime_type = typename DENSE_CONTAINER::runtime_type;
                 const auto type = runtime_type::template make<TYPE>();
                 Element new_element{ &type.type_info(), type.template get_feature<density::type_features::hash>()(
-                    static_cast<const typename DENSE_CONTAINER::value_type*>(&i_element) ) };
+                    static_cast<const typename DENSE_CONTAINER::common_type*>(&i_element) ) };
                 m_deque.insert(m_deque.begin() + i_at, i_count, new_element);
             }
             catch (...)

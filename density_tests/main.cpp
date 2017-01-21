@@ -56,7 +56,9 @@ int main()
     add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
     add_any_cases(test_tree["any"]);
 
-    ////////////////////////
+    ////////////////////////	
+	run_session(test_tree["queue/base_tests"], TestFlags::FunctionalityTest);
+	run_session(test_tree["queue"], TestFlags::FunctionalityTest);
     run_session(test_tree["any"], TestFlags::FunctionalityTest);
     run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
     ////////////////////////

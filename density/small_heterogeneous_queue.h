@@ -57,7 +57,7 @@ namespace density
 
         using allocator_type = UNTYPED_ALLOCATOR;
         using runtime_type = RUNTIME_TYPE;
-        using value_type = ELEMENT;
+        using common_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
         using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
         using difference_type = ptrdiff_t;

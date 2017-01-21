@@ -174,6 +174,7 @@ namespace density
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
+				DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
                 return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
             }
         };
@@ -191,6 +192,7 @@ namespace density
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
+				DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
                 return new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
             }
         };
@@ -249,6 +251,7 @@ namespace density
 
                 static size_t invoke(const void * i_source)
                 {
+					DENSITY_ASSERT(i_source != nullptr);
                     auto const base_ptr = static_cast<const BASE*>(i_source);
                     return detail::invoke_hash(*detail::down_cast<const TYPE*>(base_ptr));
                 }
@@ -283,6 +286,7 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest)
                 {
+					DENSITY_ASSERT(i_complete_dest != nullptr);
                     BASE * const base_result = new(i_complete_dest) TYPE();
                     return base_result;
                 }
@@ -307,6 +311,7 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest, const void * i_base_source)
                 {
+					DENSITY_ASSERT(i_base_source != nullptr);
                     auto const base_source = static_cast<const BASE*>(i_base_source);
                     // DENSITY_ASSERT( dynamic_cast<const TYPE*>(base_source) != nullptr ); to do: implement a detail::IsInstanceOf
                     BASE * const base_result = new(i_complete_dest) TYPE(*detail::down_cast<const TYPE*>(base_source));
@@ -336,6 +341,8 @@ namespace density
                 {
                     static_assert(std::is_nothrow_move_constructible<TYPE>::value,
                         "The move constructor is required to be noexcept");
+
+					DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
 
                     BASE * base_source = static_cast<BASE*>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
@@ -369,6 +376,7 @@ namespace density
             {
                 static RET invoke(void * i_base_dest, PARAMS... i_params)
                 {
+					DENSITY_ASSERT(i_base_dest != nullptr);
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
                     return (*detail::down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
                 }
@@ -718,12 +726,12 @@ namespace density
         runtime_type & operator = (const runtime_type &) noexcept = default;
 
         /** Destructor */
+		#if DENSITY_DEBUG
         ~runtime_type()
-        {
-            #if DENSITY_DEBUG
-                *reinterpret_cast<uintptr_t*>(&m_table) ^= std::numeric_limits<uintptr_t>::max();
-            #endif
+        {            
+            *reinterpret_cast<uintptr_t*>(&m_table) ^= std::numeric_limits<uintptr_t>::max();  
         }
+		#endif
 
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }
@@ -939,9 +947,7 @@ namespace density
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
-
-
-
+		
         #if DENSITY_DEBUG
 
             // the feature alignment is included in FEATURE_LIST

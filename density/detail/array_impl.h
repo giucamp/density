@@ -185,7 +185,9 @@ namespace density
 
                 void move_next() noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#if DENSITY_DEBUG_INTERNAL
+						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#endif
                     m_curr_control_block++;
                     #if DENSITY_DEBUG_INTERNAL
                         m_dbg_index++;
@@ -194,19 +196,25 @@ namespace density
 
                 void * element() const noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#if DENSITY_DEBUG_INTERNAL
+						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#endif
                     return m_curr_control_block->m_element;
                 }
 
                 const RUNTIME_TYPE & complete_type() const noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#if DENSITY_DEBUG_INTERNAL
+						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#endif
                     return *m_curr_control_block;
                 }
 
                 const ControlBlock * control() const noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
+					#if DENSITY_DEBUG_INTERNAL
+						DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
+					#endif
                     return m_curr_control_block;
                 }
 
@@ -222,7 +230,9 @@ namespace density
 
                 void operator ++ () noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#if DENSITY_DEBUG_INTERNAL
+						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+					#endif
                     m_curr_control_block++;
                     #if DENSITY_DEBUG_INTERNAL
                         m_dbg_index++;

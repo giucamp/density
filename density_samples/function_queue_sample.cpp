@@ -19,11 +19,10 @@ namespace function_queue_sample
     void run()
     {
         {
-            auto print_func = [](const char * i_str) { std::cout << i_str; };
-
-            small_function_queue<void()> queue_1;
+			small_function_queue<void()> queue_1;
             #ifndef __GNUC__ /* with gcc, the result of std::bind is not nothrow-move-constructible even if the original
                     callable object and the capture is nothrow-move-constructible. */
+				auto print_func = [](const char * i_str) { std::cout << i_str; };
                 queue_1.push(std::bind(print_func, "hello "));
             #endif // __GNUC__
             queue_1.push([]() { std::cout << std::endl; });

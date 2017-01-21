@@ -21,8 +21,9 @@ namespace density_tests
 
     /* HeterogeneousQueue<TYPE> - heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
     template <typename TYPE>
-        using HeterogeneousQueue = heterogeneous_queue<TYPE, TestVoidAllocator, runtime_type<TYPE,
-            typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type> >;
+        using HeterogeneousQueue = heterogeneous_queue<TYPE, runtime_type<TYPE,
+            typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type>, 
+				TestVoidAllocator >;
 
     /* SmallHeterogeneousQueue<TYPE> - small_heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
     template <typename TYPE>
@@ -213,7 +214,7 @@ namespace density_tests
     {
         using TestTarget = QueueTest<QUEUE>;
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
-        using BaseType = typename QUEUE::value_type;
+        using BaseType = typename QUEUE::common_type;
 
         static_assert(std::is_convertible<MI_TYPE*, BaseType*>::value,
             "MI_TYPE must be covariant to BaseType");
@@ -383,9 +384,46 @@ namespace density_tests
         add_typed_queue_cases<SmallHeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
     }
 
+	template <typename QUEUE>
+		void add_heterogeneous_queue_base_tests(TestTree & i_dest)
+	{
+		i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
+
+			QUEUE queue;
+			using runtime_type = typename QUEUE::runtime_type;
+
+			for (int i = 0; i < 1000; i++)
+				queue.push(i);
+
+			auto it = queue.cbegin();
+			for (int i = 0; i < 1000; i++)
+			{
+				TESTITY_ASSERT(i == *it);
+				it++;
+			}
+			TESTITY_ASSERT(it == queue.cend());
+
+			queue.consume([](const runtime_type & i_type, int * i_element) {
+				TESTITY_ASSERT(*i_element == 0 && i_type == runtime_type::make<int>());
+			});
+
+			it = queue.cbegin();
+			for (int i = 1; i < 1000; i++)
+			{
+				TESTITY_ASSERT(i == *it);
+				it++;
+			}
+			TESTITY_ASSERT(it == queue.cend());
+
+		});
+	}
+
     void add_queue_cases(TestTree & i_dest)
     {
-        add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
+		add_heterogeneous_queue_base_tests< heterogeneous_queue<int> >(i_dest);
+		add_heterogeneous_queue_base_tests< heterogeneous_queue<int, runtime_type<int>, TestVoidAllocator> >(i_dest);
+        
+		add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
         add_small_heterogeneous_queue_cases(i_dest["small_heterogeneous_queue"]);
     }
 

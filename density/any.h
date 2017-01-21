@@ -222,7 +222,7 @@ namespace density
 
     template <typename COMMON_TYPE, typename VOID_ALLOCATOR, typename RUNTIME_TYPE>
         inline void swap(any<COMMON_TYPE, VOID_ALLOCATOR, RUNTIME_TYPE> & i_first,
-                         any<COMMON_TYPE, VOID_ALLOCATOR, RUNTIME_TYPE> & i_second)
+                         any<COMMON_TYPE, VOID_ALLOCATOR, RUNTIME_TYPE> & i_second) noexcept
     {
         i_first.swap(i_second);
     }
