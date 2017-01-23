@@ -566,11 +566,11 @@ namespace density
             template <typename COMMON_TYPE>
                 using default_type_features = typename detail::GetDefaultFeatures<COMMON_TYPE>;
         #else
-        template <typename COMMON_TYPE>
-            struct default_type_features
-            {
-                using type = default_type_features_t<COMMON_TYPE>;
-            };
+			template <typename COMMON_TYPE>
+				struct default_type_features
+			{
+				using type = default_type_features_t<COMMON_TYPE>;
+			};
         #endif
         template <typename COMMON_TYPE>
             using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
@@ -648,8 +648,8 @@ namespace density
     */
 
     /** Class template that performs type-erasure.
-            @tparam BASE type to which all type-erased types are covariant. If it is void, any type can be type-erased.
-            @tparam FEATURE_LIST type_features::feature_list that defines which type-features are type-erased. By default
+            @tparam COMMON_TYPE Type to which all type-erased types are covariant. If it is void, any type can be type-erased.
+            @tparam FEATURE_LIST Type_features::feature_list that defines which type-features are type-erased. By default
                 the feature_list is obtained with type_features::default_type_features. If this type is not a type_features::feature_list,
                 a compile time error is reported.
 

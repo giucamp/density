@@ -26,23 +26,28 @@ namespace density
 	}
 
 	/** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
-		
-		\n<b>Thread safeness</b>: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
+		@tparam COMMON_TYPE Common type. An element of type E can be pushed on the queue only if E* is implicitly convertible 
+			to COMMON_TYPE*. COMMON_TYPE cannot be cv-qualified, a reference or an array. In general std::decay (http://en.cppreference.com/w/cpp/types/decay) 
+			must transform COMMON_TYPE into itself, or a compile time error occurs.
+			If COMMON_TYPE is void, elements of any complete type can be added to the container. In this
+			case, the methods of heterogeneous_queue that return a pointer to an element
+			will return a void* to a complete object, while the methods that returns a reference to
+			an element will return void. Use iterators and pointer semantic to write generic code
+			that works with any heterogeneous_queue.
+		@tparam VOID_ALLOCATOR Allocator to be used to allocate the memory buffer. This type must 
+			meet the requirements of PageAllocator.
+		@tparam RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
+			This type must meet the requirements of RuntimeType. 
 
-			@param COMMON_TYPE common type. An element of type E can be pushed on the queue only if E* is implicitly convertible 
-				to COMMON_TYPE*. COMMON_TYPE cannot be cv-qualified, a reference or an array. In general std::decay (http://en.cppreference.com/w/cpp/types/decay) 
-				must transform COMMON_TYPE into itself, or a compile time error occurs.
-				If COMMON_TYPE is void, elements of any complete type can be added to the container. In this
-				case, the methods of heterogeneous_queue (and its iterators) that returns a pointer to an element
-				will return a void* to a complete object, while the methods that returns a reference to
-				an element will return void. Use iterators and pointer semantic to write generic code
-				that works with any heterogeneous_queue.
+		\n <b>Thread safeness</b>: None. The user is responsible to avoid race conditions.
+        \n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
 
-			@param VOID_ALLOCATOR Allocator to be used to allocate the memory buffer.  This type must 
-				meet the requirements of PageAllocator.
-			@param RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
-				This type must meet the requirements of RuntimeType. */
+		Text.
+		Text.
+		Text.
+
+
+	*/
 	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
 		class heterogeneous_queue final : private ALLOCATOR_TYPE
 	{
@@ -55,8 +60,6 @@ namespace density
 			ControlBlock * m_control_block;
 			void * m_element;
 		};
-
-		static constexpr auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
 		
 	public:
 
@@ -78,20 +81,38 @@ namespace density
 		class iterator;
 		class const_iterator;
 
-        /** Default constructor. The page allocator inside the queue is default-constructed.
-            \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).*/
-		heterogeneous_queue() noexcept
+        /** Default constructor. The allocator is default-constructed.
+			
+			<b>Complexity</b>: constant.
+            \n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+			\n Implementation note: Currently this constructor does not allocate memory and never throws. */
+		heterogeneous_queue()
 			: m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)), m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
 		{
 		}
 
+        /** Move constructor. The allocator is move-constructed from the one of the source.
+				@param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
+
+			<b>Complexity</b>: constant.
+            \n <b>Throws</b>: Nothing. 			
+			\n <i>Implementation notes</i>:
+				- After the call the source is left empty. */
 		heterogeneous_queue(heterogeneous_queue && i_source) noexcept
-			: m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)), m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
+			: heterogeneous_queue()
 		{
 			swap(i_source);
 		}
 
+		/** Copy constructor. The allocator is copy-constructed from the one of the source.
+			
+			\n <b>Requires</b>:
+                - the runtime type must support the feature type_features::copy_construct
+
+			<b>Complexity</b>: linear in the number of elements of the source.
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
 		heterogeneous_queue(const heterogeneous_queue & i_source)
 			: allocator_type(static_cast<const allocator_type&>(i_source)),
 			  m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)), m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
@@ -102,12 +123,31 @@ namespace density
 			}
 		}
 
+		/** Move assignment. The allocator is move-assigned from the one of the source.
+				@param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
+			
+			<b>Complexity</b>: Unspecified.
+			\n <b>Effects on iterators</b>: Any iterator pointing to this queue or the source queue is invalidated.
+			\n <b>Throws</b>: Nothing. 
+
+			\n <i>Implementation notes</i>:
+				- After the call the source is left empty.
+				- The complexity is linear in the number of elements in this queue. */
 		heterogeneous_queue & operator = (heterogeneous_queue && i_source) noexcept
 		{
 			swap(i_source);
+			i_source.destroy();
+			i_source.m_tail = i_source.m_head = reinterpret_cast<ControlBlock*>(s_invalid_control_block);
 			return *this;
 		}
 
+		/** Copy assignment. The allocator is move-assigned from the one of the source.
+				@param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
+			
+			<b>Complexity</b>: linear.
+			\n <b>Effects on iterators</b>: Any iterator pointing to this queue is invalidated.			
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
 		heterogeneous_queue & operator = (const heterogeneous_queue & i_source)
 		{
 			auto copy(i_source);
@@ -115,6 +155,12 @@ namespace density
 			return *this;
 		}
 
+		/** Swaps the content of this queue and another one. The allocator is swapped too.
+				@param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
+			
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: Any iterator pointing to this queue or the other queue is invalidated.			
+			\n <b>Throws</b>: Nothing. */
 		void swap(heterogeneous_queue & i_other) noexcept
 		{
 			using std::swap;
@@ -124,14 +170,19 @@ namespace density
 		}
 
 		/** Destructor.
-			\n <b>Throws</b>: nothing. */
+					
+			<b>Complexity</b>: linear.
+			\n <b>Effects on iterators</b>: Any iterator pointing to this queue is invalidated.
+			\n <b>Throws</b>: Nothing. */
 		~heterogeneous_queue()
 		{
 			destroy();
 		}
 
         /** Returns whether the queue contains no elements.
-            \n\b Throws: nothing */
+			
+			<b>Complexity</b>: Unspecified.
+			\n <b>Throws</b>: Nothing. */
 		bool empty() const noexcept
 		{
 			for (auto curr = m_head; curr != m_tail; )
@@ -146,9 +197,11 @@ namespace density
 			return true;
 		}
 
-		/** Deletes all the elements from this queue.
-            \n\b Throws: nothing
-            \n\b Complexity: linear */
+		/** Deletes all the elements in the queue.
+			
+			<b>Complexity</b>: linear.
+			\n <b>Effects on iterators</b>: any iterator is invalidated
+			\n <b>Throws</b>: Nothing. */
 		void clear() noexcept
 		{
 			for(;;)
@@ -166,24 +219,151 @@ namespace density
 			DENSITY_ASSERT_INTERNAL(empty());
 		}
 
+		/** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), copy-constructing or move-constructing
+				it from the source.
+		
+			@param i_source object to be used as source to construct of new element.
+				- If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+				- If this argument is an r-value, the new element move-constructed (and the source object is left in an undefined but valid state).
+				
+            \n <b>Requires</b>:
+                - ELEMENT_TYPE must be copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
+                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is 
+					not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue push example 1 */
 		template <typename ELEMENT_TYPE>
 			void push(ELEMENT_TYPE && i_source)
 		{
 			return emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
 		}
 
-		template <typename ELEMENT_TYPE>
-			put_transaction begin_push(ELEMENT_TYPE && i_source)
-		{
-			return begin_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
-		}
+		/** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), inplace-constructring it from
+				a perfect forwarded a parameter pack.
+			\n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
+		
+			@param i_construction_params construction parameters for the new element.
+				
+            \n <b>Requires</b>:
+                - ELEMENT_TYPE must be constructible from the specified parameters
+                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
+                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is 
+					not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
 
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue emplace example 1 */
 		template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
 			void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
 		{
 			begin_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
 		}
 
+		/** Adds at the end of queue an element of a type known at runtime, copy-constructing it from the source.
+		
+			@param i_type type of the new element.
+			@param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
+				<i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only by
+				by the type system of the language.
+				
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue push_by_copy example 1 */
+		void push_by_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+		{
+			begin_push_by_copy(i_type, i_source).commit();
+		}
+
+		/** Adds at the end of queue an element of a type known at runtime, move-constructing it from the source.
+		
+			@param i_type type of the new element
+			@param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE
+				<i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only by
+				by the type system of the language.
+
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue push_by_move example 1 */
+		void push_by_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+		{
+			begin_push_by_move(i_type, i_source).commit();
+		}
+
+		/** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE), copy-constructing
+				or move-constructing it from the source.
+			\n This function allocates space for and constructs the new element, and returns a transaction object that may be used to 
+			allocate raw space associated to the element being inserted, or to alter the element is some way.
+			\n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
+			to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
+			space wasted in the memory pages).
+
+			@param i_source object to be used as source to construct of new element.
+				- If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
+				- If this argument is an r-value, the new element move-constructed (and the source object is left in an undefined but valid state).
+			@return A transaction object which can be used to allocate raw space and commit the transaction.
+				
+            \n <b>Requires</b>:
+                - ELEMENT_TYPE must be copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
+                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is 
+					not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue begin_push example 1 */
+		template <typename ELEMENT_TYPE>
+			put_transaction begin_push(ELEMENT_TYPE && i_source)
+		{
+			return begin_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+		}
+
+		/** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE), 
+			inplace-constructring it from a perfect forwarded a parameter pack.
+			\n This function allocates space for and constructs the new element, and returns a transaction object that may be used to 
+			allocate raw space associated to the element being inserted, or to alter the element is some way.
+			\n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
+			to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
+			space wasted in the memory pages).
+
+			@param i_construction_params construction parameters for the new element.
+			@return A transaction object which can be used to allocate raw space and commit the transaction.
+				
+            \n <b>Requires</b>:
+                - ELEMENT_TYPE must be constructible from the specified parameters
+                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
+                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is 
+					not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+
+			<b>Complexity</b>: constant.
+			\n <b>Effects on iterators</b>: no iterator is invalidated
+			\n <b>Throws</b>: unspecified. 
+			\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). 
+			
+			<b>Examples</b>
+			\snippet heter_queue_samples.cpp heter_queue begin_push example 1 */
 		template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
 			put_transaction begin_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
 		{
@@ -192,13 +372,15 @@ namespace density
 
 			size_t element_size = sizeof(ELEMENT_TYPE);
 			size_t element_alignment = alignof(ELEMENT_TYPE);
-			if (element_alignment < internal_alignment)
+			if (element_alignment < s_internal_alignment)
 			{
-				element_alignment = internal_alignment;
-				element_size = uint_upper_align(element_size, internal_alignment);
+				element_alignment = s_internal_alignment;
+				element_size = uint_upper_align(element_size, s_internal_alignment);
 			}
 
-			auto push_data = begin_put_impl(element_size, element_alignment);
+			auto push_data = element_size <= s_max_size_inpage ?
+				implace_allocate(element_size, element_alignment) :
+				external_allocate(element_size, element_alignment);
 
 			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
 			new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
@@ -211,13 +393,15 @@ namespace density
 		{
 			size_t element_size = i_type.size();
 			size_t element_alignment = i_type.alignment();
-			if (element_alignment < internal_alignment)
+			if (element_alignment < s_internal_alignment)
 			{
-				element_alignment = internal_alignment;
-				element_size = uint_upper_align(element_size, internal_alignment);
+				element_alignment = s_internal_alignment;
+				element_size = uint_upper_align(element_size, s_internal_alignment);
 			}
 
-			auto push_data = begin_put_impl(element_size, element_alignment);
+			auto push_data = element_size <= s_max_size_inpage ?
+				implace_allocate(element_size, element_alignment) :
+				external_allocate(element_size, element_alignment);
 
 			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
 			new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
@@ -230,13 +414,15 @@ namespace density
 		{
 			size_t element_size = i_type.size();
 			size_t element_alignment = i_type.alignment();
-			if (element_alignment < internal_alignment)
+			if (element_alignment < s_internal_alignment)
 			{
-				element_alignment = internal_alignment;
-				element_size = uint_upper_align(element_size, internal_alignment);
+				element_alignment = s_internal_alignment;
+				element_size = uint_upper_align(element_size, s_internal_alignment);
 			}
 
-			auto push_data = begin_put_impl(element_size, element_alignment);
+			auto push_data = element_size <= s_max_size_inpage ?
+				implace_allocate(element_size, element_alignment) :
+				external_allocate(element_size, element_alignment);
 
 			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
 			new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
@@ -245,40 +431,29 @@ namespace density
 			return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
 		}
 
-		void push_by_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
-		{
-			begin_push_by_copy(i_type, i_source).commit();
-		}
-
-		void push_by_move(const runtime_type & i_type, COMMON_TYPE * i_source)
-		{
-			begin_push_by_move(i_type, i_source).commit();
-		}
-
+		/** Move-only class that holds the state of a push\emplace transaction, or is empty.
+			Push\emplace functions whose name start with 'begin' return a put_transaction that can be used to allocate raw memory,
+			in the queue, inspect or alter the element, and commit the push. */
 		class put_transaction
 		{
 		public:
 
-			put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
-				: m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
-					{ }
-
-			put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
-				: m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
-			{
-				m_push_data.m_element = i_element;
-				m_push_data.m_control_block->m_element = i_element;
-			}
-
+			/** Copy construction is not allowed */
 			put_transaction(const put_transaction &) = delete;
+
+			/** Move construction is not allowed */
 			put_transaction & operator = (const put_transaction &) = delete;
 
+			/** Move constructs a put_transaction, transferring the state from the source.
+					@i_source source to move from. It becomes empty after the call. */
 			put_transaction(put_transaction && i_source) noexcept
 				: m_queue(i_source.m_queue), m_push_data(i_source.m_push_data), m_committed(i_source.m_committed)
 			{
 				i_source.m_queue = nullptr;
 			}
 
+			/** Move assigns a put_transaction, transferring the state from the source.
+				@i_source source to move from. It becomes empty after the call. */
 			put_transaction & operator = (put_transaction && i_source) noexcept
 			{
 				if (this != &i_source)
@@ -291,21 +466,91 @@ namespace density
 				return *this;
 			}
 
+			/** Allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
+				the elements in the memory pages. If the block does not fit in one page, the block is allocated using non-paged memory services
+				of the allocator.
+
+				\n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial 
+					content of the block is undefined.
+
+				@param i_size size in bytes of the block to allocate.
+				@param i_alignment alignment of the block to allocate. It must be a non-zero power of 2.
+
+				<b>Complexity</b>: Unspecified.
+				\n <b>Effects on iterators</b>: no iterator is invalidated
+				\n <b>Throws</b>: unspecified. 
+				\n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+			void * raw_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t))
+			{
+				DENSITY_ASSERT(!empty());
+				auto push_data = i_size <= s_max_size_inpage ?
+					m_queue->implace_allocate(element_size, element_alignment) :
+					m_queue->external_allocate(element_size, element_alignment);
+				DENSITY_ASSERT_INTERNAL((push_data.m_control->m_next & 3) == 1);
+				push_data.m_control->m_next++;
+				return push_data.m_element;
+			}
+			
+			/** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers. 
+				If the state of the transaction is not committed, it will never become visible. 
+				
+				<b>Complexity</b>: Constant.
+				\n <b>Effects on iterators</b>: no iterator is invalidated
+				\n <b>Throws</b>: Nothing. */
 			void commit() noexcept
 			{
+				DENSITY_ASSERT(!empty());
 				m_committed = true;
 			}
 
+			/** Returns true whether this object does not hold the state of a transaction. */
+			bool empty() const noexcept { return m_queue == nullptr; }
+
+			/** Returns a pointer to the object being added. 
+				\n <i>Note</i>Note: the object is constructed at the begin of the transaction, so this 
+				function always returns a pointer to a valid object. */
+			COMMON_TYPE * element_ptr() const noexcept
+			{
+				DENSITY_ASSERT(!empty());
+				return get_element(m_push_data.m_control);
+			}
+
+			/** Returns the type of the object being added. */
+			const RUNTIME_TYPE & type() const noexcept
+			{
+				DENSITY_ASSERT(!empty());
+				return *type_after_control(m_push_data.m_control);
+			}
+
+			/** If this put_transaction the destructor has no side effects. Otherwise it commits or cancels the transaction, depending 
+				on whether commit() has been called on not. */
 			~put_transaction()
 			{
 				if (m_queue != nullptr)
 				{
-					if (m_committed)
+					if (DENSITY_LIKELY(m_committed))
 						commit_put_impl(m_push_data.m_control_block);
 					else
 						cancel_put_impl(m_push_data.m_control_block);
 				}
 			}
+
+			#ifndef DOXYGEN_DOC_GENERATION
+
+				// not part of the public interface
+				put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
+					: m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+						{ }
+
+				// not part of the public interface
+				put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
+					: m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+				{
+					m_push_data.m_element = i_element;
+					m_push_data.m_control_block->m_element = i_element;
+				}
+
+			#endif // #ifndef DOXYGEN_DOC_GENERATION
 
 		private:
 			heterogeneous_queue * m_queue;
@@ -351,17 +596,17 @@ namespace density
 				}
 			}
 
-			const RUNTIME_TYPE & complete_type() noexcept
+			const RUNTIME_TYPE & complete_type() const noexcept
 			{
 				return *type_after_control(m_control);
 			}
 
-			void * unaligned_element_ptr() noexcept
+			void * unaligned_element_ptr() const noexcept
 			{
 				return get_unaligned_element(m_control);
 			}
 
-			COMMON_TYPE * element() noexcept
+			COMMON_TYPE * element() const noexcept
 			{
 				return get_element(m_control);
 			}
@@ -618,11 +863,18 @@ namespace density
 			return true;
 		}
 
+		bool operator != (const heterogeneous_queue & i_source) const
+		{
+			return !operator == (i_source);
+		}
+
 	private:	
 		
-		constexpr static size_t internal_alignment = detail::size_max(4, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
-		constexpr static size_t sizeof_ControlBlock = (sizeof(ControlBlock) + (internal_alignment - 1)) & ~(internal_alignment - 1);
-		constexpr static size_t sizeof_RuntimeType = (sizeof(runtime_type) + (internal_alignment - 1)) & ~(internal_alignment - 1);
+		constexpr static auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
+		constexpr static size_t s_internal_alignment = detail::size_max(4, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
+		constexpr static size_t s_sizeof_ControlBlock = (sizeof(ControlBlock) + (s_internal_alignment - 1)) & ~(s_internal_alignment - 1);
+		constexpr static size_t s_sizeof_RuntimeType = (sizeof(runtime_type) + (s_internal_alignment - 1)) & ~(s_internal_alignment - 1);
+		constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
 
 		ControlBlock * first_valid(ControlBlock * i_from) const
 		{
@@ -655,12 +907,12 @@ namespace density
 
 		static runtime_type * type_after_control(ControlBlock * i_control)
 		{
-			return reinterpret_cast<runtime_type*>(address_add(i_control, sizeof_ControlBlock));
+			return reinterpret_cast<runtime_type*>(address_add(i_control, s_sizeof_ControlBlock));
 		}
 
 		static void * get_unaligned_element(detail::QueueControl<void> * i_control)
 		{
-			return address_add(i_control, sizeof_ControlBlock + sizeof_RuntimeType);
+			return address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType );
 		}
 
 		static void * get_element(detail::QueueControl<void> * i_control)
@@ -685,20 +937,37 @@ namespace density
 			return (reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) < allocator_type::page_size;
 		}
 
-		PutData begin_put_impl(size_t i_size, size_t i_alignment)
+		struct ExternalBlock
 		{
-			DENSITY_ASSERT_INTERNAL(i_alignment >= internal_alignment && is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
+			void * m_block;
+		};
+
+		PutData external_allocate(size_t i_size, size_t i_alignment)
+		{
+			auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
+
+			PutData inplace_put = implace_allocate(sizeof(ExternalBlock), alignof(ExternalBlock));
+					
+			new(inplace_put.m_element) ExternalBlock{ external_block };
+
+			return PutData{ inplace_put.m_control_block, external_block };
+		}
+
+		PutData implace_allocate(size_t i_size, size_t i_alignment)
+		{
+			DENSITY_ASSERT_INTERNAL(i_alignment >= s_internal_alignment && is_power_of_2(i_alignment) && (i_size % i_alignment) == 0
+				&& i_size <= s_max_size_inpage);
 
 			for(;;)
 			{
 				auto const control_block = m_tail;
-				void * new_tail = address_add(control_block, sizeof_ControlBlock + sizeof_RuntimeType);
+				void * new_tail = address_add(control_block, s_sizeof_ControlBlock + s_sizeof_RuntimeType );
 
 				new_tail = address_upper_align(new_tail, i_alignment);
 				void * new_element = new_tail;
 				new_tail = address_add(new_tail, i_size);
 
-				if (DENSITY_LIKELY(are_in_same_page(address_add(new_tail, sizeof_ControlBlock), control_block)))
+				if (DENSITY_LIKELY(are_in_same_page(address_add(new_tail, s_sizeof_ControlBlock), control_block)))
 				{
 					DENSITY_ASSERT_INTERNAL(control_block != nullptr);
 					new(control_block) ControlBlock();
@@ -741,8 +1010,11 @@ namespace density
 			i_control_block->m_next--;
 		}
 
-		static void cancel_put_impl(ControlBlock * i_control_block)
+		DENSITY_NO_INLINE static void cancel_put_impl(ControlBlock * i_control_block)
 		{
+			const auto type_ptr = type_after_control(i_control_block);
+			type_ptr->destroy(get_element(i_control_block));
+
 			DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 1);
 			i_control_block->m_next++;
 		}

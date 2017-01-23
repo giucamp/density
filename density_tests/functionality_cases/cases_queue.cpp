@@ -14,6 +14,11 @@
 #include <algorithm>
 #include <array>
 
+namespace heter_queue_samples
+{
+	void run();
+}
+
 namespace density_tests
 {
     using namespace density;
@@ -387,6 +392,10 @@ namespace density_tests
 	template <typename QUEUE>
 		void add_heterogeneous_queue_base_tests(TestTree & i_dest)
 	{
+		i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
+			heter_queue_samples::run();
+		});
+
 		i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
 
 			QUEUE queue;

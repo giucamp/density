@@ -222,6 +222,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\density_samples\function_queue_sample.cpp" />
+    <ClCompile Include="..\..\density_samples\heter_queue_samples.cpp" />
     <ClCompile Include="..\..\density_samples\lifo_sample.cpp" />
     <ClCompile Include="..\..\density_samples\misc_samples.cpp" />
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
