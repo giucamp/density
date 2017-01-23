@@ -36,11 +36,13 @@ namespace heter_queue_samples
 	using namespace density;
 	heterogeneous_queue<> queue;
 
+	// insert an int
 	queue.emplace<int>();
 
+	// check the type and the value
 	auto it = queue.cbegin();
 	assert(it.complete_type() == runtime_type<>::make<int>() );
-	assert(*static_cast<int*>(it.element()) == 0);
+	assert(*static_cast<const int*>(it.element()) == 0);
 
 	queue.emplace<std::string>("abc"); // move-construct
 

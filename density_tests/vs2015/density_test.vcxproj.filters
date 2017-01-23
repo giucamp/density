@@ -138,5 +138,8 @@
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
+    <ClInclude Include="..\functionality_cases\dynamic_type.h">
+      <Filter>functionality_cases</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

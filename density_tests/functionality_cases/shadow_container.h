@@ -27,7 +27,7 @@ namespace density_tests
         struct Element
         {
             const std::type_info * m_type_info;
-            size_t m_hash;
+            size_t m_object_hash;
         };
 
     public:
@@ -79,7 +79,7 @@ namespace density_tests
                 const auto & deq_entry = m_deque[index];
                 const auto hash = hasher(it.element());
                 TESTITY_ASSERT(type_info == *deq_entry.m_type_info
-                    && hash == deq_entry.m_hash );
+                    && hash == deq_entry.m_object_hash );
                 index++;
             }
 
@@ -91,7 +91,7 @@ namespace density_tests
             TESTITY_ASSERT(i_at < m_deque.size());
             TESTITY_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
             const auto element_hash = i_type.template get_feature<density::type_features::hash>()(i_element);
-            TESTITY_ASSERT(element_hash == m_deque[i_at].m_hash);
+            TESTITY_ASSERT(element_hash == m_deque[i_at].m_object_hash);
         }
 
         void compare_front(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)

@@ -906,6 +906,15 @@ namespace density
             return *get_feature<type_features::rtti>();
         }
 
+		/** Returns true if two instances of the target types compare equal. 
+			\n\b Throws: unspecified
+		*/
+		bool are_equal(const common_type * i_first, const common_type * i_second) const
+		{
+			DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
+			return get_feature<type_features::equals>()(i_first, i_second);
+		}
+
         /** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails.
             This function grant access to features that are not part of the interface of runtime_type.
 

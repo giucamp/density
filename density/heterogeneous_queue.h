@@ -245,8 +245,8 @@ namespace density
 			return emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
 		}
 
-		/** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), inplace-constructring it from
-				a perfect forwarded a parameter pack.
+		/** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), inplace-constructing it from
+				a perfect forwarded parameter pack.
 			\n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
 		
 			@param i_construction_params construction parameters for the new element.
@@ -311,7 +311,7 @@ namespace density
 		/** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE), copy-constructing
 				or move-constructing it from the source.
 			\n This function allocates space for and constructs the new element, and returns a transaction object that may be used to 
-			allocate raw space associated to the element being inserted, or to alter the element is some way.
+			allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
 			to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
 			space wasted in the memory pages).
@@ -341,9 +341,9 @@ namespace density
 		}
 
 		/** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE), 
-			inplace-constructring it from a perfect forwarded a parameter pack.
+			inplace-constructing it from a perfect forwarded parameter pack.
 			\n This function allocates space for and constructs the new element, and returns a transaction object that may be used to 
-			allocate raw space associated to the element being inserted, or to alter the element is some way.
+			allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
 			to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
 			space wasted in the memory pages).
@@ -432,8 +432,11 @@ namespace density
 		}
 
 		/** Move-only class that holds the state of a push\emplace transaction, or is empty.
-			Push\emplace functions whose name start with 'begin' return a put_transaction that can be used to allocate raw memory,
-			in the queue, inspect or alter the element, and commit the push. */
+			
+			Transactional push\emplace functions on heterogeneous_queue return a put_transaction that can be used to allocate raw memory in the queue,
+			inspect or alter the element, and commit the push. Move operations transfer the transaction state to the destination, leaving the source 
+			in the empty state. If an operative function (like raw_allocate or commit) is called on an empty transaction, the 
+			behavior is undefined. */
 		class put_transaction
 		{
 		public:
@@ -441,7 +444,7 @@ namespace density
 			/** Copy construction is not allowed */
 			put_transaction(const put_transaction &) = delete;
 
-			/** Move construction is not allowed */
+			/** Copy assignment is not allowed */
 			put_transaction & operator = (const put_transaction &) = delete;
 
 			/** Move constructs a put_transaction, transferring the state from the source.
@@ -476,6 +479,11 @@ namespace density
 				@param i_size size in bytes of the block to allocate.
 				@param i_alignment alignment of the block to allocate. It must be a non-zero power of 2.
 
+				\pre The behavior is undefined if either:
+				- this put_transaction is empty, that is it has been used as source for a move operation
+				- the alignment is not valid
+				- the size is not a multiple of the alignment 
+
 				<b>Complexity</b>: Unspecified.
 				\n <b>Effects on iterators</b>: no iterator is invalidated
 				\n <b>Throws</b>: unspecified. 
@@ -483,16 +491,27 @@ namespace density
 			void * raw_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t))
 			{
 				DENSITY_ASSERT(!empty());
-				auto push_data = i_size <= s_max_size_inpage ?
-					m_queue->implace_allocate(element_size, element_alignment) :
-					m_queue->external_allocate(element_size, element_alignment);
+
+				size_t size = i_size;
+				size_t alignment = i_alignment;
+				if (alignment < s_internal_alignment)
+				{
+					alignment = s_internal_alignment;
+					size = uint_upper_align(size, s_internal_alignment);
+				}
+
+				auto push_data = size <= s_max_size_inpage ?
+					m_queue->implace_allocate(size, alignment) :
+					m_queue->external_allocate(size, alignment);
 				DENSITY_ASSERT_INTERNAL((push_data.m_control->m_next & 3) == 1);
-				push_data.m_control->m_next++;
+				push_data.m_control->m_next++; // sets the control bit to 2 (invalid element)
 				return push_data.m_element;
 			}
 			
 			/** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers. 
 				If the state of the transaction is not committed, it will never become visible. 
+
+				\pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation.
 				
 				<b>Complexity</b>: Constant.
 				\n <b>Effects on iterators</b>: no iterator is invalidated
@@ -507,15 +526,19 @@ namespace density
 			bool empty() const noexcept { return m_queue == nullptr; }
 
 			/** Returns a pointer to the object being added. 
-				\n <i>Note</i>Note: the object is constructed at the begin of the transaction, so this 
-				function always returns a pointer to a valid object. */
+				\n <i>Note</i>: the object is constructed at the begin of the transaction, so this 
+				function always returns a pointer to a valid object. 
+				
+				\pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation. */
 			COMMON_TYPE * element_ptr() const noexcept
 			{
 				DENSITY_ASSERT(!empty());
-				return get_element(m_push_data.m_control);
+				return m_push_data.m_element;
 			}
 
-			/** Returns the type of the object being added. */
+			/** Returns the type of the object being added. 
+						
+				\pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation. */
 			const RUNTIME_TYPE & type() const noexcept
 			{
 				DENSITY_ASSERT(!empty());
@@ -562,18 +585,20 @@ namespace density
 		{
 		public:
 
-			consume_transaction(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
-				: m_queue(i_queue), m_control(i_control)
-			{
+			/** Copy construction is not allowed */
+			consume_transaction(const consume_transaction &) = delete;
 
-			}
+			/** Copy assignment is not allowed */
+			consume_transaction & operator = (const consume_transaction &) = delete;
 
+			/** Move constructor. The source is left empty. */
 			consume_transaction(consume_transaction && i_source) noexcept
 				: m_queue(i_source.m_queue), m_control(i_source.m_control)
 			{
 				i_source.m_control = nullptr;
 			}
 
+			/** Move assignment. The source is left empty. */
 			consume_transaction & operator = (consume_transaction && i_source) noexcept
 			{
 				if (this != &i_source)
@@ -584,9 +609,6 @@ namespace density
 				}
 				return *this;
 			}
-
-			consume_transaction(const consume_transaction &) = delete;
-			consume_transaction & operator = (const consume_transaction &) = delete;
 
 			~consume_transaction()
 			{
@@ -615,6 +637,17 @@ namespace density
 			{
 				return m_control != nullptr;
 			}
+
+			#ifndef DOXYGEN_DOC_GENERATION
+
+				// not part of the public interface
+				consume_transaction(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
+					: m_queue(i_queue), m_control(i_control)
+				{
+
+				}
+
+			#endif // #ifndef DOXYGEN_DOC_GENERATION
 
 		private:
 			heterogeneous_queue * m_queue;
@@ -853,9 +886,8 @@ namespace density
 			const auto end_1 = cend();
 			for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
 			{
-				auto const equal_comparer = it_1.complete_type().template get_feature<type_features::equals>();
 				if (it_1.complete_type() != it_2.complete_type() ||
-					!equal_comparer(it_1.element(), it_2.element()))
+					!it_1.complete_type().are_equal(it_1.element(), it_2.element()))
 				{
 					return false;
 				}
@@ -871,7 +903,7 @@ namespace density
 	private:	
 		
 		constexpr static auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
-		constexpr static size_t s_internal_alignment = detail::size_max(4, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
+		constexpr static size_t s_internal_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
 		constexpr static size_t s_sizeof_ControlBlock = (sizeof(ControlBlock) + (s_internal_alignment - 1)) & ~(s_internal_alignment - 1);
 		constexpr static size_t s_sizeof_RuntimeType = (sizeof(runtime_type) + (s_internal_alignment - 1)) & ~(s_internal_alignment - 1);
 		constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
@@ -880,12 +912,11 @@ namespace density
 		{
 			for (auto curr = i_from; curr != m_tail; )
 			{
-				auto const control_bits = curr->m_next & 3;
-				if (control_bits == 0)
+				if ((curr->m_next & 3) == 0)
 				{
 					return curr;
 				}
-				curr = reinterpret_cast<ControlBlock*>(curr->m_next - control_bits);
+				curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
 			}
 			return m_tail;
 		}
@@ -895,12 +926,11 @@ namespace density
 			DENSITY_ASSERT_INTERNAL(i_from != m_tail);
 			for (auto curr = reinterpret_cast<ControlBlock*>(i_from->m_next & ~static_cast<uintptr_t>(3)); curr != m_tail; )
 			{
-				auto const control_bits = curr->m_next & 3;
-				if (control_bits == 0)
+				if ((curr->m_next & 3) == 0)
 				{
 					return curr;
 				}
-				curr = reinterpret_cast<ControlBlock*>(curr->m_next - control_bits);
+				curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
 			}
 			return m_tail;
 		}
@@ -912,12 +942,26 @@ namespace density
 
 		static void * get_unaligned_element(detail::QueueControl<void> * i_control)
 		{
-			return address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType );
+			auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
+			if (i_control->m_next & 4)
+			{
+				result = static_cast<ExternalBlock*>(result)->m_block;
+			}
+			return result;
 		}
 
 		static void * get_element(detail::QueueControl<void> * i_control)
 		{
-			return address_upper_align(get_unaligned_element(i_control), type_after_control(i_control)->alignment());
+			auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
+			if (i_control->m_next & 4)
+			{
+				result = static_cast<ExternalBlock*>(result)->m_block;
+			}
+			else
+			{
+				result = address_upper_align(result, type_after_control(i_control)->alignment());
+			}
+			return result;
 		}
 
 		template <typename TYPE>
@@ -940,23 +984,25 @@ namespace density
 		struct ExternalBlock
 		{
 			void * m_block;
+			size_t m_size, m_alignment;
 		};
 
 		PutData external_allocate(size_t i_size, size_t i_alignment)
 		{
 			auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
+			auto const inplace_put = implace_allocate(sizeof(ExternalBlock), alignof(ExternalBlock));
+				
+			new(inplace_put.m_element) ExternalBlock{ external_block, i_size, i_alignment };
 
-			PutData inplace_put = implace_allocate(sizeof(ExternalBlock), alignof(ExternalBlock));
-					
-			new(inplace_put.m_element) ExternalBlock{ external_block };
-
+			DENSITY_ASSERT((inplace_put.m_control_block->m_next & 4) == 0);
+			inplace_put.m_control_block->m_next |= 4;
 			return PutData{ inplace_put.m_control_block, external_block };
 		}
 
 		PutData implace_allocate(size_t i_size, size_t i_alignment)
 		{
-			DENSITY_ASSERT_INTERNAL(i_alignment >= s_internal_alignment && is_power_of_2(i_alignment) && (i_size % i_alignment) == 0
-				&& i_size <= s_max_size_inpage);
+			DENSITY_ASSERT_INTERNAL(i_alignment >= s_internal_alignment && is_power_of_2(i_alignment)
+				&& (i_size % i_alignment) == 0 && i_size <= s_max_size_inpage);
 
 			for(;;)
 			{
@@ -1024,14 +1070,13 @@ namespace density
 			auto curr = m_head;
 			while (curr != m_tail)
 			{
-				auto const control_bits = curr->m_next & 3;
-				if (control_bits == 0)
+				if ((curr->m_next & 3) == 0)
 				{
 					curr->m_next |= 1;
 					return curr;
 				}
 
-				curr = reinterpret_cast<ControlBlock*>(curr->m_next - control_bits);
+				curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
 			}
 
 			return nullptr;
@@ -1047,16 +1092,20 @@ namespace density
 				auto curr = i_control_block;
 				DENSITY_ASSERT_INTERNAL(curr != m_tail);
 				do {
-					auto const control_bits = curr->m_next & 3;
-					if (control_bits != 2)
+					if ((curr->m_next & 3) != 2)
 					{
 						break;
 					}
 
-					auto next = reinterpret_cast<ControlBlock*>(curr->m_next - control_bits);
+					auto next = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
+					if (curr->m_next & 4)
+					{
+						auto result = address_add(curr, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
+						const auto & block = *static_cast<ExternalBlock*>(result);
+						ALLOCATOR_TYPE::deallocate(block.m_block, block.m_size, block.m_alignment);
+					}
 
-					auto address_xor = reinterpret_cast<uintptr_t>(next) ^ reinterpret_cast<uintptr_t>(curr);
-					if (address_xor >= allocator_type::page_size)
+					if (!are_in_same_page(next, curr))
 					{
 						allocator_type::deallocate_page(address_lower_align(curr, allocator_type::page_size));
 					}
