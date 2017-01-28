@@ -9,6 +9,7 @@
 #include <ostream>
 #include <limits>
 #include <cstddef>
+#include <utility>
 
 #define DENSITY_VERSION            0x0008
 /**
@@ -49,12 +50,12 @@ namespace density
             return i_first > i_second ? i_first : i_second;
         }
 
-		/** Computes the base2 logarithm of a size_t. If the argument is zero or is
-			not a power of 2, the behavior is undefined. */
-		constexpr size_t size_log2(size_t i_size) noexcept
-		{
-			return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
-		}
+        /** Computes the base2 logarithm of a size_t. If the argument is zero or is
+            not a power of 2, the behavior is undefined. */
+        constexpr size_t size_log2(size_t i_size) noexcept
+        {
+            return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
+        }
 
         template <typename SCOPE_EXIT_ACTION>
             class ScopeExit
@@ -369,6 +370,21 @@ namespace density
         io_curr_ptr = reinterpret_cast<void*>(ptr);
         return result;
     }
+
+    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POS type otherwise.
+    **/
+    template <typename TYPE>
+        struct unvoid { using type = TYPE; };
+    template <>
+        struct unvoid<void> { struct type {int f;}; };
+    template <>
+        struct unvoid<const void> { struct type {int f;}; };
+    template <>
+        struct unvoid<volatile void> { struct type {int f;}; };
+    template <>
+        struct unvoid<const volatile void> { struct type {int f;}; };
+    template <typename TYPE>
+        using unvoid_t = typename unvoid<TYPE>::type;
 
     namespace detail
     {
