@@ -17,7 +17,7 @@
 
 namespace heter_queue_samples
 {
-	void run();
+    void run();
 }
 
 namespace density_tests
@@ -25,70 +25,70 @@ namespace density_tests
     using namespace density;
     using namespace testity;
 
-	template <typename QUEUE>
-		void add_heterogeneous_queue_base_tests(TestTree & i_dest)
-	{
-		i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
-			heter_queue_samples::run();
-		});
+    template <typename QUEUE>
+        void add_heterogeneous_queue_base_tests(TestTree & i_dest)
+    {
+        i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
+            heter_queue_samples::run();
+        });
 
-		i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
+        i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
 
-			QUEUE queue;
-			using runtime_type = typename QUEUE::runtime_type;
+            QUEUE queue;
+            using runtime_type = typename QUEUE::runtime_type;
 
-			TESTITY_ASSERT(!queue.begin_manual_consume());
+            TESTITY_ASSERT(!queue.start_manual_consume());
 
-			for (int i = 0; i < 1000; i++)
-				queue.push(i);
+            for (int i = 0; i < 1000; i++)
+                queue.push(i);
 
-			auto it = queue.cbegin();
-			for (int i = 0; i < 1000; i++)
-			{
-				TESTITY_ASSERT(i == *it);
-				it++;
-			}
-			TESTITY_ASSERT(it == queue.cend());
+            auto it = queue.cbegin();
+            for (int i = 0; i < 1000; i++)
+            {
+                TESTITY_ASSERT(i == *it);
+                it++;
+            }
+            TESTITY_ASSERT(it == queue.cend());
 
-			queue.consume([](const runtime_type & i_type, int * i_element) {
-				TESTITY_ASSERT(*i_element == 0 && i_type == runtime_type::make<int>());
-			});
+            queue.consume([](const runtime_type & i_type, int * i_element) {
+                TESTITY_ASSERT(*i_element == 0 && i_type == runtime_type::make<int>());
+            });
 
-			it = queue.cbegin();
-			for (int i = 1; i < 1000; i++)
-			{
-				TESTITY_ASSERT(i == *it);
-				it++;
-			}
-			TESTITY_ASSERT(it == queue.cend());
+            it = queue.cbegin();
+            for (int i = 1; i < 1000; i++)
+            {
+                TESTITY_ASSERT(i == *it);
+                it++;
+            }
+            TESTITY_ASSERT(it == queue.cend());
 
-		});
-	}
+        });
+    }
 
-	template <typename QUEUE>
-		struct QueueTest_DynType
-	{
-		QUEUE m_queue;
-		std::deque<DynamicType> m_shadow;
-	};
+    template <typename QUEUE>
+        struct QueueTest_DynType
+    {
+        QUEUE m_queue;
+        std::deque<DynamicType> m_shadow;
+    };
 
-	template <typename QUEUE>
-		void add_heterogeneous_queue_dynamic_type_tests(TestTree & i_dest)
-	{
-		using TestTarget = QueueTest_DynType<QUEUE>;
-		using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
+    template <typename QUEUE>
+        void add_heterogeneous_queue_dynamic_type_tests(TestTree & i_dest)
+    {
+        using TestTarget = QueueTest_DynType<QUEUE>;
+        using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
 
-		i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
-			auto type = DynamicType::make_random(i_random);
-			//i_target.m_queue.push_by_copy(type, );
-		}));
-	}
+        i_dest.add_case(TestFunc([](std::mt19937 & i_random, TestTarget & i_target) {
+            auto type = DynamicType::make_random(i_random);
+            //i_target.m_queue.push_by_copy(type, );
+        }));
+    }
 
     /* HeterogeneousQueue<TYPE> - heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
     template <typename TYPE>
         using HeterogeneousQueue = heterogeneous_queue<TYPE, runtime_type<TYPE,
-            typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type>, 
-				TestVoidAllocator >;
+            typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type>,
+                TestVoidAllocator >;
 
     /* SmallHeterogeneousQueue<TYPE> - small_heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
     template <typename TYPE>
@@ -109,10 +109,10 @@ namespace density_tests
         using TestFunc = std::function< void(std::mt19937 & i_random, TestTarget & i_target)>;
 
         i_dest.add_case(TestFunc([](std::mt19937 & /*i_random*/, TestTarget & i_target) {
-            
-			QUEUE tmp_queue;
+
+            QUEUE tmp_queue;
             TESTITY_ASSERT(tmp_queue.empty());
-            TESTITY_ASSERT(tmp_queue.begin() == tmp_queue.end());			
+            TESTITY_ASSERT(tmp_queue.begin() == tmp_queue.end());
 
             try
             {
@@ -453,10 +453,10 @@ namespace density_tests
 
     void add_queue_cases(TestTree & i_dest)
     {
-		add_heterogeneous_queue_base_tests< heterogeneous_queue<int> >(i_dest);
-		add_heterogeneous_queue_base_tests< heterogeneous_queue<int, runtime_type<int>, TestVoidAllocator> >(i_dest);
-        
-		add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
+        add_heterogeneous_queue_base_tests< heterogeneous_queue<int> >(i_dest);
+        add_heterogeneous_queue_base_tests< heterogeneous_queue<int, runtime_type<int>, TestVoidAllocator> >(i_dest);
+
+        add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
         add_small_heterogeneous_queue_cases(i_dest["small_heterogeneous_queue"]);
     }
 

@@ -25,8 +25,22 @@ namespace heter_queue_samples
 
     queue.push(std::string("abc")); // move-construct
 
-    std::string s("def");
+    std::wstring s(L"def");
     queue.push(s); // copy-construct
+
+	assert(std::distance(queue.begin(), queue.end()) == 2);
+
+	queue.consume([](runtime_type<> i_type, void * i_element_ptr) {
+		assert(i_type == runtime_type<>::make<std::string>());
+		assert(*static_cast<std::string*>(i_element_ptr) == "abc");
+	});
+
+	queue.consume([](runtime_type<> i_type, void * i_element_ptr) {
+		assert(i_type == runtime_type<>::make<std::wstring>());
+		assert(*static_cast<std::wstring*>(i_element_ptr) == L"def");
+	});
+
+	assert(queue.empty());
 
         //! [heter_queue push example 1]
     }
@@ -36,21 +50,70 @@ namespace heter_queue_samples
     using namespace density;
     heterogeneous_queue<> queue;
 
-    // insert an int
+    // insert a zero
     queue.emplace<int>();
 
-    // check the type and the value
-    auto it = queue.cbegin();
-    assert(it.complete_type() == runtime_type<>::make<int>() );
-    assert(*static_cast<const int*>(it.element()) == 0);
+	// insert "oooooooo"
+    queue.emplace<std::string>(8, 'o');
 
-    queue.emplace<std::string>("abc"); // move-construct
+	// insert {5, 10.}
+	queue.emplace<std::pair<int,double>>(5, 10.);
 
-    std::string s("def");
-    queue.emplace<std::string>(s); // copy-construct
+	assert(std::distance(queue.begin(), queue.end()) == 3);
+
+	// consume the elements
+
+	assert( queue.begin().complete_type() == runtime_type<>::make<int>()
+		&& *static_cast<int*>(queue.begin().element()) == 0);
+
+	queue.pop();
+
+	assert(queue.begin().complete_type() == runtime_type<>::make<std::string>()
+		&& *static_cast<std::string*>(queue.begin().element()) == "oooooooo");
+
+	queue.pop();
+
+	using Pair = std::pair<int, double>;
+	assert(queue.begin().complete_type() == runtime_type<>::make<Pair>()
+		&& *static_cast<Pair*>(queue.begin().element()) == Pair(5, 10.));
+
+	queue.pop();
+
+	assert(queue.empty());
 
         //! [heter_queue emplace example 1]
-    (void)it;
+    }
+	    {
+        //! [heter_queue dyn_push example 1]
+
+    using namespace density;
+	using namespace type_features;
+	using rt = runtime_type<void, feature_concat_t<default_type_features_t<void>, default_construct>>;
+    heterogeneous_queue<void, rt> queue;
+    queue.dyn_push(rt::make<int>());
+	queue.dyn_push(rt::make<std::string>());
+	queue.dyn_push(rt::make<std::wstring>());
+
+	assert(std::distance(queue.begin(), queue.end()) == 3);
+
+	queue.consume([](rt i_type, void * i_element_ptr) {
+		assert(i_type == rt::make<int>());
+		assert(*static_cast<int*>(i_element_ptr) == 0);
+	});
+
+	queue.consume([](rt i_type, void * i_element_ptr) {
+		assert(i_type == rt::make<std::string>());
+		assert(*static_cast<std::string*>(i_element_ptr) == "");
+	});
+
+	queue.consume([](rt i_type, void * i_element_ptr) {
+		assert(i_type == rt::make<std::wstring>());
+		assert(*static_cast<std::wstring*>(i_element_ptr) == L"");
+	});
+
+	assert(queue.empty());
+
+        //! [heter_queue dyn_push example 1]
     }
     {
         //! [heter_queue dyn_push_copy example 1]
@@ -61,7 +124,18 @@ namespace heter_queue_samples
     std::string s("abc");
     auto const source_ptr = static_cast<const void*>(&s);
     auto const type = runtime_type<>::make<std::string>();
-    queue.dyn_push_copy(type, source_ptr); // move-construct
+    queue.dyn_push_copy(type, source_ptr);
+
+	assert(s == "abc");
+
+	assert(std::distance(queue.begin(), queue.end()) == 1);
+
+	queue.consume([](runtime_type<> i_type, void * i_element_ptr) {
+		assert(i_type == runtime_type<>::make<std::string>());
+		assert(*static_cast<std::string*>(i_element_ptr) == "abc");
+	});
+
+	assert(queue.empty());
 
 
         //! [heter_queue dyn_push_copy example 1]
@@ -76,26 +150,47 @@ namespace heter_queue_samples
     auto const type = runtime_type<>::make<std::string>();
     queue.dyn_push_move(type, static_cast<void*>(&s)); // move-construct
 
-    std::cout << "This string has valid but indeterminate content: " << s << std::endl;
+	assert(std::distance(queue.begin(), queue.end()) == 1);
 
+	queue.consume([](runtime_type<> i_type, void * i_element_ptr) {
+		assert(i_type == runtime_type<>::make<std::string>());
+		assert(*static_cast<std::string*>(i_element_ptr) == "abc");
+	});
+
+	assert(queue.empty());
+
+
+    // s now has valid but indeterminate content
 
         //! [heter_queue dyn_push_move example 1]
     }
     {
-        //! [heter_queue begin_push example 1]
+        //! [heter_queue start_push example 1]
 
     using namespace density;
     heterogeneous_queue<> queue;
 
-    queue.begin_push(std::string("abc")).commit(); // move-construct
+	{	
+		struct Message
+		{
+			const char * m_message = nullptr;
+			~Message() 
+			{ 
+				if (m_message) 
+				{
+					std::cout << m_message << std::endl; 
+				} 
+			}
+		};
+		auto transaction = queue.start_push(Message{});
+		transaction.element_ptr()->m_message = transaction.raw_allocate_copy("abc");
+		transaction.commit();
+	}
 
-    std::string s("def");
-    queue.begin_push(s).commit(); // copy-construct
-
-        //! [heter_queue begin_push example 1]
+        //! [heter_queue start_push example 1]
     }
     {
-        //! [heter_queue begin_dyn_push example 1]
+        //! [heter_queue start_dyn_push example 1]
 
     using namespace density;
     using namespace type_features;
@@ -105,46 +200,46 @@ namespace heter_queue_samples
     heterogeneous_queue<void, rt> queue;
 
     auto const type = rt::make<std::string>();
-    queue.begin_dyn_push(type).commit(); // move-construct
+    queue.start_dyn_push(type).commit(); // move-construct
 
 
-        //! [heter_queue begin_dyn_push example 1]
+        //! [heter_queue start_dyn_push example 1]
     }
 
     {
-        //! [heter_queue begin_dyn_push_copy example 1]
+        //! [heter_queue start_dyn_push_copy example 1]
 
     using namespace density;
     heterogeneous_queue<> queue;
 
     auto const type = runtime_type<>::make<std::string>();
     std::string str("hello");
-    auto transaction = queue.begin_dyn_push_copy(type, &str); // copy-construct
+    auto transaction = queue.start_dyn_push_copy(type, &str); // copy-construct
     transaction.commit();
 
     auto it = queue.begin();
     assert(it.complete_type() == type);
     std::cout << *static_cast<std::string*>(it.element()) << " world!" << std::endl;
 
-        //! [heter_queue begin_dyn_push_copy example 1]
+        //! [heter_queue start_dyn_push_copy example 1]
     }
 
     {
-        //! [heter_queue begin_dyn_push_move example 1]
+        //! [heter_queue start_dyn_push_move example 1]
 
     using namespace density;
     heterogeneous_queue<> queue;
 
     auto const type = runtime_type<>::make<std::string>();
     std::string str("hello");
-    auto transaction = queue.begin_dyn_push_move(type, &str); // move-construct
+    auto transaction = queue.start_dyn_push_move(type, &str); // move-construct
     transaction.commit();
 
     auto it = queue.begin();
     assert(it.complete_type() == type);
     std::cout << *static_cast<std::string*>(it.element()) << " world!" << std::endl;
 
-        //! [heter_queue begin_dyn_push_move example 1]
+        //! [heter_queue start_dyn_push_move example 1]
     }
 
     {

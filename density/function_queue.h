@@ -106,11 +106,11 @@ namespace density
             \n\b Complexity: constant. */
         RET_VAL consume_front(PARAMS... i_params)
         {
-			auto transaction = m_queue.begin_manual_consume();
-			DENSITY_ASSERT((bool)transaction);
+            auto transaction = m_queue.start_manual_consume();
+            DENSITY_ASSERT((bool)transaction);
 
-			return transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
-				transaction.element(), std::forward<PARAMS>(i_params)...);
+            return transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
+                transaction.element(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes the first function object in the queue.

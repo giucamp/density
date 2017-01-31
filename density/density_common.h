@@ -376,13 +376,13 @@ namespace density
     template <typename TYPE>
         struct unvoid { using type = TYPE; };
     template <>
-        struct unvoid<void> { struct type {int f;}; };
+        struct unvoid<void> { struct type {}; };
     template <>
-        struct unvoid<const void> { struct type {int f;}; };
+        struct unvoid<const void> { struct type {}; };
     template <>
-        struct unvoid<volatile void> { struct type {int f;}; };
+        struct unvoid<volatile void> { struct type {}; };
     template <>
-        struct unvoid<const volatile void> { struct type {int f;}; };
+        struct unvoid<const volatile void> { struct type {}; };
     template <typename TYPE>
         using unvoid_t = typename unvoid<TYPE>::type;
 
