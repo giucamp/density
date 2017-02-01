@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/small_heterogeneous_queue.h>
 #include <density/heterogeneous_queue.h>
 #include <testity/test_tree.h>
 #include <functional>

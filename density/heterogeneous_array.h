@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/detail\array_impl.h>
+#include <density/detail/array_impl.h>
 #include <density/void_allocator.h>
 
 namespace density
@@ -166,10 +166,10 @@ namespace density
             iterator(const IteratorImpl & i_source) noexcept
                 : m_impl(i_source) {  }
 
-            reference operator * () const noexcept { return *element(); }
-            pointer operator -> () const noexcept { return element(); }
-            pointer element() const noexcept
-                { return static_cast<value_type *>(m_impl.element()); }
+            reference operator * () const noexcept { return *element_ptr(); }
+            pointer operator -> () const noexcept { return element_ptr(); }
+            pointer element_ptr() const noexcept
+                { return static_cast<value_type *>(m_impl.element_ptr()); }
 
             iterator & operator ++ () noexcept
             {
@@ -227,10 +227,10 @@ namespace density
             const_iterator(const iterator & i_source) noexcept
                 : m_impl(i_source.m_impl) {  }
 
-            reference operator * () const noexcept { return *element(); }
-            pointer operator -> () const noexcept { return element(); }
-            pointer element() const noexcept
-                { return static_cast<value_type *>(m_impl.element()); }
+            reference operator * () const noexcept { return *element_ptr(); }
+            pointer operator -> () const noexcept { return element_ptr(); }
+            pointer element_ptr() const noexcept
+                { return static_cast<value_type *>(m_impl.element_ptr()); }
 
             const_iterator & operator ++ () noexcept
             {
@@ -460,7 +460,7 @@ namespace density
                 {
                     auto const equal_comparer = it_1.complete_type().template get_feature<type_features::equals>();
                     if (it_1.complete_type() != it_2.complete_type() ||
-                        !equal_comparer(it_1.element(), it_2.element()))
+                        !equal_comparer(it_1.element_ptr(), it_2.element_ptr()))
                     {
                         return false;
                     }

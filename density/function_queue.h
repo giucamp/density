@@ -91,7 +91,7 @@ namespace density
         {
             auto first = m_queue.begin();
             return first.complete_type().template get_feature<typename type_features::invoke<value_type>>()(
-                first.element(), std::forward<PARAMS>(i_params)...);
+                first.element_ptr(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Invokes the first function object of the queue and then deletes it from the queue.
@@ -110,7 +110,7 @@ namespace density
             DENSITY_ASSERT((bool)transaction);
 
             return transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
-                transaction.element(), std::forward<PARAMS>(i_params)...);
+                transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes the first function object in the queue.

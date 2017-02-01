@@ -11,6 +11,19 @@ namespace density
 {
     namespace detail
     {
+        template <typename BASE_CLASS, typename... TYPES>
+            struct AllCovariant
+        {
+            static const bool value = true;
+        };
+
+        template <typename BASE_CLASS, typename FIRST_TYPE, typename... OTHER_TYPES>
+            struct AllCovariant<BASE_CLASS, FIRST_TYPE, OTHER_TYPES...>
+        {
+            static const bool value = std::is_convertible<FIRST_TYPE*, BASE_CLASS*>::value &&
+                AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
+        };
+
         template < typename VOID_ALLOCATOR, typename RUNTIME_TYPE >
             class ArrayImpl : private VOID_ALLOCATOR
         {
@@ -185,36 +198,36 @@ namespace density
 
                 void move_next() noexcept
                 {
-					#if DENSITY_DEBUG_INTERNAL
-						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    #endif
                     m_curr_control_block++;
                     #if DENSITY_DEBUG_INTERNAL
                         m_dbg_index++;
                     #endif
                 }
 
-                void * element() const noexcept
+                void * element_ptr() const noexcept
                 {
-					#if DENSITY_DEBUG_INTERNAL
-						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    #endif
                     return m_curr_control_block->m_element;
                 }
 
                 const RUNTIME_TYPE & complete_type() const noexcept
                 {
-					#if DENSITY_DEBUG_INTERNAL
-						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    #endif
                     return *m_curr_control_block;
                 }
 
                 const ControlBlock * control() const noexcept
                 {
-					#if DENSITY_DEBUG_INTERNAL
-						DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        DENSITY_ASSERT_INTERNAL(m_dbg_index <= m_dbg_count);
+                    #endif
                     return m_curr_control_block;
                 }
 
@@ -230,9 +243,9 @@ namespace density
 
                 void operator ++ () noexcept
                 {
-					#if DENSITY_DEBUG_INTERNAL
-						DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
-					#endif
+                    #if DENSITY_DEBUG_INTERNAL
+                        DENSITY_ASSERT_INTERNAL(m_dbg_index < m_dbg_count);
+                    #endif
                     m_curr_control_block++;
                     #if DENSITY_DEBUG_INTERNAL
                         m_dbg_index++;
@@ -413,7 +426,7 @@ namespace density
                         dense_size = (dense_size + alignment_mask) & ~alignment_mask;
                         dense_size += control_block->size();
                         dense_alignment = detail::size_max(dense_alignment, control_block->alignment());
-                        control_block->destroy(static_cast<typename RUNTIME_TYPE::common_type*>(it.element()));
+                        control_block->destroy(static_cast<typename RUNTIME_TYPE::common_type*>(it.element_ptr()));
                         control_block->ControlBlock::~ControlBlock();
                     }
 
@@ -436,7 +449,7 @@ namespace density
                         auto const end_it = i_source.end();
                         for (auto it = i_source.begin(); it != end_it; ++it)
                         {
-                            builder.add_by_copy(it.complete_type(), it.element());
+                            builder.add_by_copy(it.complete_type(), it.element_ptr());
                         }
 
                         m_control_blocks = builder.control_blocks();
@@ -587,7 +600,7 @@ namespace density
                             {
                                 break;
                             }
-                            builder.add_by_move(it.complete_type(), it.element());
+                            builder.add_by_move(it.complete_type(), it.element_ptr());
                             it.move_next();
                         }
                     }
@@ -624,7 +637,7 @@ namespace density
                         {
                             if (this_block == i_position && count_to_insert > 0)
                             {
-                                tmp_it.complete_type().destroy(static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element()));
+                                tmp_it.complete_type().destroy(static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element_ptr()));
                                 count_to_insert--;
                             }
                             else
@@ -632,7 +645,7 @@ namespace density
                                 this_element = address_upper_align(this_element, this_block->alignment());
 
                                 tmp_it.complete_type().move_construct(this_element,
-                                    static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element()));
+                                    static_cast<typename RUNTIME_TYPE::common_type*>(tmp_it.element_ptr()));
                                 this_element = address_add(this_element, this_block->size());
                                 this_block++;
                             }
@@ -698,7 +711,7 @@ namespace density
                         if (!is_in_range)
                         {
                             auto const new_element_info = builder.end_of_control_blocks();
-                            builder.add_by_move(it.complete_type(), it.element());
+                            builder.add_by_move(it.complete_type(), it.element_ptr());
 
                             if (first_in_range)
                             {

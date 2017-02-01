@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/small_function_queue.h>
 #include <density/function_queue.h>
 #include <density/lifo.h>
 #include <string>
@@ -92,7 +91,7 @@ namespace producer_consumer_sample
                     auto command_it = m_commands.begin();
                     function_type = command_it.complete_type();
                     buffer.resize(function_type.size(), function_type.alignment());
-                    function_type.move_construct(buffer.data(), command_it.element());
+                    function_type.move_construct(buffer.data(), command_it.element_ptr());
 
                     // remove the moved command from the queue
                     m_commands.pop();

@@ -75,13 +75,7 @@
     <ClInclude Include="..\..\density\runtime_type.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\queue_impl.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\pointer_artithmetic.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\heterogeneous_array.h">
@@ -93,12 +87,6 @@
     <ClInclude Include="..\..\density\function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\small_heterogeneous_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\small_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -106,9 +94,6 @@
       <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\shadow_container.h">
-      <Filter>functionality_cases</Filter>
-    </ClInclude>
-    <ClInclude Include="..\functionality_cases\test_allocators.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
@@ -139,6 +124,9 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\dynamic_type.h">
+      <Filter>functionality_cases</Filter>
+    </ClInclude>
+    <ClInclude Include="..\functionality_cases\test_void_allocator.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
   </ItemGroup>

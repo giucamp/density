@@ -9,7 +9,7 @@
 #include <testity/test_tree.h>
 #include <testity/test_classes.h>
 #include "shadow_container.h"
-#include "test_allocators.h"
+#include "test_void_allocator.h"
 #include <algorithm>
 #include <array>
 

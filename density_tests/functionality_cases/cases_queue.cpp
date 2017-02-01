@@ -5,12 +5,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include <density/heterogeneous_queue.h>
-#include <density/small_heterogeneous_queue.h>
 #include <testity/testity_common.h>
 #include <testity/test_tree.h>
 #include <testity/test_classes.h>
 #include "shadow_container.h"
-#include "test_allocators.h"
+#include "test_void_allocator.h"
 #include "dynamic_type.h"
 #include <algorithm>
 #include <array>
@@ -45,7 +44,7 @@ namespace density_tests
             auto it = queue.cbegin();
             for (int i = 0; i < 1000; i++)
             {
-                TESTITY_ASSERT(i == *it);
+                TESTITY_ASSERT(i == *(*it).second);
                 it++;
             }
             TESTITY_ASSERT(it == queue.cend());
@@ -57,7 +56,7 @@ namespace density_tests
             it = queue.cbegin();
             for (int i = 1; i < 1000; i++)
             {
-                TESTITY_ASSERT(i == *it);
+                TESTITY_ASSERT(i == *(*it).second);
                 it++;
             }
             TESTITY_ASSERT(it == queue.cend());
@@ -89,11 +88,6 @@ namespace density_tests
         using HeterogeneousQueue = heterogeneous_queue<TYPE, runtime_type<TYPE,
             typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type>,
                 TestVoidAllocator >;
-
-    /* SmallHeterogeneousQueue<TYPE> - small_heterogeneous_queue that uses TestVoidAllocator and adds hash to the automatic runtime type */
-    template <typename TYPE>
-        using SmallHeterogeneousQueue = small_heterogeneous_queue<TYPE, TestVoidAllocator, runtime_type<TYPE,
-            typename type_features::feature_concat< typename type_features::default_type_features_t<TYPE>, type_features::feature_list<type_features::hash, type_features::equals> >::type> >;
 
     template <typename QUEUE>
         struct QueueTest
@@ -427,37 +421,12 @@ namespace density_tests
         add_typed_queue_cases<HeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
     }
 
-    void add_small_heterogeneous_queue_cases(TestTree & i_dest)
-    {
-        auto & void_test = i_dest["void"];
-        add_common_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
-        add_void_queue_cases<SmallHeterogeneousQueue<void>>(void_test);
-
-        using BaseElement = TestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-            sizeof(std::max_align_t) * 2, alignof(std::max_align_t), Polymorphic::Yes >;
-
-        using MI_Element = MultipleInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
-
-        using MVI_Element = MultipleVirtualInheriTestClass<FeatureKind::Supported, FeatureKind::Supported, FeatureKind::SupportedNoExcept,
-            sizeof(std::max_align_t) * 2, alignof(std::max_align_t) >;
-
-        static_assert(std::is_nothrow_move_constructible<BaseElement>::value, "BaseElement");
-        static_assert(std::is_nothrow_move_constructible<MI_Element>::value, "MI_Element");
-        static_assert(std::is_nothrow_move_constructible<MVI_Element>::value, "MVI_Element");
-
-        auto & typed_test = i_dest["typed"];
-        add_common_queue_cases<SmallHeterogeneousQueue<BaseElement>>(typed_test);
-        add_typed_queue_cases<SmallHeterogeneousQueue<BaseElement>, MI_Element, MVI_Element>(typed_test);
-    }
-
     void add_queue_cases(TestTree & i_dest)
     {
         add_heterogeneous_queue_base_tests< heterogeneous_queue<int> >(i_dest);
         add_heterogeneous_queue_base_tests< heterogeneous_queue<int, runtime_type<int>, TestVoidAllocator> >(i_dest);
 
         add_heterogeneous_queue_cases(i_dest["heterogeneous_queue"]);
-        add_small_heterogeneous_queue_cases(i_dest["small_heterogeneous_queue"]);
     }
 
 } // namespace density_tests

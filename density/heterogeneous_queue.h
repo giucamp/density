@@ -114,15 +114,21 @@ namespace density
         static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
             "The size and alignment of the pages must be the same (and not too small)");
 
-        using allocator_type = ALLOCATOR_TYPE;
         using runtime_type = RUNTIME_TYPE;
         using common_type = COMMON_TYPE;
-        using reference = typename std::add_lvalue_reference< COMMON_TYPE >::type;
-        using const_reference = typename std::add_lvalue_reference< const COMMON_TYPE>::type;
+        using value_type = std::pair<const runtime_type &, common_type* const>;
+        using allocator_type = ALLOCATOR_TYPE;
+        using pointer = value_type *;
+        using const_pointer = const value_type *;
+        using reference = value_type &;
+        using const_reference = const value_type&;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+
         class put_transaction;
-		template <typename TYPE> class typed_put_transaction;
+        template <typename TYPE> class typed_put_transaction;
         class reentrant_put_transaction;
-		template <typename TYPE> class reentrant_typed_put_transaction;
+        template <typename TYPE> class reentrant_typed_put_transaction;
         class iterator;
         class const_iterator;
 
@@ -137,7 +143,7 @@ namespace density
             \n Implementation note: Currently this constructor does not allocate memory and never throws. */
         heterogeneous_queue() noexcept
             : m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)),
-			  m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
+              m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
         {
         }
 
@@ -149,9 +155,10 @@ namespace density
             \n <i>Implementation notes</i>:
                 - After the call the source is left empty. */
         heterogeneous_queue(heterogeneous_queue && i_source) noexcept
-            : heterogeneous_queue()
+            : ALLOCATOR_TYPE(std::move(static_cast<ALLOCATOR_TYPE&&>(i_source))),
+              m_head(i_source.m_head), m_tail(i_source.m_tail)
         {
-			i_source.m_tail = i_source.m_head = reinterpret_cast<ControlBlock*>(s_invalid_control_block);
+            i_source.m_tail = i_source.m_head = reinterpret_cast<ControlBlock*>(s_invalid_control_block);
         }
 
         /** Copy constructor. The allocator is copy-constructed from the one of the source.
@@ -168,7 +175,7 @@ namespace density
         {
             for (auto source_it = i_source.cbegin(); source_it != i_source.cend(); source_it++)
             {
-                dyn_push_copy(source_it.complete_type(), source_it.element());
+                dyn_push_copy(source_it.complete_type(), source_it.element_ptr());
             }
         }
 
@@ -259,7 +266,7 @@ namespace density
                 {
                     break;
                 }
-                auto const element = transaction.element();
+                auto const element = transaction.element_ptr();
                 auto const & type = transaction.complete_type();
                 type.destroy(element);
                 transaction.commit();
@@ -400,7 +407,7 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
-			typed_put_transaction<ELEMENT_TYPE> start_push(ELEMENT_TYPE && i_source)
+            typed_put_transaction<ELEMENT_TYPE> start_push(ELEMENT_TYPE && i_source)
         {
             return start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -430,7 +437,7 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-			typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -611,32 +618,32 @@ namespace density
                 return push_data.m_element;
             }
 
-			template <typename INPUT_ITERATOR>
-				typename std::iterator_traits<INPUT_ITERATOR>::value_type *
-					raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
-			{
-				using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
-				using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-				static_assert(std::is_trivially_destructible<ValueType>::value, 
-					"put_transaction provides a raw memory implace allocation that does not invoke destructors when deallocating");
+            template <typename INPUT_ITERATOR>
+                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
+                    raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
+            {
+                using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
+                using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
+                static_assert(std::is_trivially_destructible<ValueType>::value,
+                    "put_transaction provides a raw memory implace allocation that does not invoke destructors when deallocating");
 
-				auto const count_s = std::distance(i_begin, i_end);
-				auto const count = static_cast<size_t>(count_s);
-				DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
-				
-				auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
-				//std::uninitialized_copy(i_begin, i_end, elements);
-				for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-					new(curr) ValueType(*i_begin);
-				return elements;
-			}
+                auto const count_s = std::distance(i_begin, i_end);
+                auto const count = static_cast<size_t>(count_s);
+                DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
 
-			template <typename INPUT_RANGE>
-				auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-					-> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
-			{
-				return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
-			}
+                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
+                //std::uninitialized_copy(i_begin, i_end, elements);
+                for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
+                    new(curr) ValueType(*i_begin);
+                return elements;
+            }
+
+            template <typename INPUT_RANGE>
+                auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
+                    -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+            {
+                return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
+            }
 
             /** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers.
                 If the state of the transaction is not committed, it will never become visible.
@@ -710,16 +717,16 @@ namespace density
         };
 
 
-		template <typename TYPE>
-			class typed_put_transaction : public put_transaction
-		{
-		public:
-		
-			using put_transaction::put_transaction;
+        template <typename TYPE>
+            class typed_put_transaction : public put_transaction
+        {
+        public:
 
-			TYPE * element_ptr() const noexcept
-				{ return static_cast<TYPE *>(put_transaction::element_ptr()); }
-		};
+            using put_transaction::put_transaction;
+
+            TYPE * element_ptr() const noexcept
+                { return static_cast<TYPE *>(put_transaction::element_ptr()); }
+        };
 
 
         class consume_transaction
@@ -809,7 +816,7 @@ namespace density
             /** Returns a pointer to the element being consumed.
 
                 \pre The behavior is undefined if this consume_transaction is empty, that is it has been used as source for a move operation. */
-            COMMON_TYPE * element() const noexcept
+            COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return get_element(m_control);
@@ -844,7 +851,7 @@ namespace density
             auto transaction = start_manual_consume();
             DENSITY_ASSERT((bool)transaction);
             auto const & type = transaction.complete_type();
-            auto const element = transaction.element();
+            auto const element = transaction.element_ptr();
             type.destroy(element);
             transaction.commit();
         }
@@ -863,7 +870,7 @@ namespace density
             if (transaction)
             {
                 auto const & type = transaction.complete_type();
-                auto const element = transaction.element();
+                auto const element = transaction.element_ptr();
                 type.destroy(element);
                 transaction.commit();
                 return true;
@@ -979,7 +986,7 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-			reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_push(ELEMENT_TYPE && i_source)
+            reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_push(ELEMENT_TYPE && i_source)
         {
             return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -990,7 +997,7 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-			reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -1208,16 +1215,16 @@ namespace density
             bool m_committed;
         };
 
-		template <typename TYPE>
-			class reentrant_typed_put_transaction : public reentrant_put_transaction
-		{
-		public:
-		
-			using reentrant_put_transaction::reentrant_put_transaction;
+        template <typename TYPE>
+            class reentrant_typed_put_transaction : public reentrant_put_transaction
+        {
+        public:
 
-			TYPE * element_ptr() const noexcept
-				{ return static_cast<TYPE *>(reentrant_put_transaction::element_ptr()); }
-		};		
+            using reentrant_put_transaction::reentrant_put_transaction;
+
+            TYPE * element_ptr() const noexcept
+                { return static_cast<TYPE *>(reentrant_put_transaction::element_ptr()); }
+        };
 
 
                     // iterator
@@ -1227,12 +1234,15 @@ namespace density
         public:
 
             using iterator_category = std::forward_iterator_tag;
-            using difference_type = ptrdiff_t;
-            using size_type = size_t;
-            using value_type = COMMON_TYPE;
-            using pointer = COMMON_TYPE *;
-            using reference = typename heterogeneous_queue::reference;
-            using const_reference = typename heterogeneous_queue::const_reference;
+            using runtime_type = RUNTIME_TYPE;
+            using common_type = COMMON_TYPE;
+            using value_type = std::pair<const runtime_type &, common_type * const>;
+            using pointer = value_type *;
+            using const_pointer = const value_type *;
+            using reference = value_type &;
+            using const_reference = const value_type&;
+            using size_type = std::size_t;
+            using difference_type = std::ptrdiff_t;
 
             iterator() noexcept = default;
             iterator(const iterator & i_source) noexcept = default;
@@ -1243,16 +1253,13 @@ namespace density
                     { }
 
             /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
-            reference operator * () const noexcept { return detail::DeferenceVoidPtr<value_type>::apply(get_element(m_control)); }
+            value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
-            /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void *. */
-            pointer operator -> () const noexcept { return static_cast<value_type *>(get_element(m_control)); }
-
-            /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void, then the return type is void *. */
-            pointer element() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
+            /** Returns a pointer to the subobject of type COMMON_TYPE of current element */
+            common_type * element_ptr() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
 
             /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
-            (whenever supported) to obtain a const-reference to a std::type_info. */
+                (whenever supported) to obtain a const-reference to a std::type_info. */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
@@ -1306,12 +1313,15 @@ namespace density
         public:
 
             using iterator_category = std::forward_iterator_tag;
-            using difference_type = ptrdiff_t;
-            using size_type = size_t;
-            using value_type = const COMMON_TYPE;
-            using pointer = const COMMON_TYPE *;
-            using reference = typename heterogeneous_queue::const_reference;
-            using const_reference = typename heterogeneous_queue::const_reference;
+            using runtime_type = RUNTIME_TYPE;
+            using common_type = COMMON_TYPE;
+            using value_type = const std::pair<const runtime_type &, common_type* const>;
+            using pointer = const value_type *;
+            using const_pointer = const value_type *;
+            using reference = const value_type &;
+            using const_reference = const value_type&;
+            using size_type = std::size_t;
+            using difference_type = std::ptrdiff_t;
 
             const_iterator() noexcept = default;
             const_iterator(const const_iterator & i_source) noexcept = default;
@@ -1322,13 +1332,10 @@ namespace density
                     { }
 
             /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
-            reference operator * () const noexcept { return detail::DeferenceVoidPtr<value_type>::apply(get_element(m_control)); }
-
-            /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void *. */
-            pointer operator -> () const noexcept { return static_cast<value_type *>(get_element(m_control)); }
+            value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
             /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void, then the return type is void *. */
-            pointer element() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
+            const common_type * element_ptr() const noexcept { return get_element(m_control); }
 
             /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
@@ -1389,7 +1396,7 @@ namespace density
             for (auto it_1 = cbegin(), it_2 = i_source.cbegin(); it_1 != end_1; ++it_1, ++it_2)
             {
                 if (it_1.complete_type() != it_2.complete_type() ||
-                    !it_1.complete_type().are_equal(it_1.element(), it_2.element()))
+                    !it_1.complete_type().are_equal(it_1.element_ptr(), it_2.element_ptr()))
                 {
                     return false;
                 }
@@ -1412,7 +1419,7 @@ namespace density
             auto transaction = start_manual_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
             auto const & type = transaction.complete_type();
-            auto const element = transaction.element();
+            auto const element = transaction.element_ptr();
 
             auto res = i_func(type, element);
 
@@ -1428,7 +1435,7 @@ namespace density
             auto transaction = start_manual_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
             auto const & type = transaction.complete_type();
-            auto const element = transaction.element();
+            auto const element = transaction.element_ptr();
 
             i_func(type, element);
 
@@ -1448,7 +1455,7 @@ namespace density
             if (transaction)
             {
                 auto const & type = transaction.complete_type();
-                auto const element = transaction.element();
+                auto const element = transaction.element_ptr();
                 auto result = make_optional<ReturnType>(i_func(type, element));
                 type.destroy(element);
                 transaction.commit();
@@ -1465,7 +1472,7 @@ namespace density
             if (transaction)
             {
                 auto const & type = transaction.complete_type();
-                auto const element = transaction.element();
+                auto const element = transaction.element_ptr();
                 i_func(type, element);
                 type.destroy(element);
                 transaction.commit();

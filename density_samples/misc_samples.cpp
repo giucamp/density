@@ -77,7 +77,7 @@ namespace misc_samples
     auto my_array = ArrayOfInvokables::make([](std::string s) { std::cout << s << std::endl; });
 
     // invoke my_array.begin()
-    my_array.begin().complete_type().get_feature<MyInvoke>()(my_array.begin().element(), "hello!");
+    my_array.begin().complete_type().get_feature<MyInvoke>()(my_array.begin().element_ptr(), "hello!");
             //! [type_features::invoke example 1]
         }
 
@@ -136,7 +136,7 @@ namespace misc_samples
     for (auto it = my_array.begin(); it != end_it; ++it)
     {
         auto const update_func = it.complete_type().get_feature<feature_call_update>();
-        update_func(it.element(), 1.f / 60.f );
+        update_func(it.element_ptr(), 1.f / 60.f );
     }
 
             //! [runtime_type example 3]

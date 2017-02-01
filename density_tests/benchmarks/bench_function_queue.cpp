@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/small_function_queue.h>
 #include <density/function_queue.h>
 #include <testity/test_tree.h>
 #include <functional>
@@ -24,15 +23,6 @@ namespace density_tests
         // function_queue
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             function_queue< void() > queue;
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.push([]() { volatile int dummy = 1; (void)dummy; });
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.consume_front();
-        }, __LINE__);
-
-        // small_function_queue
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            small_function_queue< void() > queue;
             for (size_t index = 0; index < i_cardinality; index++)
                 queue.push([]() { volatile int dummy = 1; (void)dummy; });
             for (size_t index = 0; index < i_cardinality; index++)
@@ -84,16 +74,6 @@ namespace density_tests
                 queue.consume_front();
         }, __LINE__);
 
-        // small_function_queue
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            small_function_queue< void() > queue;
-            struct { volatile char chars[46] = "just a string"; } str;
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.push([str]() { volatile int dummy = 1; (void)dummy; });
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.consume_front();
-        }, __LINE__);
-
         // std::queue< std::function >
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             std::queue< std::function<void()> > queue;
@@ -135,16 +115,6 @@ namespace density_tests
         // function_queue
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             function_queue< void() > queue;
-            struct { volatile char chars[64] = "just a string"; } str;
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.push([str]() { volatile int dummy = 1; (void)dummy; });
-            for (size_t index = 0; index < i_cardinality; index++)
-                queue.consume_front();
-        }, __LINE__);
-
-        // small_function_queue
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            small_function_queue< void() > queue;
             struct { volatile char chars[64] = "just a string"; } str;
             for (size_t index = 0; index < i_cardinality; index++)
                 queue.push([str]() { volatile int dummy = 1; (void)dummy; });

@@ -57,7 +57,7 @@ namespace density_tests
             {
                 auto hasher = it->curr_type().template get_feature<density::type_features::hash>();
                 const auto & type_info = it->complete_type().type_info().type_info();
-                m_deque.push_back(Element(type_info, hasher(it->element()) ));
+                m_deque.push_back(Element(type_info, hasher(it->element_ptr()) ));
             }
         }
 
@@ -77,7 +77,7 @@ namespace density_tests
                 auto hasher = it.complete_type().template get_feature<density::type_features::hash>();
                 const auto & type_info = it.complete_type().type_info();
                 const auto & deq_entry = m_deque[index];
-                const auto hash = hasher(it.element());
+                const auto hash = hasher(it.element_ptr());
                 TESTITY_ASSERT(type_info == *deq_entry.m_type_info
                     && hash == deq_entry.m_object_hash );
                 index++;

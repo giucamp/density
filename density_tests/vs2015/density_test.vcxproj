@@ -248,22 +248,18 @@
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_spsc.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\page_allocator_imp.h" />
-    <ClInclude Include="..\..\density\small_function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_array.h" />
-    <ClInclude Include="..\..\density\small_heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\detail\array_impl.h" />
-    <ClInclude Include="..\..\density\detail\queue_impl.h" />
     <ClInclude Include="..\..\density\lifo.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\void_allocator.h" />
-    <ClInclude Include="..\..\density\pointer_artithmetic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
     <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h" />
     <ClInclude Include="..\functionality_cases\dynamic_type.h" />
     <ClInclude Include="..\functionality_cases\shadow_container.h" />
-    <ClInclude Include="..\functionality_cases\test_allocators.h" />
+    <ClInclude Include="..\functionality_cases\test_void_allocator.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\testity\vs2015\testity.vcxproj">

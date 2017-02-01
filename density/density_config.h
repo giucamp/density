@@ -39,11 +39,7 @@
 #define DENSITY_ASSERT_INTERNAL(bool_expr)     DENSITY_ASSERT((bool_expr))
 
 #define DENSITY_LIKELY(bool_expr)                    (bool_expr)
-#define DENSITY_UNLIKELY(bool_expr)                    (bool_expr)
-
-#define DENSITY_HANDLE_EXCEPTIONS                  1
-
-#define DENSITY_CONCURRENT_DATA_ALIGNMENT          64
+#define DENSITY_UNLIKELY(bool_expr)                  (bool_expr)
 
 #ifdef _MSC_VER
     #define DENSITY_NO_INLINE                    __declspec(noinline)
@@ -56,8 +52,6 @@
     #define DENSITY_NO_INLINE
     #define DENSITY_STRONG_INLINE
 #endif
-
-#define DENSITY_COMPATCT_QUEUE                   1
 
 #if defined(__GNUC__) && defined(__MINGW32__)
     #define DENSITY_ENV_HAS_THREADING                   0

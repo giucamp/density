@@ -25,19 +25,6 @@ namespace density
 {
     namespace detail
     {
-        /* DeferenceVoidPtr<TYPE>::apply(void *) returns *static_cast<TYPE*>(i_ptr). If TYPE is void, returns void */
-        template <typename TYPE> struct DeferenceVoidPtr
-        {
-            using type = TYPE &;
-            inline static type apply(void * i_ptr)
-                { return *static_cast<TYPE*>(i_ptr); }
-        };
-        template <> struct DeferenceVoidPtr<void>
-        {
-            using type = void;
-            inline static type apply(void * /*i_ptr*/) {}
-        };
-
         // size_min: avoid including <algorithm> just to use std::min<size_t>
         constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
         {
@@ -286,37 +273,6 @@ namespace density
             return address_add( i_second, i_second_size ) > i_first;
     }
 
-    /** Returns true whether the given pair of pointers encloses a valid array of objects of the type. This function is intended to validate
-            an input array.
-        @param i_objects_start inclusive lower bound of the array
-        @param i_objects_end exclusive upper bound of the array
-        @return true if and only if all the following conditions are true:
-            - i_objects_start <= i_objects_end
-            - the difference (in bytes) between i_objects_end and i_objects_start is a multiple of the size of TYPE
-            - both i_objects_start and i_objects_end respects the alignment for TYPE. */
-    template <typename TYPE>
-        inline bool is_valid_range(const TYPE * i_objects_start, const TYPE * i_objects_end) noexcept
-    {
-        if (i_objects_start > i_objects_end)
-        {
-            return false;
-        }
-        if( !address_is_aligned(i_objects_start, std::alignment_of<TYPE>::value) )
-        {
-            return false;
-        }
-        if( !address_is_aligned(i_objects_end, std::alignment_of<TYPE>::value))
-        {
-            return false;
-        }
-        uintptr_t const diff = address_diff(i_objects_end, i_objects_start);
-        if (diff % sizeof(TYPE) != 0)
-        {
-            return false;
-        }
-        return true;
-    }
-
     /** Allocates an object with the given size and alignment starting from a reference pointer, and update
             it to the end of the allocation.
         @param io_top_pointer pointer to the current address, which is incremented to make space for the new block
@@ -348,31 +304,7 @@ namespace density
         return new_block;
     }
 
-    inline void * safe_linear_alloc(void * & io_curr_ptr, size_t i_size, size_t i_alignment)
-    {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-
-        const auto alignment_mask = i_alignment - 1;
-
-        auto ptr = reinterpret_cast<uintptr_t>(io_curr_ptr);
-        const auto original_ptr = ptr;
-
-        ptr += alignment_mask;
-        ptr &= ~alignment_mask;
-        void * result = reinterpret_cast<void*>(ptr);
-        ptr += i_size;
-
-        if (ptr < original_ptr)
-        {
-            io_curr_ptr = reinterpret_cast<void*>(std::numeric_limits<uintptr_t>::max());
-        }
-
-        io_curr_ptr = reinterpret_cast<void*>(ptr);
-        return result;
-    }
-
-    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POS type otherwise.
-    **/
+    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POS type otherwise. **/
     template <typename TYPE>
         struct unvoid { using type = TYPE; };
     template <>
@@ -386,21 +318,6 @@ namespace density
     template <typename TYPE>
         using unvoid_t = typename unvoid<TYPE>::type;
 
-    namespace detail
-    {
-        template <typename BASE_CLASS, typename... TYPES>
-            struct AllCovariant
-        {
-            static const bool value = true;
-        };
-
-        template <typename BASE_CLASS, typename FIRST_TYPE, typename... OTHER_TYPES>
-            struct AllCovariant<BASE_CLASS, FIRST_TYPE, OTHER_TYPES...>
-        {
-            static const bool value = std::is_convertible<FIRST_TYPE*, BASE_CLASS*>::value &&
-                AllCovariant<BASE_CLASS, OTHER_TYPES...>::value;
-        };
-    }
 
     /*! \page wid_list_iter_bench Widget list benchmarks
 

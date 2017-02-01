@@ -4,7 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/small_function_queue.h>
 #include <density/function_queue.h>
 #include <density/lifo.h>
 #include <string>
@@ -16,24 +15,11 @@ namespace function_queue_sample
 {
     using namespace density;
 
+	// if this struct is defined within run(), in visual studio 2015 (update 2) clang crashes while compiling
+    struct Renderer { int m_draw_calls = 0; };
+
     void run()
     {
-        {
-			small_function_queue<void()> queue_1;
-            #ifndef __GNUC__ /* with gcc, the result of std::bind is not nothrow-move-constructible even if the original
-                    callable object and the capture is nothrow-move-constructible. */
-				auto print_func = [](const char * i_str) { std::cout << i_str; };
-                queue_1.push(std::bind(print_func, "hello "));
-            #endif // __GNUC__
-            queue_1.push([]() { std::cout << std::endl; });
-            while(!queue_1.empty())
-                queue_1.consume_front();
-
-            small_function_queue<int(double, double)> queue_2;
-            queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
-            std::cout << "a + b = " << queue_2.consume_front(40., 2.) << std::endl;
-        }
-
         {
             auto print_func = [](const char * i_str) { std::cout << i_str; };
 
@@ -54,7 +40,7 @@ namespace function_queue_sample
         }
 
         {
-struct Renderer { int m_draw_calls = 0; };
+
 
 function_queue<bool (Renderer & )> render_commands;
 

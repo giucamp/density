@@ -36,12 +36,13 @@ namespace function_queue_sample
     void run();
 }
 
+
 int main()
 {
     using namespace testity;
     using namespace density_tests;
     using namespace std;
-	
+
     //function_queue_sample::run();
 
     TestTree test_tree("density");
@@ -56,9 +57,9 @@ int main()
     add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
     add_any_cases(test_tree["any"]);
 
-    ////////////////////////	
-	run_session(test_tree["queue/base_tests"], TestFlags::FunctionalityTest);
-	run_session(test_tree["queue"], TestFlags::FunctionalityTest);
+    ////////////////////////
+    run_session(test_tree["queue/base_tests"], TestFlags::FunctionalityTest);
+    run_session(test_tree["queue"], TestFlags::FunctionalityTest);
     run_session(test_tree["any"], TestFlags::FunctionalityTest);
     run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
     ////////////////////////
