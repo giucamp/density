@@ -34,7 +34,7 @@ namespace density_tests
         i_dest["base_tests"].add_case([](std::mt19937 & /*i_random*/) {
 
             QUEUE queue;
-            using runtime_type = typename QUEUE::runtime_type;
+            using runtime_type = typename QUEUE::type_eraser_type;
 
             TESTITY_ASSERT(!queue.start_manual_consume());
 

@@ -13,38 +13,93 @@ namespace density
 {
     namespace detail
     {
-        template<typename COMMON_TYPE> struct QueueControl
+        template<typename COMMON_TYPE> struct QueueControl // used by heterogeneous_queue<T,...
         {
             uintptr_t m_next;
             COMMON_TYPE * m_element;
         };
 
-        template<> struct QueueControl<void>
+        template<> struct QueueControl<void> // used by heterogeneous_queue<void,...
         {
             uintptr_t m_next;
         };
     }
 
-    /** \brief Class template that implements an heterogeneous FIFO container with dynamic size.
+    /** \brief Heterogeneous FIFO container-like class template. 	
+		
+		Heterogeneous FIFO container-like class template. Since this pseudo container is heterogeneous, each element can have 
+		a different type. A type-eraser is associated to each element to allow type-specific operations. Insertions are possible 
+		only at the end of the queue. Removals are possible only at the beginning of the queue.
 
-        Insertions and removals:
-            - can happen only at the beginning or at the end of the queue
-            - never imply a memory reallocation or a relocation of other elements
-            - have a strict constant complexity
-            - never invalidate iterators, except those pointing to an element being removed
-
-        @tparam COMMON_TYPE Common type. An element of type E can be pushed on the queue only if E* is implicitly convertible
-            to COMMON_TYPE*. COMMON_TYPE may:
-                - be void (the default). In this case elements of any type can be added to the queue.
+		@tparam COMMON_TYPE Common type. An element of type E can be pushed on the queue only if E* is implicitly convertible
+            to COMMON_TYPE*. COMMON_TYPE may be:
+                - void (the default). In this case elements of any type can be added to the queue.
                 - a class\\struct. In this case only elements of a type deriving from COMMON_TYPE can be added.
+        @tparam TYPE_ERASER_TYPE Type to be used to handle at runtime the actual complete type of each element.
+                This type must model the \ref RuntimeType_concept "RuntimeType" concept. The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must model both the \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts.
-        @tparam RUNTIME_TYPE Type to be used to handle at runtime the actual complete type of each element.
-                This type must model the \ref RuntimeType_concept "RuntimeType" concept. \n The default is runtime_type.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts. The default is void_allocator.
 
-        \n <b>Thread safeness</b>: None. The user is responsible to avoid race conditions.
-        \n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
+		\n <b>Thread safeness</b>: None. The user is responsible to avoid data races.
+		\n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
+		
+		Layout
+		--------------------------		
+		Elements and type-eraser are allocated linearly and tightly in memory pages allocated by the provided allocator. 
+		Whenever an element would not fit (alone) in a page, a normal memory block is requested to the allocator and used for the storage.
+		Elements are never reallocated or moved, so insertions and removals have always strict constant complexity.		
+		Insertions invalidate no iterators. Removals invalidate iterators pointing to the element being removed. Past-the-end
+		iterators are never invalidated.
+		
+		Usage
+		--------------------------
+		An element is an object of any (non cv-qualified) type T such that T* is implicitly convertible to COMMON_TYPE*. 
+		
+		A value of the queue is an std::pair of a reference to a type eraser and a pointer to the element. 
 
+		When an element of a type known at compile time is added to the queue, its type eraser is deduced:
+
+		\snippet heter_queue_samples.cpp heter_queue example 1
+
+		The type of the element may be unknown at compile time, in which case \ref dyn_push_copy can be used:
+
+		\snippet heter_queue_samples.cpp heter_queue example 2
+						
+		Since iterators can only return the current value by value (std::pair), they does not
+		satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterator</a> (they are just
+		<a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>). This is the only reason why 
+		heterogeneous_queue is not a container.
+		
+		Reentrant operations
+		--------------------------
+		While a normal operation is in progress, the queue is not in a consistent state. In contrast, member function containing "reentrant_"
+		in their names support reentrancy: while they are in progress other puts, consumes, iterations and any non-modifying operation are
+		allowed. These operation are allowed only in the same thread (reentrancy has nothing to do with multithreading).
+
+		Transactional operations
+		--------------------------
+		Member functions containing "start_" in their names are transactional. They start an operation and returns an object bound to the
+		transaction. The effects of the transaction are not visible until the member function commit is called on it. If the transaction is 
+		destroyed and commit has not been called, the transaction has no visible effects (memory allocations are not considered a visible effect).
+		The only exception is reentrant consume operations, which make the element disappear from the queue when they start. If the
+		transaction is canceled, the element reappears in the queue.
+		
+		\snippet heter_queue_samples.cpp heter_queue start_push example 1
+		
+		In the following sample transactional puts and reentrancy are used together.
+
+		\snippet heter_queue_samples.cpp heter_queue put_transaction example 1
+
+		Implementation and performance notes
+		--------------------------
+
+		- If COMMON_TYPE is not void for every element the queue stores an additional pointer
+		- In general non-reentrant operations are faster than reentrant
+		- Transactional operations are not slower than normal ones
+		
+
+		Put functions summary
+		--------------------------
         <table>
         <caption id="multi_row">Put functions</caption>
         <tr>
@@ -83,16 +138,9 @@ namespace density
             <td>Runtime time</td>
             <td>Move</td>
         </tr>
-        </table>
-
-        Naming conventions:
-            - Many functions have a transactional variant: push, begin_push
-            - Push functions have a dynamic variant: push, dyn_push
-            - reentrant, reentrant_push
-
-        Any member function of heterogeneous_queue is not reentrant, unless its name is prefixed by "reentant_".
+        </table>        
     */
-    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
+    template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
         class heterogeneous_queue final : private ALLOCATOR_TYPE
     {
     private:
@@ -105,22 +153,22 @@ namespace density
 
     public:
 
-        static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
-            "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
+        static_assert(std::is_same<COMMON_TYPE, typename TYPE_ERASER_TYPE::common_type>::value,
+            "COMMON_TYPE and TYPE_ERASER_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
 
         static_assert(std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
             "COMMON_TYPE can't be cv-qualified, an array or a reference");
 
-        static_assert(ALLOCATOR_TYPE::page_size > sizeof(void*) * 8 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
+        static_assert(ALLOCATOR_TYPE::page_size > (sizeof(ControlBlock) + alignof(ControlBlock)) * 4 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
             "The size and alignment of the pages must be the same (and not too small)");
-
-        using runtime_type = RUNTIME_TYPE;
+		        
         using common_type = COMMON_TYPE;
-        using value_type = std::pair<const runtime_type &, common_type* const>;
+		using type_eraser_type = TYPE_ERASER_TYPE;
+        using value_type = std::pair<const type_eraser_type &, common_type* const>;
         using allocator_type = ALLOCATOR_TYPE;
         using pointer = value_type *;
         using const_pointer = const value_type *;
-        using reference = value_type &;
+        using reference = value_type;
         using const_reference = const value_type&;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
@@ -132,16 +180,17 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Minimum alignment used for the storage of the elements. The storage of the elements is always properly aligned. */
-        constexpr static size_t min_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
+        /** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the type. */
+        constexpr static size_t min_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(type_eraser_type)));
 
         /** Default constructor. The allocator is default-constructed.
 
             <b>Complexity</b>: constant.
             \n <b>Throws</b>: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
-            \n Implementation note: Currently this constructor does not allocate memory and never throws. */
-        heterogeneous_queue() noexcept
+            \n <i>Implementation notes</i>:
+				-Currently this constructor does not allocate memory and never throws. */
+        heterogeneous_queue()
             : m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)),
               m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
         {
@@ -227,7 +276,7 @@ namespace density
         /** Destructor.
 
             <b>Complexity</b>: linear.
-            \n <b>Effects on iterators</b>: Any iterator pointing to this queue is invalidated.
+            \n <b>Effects on iterators</b>: any iterator pointing to this queue is invalidated.
             \n <b>Throws</b>: Nothing. */
         ~heterogeneous_queue()
         {
@@ -337,7 +386,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push example 1 */
-        void dyn_push(const runtime_type & i_type)
+        void dyn_push(const type_eraser_type & i_type)
         {
             start_dyn_push(i_type).commit();
         }
@@ -356,7 +405,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push_copy example 1 */
-        void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -375,7 +424,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push_move example 1 */
-        void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -384,9 +433,8 @@ namespace density
                 or move-constructing it from the source.
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
-            \n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
-            to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
-            memory wasted).
+            \n Call the member function commit on the returned transaction in order to make the effects observable.
+			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
 
             @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed.
@@ -416,9 +464,8 @@ namespace density
             inplace-constructing it from a perfect forwarded parameter pack.
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
-            \n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
-            to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
-            memory wasted).
+			\n Call the member function commit on the returned transaction in order to make the effects observable.
+			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
 
             @param i_construction_params construction parameters for the new element.
             @return A transaction object which can be used to allocate raw space and commit the transaction.
@@ -447,7 +494,7 @@ namespace density
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(type_eraser_type::template make<ELEMENT_TYPE>());
             auto const element = new (push_data.m_element) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
 
             return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -456,9 +503,8 @@ namespace density
         /** Begins a transaction to add at the end of queue an element of a type known at runtime, default-constructing it.
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
-            \n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
-            to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
-            memory wasted).
+			\n Call the member function commit on the returned transaction in order to make the effects observable.
+			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
 
             @param i_type type of the new element.
             @return A transaction object which can be used to allocate raw space and commit the transaction.
@@ -470,14 +516,14 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push example 1 */
-        put_transaction start_dyn_push(const runtime_type & i_type)
+        put_transaction start_dyn_push(const type_eraser_type & i_type)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{i_type.size(), i_type.alignment()});
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.default_construct(push_data.m_element);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -487,9 +533,8 @@ namespace density
         /** Begins a transaction to add at the end of queue an element of a type known at runtime, copy-constructing it from the source..
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
-            \n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
-            to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
-            memory wasted).
+			\n Call the member function commit on the returned transaction in order to make the effects observable.
+			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
@@ -504,14 +549,14 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction start_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.copy_construct(push_data.m_element, i_source);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -520,9 +565,8 @@ namespace density
         /** Begins a transaction to add at the end of queue an element of a type known at runtime, move-constructing it from the source..
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
-            \n When the state of the transaction object is destroyed, if commit has been called the new element becomes visible
-            to iterators and consumers. Otherwise the element is destroyed and the call has no visible effects (other than some
-            memory wasted).
+			\n Call the member function commit on the returned transaction in order to make the effects observable.
+			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
@@ -537,25 +581,26 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        put_transaction start_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.move_construct(push_data.m_element, i_source);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Move-only class that holds the state of a push\emplace transaction, or is empty.
+        /** Move-only class that holds the state of a put transaction, or is empty.
 
-            Transactional push\emplace functions on heterogeneous_queue return a put_transaction that can be used to allocate raw memory in the queue,
-            inspect or alter the element, and commit the push. Move operations transfer the transaction state to the destination, leaving the source
-            in the empty state. If an operative function (like raw_allocate or commit) is called on an empty transaction, the
-            behavior is undefined. */
+            Transactional put functions on heterogeneous_queue return a put_transaction that can be used to 
+			allocate raw memory in the queue, inspect or alter the element, and commit the push. Move operations transfer 
+			the transaction state to the destination, leaving the source in the empty state. A committed transaction is in 
+			the empty state.
+			If an operative function (like raw_allocate or commit) is called on an empty transaction, the behavior is undefined. */
         class put_transaction
         {
         public:
@@ -569,7 +614,7 @@ namespace density
             /** Move constructs a put_transaction, transferring the state from the source.
                     @i_source source to move from. It becomes empty after the call. */
             put_transaction(put_transaction && i_source) noexcept
-                : m_queue(i_source.m_queue), m_push_data(i_source.m_push_data), m_committed(i_source.m_committed)
+                : m_queue(i_source.m_queue), m_push_data(i_source.m_push_data)
             {
                 i_source.m_queue = nullptr;
             }
@@ -582,7 +627,6 @@ namespace density
                 {
                     m_queue = i_source.m_queue;
                     m_push_data = i_source.m_push_data;
-                    m_committed = i_source.m_committed;
                     i_source.m_queue = nullptr;
                 }
                 return *this;
@@ -599,9 +643,9 @@ namespace density
                 @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2.
 
                 \pre The behavior is undefined if either:
-                - this put_transaction is empty, that is it has been used as source for a move operation
-                - the alignment is not valid
-                - the size is not a multiple of the alignment
+					- this transaction is empty
+					- the alignment is not valid
+					- the size is not a multiple of the alignment
 
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -618,6 +662,28 @@ namespace density
                 return push_data.m_element;
             }
 
+            /** Allocates a memory block associated to the element being added in the queue, and copies the content from a range 
+				of iterators. The block may be allocated contiguously with the elements in the memory pages. If the block does not
+				fit in one page, the block is allocated using non-paged memory services of the allocator.
+				
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                @param i_begin first element to be copied
+                @param i_end first element not to be copied
+
+				\n <b>Requires</b>:
+					- INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+					- the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+					- this transaction is empty
+					- i_end is not reachable from i_begin
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: unspecified.
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
             template <typename INPUT_ITERATOR>
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
@@ -638,6 +704,26 @@ namespace density
                 return elements;
             }
 
+			/** Allocates a memory block associated to the element being added in the queue, and copies the content from a range.
+				The block may be allocated contiguously with the elements in the memory pages. If the block does not
+				fit in one page, the block is allocated using non-paged memory services of the allocator.
+				
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                @param i_source_range to be iterated
+
+				\n <b>Requires</b>:
+					- The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+					- the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+					- this transaction is empty
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: unspecified.
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
@@ -645,10 +731,10 @@ namespace density
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
 
-            /** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers.
-                If the state of the transaction is not committed, it will never become visible.
+            /** Makes the effects of the transaction observable.
 
-                \pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation.
+				\pre The behavior is undefined if either:
+					- this transaction is empty
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -656,7 +742,7 @@ namespace density
             void commit() noexcept
             {
                 DENSITY_ASSERT(!empty());
-                m_committed = true;
+				m_queue = nullptr;
             }
 
             /** Returns true whether this object does not hold the state of a transaction. */
@@ -666,7 +752,8 @@ namespace density
                 \n <i>Note</i>: the object is constructed at the begin of the transaction, so this
                     function always returns a pointer to a valid object.
 
-                \pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation. */
+				\pre The behavior is undefined if either:
+					- this transaction is empty */
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -675,21 +762,20 @@ namespace density
 
             /** Returns the type of the object being added.
 
-                \pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation. */
-            const RUNTIME_TYPE & type() const noexcept
+				\pre The behavior is undefined if either:
+					- this transaction is empty */
+            const TYPE_ERASER_TYPE & type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_push_data.m_control);
             }
 
-            /** If this put_transaction is empty the destructor has no side effects. Otherwise it commits or cancels the transaction, depending
-                on whether commit() has been called on not. */
+            /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. */
             ~put_transaction()
             {
                 if (m_queue != nullptr)
                 {
-                    if (DENSITY_UNLIKELY(!m_committed))
-                        cancel_put_impl(m_push_data.m_control_block);
+					cancel_put_impl(m_push_data.m_control_block);
                 }
             }
 
@@ -697,12 +783,12 @@ namespace density
 
                 // not part of the public interface
                 put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
-                    : m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+                    : m_queue(i_queue), m_push_data(i_push_data)
                         { }
 
                 // not part of the public interface
                 put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
-                    : m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+                    : m_queue(i_queue), m_push_data(i_push_data)
                 {
                     m_push_data.m_element = i_element;
                     m_push_data.m_control_block->m_element = i_element;
@@ -713,10 +799,13 @@ namespace density
         private:
             heterogeneous_queue * m_queue;
             PutData m_push_data;
-            bool m_committed;
         };
 
 
+		/** This class is used as return type fro put functions with an element type known at compile time.
+			
+			typed_put_transaction derives from put_transaction adding just an element_ptr() that returns a
+			pointer of correct the type. */
         template <typename TYPE>
             class typed_put_transaction : public put_transaction
         {
@@ -724,11 +813,17 @@ namespace density
 
             using put_transaction::put_transaction;
 
+            /** Returns a pointer to the object being added.
+                \n <i>Note</i>: the object is constructed at the begin of the transaction, so this
+                    function always returns a pointer to a valid object.
+
+				\pre The behavior is undefined if either:
+					- this transaction is empty */
             TYPE * element_ptr() const noexcept
                 { return static_cast<TYPE *>(put_transaction::element_ptr()); }
         };
 
-
+        /** Move-only class that holds the state of a consumes, or is empty. */
         class consume_transaction
         {
         public:
@@ -758,15 +853,12 @@ namespace density
                 return *this;
             }
 
-            /** Destructor: ends the transaction. */
+            /** Destructor: cancel the transaction. */
             ~consume_transaction()
             {
                 if(m_control != nullptr)
                 {
-                    if(m_committed)
-                        m_queue->commit_consume_impl(m_control);
-                    else
-                        m_queue->cancel_consume_impl(m_control);
+					m_queue->cancel_consume_impl(m_control);
                 }
             }
 
@@ -779,10 +871,10 @@ namespace density
                 return m_control != nullptr;
             }
 
-            /** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers.
-                If the state of the transaction is not committed, it will never become visible.
+            /** Makes the effects of the transaction observable.
 
-                \pre The behavior is undefined if this put_transaction is empty, that is it has been used as source for a move operation.
+				\pre The behavior is undefined if either:
+					- this transaction is empty
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -790,13 +882,14 @@ namespace density
             void commit() noexcept
             {
                 DENSITY_ASSERT(!empty());
-                m_committed = true;
+				m_queue->commit_consume_impl(m_control);
+				m_control = nullptr;
             }
 
             /** Returns the type of the element being consumed.
 
                 \pre The behavior is undefined if this consume_transaction is empty, that is it has been used as source for a move operation. */
-            const RUNTIME_TYPE & complete_type() const noexcept
+            const TYPE_ERASER_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_control);
@@ -826,9 +919,8 @@ namespace density
 
                 // not part of the public interface
                 consume_transaction(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
-                    : m_queue(i_queue), m_control(i_control), m_committed(false)
+                    : m_queue(i_queue), m_control(i_control)
                 {
-
                 }
 
             #endif // #ifndef DOXYGEN_DOC_GENERATION
@@ -836,7 +928,6 @@ namespace density
         private:
             heterogeneous_queue * m_queue;
             ControlBlock * m_control;
-            bool m_committed;
         };
 
         /** Removes and destroy the first element of the queue.
@@ -881,8 +972,8 @@ namespace density
         /** Calls a user provided function object passing as parameters the first element of the queue and its type, the removes and
             destroys the element.
 
-            @param i_func funcion object to be invoked with  const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
-            @return return value of i_func(std::declval<RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>())
+            @param i_func funcion object to be invoked with  const TYPE_ERASER_TYPE & i_type, COMMON_TYPE * i_element
+            @return return value of i_func(std::declval<TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>())
 
             \pre The behavior is undefined if the queue is empty.
 
@@ -896,15 +987,15 @@ namespace density
         */
         template <typename FUNC>
             auto consume(FUNC && i_func)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
+                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                    -> unvoid_t<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>
         {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
             return consume_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
         }
 
         /**
-            const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
+            const TYPE_ERASER_TYPE & i_type, COMMON_TYPE * i_element
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue consume_if_any example 1
@@ -912,10 +1003,10 @@ namespace density
         */
         template <typename FUNC>
             auto consume_if_any(FUNC && i_func)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>>
+                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                    -> optional<unvoid_t<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>>
         {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
             return consume_if_any_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
         }
 
@@ -955,7 +1046,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push example 1 */
-        void reentrant_dyn_push(const runtime_type & i_type)
+        void reentrant_dyn_push(const type_eraser_type & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
         }
@@ -965,7 +1056,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_copy example 1 */
-        void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
@@ -975,7 +1066,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_move example 1 */
-        void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -1007,7 +1098,7 @@ namespace density
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(type_eraser_type::template make<ELEMENT_TYPE>());
             auto const element = new (push_data.m_element) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
 
             return reentrant_typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1018,14 +1109,14 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push(const runtime_type & i_type)
+        reentrant_put_transaction start_reentrant_dyn_push(const type_eraser_type & i_type)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{i_type.size(), i_type.alignment()});
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.default_construct(push_data.m_element);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1037,14 +1128,14 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        reentrant_put_transaction start_reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.copy_construct(push_data.m_element, i_source);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1055,22 +1146,22 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        reentrant_put_transaction start_reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
+            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
             auto const element = i_type.move_construct(push_data.m_element, i_source);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Move-only class that holds the state of a push\emplace transaction, or is empty.
+        /** Move-only class that holds the state of a put transaction, or is empty.
 
-            Transactional push\emplace functions on heterogeneous_queue return a reentrant_put_transaction that can be used to allocate raw memory in the queue,
+            Transactional put functions on heterogeneous_queue return a reentrant_put_transaction that can be used to allocate raw memory in the queue,
             inspect or alter the element, and commit the push. Move operations transfer the transaction state to the destination, leaving the source
             in the empty state. If an operative function (like raw_allocate or commit) is called on an empty transaction, the
             behavior is undefined. */
@@ -1087,7 +1178,7 @@ namespace density
             /** Move constructs a reentrant_put_transaction, transferring the state from the source.
                     @i_source source to move from. It becomes empty after the call. */
             reentrant_put_transaction(reentrant_put_transaction && i_source) noexcept
-                : m_queue(i_source.m_queue), m_push_data(i_source.m_push_data), m_committed(i_source.m_committed)
+                : m_queue(i_source.m_queue), m_push_data(i_source.m_push_data)
             {
                 i_source.m_queue = nullptr;
             }
@@ -1100,7 +1191,6 @@ namespace density
                 {
                     m_queue = i_source.m_queue;
                     m_push_data = i_source.m_push_data;
-                    m_committed = i_source.m_committed;
                     i_source.m_queue = nullptr;
                 }
                 return *this;
@@ -1117,9 +1207,9 @@ namespace density
                 @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2.
 
                 \pre The behavior is undefined if either:
-                - this reentrant_put_transaction is empty, that is it has been used as source for a move operation
-                - the alignment is not valid
-                - the size is not a multiple of the alignment
+					- this reentrant_put_transaction is empty
+					- the alignment is not valid
+					- the size is not a multiple of the alignment
 
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1145,7 +1235,7 @@ namespace density
             /** Marks the state of the transaction so that when it is destroyed the element becomes visible to iterators and consumers.
                 If the state of the transaction is not committed, it will never become visible.
 
-                \pre The behavior is undefined if this reentrant_put_transaction is empty, that is it has been used as source for a move operation.
+				\pre The behavior is undefined if this transaction is empty
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1153,7 +1243,8 @@ namespace density
             void commit() noexcept
             {
                 DENSITY_ASSERT(!empty());
-                m_committed = true;
+				commit_reentrant_put_impl(m_push_data.m_control_block);
+				m_queue = nullptr;
             }
 
             /** Returns true whether this object does not hold the state of a transaction. */
@@ -1173,7 +1264,7 @@ namespace density
             /** Returns the type of the object being added.
 
                 \pre The behavior is undefined if this reentrant_put_transaction is empty, that is it has been used as source for a move operation. */
-            const RUNTIME_TYPE & type() const noexcept
+            const TYPE_ERASER_TYPE & type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_push_data.m_control);
@@ -1185,10 +1276,7 @@ namespace density
             {
                 if (m_queue != nullptr)
                 {
-                    if (DENSITY_LIKELY(m_committed))
-                        commit_reentrant_put_impl(m_push_data.m_control_block);
-                    else
-                        cancel_reentrant_put_impl(m_push_data.m_control_block);
+					cancel_reentrant_put_impl(m_push_data.m_control_block);
                 }
             }
 
@@ -1196,12 +1284,12 @@ namespace density
 
                 // not part of the public interface
                 reentrant_put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
-                    : m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+                    : m_queue(i_queue), m_push_data(i_push_data)
                         { }
 
                 // not part of the public interface
                 reentrant_put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
-                    : m_queue(i_queue), m_push_data(i_push_data), m_committed(false)
+                    : m_queue(i_queue), m_push_data(i_push_data)
                 {
                     m_push_data.m_element = i_element;
                     m_push_data.m_control_block->m_element = i_element;
@@ -1212,7 +1300,6 @@ namespace density
         private:
             heterogeneous_queue * m_queue;
             PutData m_push_data;
-            bool m_committed;
         };
 
         template <typename TYPE>
@@ -1233,10 +1320,10 @@ namespace density
         {
         public:
 
-            using iterator_category = std::forward_iterator_tag;
-            using runtime_type = RUNTIME_TYPE;
+			using iterator_category = std::input_iterator_tag;
+            using type_eraser_type = TYPE_ERASER_TYPE;
             using common_type = COMMON_TYPE;
-            using value_type = std::pair<const runtime_type &, common_type * const>;
+            using value_type = std::pair<const type_eraser_type &, common_type * const>;
             using pointer = value_type *;
             using const_pointer = const value_type *;
             using reference = value_type &;
@@ -1255,12 +1342,17 @@ namespace density
             /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
             value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
+			const value_type * operator -> () const noexcept
+			{
+				return std::pointer_traits<const value_type *>::pointer_to(**this);
+			}
+
             /** Returns a pointer to the subobject of type COMMON_TYPE of current element */
             common_type * element_ptr() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
 
-            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
+            /** Returns the TYPE_ERASER_TYPE associated to this element. The user may use the function type_info of TYPE_ERASER_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const RUNTIME_TYPE & complete_type() const noexcept
+            const TYPE_ERASER_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
             }
@@ -1306,16 +1398,16 @@ namespace density
         };
 
         iterator begin() noexcept { return iterator(this, first_valid(m_head)); }
-        iterator end() noexcept { return iterator(this, m_tail); }
+        iterator end() noexcept { return iterator(nullptr, nullptr); }
 
         class const_iterator
         {
         public:
 
-            using iterator_category = std::forward_iterator_tag;
-            using runtime_type = RUNTIME_TYPE;
+            using iterator_category = std::input_iterator_tag;
+            using type_eraser_type = TYPE_ERASER_TYPE;
             using common_type = COMMON_TYPE;
-            using value_type = const std::pair<const runtime_type &, common_type* const>;
+            using value_type = const std::pair<const type_eraser_type &, const common_type* const>;
             using pointer = const value_type *;
             using const_pointer = const value_type *;
             using reference = const value_type &;
@@ -1334,12 +1426,17 @@ namespace density
             /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
             value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
+			const value_type * operator->() const
+			{
+				return std::pointer_traits<pointer>::pointer_to(**this);
+			}
+
             /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void, then the return type is void *. */
             const common_type * element_ptr() const noexcept { return get_element(m_control); }
 
-            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
+            /** Returns the TYPE_ERASER_TYPE associated to this element. The user may use the function type_info of TYPE_ERASER_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const RUNTIME_TYPE & complete_type() const noexcept
+            const TYPE_ERASER_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
             }
@@ -1385,10 +1482,10 @@ namespace density
         };
 
         const_iterator begin() const noexcept { return const_iterator(this, first_valid(m_head)); }
-        const_iterator end() const noexcept { return const_iterator(this, m_tail); }
+        const_iterator end() const noexcept { return const_iterator(nullptr, nullptr); }
 
         const_iterator cbegin() const noexcept { return const_iterator(this, first_valid(m_head)); }
-        const_iterator cend() const noexcept { return const_iterator(this, m_tail); }
+        const_iterator cend() const noexcept { return const_iterator(nullptr, nullptr); }
 
         bool operator == (const heterogeneous_queue & i_source) const
         {
@@ -1413,8 +1510,8 @@ namespace density
 
         template <typename FUNC>
             auto consume_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))
+                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                    -> decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))
         {
             auto transaction = start_manual_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
@@ -1430,7 +1527,7 @@ namespace density
 
         template <typename FUNC>
             unvoid_t<void> consume_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
         {
             auto transaction = start_manual_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
@@ -1447,10 +1544,10 @@ namespace density
 
         template <typename FUNC>
             auto consume_if_any_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
+                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                    -> optional<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>
         {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
             auto transaction = start_manual_consume();
             if (transaction)
             {
@@ -1466,7 +1563,7 @@ namespace density
 
         template <typename FUNC>
             optional<unvoid_t<void>> consume_if_any_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
         {
             auto transaction = start_manual_consume();
             if (transaction)
@@ -1483,7 +1580,7 @@ namespace density
 
         constexpr static auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
         constexpr static size_t s_sizeof_ControlBlock = (sizeof(ControlBlock) + (min_alignment - 1)) & ~(min_alignment - 1);
-        constexpr static size_t s_sizeof_RuntimeType = (sizeof(runtime_type) + (min_alignment - 1)) & ~(min_alignment - 1);
+        constexpr static size_t s_sizeof_RuntimeType = (sizeof(type_eraser_type) + (min_alignment - 1)) & ~(min_alignment - 1);
         constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
 
         struct SizeAndAlignment { size_t m_size, m_alignment; };
@@ -1504,7 +1601,7 @@ namespace density
                 }
                 curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
             }
-            return m_tail;
+            return nullptr;
         }
 
         ControlBlock * next_valid(ControlBlock * i_from) const
@@ -1518,12 +1615,12 @@ namespace density
                 }
                 curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
             }
-            return m_tail;
+            return nullptr;
         }
 
-        static runtime_type * type_after_control(ControlBlock * i_control)
+        static type_eraser_type * type_after_control(ControlBlock * i_control)
         {
-            return reinterpret_cast<runtime_type*>(address_add(i_control, s_sizeof_ControlBlock));
+            return reinterpret_cast<type_eraser_type*>(address_add(i_control, s_sizeof_ControlBlock));
         }
 
         static void * get_unaligned_element(detail::QueueControl<void> * i_control)
@@ -1732,9 +1829,9 @@ namespace density
         ControlBlock * m_head, * m_tail;
     };
 
-    template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-        inline void swap(heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
-            heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
+    template <typename COMMON_TYPE, typename TYPE_ERASER_TYPE, typename ALLOCATOR_TYPE>
+        inline void swap(heterogeneous_queue<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE> & i_first,
+            heterogeneous_queue<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
     {
         i_first.swap(i_second);
     }

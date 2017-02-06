@@ -61,7 +61,7 @@ namespace density
     public:
 
         using allocator_type = UNTYPED_ALLOCATOR;
-        using runtime_type = RUNTIME_TYPE;
+        using type_eraser_type = RUNTIME_TYPE;
         using common_type = ELEMENT;
         using reference = typename std::add_lvalue_reference< ELEMENT >::type;
         using const_reference = typename std::add_lvalue_reference< const ELEMENT>::type;
@@ -521,7 +521,7 @@ namespace density
                 depend on ELEMENT_COMPLETE_TYPE. In this way the same machine code will be used
                 for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
             return m_impl.insert_n_impl(i_position, i_count_to_insert,
-                runtime_type::template make<ElementCompleteType>(),
+				type_eraser_type::template make<ElementCompleteType>(),
                 move_construct(&i_source) );
         }
 
@@ -538,7 +538,7 @@ namespace density
                 depend on ELEMENT_COMPLETE_TYPE. In this way the same machine code will be used
                 for this call to push_back_impl, no mater what ELEMENT_COMPLETE_TYPE is. */
             return m_impl.insert_n_impl(i_position, i_count_to_insert,
-                runtime_type::template make<ElementCompleteType>(),
+				type_eraser_type::template make<ElementCompleteType>(),
                 copy_construct(&i_source) );
         }
 

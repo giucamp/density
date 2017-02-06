@@ -111,7 +111,7 @@ namespace density_tests
         {
             try
             {
-                using runtime_type = typename DENSE_CONTAINER::runtime_type;
+                using runtime_type = typename DENSE_CONTAINER::type_eraser_type;
                 const auto type = runtime_type::template make<TYPE>();
                 Element new_element{ &type.type_info(), type.template get_feature<density::type_features::hash>()(
                     static_cast<const typename DENSE_CONTAINER::common_type*>(&i_element) ) };

@@ -74,7 +74,7 @@ namespace producer_consumer_sample
             // this buffer is used to store temporary the command to be executed
             lifo_buffer<> buffer;
 
-            function_queue<void(size_t)>::underlying_queue::runtime_type function_type;
+            function_queue<void(size_t)>::underlying_queue::type_eraser_type function_type;
             for (;;)
             {
                 {

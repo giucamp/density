@@ -10,11 +10,50 @@
 #include <functional> // for std::bind
 #include <iostream>
 #include <utility>
+#include <complex>
+
 
 namespace heter_queue_samples
 {
     void run()
     {
+
+	{
+		//! [heter_queue example 1]
+	using namespace density;	
+	heterogeneous_queue<> queue;
+	
+	using C = std::complex<double>;
+	queue.push(C(1., 2.));
+	queue.push(1.f);
+
+	for (auto val : queue)
+	{
+		assert(val.first == runtime_type<>::make<C>() ||
+			val.first == runtime_type<>::make<float>() );
+	}
+		//! [heter_queue example 1]
+	}
+
+	{
+		//! [heter_queue example 2]
+	using namespace density;		
+	heterogeneous_queue<> queue;
+
+	using C = std::complex<double>;
+	const C c(1., 2.);
+	auto const type = runtime_type<>::make<C>();
+	queue.dyn_push_copy(type, &c ); // the new element is copy constructed
+
+	std::complex<double> sum;
+	for (auto val : queue)
+	{
+		assert(val.first == type);
+		sum += *static_cast<C*>(val.second);
+	}
+	assert(sum == c);		
+		//! [heter_queue example 2]
+	}
 
     {
         //! [heter_queue push example 1]
@@ -169,33 +208,83 @@ namespace heter_queue_samples
 
     assert(queue.empty());
 
-
     // s now has valid but indeterminate content
 
         //! [heter_queue dyn_push_move example 1]
     }
+
+	{
+	//! [heter_queue put_transaction example 1]
+	
+	using namespace density;
+	heterogeneous_queue<int> queue;
+
+	auto sum = [&queue] {
+		int sum = 0;
+		for (const auto & val : queue)
+			sum += *val.second;
+		return sum;
+	};
+
+	queue.push(1);
+	queue.push(2);
+	queue.push(3);
+	assert(sum() == 6);
+
+	{
+		// we are going to use the queue while the transaction is in progress, so we must use reentrant calls
+		auto trans_1 = queue.start_reentrant_push(4);			
+		assert(sum() == 6);
+
+		// we can start multiple transaction
+		auto trans_2 = queue.start_reentrant_push(5);			
+		assert(sum() == 6);
+			
+		// this transaction is never committed
+		auto trans_3 = queue.start_reentrant_push(6);
+		assert(sum() == 6);
+
+		// this is the first visible change to the queue since the push(3)
+		trans_2.commit();
+		assert(sum() == 11);
+
+		// we can commit the transaction in any order
+		trans_1.commit();
+		assert(sum() == 15);
+	}
+	assert(sum() == 15);
+
+	//! [heter_queue put_transaction example 1]
+	}
+	
+
     {
         //! [heter_queue start_push example 1]
 
     using namespace density;
     heterogeneous_queue<> queue;
 
+	struct Message
+	{
+		const char * m_message = nullptr;
+	};
+
     {
-        struct Message
-        {
-            const char * m_message = nullptr;
-            ~Message()
-            {
-                if (m_message)
-                {
-                    std::cout << m_message << std::endl;
-                }
-            }
-        };
         auto transaction = queue.start_push(Message{});
-        transaction.element_ptr()->m_message = transaction.raw_allocate_copy("abc");
+
+		// allocates a string linearly after the Message
+		// if the following expression throws, the Message is destroyed, and the queue remains unchanged
+		transaction.element_ptr()->m_message = transaction.raw_allocate_copy("abc");
+
+		// done
         transaction.commit();
     }
+
+	queue.consume([](const runtime_type<> & i_type, void * i_element_ptr) {
+		assert(i_type == runtime_type<>::make<Message>());
+		const Message & msg = *static_cast<const Message *>(i_element_ptr);
+		std::cout << msg.m_message << std::endl;
+	});
 
         //! [heter_queue start_push example 1]
     }
