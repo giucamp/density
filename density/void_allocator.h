@@ -75,7 +75,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        void_allocator models the UntypedAllocator concept.
+        void_allocator meets the requirements of UntypedAllocator concept.
     */
 
 
@@ -120,7 +120,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        void_allocator models the PagedAllocator concept.
+        void_allocator meets the requirements of PagedAllocator.
     */
 
     /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
@@ -349,6 +349,8 @@ namespace density
 
                 void add_page(void * i_page)
                 {
+					DENSITY_ASSERT_INTERNAL(i_page != nullptr);
+
                     std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
@@ -368,16 +370,21 @@ namespace density
 
                 void remove_page(void * i_page) noexcept
                 {
-                    std::lock_guard<sync::mutex> lock(m_mutex);
-                    auto const removed = m_pages.erase(i_page);
-                    if (m_enable)
-                    {
-                        DENSITY_ASSERT_INTERNAL(removed == 1);
-                    }
+					if (i_page != nullptr)
+					{
+						std::lock_guard<sync::mutex> lock(m_mutex);
+						auto const removed = m_pages.erase(i_page);
+						if (m_enable)
+						{
+							DENSITY_ASSERT_INTERNAL(removed == 1);
+						}
+					}
                 }
 
                 void add_block(void * i_block, size_t i_size, size_t i_alignment)
                 {
+					DENSITY_ASSERT_INTERNAL(i_block != nullptr);
+
                     std::lock_guard<sync::mutex> lock(m_mutex);
                     if (m_enable)
                     {
@@ -397,25 +404,31 @@ namespace density
 
                 void remove_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
                 {
-                    std::lock_guard<sync::mutex> lock(m_mutex);
-                    if (m_enable)
-                    {
-                        auto const it = m_blocks.find(i_block);
-                        DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
-                        DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
-                        m_blocks.erase(it);
-                    }
+					if (i_block != nullptr)
+					{
+						std::lock_guard<sync::mutex> lock(m_mutex);
+						if (m_enable)
+						{
+							auto const it = m_blocks.find(i_block);
+							DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
+							DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
+							m_blocks.erase(it);
+						}
+					}
                 }
 
                 void check_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
                 {
-                    std::lock_guard<sync::mutex> lock(m_mutex);
-                    if (m_enable)
-                    {
-                        auto const it = m_blocks.find(i_block);
-                        DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
-                        DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
-                    }
+					if (i_block != nullptr)
+					{
+						std::lock_guard<sync::mutex> lock(m_mutex);
+						if (m_enable)
+						{
+							auto const it = m_blocks.find(i_block);
+							DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
+							DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
+						}
+					}
                 }
 
                 ~DbgData()

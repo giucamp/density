@@ -23,10 +23,10 @@ namespace density
                 type of all elements will always be ELEMENT (that is, the container will not be heterogeneous). In
                 this case a standard container (like std::vector) instead of std::heterogeneous_array is a better choice. \n
                 If ELEMENT is not void, it must be noexcept move constructible.\n The default is void.
-            @tparam UNTYPED_ALLOCATOR Allocator to be used by the container. This type must model the \ref UntypedAllocator_concept
-                "UntypedAllocator" concept. \n The default is void_allocator.
+            @tparam UNTYPED_ALLOCATOR Allocator to be used by the container. This type must meet the requirements of 
+				\ref UntypedAllocator_concept "UntypedAllocator". \n The default is void_allocator.
             @tparam RUNTIME_TYPE Type to be used to represent the actual complete type of each element.
-                This type must model the \ref RuntimeType_concept "RuntimeType" concept. \n The default is runtime_type.
+                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". \n The default is runtime_type.
 
         In a heterogeneous_array elements are allocated tightly in the same dynamic memory block, respecting their alignment requirements.
         To be added to a heterogeneous_array, an element must have a type covariant to the template argument ELEMENT. If ELEMENT is void
@@ -299,7 +299,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_back(ELEMENT_COMPLETE_TYPE && i_source)
@@ -325,7 +325,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push_front(ELEMENT_COMPLETE_TYPE && i_source)
@@ -353,7 +353,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             iterator insert(const const_iterator & i_at, ELEMENT_COMPLETE_TYPE && i_source)
@@ -381,7 +381,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             iterator insert(const const_iterator & i_at, size_type i_count, const ELEMENT_COMPLETE_TYPE & i_source)
@@ -409,7 +409,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         iterator erase(const_iterator i_position)
         {
@@ -425,7 +425,7 @@ namespace density
             Note: this function can throw because is causes a reallocation.
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear (a reallocation is always required). */
         iterator erase(const_iterator i_from, const_iterator i_to)
         {

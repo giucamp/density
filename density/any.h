@@ -26,7 +26,7 @@ namespace density
                 @param i_args construction arguments to forward to the constructor of TYPE
                 @return an instance of any bound to an instance of TYPE
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
         Example:
             \snippet misc_samples.cpp any make example 1 */
         template <typename TYPE, typename ... CONSTRUCTION_ARGS>
@@ -40,7 +40,7 @@ namespace density
                 @param i_args construction arguments to forward to the constructor of TYPE
                 @return an instance of any bound to an instance of TYPE
             \n\b Throws: unspecified
-            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no observable effects).
         Example:
             \snippet misc_samples.cpp any make example 3 */
         template <typename TYPE, typename ... CONSTRUCTION_ARGS>
@@ -66,7 +66,7 @@ namespace density
                 @param i_args construction arguments to forward to the constructor of TYPE
                 @return an instance of any bound to an instance of TYPE
             \n\b Throws: unspecified
-            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no observable effects).
         Example:
             \snippet misc_samples.cpp any make example 2 */
         template <typename TYPE, typename ... CONSTRUCTION_ARGS>
@@ -77,7 +77,7 @@ namespace density
 
         /** Default constructor. A default constructed any is empty.
             \n\b Throws: anything the default constructor of the allocator throws.
-            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         any()
             : m_object(nullptr)
         {
@@ -85,7 +85,7 @@ namespace density
 
         /** Copy constructor. The constructed any is bound to a copy of the object bound to source.
             \n\b Throws: anything the default constructor of the allocator throws.
-            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         any(const any & i_source)
             : VOID_ALLOCATOR(static_cast<const VOID_ALLOCATOR&>(i_source)), m_type(i_source.m_type)
         {
@@ -112,7 +112,7 @@ namespace density
 
         /** Copy assignment.
             \n\b Throws: unspecified
-            \n\b Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n\b Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             http://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
         */
         any & operator = (const any & i_source)

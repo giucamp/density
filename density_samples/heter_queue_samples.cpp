@@ -17,6 +17,15 @@ namespace heter_queue_samples
 {
     void run()
     {
+	{
+		//! [heter_queue iterators 1]
+		using namespace density;
+		heterogeneous_queue<> queue_1, queue_2;
+		queue_1.push(42);
+		assert(queue_1.end() == queue_2.end() && queue_1.end() == heterogeneous_queue<>::iterator() );
+
+		//! [heter_queue iterators 1]
+	}
 
 	{
 		//! [heter_queue example 1]
@@ -236,7 +245,7 @@ namespace heter_queue_samples
 		auto trans_1 = queue.start_reentrant_push(4);			
 		assert(sum() == 6);
 
-		// we can start multiple transaction
+		// we can start multiple transactions
 		auto trans_2 = queue.start_reentrant_push(5);			
 		assert(sum() == 6);
 			

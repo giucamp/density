@@ -70,7 +70,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: constant amortized (a reallocation may be required). */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
@@ -85,7 +85,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: no iterator is invalidated
             \n\b Throws: anything that the function object invocation throws
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: constant. */
         RET_VAL invoke_front(PARAMS... i_params) const
         {
@@ -102,7 +102,7 @@ namespace density
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: anything that the function object invocation throws
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: constant. */
         RET_VAL consume_front(PARAMS... i_params)
         {
@@ -116,7 +116,7 @@ namespace density
         /** Deletes the first function object in the queue.
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: constant */
         void pop() noexcept
         {
@@ -126,7 +126,7 @@ namespace density
         /** Deletes all the function objects in the queue.
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear. */
         void clear() noexcept
         {

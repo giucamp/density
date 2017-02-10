@@ -177,7 +177,10 @@ namespace density
 
             void deallocate_page(void * i_page) noexcept
             {
-                m_free_stack.push(i_page);
+				if (i_page != nullptr)
+				{
+					m_free_stack.push(i_page);
+				}
             }
 
             ~PageAllocator()

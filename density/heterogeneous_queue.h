@@ -27,29 +27,21 @@ namespace density
 
     /** \brief Heterogeneous FIFO container-like class template. 	
 		
-		Heterogeneous FIFO container-like class template. Since this pseudo container is heterogeneous, each element can have 
-		a different type. A type-eraser is associated to each element to allow type-specific operations. Insertions are possible 
-		only at the end of the queue. Removals are possible only at the beginning of the queue.
+		Heterogeneous FIFO container-like class template. Since this pseudo-container is heterogeneous, each element can have 
+		a different type. A type-eraser is associated to each element to allow type-specific operations. Insertions (put operations)
+		are possible only at the end of the queue. Removals (consumptions) are possible only at the beginning of the queue.
 
 		@tparam COMMON_TYPE Common type. An element of type E can be pushed on the queue only if E* is implicitly convertible
             to COMMON_TYPE*. COMMON_TYPE may be:
                 - void (the default). In this case elements of any type can be added to the queue.
                 - a class\\struct. In this case only elements of a type deriving from COMMON_TYPE can be added.
         @tparam TYPE_ERASER_TYPE Type to be used to handle at runtime the actual complete type of each element.
-                This type must model the \ref RuntimeType_concept "RuntimeType" concept. The default is runtime_type.
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must model both the \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts. The default is void_allocator.
+                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is void_allocator.
 
 		\n <b>Thread safeness</b>: None. The user is responsible to avoid data races.
 		\n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
-		
-		Layout
-		--------------------------		
-		Elements and type-eraser are allocated linearly and tightly in memory pages allocated by the provided allocator. 
-		Whenever an element would not fit (alone) in a page, a normal memory block is requested to the allocator and used for the storage.
-		Elements are never reallocated or moved, so insertions and removals have always strict constant complexity.		
-		Insertions invalidate no iterators. Removals invalidate iterators pointing to the element being removed. Past-the-end
-		iterators are never invalidated.
 		
 		Usage
 		--------------------------
@@ -65,38 +57,39 @@ namespace density
 
 		\snippet heter_queue_samples.cpp heter_queue example 2
 						
-		Since iterators can only return the current value by value (std::pair), they does not
-		satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterator</a> (they are just
-		<a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>). This is the only reason why 
-		heterogeneous_queue is not a container.
-		
+		Iterators don't provide the multipass guarantee, so they are not
+		<a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterators</a>, but just
+		<a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>.
+		For this reason heterogeneous_queue is not a container.
+
+		Insertions invalidate no iterators. Removals invalidate iterators pointing to the element being removed. \n
+		Past-the-end iterators are never invalidated. They compare equal each other and with a default constructed iterator:
+
+		\snippet heter_queue_samples.cpp heter_queue iterators 1		
+
 		Reentrant operations
 		--------------------------
-		While a normal operation is in progress, the queue is not in a consistent state. In contrast, member function containing "reentrant_"
-		in their names support reentrancy: while they are in progress other puts, consumes, iterations and any non-modifying operation are
-		allowed. These operation are allowed only in the same thread (reentrancy has nothing to do with multithreading).
+		Member function containing "reentrant_" in their names support reentrancy: while they are in progress, other puts, consumes, 
+		iterations and any non-modifying operation are allowed. These operations are allowed only in the same thread (reentrancy has 
+		nothing to do with multithreading). \n
+		In contrast, while a non-reentrant operation is in progress, the queue is not in a consistent state: if during a put the 
+		construction of the new element directly or indirectly calls other member functions on the same queue, the behavior is undefined.		
 
-		Transactional operations
+		Transactional puts and consume operations
 		--------------------------
-		Member functions containing "start_" in their names are transactional. They start an operation and returns an object bound to the
-		transaction. The effects of the transaction are not visible until the member function commit is called on it. If the transaction is 
-		destroyed and commit has not been called, the transaction has no visible effects (memory allocations are not considered a visible effect).
-		The only exception is reentrant consume operations, which make the element disappear from the queue when they start. If the
-		transaction is canceled, the element reappears in the queue.
+		Put member functions containing "start_" in their names are transactional: they start a transaction and return an object 
+		bound to it. The effects of the transaction are not observable until the member function commit is called on
+		it. If the transaction is destroyed and commit has not been called, the transaction is canceled, with no effect ever 
+		observable (memory allocations are not considered an observable effect to the queue). \n
+		Consume member functions containing "start_" start an operation and return an object bound to it. The member function commit
+		makes the operation persistent. If the operation object is destroyed without being committed, the operation is canceled.
+		The operation object is not a transaction, as the element disappears from the queue until commit is called.	
 		
 		\snippet heter_queue_samples.cpp heter_queue start_push example 1
 		
 		In the following sample transactional puts and reentrancy are used together.
 
 		\snippet heter_queue_samples.cpp heter_queue put_transaction example 1
-
-		Implementation and performance notes
-		--------------------------
-
-		- If COMMON_TYPE is not void for every element the queue stores an additional pointer
-		- In general non-reentrant operations are faster than reentrant
-		- Transactional operations are not slower than normal ones
-		
 
 		Put functions summary
 		--------------------------
@@ -138,7 +131,20 @@ namespace density
             <td>Runtime time</td>
             <td>Move</td>
         </tr>
-        </table>        
+        </table>
+
+		Implementation and performance notes
+		--------------------------
+		Elements and type-eraser are allocated linearly and tightly in memory pages allocated by the provided allocator.
+		Whenever an element would not fit (alone) in a page, a normal memory block is requested to the allocator and used for the storage.
+		Elements are never reallocated or moved, so insertions and removals have always strict constant complexity.
+		Pages are not recycled: when the last element in a page is consumed, the page is freed.		
+
+		- If COMMON_TYPE is not void for every element the queue stores an additional pointer for every element. It's 
+			recommended to use void as COMMON_TYPE.
+		- In general non-reentrant operations are faster than reentrant
+		- Transactional operations are not slower than non-transactional ones
+
     */
     template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
         class heterogeneous_queue final : private ALLOCATOR_TYPE
@@ -180,14 +186,14 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the type. */
+        /** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
         constexpr static size_t min_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(type_eraser_type)));
 
         /** Default constructor. The allocator is default-constructed.
 
             <b>Complexity</b>: constant.
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				-Currently this constructor does not allocate memory and never throws. */
         heterogeneous_queue()
@@ -217,7 +223,7 @@ namespace density
 
             <b>Complexity</b>: linear in the number of elements of the source.
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         heterogeneous_queue(const heterogeneous_queue & i_source)
             : allocator_type(static_cast<const allocator_type&>(i_source)),
               m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)), m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
@@ -232,7 +238,7 @@ namespace density
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
 
             <b>Complexity</b>: Unspecified.
-            \n <b>Effects on iterators</b>: Any iterator pointing to this queue or the source queue is invalidated.
+            \n <b>Effects on iterators</b>: Any iterator pointing to this queue or to the source queue is invalidated.
             \n <b>Throws</b>: Nothing.
 
             \n <i>Implementation notes</i>:
@@ -251,7 +257,7 @@ namespace density
                         <b>Complexity</b>: linear.
             \n <b>Effects on iterators</b>: Any iterator pointing to this queue is invalidated.
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         heterogeneous_queue & operator = (const heterogeneous_queue & i_source)
         {
             auto copy(i_source);
@@ -259,11 +265,11 @@ namespace density
             return *this;
         }
 
-        /** Swaps the content of this queue and another one. The allocator is swapped too.
+        /** Swaps the content of this queue and another one. The allocators are swapped too.
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
 
             <b>Complexity</b>: constant.
-            \n <b>Effects on iterators</b>: no iterator is invalidated
+            \n <b>Effects on iterators</b>: the domain of validity of iterators is swapped
             \n <b>Throws</b>: Nothing. */
         void swap(heterogeneous_queue & i_other) noexcept
         {
@@ -340,7 +346,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue push example 1 */
@@ -365,7 +371,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue emplace example 1 */
@@ -382,7 +388,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push example 1 */
@@ -401,7 +407,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push_copy example 1 */
@@ -420,7 +426,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue dyn_push_move example 1 */
@@ -450,7 +456,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
@@ -479,7 +485,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
@@ -512,7 +518,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push example 1 */
@@ -545,7 +551,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
@@ -577,7 +583,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
@@ -650,7 +656,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
             void * raw_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t))
             {
                 DENSITY_ASSERT(!empty());
@@ -683,7 +689,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
             template <typename INPUT_ITERATOR>
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
@@ -723,7 +729,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
@@ -824,25 +830,25 @@ namespace density
         };
 
         /** Move-only class that holds the state of a consumes, or is empty. */
-        class consume_transaction
+        class consume_operation
         {
         public:
 
             /** Copy construction is not allowed */
-            consume_transaction(const consume_transaction &) = delete;
+            consume_operation(const consume_operation &) = delete;
 
             /** Copy assignment is not allowed */
-            consume_transaction & operator = (const consume_transaction &) = delete;
+            consume_operation & operator = (const consume_operation &) = delete;
 
             /** Move constructor. The source is left empty. */
-            consume_transaction(consume_transaction && i_source) noexcept
+            consume_operation(consume_operation && i_source) noexcept
                 : m_queue(i_source.m_queue), m_control(i_source.m_control)
             {
                 i_source.m_control = nullptr;
             }
 
             /** Move assignment. The source is left empty. */
-            consume_transaction & operator = (consume_transaction && i_source) noexcept
+            consume_operation & operator = (consume_operation && i_source) noexcept
             {
                 if (this != &i_source)
                 {
@@ -854,7 +860,7 @@ namespace density
             }
 
             /** Destructor: cancel the transaction. */
-            ~consume_transaction()
+            ~consume_operation()
             {
                 if(m_control != nullptr)
                 {
@@ -865,7 +871,7 @@ namespace density
             /** Returns true whether this object does not hold the state of a transaction. */
             bool empty() const noexcept { return m_control == nullptr; }
 
-            /** Returns true whether this object does not hold the state of a transaction. Same to !consume_transaction::empty. */
+            /** Returns true whether this object does not hold the state of a transaction. Same to !consume_operation::empty. */
             explicit operator bool() const noexcept
             {
                 return m_control != nullptr;
@@ -888,7 +894,7 @@ namespace density
 
             /** Returns the type of the element being consumed.
 
-                \pre The behavior is undefined if this consume_transaction is empty, that is it has been used as source for a move operation. */
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation. */
             const TYPE_ERASER_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -898,7 +904,7 @@ namespace density
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
                 \n This call is equivalent to: address_upper_align(unaligned_element_ptr(), complete_type().alignment());
 
-                \pre The behavior is undefined if this consume_transaction is empty, that is it has been used as source for a move operation.
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
                 \pos The returned address is aligned at least on heterogeneous_queue::min_alignment. */
             void * unaligned_element_ptr() const noexcept
             {
@@ -908,7 +914,7 @@ namespace density
 
             /** Returns a pointer to the element being consumed.
 
-                \pre The behavior is undefined if this consume_transaction is empty, that is it has been used as source for a move operation. */
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation. */
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -918,7 +924,7 @@ namespace density
             #ifndef DOXYGEN_DOC_GENERATION
 
                 // not part of the public interface
-                consume_transaction(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
+                consume_operation(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
                     : m_queue(i_queue), m_control(i_control)
                 {
                 }
@@ -969,7 +975,7 @@ namespace density
             return false;
         }
 
-        /** Calls a user provided function object passing as parameters the first element of the queue and its type, the removes and
+        /** Calls a user provided function object passing as parameters the first element of the queue and its type, then removes and
             destroys the element.
 
             @param i_func funcion object to be invoked with  const TYPE_ERASER_TYPE & i_type, COMMON_TYPE * i_element
@@ -980,7 +986,7 @@ namespace density
             <b>Complexity</b>: Constant
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: anything thrown by i_func.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects).
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue consume example 1
@@ -1011,16 +1017,16 @@ namespace density
         }
 
 
-        consume_transaction start_manual_consume() noexcept
+        consume_operation start_manual_consume() noexcept
         {
-            return consume_transaction(this, start_consume_impl());
+            return consume_operation(this, start_consume_impl());
         }
 
 
                     // reentrant
 
         /** Same to heterogeneous_queue::push, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The new element is not visible until the function returns.
+            valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_push example 1 */
@@ -1031,7 +1037,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The new element is not visible until the function returns.
+            valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_emplace example 1 */
@@ -1042,7 +1048,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The new element is not visible until the function returns.
+            valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push example 1 */
@@ -1052,7 +1058,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The new element is not visible until the function returns.
+            valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_copy example 1 */
@@ -1062,7 +1068,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The new element is not visible until the function returns.
+            valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_move example 1 */
@@ -1072,7 +1078,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The new element is not visible until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_push example 1 */
@@ -1083,7 +1089,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The new element is not visible until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
@@ -1105,7 +1111,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The new element is not visible until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
@@ -1124,7 +1130,7 @@ namespace density
 
 
         /** Same to heterogeneous_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The new element is not visible until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
@@ -1142,7 +1148,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The new element is not visible until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
@@ -1214,7 +1220,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
             void * raw_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t))
             {
                 DENSITY_ASSERT(!empty());
@@ -1393,12 +1399,12 @@ namespace density
             }
 
         private:
-            ControlBlock * m_control;
-            heterogeneous_queue * m_queue;
+            ControlBlock * m_control = nullptr;
+            heterogeneous_queue * m_queue = nullptr;
         };
 
         iterator begin() noexcept { return iterator(this, first_valid(m_head)); }
-        iterator end() noexcept { return iterator(nullptr, nullptr); }
+        iterator end() noexcept { return iterator(); }
 
         class const_iterator
         {
@@ -1477,15 +1483,15 @@ namespace density
             }
 
         private:
-            ControlBlock * m_control;
-            const heterogeneous_queue * m_queue;
+            ControlBlock * m_control = nullptr;
+            const heterogeneous_queue * m_queue = nullptr;
         };
 
         const_iterator begin() const noexcept { return const_iterator(this, first_valid(m_head)); }
-        const_iterator end() const noexcept { return const_iterator(nullptr, nullptr); }
+        const_iterator end() const noexcept { return const_iterator(); }
 
         const_iterator cbegin() const noexcept { return const_iterator(this, first_valid(m_head)); }
-        const_iterator cend() const noexcept { return const_iterator(nullptr, nullptr); }
+        const_iterator cend() const noexcept { return const_iterator(); }
 
         bool operator == (const heterogeneous_queue & i_source) const
         {

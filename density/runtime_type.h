@@ -174,7 +174,7 @@ namespace density
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
-				DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+                DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
                 return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
             }
         };
@@ -192,7 +192,7 @@ namespace density
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
-				DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+                DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
                 return new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
             }
         };
@@ -251,7 +251,7 @@ namespace density
 
                 static size_t invoke(const void * i_source)
                 {
-					DENSITY_ASSERT(i_source != nullptr);
+                    DENSITY_ASSERT(i_source != nullptr);
                     auto const base_ptr = static_cast<const BASE*>(i_source);
                     return detail::invoke_hash(*detail::down_cast<const TYPE*>(base_ptr));
                 }
@@ -286,7 +286,7 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest)
                 {
-					DENSITY_ASSERT(i_complete_dest != nullptr);
+                    DENSITY_ASSERT(i_complete_dest != nullptr);
                     BASE * const base_result = new(i_complete_dest) TYPE();
                     return base_result;
                 }
@@ -311,7 +311,7 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest, const void * i_base_source)
                 {
-					DENSITY_ASSERT(i_base_source != nullptr);
+                    DENSITY_ASSERT(i_base_source != nullptr);
                     auto const base_source = static_cast<const BASE*>(i_base_source);
                     // DENSITY_ASSERT( dynamic_cast<const TYPE*>(base_source) != nullptr ); to do: implement a detail::IsInstanceOf
                     BASE * const base_result = new(i_complete_dest) TYPE(*detail::down_cast<const TYPE*>(base_source));
@@ -342,7 +342,7 @@ namespace density
                     static_assert(std::is_nothrow_move_constructible<TYPE>::value,
                         "The move constructor is required to be noexcept");
 
-					DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
+                    DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
 
                     BASE * base_source = static_cast<BASE*>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
@@ -376,7 +376,7 @@ namespace density
             {
                 static RET invoke(void * i_base_dest, PARAMS... i_params)
                 {
-					DENSITY_ASSERT(i_base_dest != nullptr);
+                    DENSITY_ASSERT(i_base_dest != nullptr);
                     const auto base_dest = static_cast<BASE*>(i_base_dest);
                     return (*detail::down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
                 }
@@ -566,11 +566,11 @@ namespace density
             template <typename COMMON_TYPE>
                 using default_type_features = typename detail::GetDefaultFeatures<COMMON_TYPE>;
         #else
-			template <typename COMMON_TYPE>
-				struct default_type_features
-			{
-				using type = default_type_features_t<COMMON_TYPE>;
-			};
+            template <typename COMMON_TYPE>
+                struct default_type_features
+            {
+                using type = default_type_features_t<COMMON_TYPE>;
+            };
         #endif
         template <typename COMMON_TYPE>
             using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
@@ -653,7 +653,7 @@ namespace density
                 the feature_list is obtained with type_features::default_type_features. If this type is not a type_features::feature_list,
                 a compile time error is reported.
 
-        runtime_type models the \ref RuntimeType_concept "RuntimeType" concept.
+        runtime_type meets the requirements of \ref RuntimeType_concept "RuntimeType".
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
         instances of the target types, depending on the features included on FEATURE_LIST. \n
@@ -726,12 +726,12 @@ namespace density
         runtime_type & operator = (const runtime_type &) noexcept = default;
 
         /** Destructor */
-		#if DENSITY_DEBUG
+        #if DENSITY_DEBUG
         ~runtime_type()
-        {            
-            *reinterpret_cast<uintptr_t*>(&m_table) ^= std::numeric_limits<uintptr_t>::max();  
+        {
+            *reinterpret_cast<uintptr_t*>(&m_table) ^= std::numeric_limits<uintptr_t>::max();
         }
-		#endif
+        #endif
 
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }
@@ -906,14 +906,14 @@ namespace density
             return *get_feature<type_features::rtti>();
         }
 
-		/** Returns true if two instances of the target types compare equal. 
-			\n\b Throws: unspecified
-		*/
-		bool are_equal(const common_type * i_first, const common_type * i_second) const
-		{
-			DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
-			return get_feature<type_features::equals>()(i_first, i_second);
-		}
+        /** Returns true if two instances of the target types compare equal.
+            \n\b Throws: unspecified
+        */
+        bool are_equal(const common_type * i_first, const common_type * i_second) const
+        {
+            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
+            return get_feature<type_features::equals>()(i_first, i_second);
+        }
 
         /** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails.
             This function grant access to features that are not part of the interface of runtime_type.
@@ -956,7 +956,7 @@ namespace density
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
-		
+
         #if DENSITY_DEBUG
 
             // the feature alignment is included in FEATURE_LIST

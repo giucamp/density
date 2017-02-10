@@ -14,8 +14,8 @@ namespace density
 {
     /** Class template that provides a typeless LIFO memory management.
 
-        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must model both the
-            \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator" concepts.
+        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements 
+			of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
@@ -64,7 +64,7 @@ namespace density
                 @param i_mem_size The size of the requested block, in bytes.
                 @return address of the allocated block
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * allocate(size_t i_mem_size)
         {
             auto const actual_size = (i_mem_size + s_alignment_mask) & ~s_alignment_mask;
@@ -84,7 +84,7 @@ namespace density
                 @param i_new_mem_size the new size requested for the block, in bytes.
                 @return address of the resized block.
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_new_mem_size)
         {
             auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
@@ -109,7 +109,7 @@ namespace density
                 @param i_new_mem_size the new size requested for the block, in bytes.
                 @return address of the resized block.
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate_preserve(void * i_block, size_t i_new_mem_size)
         {
             auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
@@ -346,7 +346,7 @@ namespace density
         /** Allocates a memory block. The content of the newly allocated memory is undefined.
                 @param i_block i_mem_size The size of the requested block, in bytes.
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * allocate(size_t i_mem_size)
         {
             return get_allocator().allocate(i_mem_size);
@@ -359,7 +359,7 @@ namespace density
                 @param i_new_mem_size the new size requested for the block, in bytes.
                 @return address of the resized block.
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_new_mem_size)
         {
             return get_allocator().reallocate(i_block, i_new_mem_size);
@@ -373,7 +373,7 @@ namespace density
                 @param i_new_mem_size the new size requested for the block, in bytes.
                 @return address of the resized block.
             \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no visible side effects). */
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate_preserve(void * i_block, size_t i_new_mem_size)
         {
             return get_allocator().reallocate_preserve(i_block, i_new_mem_size);
