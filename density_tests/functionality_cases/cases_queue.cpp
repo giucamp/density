@@ -36,7 +36,7 @@ namespace density_tests
             QUEUE queue;
             using runtime_type = typename QUEUE::type_eraser_type;
 
-            TESTITY_ASSERT(!queue.start_manual_consume());
+            TESTITY_ASSERT(!queue.start_consume());
 
             for (int i = 0; i < 1000; i++)
                 queue.push(i);
@@ -50,7 +50,7 @@ namespace density_tests
             TESTITY_ASSERT(it == queue.cend());
 
             queue.consume([](const runtime_type & i_type, int * i_element) {
-                TESTITY_ASSERT(*i_element == 0 && i_type == runtime_type::make<int>());
+                TESTITY_ASSERT(*i_element == 0 && i_type == runtime_type::template make<int>());
             });
 
             it = queue.cbegin();

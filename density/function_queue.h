@@ -106,11 +106,7 @@ namespace density
             \n\b Complexity: constant. */
         RET_VAL consume_front(PARAMS... i_params)
         {
-            auto transaction = m_queue.start_manual_consume();
-            DENSITY_ASSERT((bool)transaction);
-
-            return transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
-                transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
+			return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes the first function object in the queue.
@@ -175,6 +171,33 @@ namespace density
 
         typename underlying_queue::const_iterator begin() const noexcept { return m_queue.cbegin(); }
         typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
+
+
+	private:
+
+		RET_VAL consume_front_impl(std::false_type, PARAMS... i_params)
+		{
+			auto transaction = m_queue.start_consume();
+			DENSITY_ASSERT((bool)transaction);
+
+			auto result = transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
+				transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
+
+			transaction.commit();
+
+			return std::move(result);
+		}
+
+		void consume_front_impl(std::true_type, PARAMS... i_params)
+		{
+			auto transaction = m_queue.start_consume();
+			DENSITY_ASSERT((bool)transaction);
+
+			transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
+				transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
+
+			transaction.commit();
+		}
 
     private:
         underlying_queue m_queue;

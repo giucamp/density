@@ -91,6 +91,9 @@ namespace density
 
 		\snippet heter_queue_samples.cpp heter_queue put_transaction example 1
 
+		If a transaction or a consume operation is in progress (not yet committed) on a queue used as destination of an assignment 
+		or being destroyed, the behavior is undefined.
+
 		Put functions summary
 		--------------------------
         <table>
@@ -147,7 +150,7 @@ namespace density
 
     */
     template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
-        class heterogeneous_queue final : private ALLOCATOR_TYPE
+        class heterogeneous_queue : private ALLOCATOR_TYPE
     {
     private:
         using ControlBlock = typename detail::QueueControl<COMMON_TYPE>;
@@ -254,7 +257,8 @@ namespace density
 
         /** Copy assignment. The allocator is move-assigned from the one of the source.
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
-                        <b>Complexity</b>: linear.
+            
+			<b>Complexity</b>: linear.
             \n <b>Effects on iterators</b>: Any iterator pointing to this queue is invalidated.
             \n <b>Throws</b>: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
@@ -316,7 +320,7 @@ namespace density
         {
             for(;;)
             {
-                auto transaction = start_manual_consume();
+                auto transaction = start_consume();
                 if (!transaction)
                 {
                     break;
@@ -737,7 +741,7 @@ namespace density
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
 
-            /** Makes the effects of the transaction observable.
+            /** Makes the effects of the transaction observable. This object becomes empty.
 
 				\pre The behavior is undefined if either:
 					- this transaction is empty
@@ -748,6 +752,21 @@ namespace density
             void commit() noexcept
             {
                 DENSITY_ASSERT(!empty());
+				m_queue = nullptr;
+            }
+
+			/** Cancel the transaction. This object becomes empty.
+
+				\pre The behavior is undefined if either:
+					- this transaction is empty
+
+                <b>Complexity</b>: Constant.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: Nothing. */
+            void cancel() noexcept
+            {
+                DENSITY_ASSERT(!empty());
+				cancel_put_impl(m_push_data.m_control_block);
 				m_queue = nullptr;
             }
 
@@ -808,7 +827,7 @@ namespace density
         };
 
 
-		/** This class is used as return type fro put functions with an element type known at compile time.
+		/** This class is used as return type from put functions with an element type known at compile time.
 			
 			typed_put_transaction derives from put_transaction adding just an element_ptr() that returns a
 			pointer of correct the type. */
@@ -829,7 +848,7 @@ namespace density
                 { return static_cast<TYPE *>(put_transaction::element_ptr()); }
         };
 
-        /** Move-only class that holds the state of a consumes, or is empty. */
+        /** Move-only class that holds the state of a consume operation, or is empty. */
         class consume_operation
         {
         public:
@@ -859,7 +878,7 @@ namespace density
                 return *this;
             }
 
-            /** Destructor: cancel the transaction. */
+            /** Destructor: cancel the operation (if any) */
             ~consume_operation()
             {
                 if(m_control != nullptr)
@@ -868,28 +887,69 @@ namespace density
                 }
             }
 
-            /** Returns true whether this object does not hold the state of a transaction. */
+            /** Returns true whether this object does not hold the state of an operation. */
             bool empty() const noexcept { return m_control == nullptr; }
 
-            /** Returns true whether this object does not hold the state of a transaction. Same to !consume_operation::empty. */
+            /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty. */
             explicit operator bool() const noexcept
             {
                 return m_control != nullptr;
             }
 
-            /** Makes the effects of the transaction observable.
+            /** Destroys the element, and makes the effects of the operation observable. This object becomes empty.
 
 				\pre The behavior is undefined if either:
-					- this transaction is empty
+					- this object is empty
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing. */
             void commit() noexcept
             {
-                DENSITY_ASSERT(!empty());
+				DENSITY_ASSERT(!empty());
+
+				auto const & type = complete_type();
+				auto const element = element_ptr();
+				type.destroy(element);
+                
 				m_queue->commit_consume_impl(m_control);
 				m_control = nullptr;
+            }
+
+            /** Makes the effects of the operation observable without destroying the element. 
+				The caller should destroy the element before calling this function.
+				This object becomes empty.
+
+				\pre The behavior is undefined if either:
+					- this object is empty
+
+                <b>Complexity</b>: Constant.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: Nothing. */
+            void commit_nodestroy() noexcept
+            {
+				DENSITY_ASSERT(!empty());
+
+				m_queue->commit_consume_impl(m_control);
+				m_control = nullptr;
+            }
+
+			 /** Cancel the operation. This object becomes empty.
+
+				\pre The behavior is undefined if either:
+					- this object is empty
+
+                <b>Complexity</b>: Constant.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: Nothing. */
+            void cancel() noexcept
+            {
+                DENSITY_ASSERT(!empty());
+				if (m_control != nullptr)
+				{
+					m_queue->cancel_consume_impl(m_control);
+					m_control = nullptr;
+				}
             }
 
             /** Returns the type of the element being consumed.
@@ -945,12 +1005,10 @@ namespace density
             \n <b>Throws</b>: nothing */
         void pop() noexcept
         {
-            auto transaction = start_manual_consume();
-            DENSITY_ASSERT((bool)transaction);
-            auto const & type = transaction.complete_type();
-            auto const element = transaction.element_ptr();
-            type.destroy(element);
-            transaction.commit();
+			start_consume().commit();
+            auto operation = start_consume();
+
+			operation.commit();
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
@@ -963,13 +1021,13 @@ namespace density
             \n <b>Throws</b>: nothing */
         bool pop_if_any() noexcept
         {
-            auto transaction = start_manual_consume();
-            if (transaction)
+            auto operation = start_consume();
+            if (operation)
             {
-                auto const & type = transaction.complete_type();
-                auto const element = transaction.element_ptr();
+                auto const & type = operation.complete_type();
+                auto const element = operation.element_ptr();
                 type.destroy(element);
-                transaction.commit();
+				operation.commit();
                 return true;
             }
             return false;
@@ -1017,7 +1075,7 @@ namespace density
         }
 
 
-        consume_operation start_manual_consume() noexcept
+        consume_operation start_consume() noexcept
         {
             return consume_operation(this, start_consume_impl());
         }
@@ -1026,7 +1084,7 @@ namespace density
                     // reentrant
 
         /** Same to heterogeneous_queue::push, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not obseravle until the function returns.
+            valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_push example 1 */
@@ -1037,7 +1095,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not obseravle until the function returns.
+            valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_emplace example 1 */
@@ -1048,7 +1106,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not obseravle until the function returns.
+            valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push example 1 */
@@ -1058,7 +1116,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not obseravle until the function returns.
+            valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_copy example 1 */
@@ -1068,7 +1126,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not obseravle until the function returns.
+            valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_move example 1 */
@@ -1078,7 +1136,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_push example 1 */
@@ -1089,7 +1147,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
@@ -1111,7 +1169,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
@@ -1130,7 +1188,7 @@ namespace density
 
 
         /** Same to heterogeneous_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
@@ -1148,7 +1206,7 @@ namespace density
         }
 
         /** Same to heterogeneous_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not obseravle until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
@@ -1253,8 +1311,33 @@ namespace density
 				m_queue = nullptr;
             }
 
+			/** Cancel the transaction. This object becomes empty.
+
+				\pre The behavior is undefined if either:
+					- this transaction is empty
+
+                <b>Complexity</b>: Constant.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: Nothing. */
+            void cancel() noexcept
+            {
+                DENSITY_ASSERT(!empty());
+				cancel_reentrant_put_impl(m_push_data.m_control_block);
+				m_queue = nullptr;
+            }
+
             /** Returns true whether this object does not hold the state of a transaction. */
             bool empty() const noexcept { return m_queue == nullptr; }
+
+			/** Returns the queue that created this transaction. 
+			
+			\pre The behavior is undefined if either:
+				- this transaction is empty */
+			heterogeneous_queue & queue() const noexcept 
+			{
+				DENSITY_ASSERT(!empty());
+				return *m_queue; 
+			}
 
             /** Returns a pointer to the object being added.
                 \n <i>Note</i>: the object is constructed at the begin of the transaction, so this
@@ -1519,7 +1602,7 @@ namespace density
                 noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
                     -> decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))
         {
-            auto transaction = start_manual_consume();
+            auto transaction = start_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
             auto const & type = transaction.complete_type();
             auto const element = transaction.element_ptr();
@@ -1535,7 +1618,7 @@ namespace density
             unvoid_t<void> consume_impl(FUNC && i_func, std::true_type)
                 noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
         {
-            auto transaction = start_manual_consume();
+            auto transaction = start_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
             auto const & type = transaction.complete_type();
             auto const element = transaction.element_ptr();
@@ -1554,7 +1637,7 @@ namespace density
                     -> optional<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>
         {
             using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
-            auto transaction = start_manual_consume();
+            auto transaction = start_consume();
             if (transaction)
             {
                 auto const & type = transaction.complete_type();
@@ -1571,7 +1654,7 @@ namespace density
             optional<unvoid_t<void>> consume_if_any_impl(FUNC && i_func, std::true_type)
                 noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
         {
-            auto transaction = start_manual_consume();
+            auto transaction = start_consume();
             if (transaction)
             {
                 auto const & type = transaction.complete_type();

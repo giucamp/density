@@ -86,7 +86,7 @@ namespace density_tests
             TESTITY_ASSERT(index == m_deque.size());
         }
 
-        void compare_at(size_t i_at, const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+        void compare_at(size_t i_at, const typename DENSE_CONTAINER::type_eraser_type & i_type, const void * i_element)
         {
             TESTITY_ASSERT(i_at < m_deque.size());
             TESTITY_ASSERT(*m_deque[i_at].m_type_info == i_type.type_info());
@@ -94,13 +94,13 @@ namespace density_tests
             TESTITY_ASSERT(element_hash == m_deque[i_at].m_object_hash);
         }
 
-        void compare_front(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+        void compare_front(const typename DENSE_CONTAINER::type_eraser_type & i_type, const void * i_element)
         {
             TESTITY_ASSERT(m_deque.size() > 0);
             compare_at(0, i_type, i_element);
         }
 
-        void compare_back(const typename DENSE_CONTAINER::runtime_type & i_type, const void * i_element)
+        void compare_back(const typename DENSE_CONTAINER::type_eraser_type & i_type, const void * i_element)
         {
             TESTITY_ASSERT(m_deque.size() > 0);
             compare_at(m_deque.size() - 1, i_type, i_element);

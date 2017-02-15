@@ -30,12 +30,12 @@ namespace density_tests
 
         bool res;
         int64_t consumed = 0;
-        auto const int_type = QUEUE::runtime_type::template make<int64_t>();
+        auto const int_type = QUEUE::type_eraser_type::template make<int64_t>();
         do {
-            res = queue.try_consume([&int_type, consumed](const typename QUEUE::runtime_type & i_complete_type, void * i_element) {
+            res = static_cast<bool>(queue.consume_if_any([&int_type, consumed](const typename QUEUE::type_eraser_type & i_complete_type, void * i_element) {
                 TESTITY_ASSERT(i_complete_type == int_type);
                 TESTITY_ASSERT(consumed == *static_cast<int*>(i_element));
-            });
+            }));
             consumed++;
         } while (res);
 
@@ -208,7 +208,9 @@ namespace density_tests
         using namespace density;
         using namespace density::experimental;
 
-		i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue<>>);
+        i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue<>>);
+        i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue<int64_t>>);
+
 
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_void_mt);
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_base_mt);

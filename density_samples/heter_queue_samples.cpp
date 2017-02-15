@@ -10,8 +10,6 @@
 #include <functional> // for std::bind
 #include <iostream>
 #include <utility>
-#include <complex>
-
 
 namespace heter_queue_samples
 {
@@ -32,7 +30,7 @@ namespace heter_queue_samples
 	using namespace density;	
 	heterogeneous_queue<> queue;
 	
-	using C = std::complex<double>;
+	using C = std::pair<double, double>;
 	queue.push(C(1., 2.));
 	queue.push(1.f);
 
@@ -49,16 +47,17 @@ namespace heter_queue_samples
 	using namespace density;		
 	heterogeneous_queue<> queue;
 
-	using C = std::complex<double>;
+	using C = std::pair<double, double>;
 	const C c(1., 2.);
 	auto const type = runtime_type<>::make<C>();
 	queue.dyn_push_copy(type, &c ); // the new element is copy constructed
 
-	std::complex<double> sum;
+	std::pair<double, double> sum(0., 0.);
 	for (auto val : queue)
 	{
 		assert(val.first == type);
-		sum += *static_cast<C*>(val.second);
+		sum.first += static_cast<C*>(val.second)->first;
+		sum.second += static_cast<C*>(val.second)->second;
 	}
 	assert(sum == c);		
 		//! [heter_queue example 2]
