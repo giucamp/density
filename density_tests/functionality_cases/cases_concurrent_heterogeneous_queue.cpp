@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include <density/concurrent_heterogeneous_queue.h>
-#include <density/concurrent_heterogeneous_queue_lf.h>
+#include <density/nb_concurrent_heterogeneous_queue.h>
 #include <testity/test_tree.h>
 #include <testity/testity_common.h>
 #include <testity/test_classes.h>
@@ -52,7 +52,7 @@ namespace density_tests
 
         using namespace density::experimental;
 
-        using Queue = concurrent_heterogeneous_queue_lf<>;
+        using Queue = nb_concurrent_heterogeneous_queue<>;
         ConcProdConsTest<Queue> test(10 * 1000 * 1000 );
         using CommonType = Queue::common_type;
 
@@ -144,7 +144,7 @@ namespace density_tests
         using namespace density::experimental;
         using namespace queue_test;
 
-        using Queue = concurrent_heterogeneous_queue_lf<Base>;
+        using Queue = nb_concurrent_heterogeneous_queue<Base>;
         ConcProdConsTest<Queue> test(10 * 1000 * 1000);
         using CommonType = Queue::common_type;
 
@@ -215,9 +215,9 @@ namespace density_tests
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_void_mt);
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_base_mt);
 
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nb_concurrent_heterogeneous_queue<>>);
 
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<concurrent_heterogeneous_queue_lf<int64_t>>);
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<concurrent_heterogeneous_queue_lf<int64_t>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nb_concurrent_heterogeneous_queue<int64_t>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<nb_concurrent_heterogeneous_queue<int64_t>>);
     }
 }

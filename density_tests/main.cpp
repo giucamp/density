@@ -69,7 +69,7 @@ int main()
     #else
         auto const flags = TestFlags::FunctionalityTest | TestFlags::FunctionalityExceptionTest;
     #endif // _DEBUG
-
+		
     string last_label;
     auto test_results = run_session(test_tree, flags, TestConfig(),
         [&last_label](const Progression & i_progression) {

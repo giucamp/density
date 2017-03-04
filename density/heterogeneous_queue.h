@@ -13,13 +13,13 @@ namespace density
 {
     namespace detail
     {
-        template<typename COMMON_TYPE> struct QueueControl // used by heterogeneous_queue<T,...
+        template<typename COMMON_TYPE> struct QueueControl // used by heterogeneous_queue<T,...>
         {
             uintptr_t m_next;
             COMMON_TYPE * m_element;
         };
 
-        template<> struct QueueControl<void> // used by heterogeneous_queue<void,...
+        template<> struct QueueControl<void> // used by heterogeneous_queue<void,...>
         {
             uintptr_t m_next;
         };
@@ -499,7 +499,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto const sa = adjust_alignment(SizeAndAlignment{sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)});
+            auto const sa = adjust_alignment(detail::SizeAndAlignment{sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
@@ -528,7 +528,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push example 1 */
         put_transaction start_dyn_push(const type_eraser_type & i_type)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{i_type.size(), i_type.alignment()});
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{i_type.size(), i_type.alignment()}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
@@ -561,7 +561,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
         put_transaction start_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
@@ -593,7 +593,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
         put_transaction start_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
@@ -665,7 +665,7 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
 
-                const auto sa = adjust_alignment(SizeAndAlignment{i_size,i_alignment});
+                const auto sa = adjust_alignment(detail::SizeAndAlignment{i_size,i_alignment}, min_alignment);
                 auto push_data = sa.m_size <= s_max_size_inpage ?
                     m_queue->implace_allocate<2>(sa) : m_queue->external_allocate<2>(sa);
 
@@ -1157,7 +1157,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto const sa = adjust_alignment(SizeAndAlignment{sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)});
+            auto const sa = adjust_alignment(detail::SizeAndAlignment{sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
@@ -1175,7 +1175,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction start_reentrant_dyn_push(const type_eraser_type & i_type)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{i_type.size(), i_type.alignment()});
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{i_type.size(), i_type.alignment()}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
@@ -1194,7 +1194,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction start_reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
@@ -1212,7 +1212,7 @@ namespace density
             \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction start_reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
         {
-            const auto sa = adjust_alignment(SizeAndAlignment{ i_type.size(), i_type.alignment() });
+            const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<1>(sa) : external_allocate<1>(sa);
 
@@ -1672,14 +1672,6 @@ namespace density
         constexpr static size_t s_sizeof_RuntimeType = (sizeof(type_eraser_type) + (min_alignment - 1)) & ~(min_alignment - 1);
         constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
 
-        struct SizeAndAlignment { size_t m_size, m_alignment; };
-
-        static constexpr SizeAndAlignment adjust_alignment(SizeAndAlignment i_input) noexcept
-        {
-            return i_input.m_alignment >= min_alignment ? i_input :
-                SizeAndAlignment{ uint_upper_align(i_input.m_size, min_alignment), min_alignment };
-        }
-
         ControlBlock * first_valid(ControlBlock * i_from) const
         {
             for (auto curr = i_from; curr != m_tail; )
@@ -1760,10 +1752,10 @@ namespace density
         };
 
         template <uintptr_t CONTROL_BITS>
-            PutData external_allocate(SizeAndAlignment i_sa)
+            PutData external_allocate(detail::SizeAndAlignment i_sa)
         {
             auto const external_block = ALLOCATOR_TYPE::allocate(i_sa.m_size, i_sa.m_alignment);
-            auto const inplace_put = implace_allocate<CONTROL_BITS>(SizeAndAlignment{sizeof(ExternalBlock), alignof(ExternalBlock)});
+            auto const inplace_put = implace_allocate<CONTROL_BITS>(detail::SizeAndAlignment{sizeof(ExternalBlock), alignof(ExternalBlock)});
 
             new(inplace_put.m_element) ExternalBlock{external_block, i_sa.m_size, i_sa.m_alignment};
 
@@ -1773,7 +1765,7 @@ namespace density
         }
 
         template <uintptr_t CONTROL_BITS>
-            PutData implace_allocate(SizeAndAlignment i_sa)
+            PutData implace_allocate(detail::SizeAndAlignment i_sa)
         {
             DENSITY_ASSERT_INTERNAL(i_sa.m_alignment >= min_alignment && is_power_of_2(i_sa.m_alignment)
                 && (i_sa.m_size % i_sa.m_alignment) == 0 && i_sa.m_size <= s_max_size_inpage);

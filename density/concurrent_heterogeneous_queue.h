@@ -42,8 +42,6 @@ namespace density
 		template <typename TYPE> class typed_put_transaction;
 		class reentrant_put_transaction;
 		template <typename TYPE> class reentrant_typed_put_transaction;
-		class iterator;
-		class const_iterator;
 
 		/** Same to heterogeneous_queue::min_alignment. */
 		constexpr static size_t min_alignment = heter_queue::min_alignment;

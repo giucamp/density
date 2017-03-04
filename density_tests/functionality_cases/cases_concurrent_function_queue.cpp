@@ -10,7 +10,7 @@
 
 namespace density_tests
 {
-    using namespace density;
+    /*using namespace density;
     using namespace testity;
 
     void test_concurrent_function_queue(std::mt19937 &)
@@ -26,5 +26,5 @@ namespace density_tests
     void add_concurrent_function_queue_cases(TestTree & i_dest)
     {
         i_dest.add_case(test_concurrent_function_queue);
-    }
+    }*/
 }

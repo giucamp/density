@@ -132,11 +132,11 @@ namespace density
             swap(*this, i_source);
         }
 
-        TYPE * operator -> () const                        { return ptr(); }
+        TYPE * operator -> () const                     { return ptr(); }
         TYPE & operator * ()                            { return *ptr(); }
         const TYPE & operator * () const                { return *ptr(); }
 
-        explicit operator bool() const                    { return m_has_value; }
+        explicit operator bool() const                  { return m_has_value; }
 
         ~optional()
         {

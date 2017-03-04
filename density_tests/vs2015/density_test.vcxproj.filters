@@ -108,26 +108,20 @@
     <ClInclude Include="..\..\density\density_config.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_spsc.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue_lf_v1.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\page_allocator_imp.h">
       <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
-      <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\dynamic_type.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\test_void_allocator.h">
       <Filter>functionality_cases</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\nb_concurrent_heterogeneous_queue.h">
+      <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

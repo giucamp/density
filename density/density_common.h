@@ -44,7 +44,15 @@ namespace density
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
 
-        template <typename SCOPE_EXIT_ACTION>
+		struct SizeAndAlignment { size_t m_size, m_alignment; };
+
+		constexpr static detail::SizeAndAlignment adjust_alignment(detail::SizeAndAlignment i_input, size_t i_min_alignment) noexcept
+		{
+			return i_input.m_alignment >= i_min_alignment ? i_input :
+				detail::SizeAndAlignment{ uint_upper_align(i_input.m_size, min_alignment), i_min_alignment };
+		}
+
+        /*template <typename SCOPE_EXIT_ACTION>
             class ScopeExit
         {
         public:
@@ -74,8 +82,15 @@ namespace density
             inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
         {
             return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
-        }
+        }*/
     }
+
+	enum concurrency_guarantee
+	{
+		obstruction_free,
+		conditionally_lockfree,
+		conditionally_waitfree
+	};
 
                 // address functions
 
@@ -304,7 +319,7 @@ namespace density
         return new_block;
     }
 
-    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POS type otherwise. **/
+    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POD type otherwise. **/
     template <typename TYPE>
         struct unvoid { using type = TYPE; };
     template <>
