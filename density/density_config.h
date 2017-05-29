@@ -64,9 +64,11 @@
 #include <mutex>
 #include <atomic>
 
+
 namespace density
 {
     constexpr size_t concurrent_alignment = 64;
+	constexpr size_t default_page_capacity = 1024 * 16;
 
     /** Aliases for the synchronization classes.
         By default density uses the C++11 standard synchronization support. Anyway you can change these aliases

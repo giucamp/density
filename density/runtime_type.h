@@ -182,7 +182,7 @@ namespace density
         {
             static void * invoke(void *, void *)
             {
-                return throw std::exception("copy-construction not supported");
+                throw std::exception("copy-construction not supported");
             }
         };
 

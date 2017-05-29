@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include <density/concurrent_heterogeneous_queue.h>
-#include <density/nb_concurrent_heterogeneous_queue.h>
+#include <density/nonblocking_heterogeneous_queue.h>
 #include <testity/test_tree.h>
 #include <testity/testity_common.h>
 #include <testity/test_classes.h>
@@ -30,9 +30,9 @@ namespace density_tests
 
         bool res;
         int64_t consumed = 0;
-        auto const int_type = QUEUE::type_eraser_type::template make<int64_t>();
+        auto const int_type = QUEUE::runtime_type::template make<int64_t>();
         do {
-            res = static_cast<bool>(queue.consume_if_any([&int_type, consumed](const typename QUEUE::type_eraser_type & i_complete_type, void * i_element) {
+            res = static_cast<bool>(queue.consume_if_any([&int_type, consumed](const typename QUEUE::runtime_type & i_complete_type, void * i_element) {
                 TESTITY_ASSERT(i_complete_type == int_type);
                 TESTITY_ASSERT(consumed == *static_cast<int*>(i_element));
             }));
@@ -52,7 +52,7 @@ namespace density_tests
 
         using namespace density::experimental;
 
-        using Queue = nb_concurrent_heterogeneous_queue<>;
+        using Queue = nonblocking_heterogeneous_queue<>;
         ConcProdConsTest<Queue> test(10 * 1000 * 1000 );
         using CommonType = Queue::common_type;
 
@@ -144,7 +144,7 @@ namespace density_tests
         using namespace density::experimental;
         using namespace queue_test;
 
-        using Queue = nb_concurrent_heterogeneous_queue<Base>;
+        using Queue = nonblocking_heterogeneous_queue<Base>;
         ConcProdConsTest<Queue> test(10 * 1000 * 1000);
         using CommonType = Queue::common_type;
 
@@ -215,9 +215,9 @@ namespace density_tests
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_void_mt);
         //i_dest.add_case(tets_concurrent_heterogeneous_queue_base_mt);
 
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nb_concurrent_heterogeneous_queue<>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nonblocking_heterogeneous_queue<>>);
 
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nb_concurrent_heterogeneous_queue<int64_t>>);
-        //i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<nb_concurrent_heterogeneous_queue<int64_t>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_st<nonblocking_heterogeneous_queue<int64_t>>);
+        //i_dest.add_case(tets_concurrent_heterogeneous_queue_mt<nonblocking_heterogeneous_queue<int64_t>>);
     }
 }

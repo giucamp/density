@@ -28,8 +28,8 @@ namespace density
 			"COMMON_TYPE can't be cv-qualified, an array or a reference");
 
 		using common_type = COMMON_TYPE;
-		using type_eraser_type = TYPE_ERASER_TYPE;
-		using value_type = std::pair<const type_eraser_type &, common_type* const>;
+		using runtime_type = TYPE_ERASER_TYPE;
+		using value_type = std::pair<const runtime_type &, common_type* const>;
 		using allocator_type = ALLOCATOR_TYPE;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
@@ -137,7 +137,7 @@ namespace density
         /** Same to heterogeneous_queue::dyn_push.
 
             \n <b>Thread safeness</b>: thread safe. */
-        void dyn_push(const type_eraser_type & i_type)
+        void dyn_push(const runtime_type & i_type)
         {
             start_dyn_push(i_type).commit();
         }
@@ -145,7 +145,7 @@ namespace density
         /** Same to heterogeneous_queue::dyn_push_copy.
 
             \n <b>Thread safeness</b>: thread safe. */
-        void dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+        void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -153,7 +153,7 @@ namespace density
         /** Same to heterogeneous_queue::dyn_push_move.
 
             \n <b>Thread safeness</b>: thread safe. */
-        void dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+        void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -181,7 +181,7 @@ namespace density
         /** Same to heterogeneous_queue::start_dyn_push.
 
             \n <b>Thread safeness</b>: thread safe. */
-        put_transaction start_dyn_push(const type_eraser_type & i_type)
+        put_transaction start_dyn_push(const runtime_type & i_type)
         {
 			std::unique_lock<sync::mutex> lock(m_mutex);
             return put_transaction(std::move(lock), heter_queue::start_dyn_push(i_type));
@@ -190,7 +190,7 @@ namespace density
         /** Same to heterogeneous_queue::start_dyn_push_copy.
 
             \n <b>Thread safeness</b>: thread safe. */
-        put_transaction start_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
 			std::unique_lock<sync::mutex> lock(m_mutex);
 			return put_transaction(std::move(lock), heter_queue::start_dyn_push_copy(i_type, i_source));
@@ -199,7 +199,7 @@ namespace density
         /** Same to heterogeneous_queue::start_dyn_push_move.
 
             \n <b>Thread safeness</b>: thread safe. */
-        put_transaction start_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+        put_transaction start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
 			std::unique_lock<sync::mutex> lock(m_mutex);
 			return put_transaction(std::move(lock), heter_queue::start_dyn_push_move(i_type, i_source));
@@ -222,9 +222,6 @@ namespace density
 			/** Same to heterogeneous_queue::put_transaction::operator = (put_transaction &&). */
 			put_transaction & operator = (put_transaction && i_source) noexcept
 			{
-				static_assert(noexcept(m_lock = std::move(i_source.m_lock)), "1");
-				static_assert(noexcept(m_put_transaction = std::move(i_source.m_put_transaction)), "2");
-
 				m_lock = std::move(i_source.m_lock);
 				m_put_transaction = std::move(i_source.m_put_transaction);
 				return *this;
@@ -305,7 +302,7 @@ namespace density
 
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 put_transaction(std::unique_lock<sync::mutex> && i_lock, typename heter_queue::put_transaction && i_put_transaction) noexcept
                     : m_lock(std::move(i_lock)), m_put_transaction(std::move(i_put_transaction))
                 {
@@ -319,7 +316,7 @@ namespace density
         };
 
 
-		/** This class is used as return type from put functions with an element type known at compile time.
+		/** This class is used as return type from put functions with the element type known at compile time.
 			
 			typed_put_transaction derives from put_transaction adding just an element_ptr() that returns a
 			pointer of correct the type. */
@@ -371,7 +368,7 @@ namespace density
             bool empty() const noexcept
 			{
 				bool const is_empty = m_consume_operation.empty();
-				DENSITY_ASSERT_INTERNAL(is_empty == m_lock.owns_lock());
+				DENSITY_ASSERT_INTERNAL(is_empty == !m_lock.owns_lock());
 				return is_empty;
 			}
 
@@ -410,9 +407,17 @@ namespace density
 				return m_consume_operation.element_ptr();
             }
 
+			/** Same to heterogeneous_queue::consume_operation::element. */
+			template <typename COMPLETE_ELEMENT_TYPE>
+				COMPLETE_ELEMENT_TYPE & element() const noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(m_lock.owns_lock());
+				return m_consume_operation.element<COMPLETE_ELEMENT_TYPE>();
+			}
+
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 consume_operation(std::unique_lock<sync::mutex> && i_lock, typename heter_queue::consume_operation && i_consume_operation) noexcept
                     : m_lock(std::move(i_lock)), m_consume_operation(std::move(i_consume_operation))
                 {
@@ -484,19 +489,19 @@ namespace density
         }
 
 		/** Same to heterogeneous_queue::reentrant_dyn_push. */
-        void reentrant_dyn_push(const type_eraser_type & i_type)
+        void reentrant_dyn_push(const runtime_type & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
         }
 
 		/** Same to heterogeneous_queue::reentrant_dyn_push_copy. */
-        void reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+        void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
 
 		/** Same to heterogeneous_queue::reentrant_dyn_push_move. */
-        void reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+        void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -520,7 +525,7 @@ namespace density
         }
 
 		/** Same to heterogeneous_queue::start_reentrant_dyn_push. */
-        reentrant_put_transaction start_reentrant_dyn_push(const type_eraser_type & i_type)
+        reentrant_put_transaction start_reentrant_dyn_push(const runtime_type & i_type)
         {
 			{
 				std::lock_guard<sync::mutex> lock(m_mutex);
@@ -531,7 +536,7 @@ namespace density
 
 
 		/** Same to heterogeneous_queue::start_reentrant_dyn_push_copy. */
-        reentrant_put_transaction start_reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+        reentrant_put_transaction start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
 			{
 				std::lock_guard<sync::mutex> lock(m_mutex);
@@ -541,7 +546,7 @@ namespace density
         }
 
 		/** Same to heterogeneous_queue::start_reentrant_dyn_push_move. */
-        reentrant_put_transaction start_reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+        reentrant_put_transaction start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
 			{
 				std::lock_guard<sync::mutex> lock(m_mutex);
@@ -616,7 +621,7 @@ namespace density
 
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 reentrant_put_transaction(typename heter_queue::reentrant_put_transaction && i_put_transaction)
                     : m_put_transaction(std::move(i_put_transaction))
                         { }

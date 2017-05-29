@@ -23,22 +23,40 @@ namespace density
         {
             uintptr_t m_next;
         };
+
+		constexpr uintptr_t Queue_Busy = 1; // set on QueueControl::m_next when a thread is producing or consuming an element
+		constexpr uintptr_t Queue_Dead = 2;  /* set on QueueControl::m_next when an element is not consumable.
+											   If Queue_Dead is set, then Queue_Busy is meaningless. */
+		constexpr uintptr_t Queue_External = 4;  // set on QueueControl::m_next in case of external allocation
+		constexpr uintptr_t Queue_Flags = Queue_Busy | Queue_Dead | Queue_External;
+
+		struct SizeAndAlignment { size_t m_size, m_alignment; };
+
+		constexpr static detail::SizeAndAlignment adjust_alignment(detail::SizeAndAlignment i_input, size_t i_min_alignment) noexcept
+		{
+			return i_input.m_alignment >= i_min_alignment ? i_input :
+				detail::SizeAndAlignment{ uint_upper_align(i_input.m_size, i_min_alignment), i_min_alignment };
+		}
     }
 
-    /** \brief Heterogeneous FIFO container-like class template. 	
+    /** \brief Heterogeneous FIFO pseudo-container class template. 	
 		
-		Heterogeneous FIFO container-like class template. Since this pseudo-container is heterogeneous, each element can have 
-		a different type. A type-eraser is associated to each element to allow type-specific operations. Insertions (put operations)
-		are possible only at the end of the queue. Removals (consumptions) are possible only at the beginning of the queue.
+		Heterogeneous FIFO pseudo-container class template. Heterogeneous means that objects of different types can be inserted.
+		Values handled by heterogeneous_queue are pairs of:
+			- a runtime type that allows to execute a set of operations on the objects independently from the actual type (type erasing) 
+			- an user-provided object (the element) of the type the runtime type is bound to
 
-		@tparam COMMON_TYPE Common type. An element of type E can be pushed on the queue only if E* is implicitly convertible
-            to COMMON_TYPE*. COMMON_TYPE may be:
+		Insertions in a heterogeneous_queue (put operations) are possible only at the end of the queue.
+		Removals (consumptions) are possible only at the beginning of the queue.
+
+		@tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is 
+			implicitly convertible to COMMON_TYPE*. COMMON_TYPE may be:
                 - void (the default). In this case elements of any type can be added to the queue.
                 - a class\\struct. In this case only elements of a type deriving from COMMON_TYPE can be added.
-        @tparam TYPE_ERASER_TYPE Type to be used to handle at runtime the actual complete type of each element.
+        @tparam RUNTIME_TYPE Type to be used to handle at runtime the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
 
 		\n <b>Thread safeness</b>: None. The user is responsible to avoid data races.
 		\n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
@@ -47,31 +65,32 @@ namespace density
 		--------------------------
 		An element is an object of any (non cv-qualified) type T such that T* is implicitly convertible to COMMON_TYPE*. 
 		
-		A value of the queue is an std::pair of a reference to a type eraser and a pointer to the element. 
+		When an element of a type known at compile time is added to the queue, its runtime type is deduced:
 
-		When an element of a type known at compile time is added to the queue, its type eraser is deduced:
+		\snippet heterogeneous_queue_samples.cpp heter_queue example 1
 
-		\snippet heter_queue_samples.cpp heter_queue example 1
+		A value in the queue has the type std::pair<const RUNTIME_TYPE &, COMMON_TYPE* const>. Iterators are 
+		conceptually pointers to such pairs.
 
-		The type of the element may be unknown at compile time, in which case \ref dyn_push_copy can be used:
-
-		\snippet heter_queue_samples.cpp heter_queue example 2
-						
 		Iterators don't provide the multipass guarantee, so they are not
 		<a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterators</a>, but just
 		<a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>.
 		For this reason heterogeneous_queue is not a container.
 
-		Insertions invalidate no iterators. Removals invalidate iterators pointing to the element being removed. \n
-		Past-the-end iterators are never invalidated. They compare equal each other and with a default constructed iterator:
+		Insertions invalidate no iterators. Removals invalidate iterators pointing to the element being removed.
+		Past-the-end iterators are never invalidated, and they compare equal each other and with a default constructed iterator:
 
-		\snippet heter_queue_samples.cpp heter_queue iterators 1		
+		\snippet heterogeneous_queue_samples.cpp heter_queue iterators 1	
+		
+		The type of the element may be known only at runtime time, in which case \ref dyn_push_copy can be used:
 
+		\snippet heterogeneous_queue_samples.cpp heter_queue example 2
+						
 		Reentrant operations
 		--------------------------
 		Member function containing "reentrant_" in their names support reentrancy: while they are in progress, other puts, consumes, 
-		iterations and any non-modifying operation are allowed. These operations are allowed only in the same thread (reentrancy has 
-		nothing to do with multithreading). \n
+		iterations and any non-modifying operation are allowed, but only in the same thread (reentrancy has nothing to do with 
+		multithreading). \n
 		In contrast, while a non-reentrant operation is in progress, the queue is not in a consistent state: if during a put the 
 		construction of the new element directly or indirectly calls other member functions on the same queue, the behavior is undefined.		
 
@@ -85,11 +104,11 @@ namespace density
 		makes the operation persistent. If the operation object is destroyed without being committed, the operation is canceled.
 		The operation object is not a transaction, as the element disappears from the queue until commit is called.	
 		
-		\snippet heter_queue_samples.cpp heter_queue start_push example 1
+		\snippet heterogeneous_queue_samples.cpp heter_queue start_push example 1
 		
 		In the following sample transactional puts and reentrancy are used together.
 
-		\snippet heter_queue_samples.cpp heter_queue put_transaction example 1
+		\snippet heterogeneous_queue_samples.cpp heter_queue put_transaction example 1
 
 		If a transaction or a consume operation is in progress (not yet committed) on a queue used as destination of an assignment 
 		or being destroyed, the behavior is undefined.
@@ -138,18 +157,16 @@ namespace density
 
 		Implementation and performance notes
 		--------------------------
-		Elements and type-eraser are allocated linearly and tightly in memory pages allocated by the provided allocator.
+		Elements and runtime-types are allocated linearly and tightly in memory pages allocated by the provided allocator.
 		Whenever an element would not fit (alone) in a page, a normal memory block is requested to the allocator and used for the storage.
 		Elements are never reallocated or moved, so insertions and removals have always strict constant complexity.
 		Pages are not recycled: when the last element in a page is consumed, the page is freed.		
 
-		- If COMMON_TYPE is not void for every element the queue stores an additional pointer for every element. It's 
-			recommended to use void as COMMON_TYPE.
+		- If COMMON_TYPE is not void for every element the queue stores an additional pointer for every element.
 		- In general non-reentrant operations are faster than reentrant
 		- Transactional operations are not slower than non-transactional ones
-
     */
-    template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
+    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
         class heterogeneous_queue : private ALLOCATOR_TYPE
     {
     private:
@@ -162,18 +179,20 @@ namespace density
 
     public:
 
-        static_assert(std::is_same<COMMON_TYPE, typename TYPE_ERASER_TYPE::common_type>::value,
-            "COMMON_TYPE and TYPE_ERASER_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
+        static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
+            "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
 
         static_assert(std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
             "COMMON_TYPE can't be cv-qualified, an array or a reference");
 
-        static_assert(ALLOCATOR_TYPE::page_size > (sizeof(ControlBlock) + alignof(ControlBlock)) * 4 && ALLOCATOR_TYPE::page_alignment == ALLOCATOR_TYPE::page_size,
-            "The size and alignment of the pages must be the same (and not too small)");
+		static_assert(ALLOCATOR_TYPE::page_alignment >= 8 && is_power_of_2(ALLOCATOR_TYPE::page_alignment), "Invalid page size alignment");
+
+        static_assert(ALLOCATOR_TYPE::page_size > (sizeof(ControlBlock) + alignof(ControlBlock)) * 4 && 
+			ALLOCATOR_TYPE::page_alignment >= ALLOCATOR_TYPE::page_size, "Invalid page size");
 		        
         using common_type = COMMON_TYPE;
-		using type_eraser_type = TYPE_ERASER_TYPE;
-        using value_type = std::pair<const type_eraser_type &, common_type* const>;
+		using runtime_type = RUNTIME_TYPE;
+        using value_type = std::pair<const runtime_type &, common_type* const>;
         using allocator_type = ALLOCATOR_TYPE;
         using pointer = value_type *;
         using const_pointer = const value_type *;
@@ -189,8 +208,8 @@ namespace density
         class iterator;
         class const_iterator;
 
-        /** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
-        constexpr static size_t min_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(type_eraser_type)));
+        /** Minimum guaranteed alignment for every element. The actual alignment of an element may be stricter if the type requires it. */
+        constexpr static size_t min_alignment = detail::size_max(8, detail::size_max(alignof(ControlBlock), alignof(runtime_type)));
 
         /** Default constructor. The allocator is default-constructed.
 
@@ -229,7 +248,8 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         heterogeneous_queue(const heterogeneous_queue & i_source)
             : allocator_type(static_cast<const allocator_type&>(i_source)),
-              m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)), m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
+              m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)),
+			  m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
         {
             for (auto source_it = i_source.cbegin(); source_it != i_source.cend(); source_it++)
             {
@@ -299,14 +319,15 @@ namespace density
             \n <b>Throws</b>: Nothing. */
         bool empty() const noexcept
         {
+			// the queue may contain busy or dead elements, that must be ignored
             for (auto curr = m_head; curr != m_tail; )
             {
-                auto const control_bits = curr->m_next & 3;
-                if (control_bits == 0)
+                auto const control_bits = curr->m_next & (detail::Queue_Busy | detail::Queue_Dead);
+                if (control_bits != detail::Queue_Dead)
                 {
                     return false;
                 }
-                curr = reinterpret_cast<ControlBlock*>(curr->m_next - control_bits);
+                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_Flags);
             }
             return true;
         }
@@ -322,12 +343,7 @@ namespace density
             {
                 auto transaction = start_consume();
                 if (!transaction)
-                {
                     break;
-                }
-                auto const element = transaction.element_ptr();
-                auto const & type = transaction.complete_type();
-                type.destroy(element);
                 transaction.commit();
             }
 
@@ -353,7 +369,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue push example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue push example 1 */
         template <typename ELEMENT_TYPE>
             void push(ELEMENT_TYPE && i_source)
         {
@@ -378,7 +394,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue emplace example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -395,8 +411,8 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue dyn_push example 1 */
-        void dyn_push(const type_eraser_type & i_type)
+            \snippet heterogeneous_queue_samples.cpp heter_queue dyn_push example 1 */
+        void dyn_push(const runtime_type & i_type)
         {
             start_dyn_push(i_type).commit();
         }
@@ -414,8 +430,8 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue dyn_push_copy example 1 */
-        void dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue dyn_push_copy example 1 */
+        void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -433,8 +449,8 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue dyn_push_move example 1 */
-        void dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue dyn_push_move example 1 */
+        void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -463,7 +479,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
             typed_put_transaction<ELEMENT_TYPE> start_push(ELEMENT_TYPE && i_source)
         {
@@ -492,7 +508,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_push example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -504,7 +520,7 @@ namespace density
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(type_eraser_type::template make<ELEMENT_TYPE>());
+            new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
             auto const element = new (push_data.m_element) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
 
             return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -525,15 +541,15 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_dyn_push example 1 */
-        put_transaction start_dyn_push(const type_eraser_type & i_type)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_dyn_push example 1 */
+        put_transaction start_dyn_push(const runtime_type & i_type)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{i_type.size(), i_type.alignment()}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.default_construct(push_data.m_element);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -558,15 +574,15 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction start_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
+        put_transaction start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.copy_construct(push_data.m_element, i_source);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -590,15 +606,15 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction start_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
+        put_transaction start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
                 implace_allocate<0>(sa) : external_allocate<0>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.move_construct(push_data.m_element, i_source);
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -667,7 +683,7 @@ namespace density
 
                 const auto sa = adjust_alignment(detail::SizeAndAlignment{i_size,i_alignment}, min_alignment);
                 auto push_data = sa.m_size <= s_max_size_inpage ?
-                    m_queue->implace_allocate<2>(sa) : m_queue->external_allocate<2>(sa);
+                    m_queue->implace_allocate<detail::Queue_Dead>(sa) : m_queue->external_allocate<detail::Queue_Dead>(sa);
 
                 return push_data.m_element;
             }
@@ -701,15 +717,14 @@ namespace density
                 using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "put_transaction provides a raw memory implace allocation that does not invoke destructors when deallocating");
+                    "put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
 
                 auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
-                //std::uninitialized_copy(i_begin, i_end, elements);
-                for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
+				for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
                     new(curr) ValueType(*i_begin);
                 return elements;
             }
@@ -789,7 +804,7 @@ namespace density
 
 				\pre The behavior is undefined if either:
 					- this transaction is empty */
-            const TYPE_ERASER_TYPE & type() const noexcept
+            const RUNTIME_TYPE & type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_push_data.m_control);
@@ -806,12 +821,12 @@ namespace density
 
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
                     : m_queue(i_queue), m_push_data(i_push_data)
                         { }
 
-                // not part of the public interface
+                // internal only - do not use
                 put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
                     : m_queue(i_queue), m_push_data(i_push_data)
                 {
@@ -827,7 +842,7 @@ namespace density
         };
 
 
-		/** This class is used as return type from put functions with an element type known at compile time.
+		/** This class is used as return type from put functions with the element type known at compile time.
 			
 			typed_put_transaction derives from put_transaction adding just an element_ptr() that returns a
 			pointer of correct the type. */
@@ -945,17 +960,15 @@ namespace density
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
-				if (m_control != nullptr)
-				{
-					m_queue->cancel_consume_impl(m_control);
-					m_control = nullptr;
-				}
+
+				m_queue->cancel_consume_impl(m_control);
+				m_control = nullptr;
             }
 
             /** Returns the type of the element being consumed.
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation. */
-            const TYPE_ERASER_TYPE & complete_type() const noexcept
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_control);
@@ -974,16 +987,27 @@ namespace density
 
             /** Returns a pointer to the element being consumed.
 
-                \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation. */
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation. */
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return get_element(m_control);
             }
 
+			/** Returns a reference to the element being consumed.
+
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
+				\pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element. */
+            template <typename COMPLETE_ELEMENT_TYPE>
+				COMPLETE_ELEMENT_TYPE & element() const noexcept
+            {
+                DENSITY_ASSERT(!empty() && complete_type() == runtime_type::template make<COMPLETE_ELEMENT_TYPE>());
+                return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
+            }
+
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 consume_operation(heterogeneous_queue * i_queue, ControlBlock * i_control) noexcept
                     : m_queue(i_queue), m_control(i_control)
                 {
@@ -1006,9 +1030,6 @@ namespace density
         void pop() noexcept
         {
 			start_consume().commit();
-            auto operation = start_consume();
-
-			operation.commit();
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
@@ -1024,10 +1045,7 @@ namespace density
             auto operation = start_consume();
             if (operation)
             {
-                auto const & type = operation.complete_type();
-                auto const element = operation.element_ptr();
-                type.destroy(element);
-				operation.commit();
+                operation.commit();
                 return true;
             }
             return false;
@@ -1036,8 +1054,8 @@ namespace density
         /** Calls a user provided function object passing as parameters the first element of the queue and its type, then removes and
             destroys the element.
 
-            @param i_func funcion object to be invoked with  const TYPE_ERASER_TYPE & i_type, COMMON_TYPE * i_element
-            @return return value of i_func(std::declval<TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>())
+            @param i_func funcion object to be invoked with  const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
+            @return return value of i_func(std::declval<RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>())
 
             \pre The behavior is undefined if the queue is empty.
 
@@ -1047,30 +1065,30 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue consume example 1
+            \snippet heterogeneous_queue_samples.cpp heter_queue consume example 1
         */
         template <typename FUNC>
             auto consume(FUNC && i_func)
-                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> unvoid_t<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>
+                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                    -> unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
         {
-            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
             return consume_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
         }
 
         /**
-            const TYPE_ERASER_TYPE & i_type, COMMON_TYPE * i_element
+            const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue consume_if_any example 1
+            \snippet heterogeneous_queue_samples.cpp heter_queue consume_if_any example 1
 
         */
         template <typename FUNC>
             auto consume_if_any(FUNC && i_func)
-                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<unvoid_t<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>>
+                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                    -> optional<unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>>
         {
-            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
             return consume_if_any_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
         }
 
@@ -1087,7 +1105,7 @@ namespace density
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue reentrant_push example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             void reentrant_push(ELEMENT_TYPE && i_source)
         {
@@ -1098,7 +1116,7 @@ namespace density
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue reentrant_emplace example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -1109,8 +1127,8 @@ namespace density
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push example 1 */
-        void reentrant_dyn_push(const type_eraser_type & i_type)
+            \snippet heterogeneous_queue_samples.cpp heter_queue reentrant_dyn_push example 1 */
+        void reentrant_dyn_push(const runtime_type & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
         }
@@ -1119,8 +1137,8 @@ namespace density
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_copy example 1 */
-        void reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue reentrant_dyn_push_copy example 1 */
+        void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
@@ -1129,8 +1147,8 @@ namespace density
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue reentrant_dyn_push_move example 1 */
-        void reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue reentrant_dyn_push_move example 1 */
+        void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -1139,7 +1157,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_reentrant_push example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_push(ELEMENT_TYPE && i_source)
         {
@@ -1150,7 +1168,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -1159,10 +1177,10 @@ namespace density
 
             auto const sa = adjust_alignment(detail::SizeAndAlignment{sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
-                implace_allocate<1>(sa) : external_allocate<1>(sa);
+                implace_allocate<detail::Queue_Busy>(sa) : external_allocate<detail::Queue_Busy>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(type_eraser_type::template make<ELEMENT_TYPE>());
+            new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
             auto const element = new (push_data.m_element) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
 
             return reentrant_typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1172,15 +1190,15 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push(const type_eraser_type & i_type)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_reentrant_dyn_push example 1 */
+        reentrant_put_transaction start_reentrant_dyn_push(const runtime_type & i_type)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{i_type.size(), i_type.alignment()}, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
-                implace_allocate<1>(sa) : external_allocate<1>(sa);
+                implace_allocate<detail::Queue_Busy>(sa) : external_allocate<detail::Queue_Busy>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.default_construct(push_data.m_element);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1191,15 +1209,15 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push_copy(const type_eraser_type & i_type, const COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
+        reentrant_put_transaction start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
-                implace_allocate<1>(sa) : external_allocate<1>(sa);
+                implace_allocate<detail::Queue_Busy>(sa) : external_allocate<detail::Queue_Busy>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.copy_construct(push_data.m_element, i_source);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1209,15 +1227,15 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet heter_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
-        reentrant_put_transaction start_reentrant_dyn_push_move(const type_eraser_type & i_type, COMMON_TYPE * i_source)
+            \snippet heterogeneous_queue_samples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
+        reentrant_put_transaction start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             const auto sa = adjust_alignment(detail::SizeAndAlignment{ i_type.size(), i_type.alignment() }, min_alignment);
             auto push_data = sa.m_size <= s_max_size_inpage ?
-                implace_allocate<1>(sa) : external_allocate<1>(sa);
+                implace_allocate<detail::Queue_Busy>(sa) : external_allocate<detail::Queue_Busy>(sa);
 
             DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) type_eraser_type(i_type);
+            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
             auto const element = i_type.move_construct(push_data.m_element, i_source);
 
             return reentrant_put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
@@ -1291,8 +1309,8 @@ namespace density
                     size = uint_upper_align(size, min_alignment);
                 }
                 auto push_data = size <= s_max_size_inpage ?
-                    m_queue->implace_allocate<2>(size, alignment) :
-                    m_queue->external_allocate<2>(size, alignment);
+                    m_queue->implace_allocate<detail::Queue_Dead>(size, alignment) :
+                    m_queue->external_allocate<detail::Queue_Dead>(size, alignment);
                 return push_data.m_element;
             }
 
@@ -1353,7 +1371,7 @@ namespace density
             /** Returns the type of the object being added.
 
                 \pre The behavior is undefined if this reentrant_put_transaction is empty, that is it has been used as source for a move operation. */
-            const TYPE_ERASER_TYPE & type() const noexcept
+            const RUNTIME_TYPE & type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return *type_after_control(m_push_data.m_control);
@@ -1371,12 +1389,12 @@ namespace density
 
             #ifndef DOXYGEN_DOC_GENERATION
 
-                // not part of the public interface
+                // internal only - do not use
                 reentrant_put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::true_type, void *) noexcept
                     : m_queue(i_queue), m_push_data(i_push_data)
                         { }
 
-                // not part of the public interface
+                // internal only - do not use
                 reentrant_put_transaction(heterogeneous_queue * i_queue, PutData i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
                     : m_queue(i_queue), m_push_data(i_push_data)
                 {
@@ -1410,9 +1428,9 @@ namespace density
         public:
 
 			using iterator_category = std::input_iterator_tag;
-            using type_eraser_type = TYPE_ERASER_TYPE;
+            using runtime_type = RUNTIME_TYPE;
             using common_type = COMMON_TYPE;
-            using value_type = std::pair<const type_eraser_type &, common_type * const>;
+            using value_type = std::pair<const runtime_type &, common_type * const>;
             using pointer = value_type *;
             using const_pointer = const value_type *;
             using reference = value_type &;
@@ -1439,9 +1457,9 @@ namespace density
             /** Returns a pointer to the subobject of type COMMON_TYPE of current element */
             common_type * element_ptr() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
 
-            /** Returns the TYPE_ERASER_TYPE associated to this element. The user may use the function type_info of TYPE_ERASER_TYPE
+            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const TYPE_ERASER_TYPE & complete_type() const noexcept
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
             }
@@ -1494,9 +1512,9 @@ namespace density
         public:
 
             using iterator_category = std::input_iterator_tag;
-            using type_eraser_type = TYPE_ERASER_TYPE;
+            using runtime_type = RUNTIME_TYPE;
             using common_type = COMMON_TYPE;
-            using value_type = const std::pair<const type_eraser_type &, const common_type* const>;
+            using value_type = const std::pair<const runtime_type &, const common_type* const>;
             using pointer = const value_type *;
             using const_pointer = const value_type *;
             using reference = const value_type &;
@@ -1523,9 +1541,9 @@ namespace density
             /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void, then the return type is void *. */
             const common_type * element_ptr() const noexcept { return get_element(m_control); }
 
-            /** Returns the TYPE_ERASER_TYPE associated to this element. The user may use the function type_info of TYPE_ERASER_TYPE
+            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
                 (whenever supported) to obtain a const-reference to a std::type_info. */
-            const TYPE_ERASER_TYPE & complete_type() const noexcept
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
             }
@@ -1599,8 +1617,8 @@ namespace density
 
         template <typename FUNC>
             auto consume_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))
+                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                    -> decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))
         {
             auto transaction = start_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
@@ -1609,14 +1627,13 @@ namespace density
 
             auto res = i_func(type, element);
 
-            type.destroy(element);
             transaction.commit();
             return res;
         }
 
         template <typename FUNC>
             unvoid_t<void> consume_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>())))
+                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
         {
             auto transaction = start_consume();
             DENSITY_ASSERT(static_cast<bool>(transaction));
@@ -1625,7 +1642,6 @@ namespace density
 
             i_func(type, element);
 
-            type.destroy(element);
             transaction.commit();
 
             return unvoid_t<void>();
@@ -1633,17 +1649,16 @@ namespace density
 
         template <typename FUNC>
             auto consume_if_any_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()))>
+                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                    -> optional<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
         {
-            using ReturnType = decltype(i_func(std::declval<const TYPE_ERASER_TYPE &>(), std::declval<COMMON_TYPE *>()));
+            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
             auto transaction = start_consume();
             if (transaction)
             {
                 auto const & type = transaction.complete_type();
                 auto const element = transaction.element_ptr();
                 auto result = make_optional<ReturnType>(i_func(type, element));
-                type.destroy(element);
                 transaction.commit();
                 return result;
             }
@@ -1652,7 +1667,7 @@ namespace density
 
         template <typename FUNC>
             optional<unvoid_t<void>> consume_if_any_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept((i_func(std::declval<const TYPE_ERASER_TYPE>(), std::declval<COMMON_TYPE *>()))))
+                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
         {
             auto transaction = start_consume();
             if (transaction)
@@ -1660,7 +1675,6 @@ namespace density
                 auto const & type = transaction.complete_type();
                 auto const element = transaction.element_ptr();
                 i_func(type, element);
-                type.destroy(element);
                 transaction.commit();
                 return make_optional<unvoid_t<void>>(unvoid_t<void>());
             }
@@ -1669,18 +1683,18 @@ namespace density
 
         constexpr static auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
         constexpr static size_t s_sizeof_ControlBlock = (sizeof(ControlBlock) + (min_alignment - 1)) & ~(min_alignment - 1);
-        constexpr static size_t s_sizeof_RuntimeType = (sizeof(type_eraser_type) + (min_alignment - 1)) & ~(min_alignment - 1);
+        constexpr static size_t s_sizeof_RuntimeType = (sizeof(runtime_type) + (min_alignment - 1)) & ~(min_alignment - 1);
         constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
 
         ControlBlock * first_valid(ControlBlock * i_from) const
         {
             for (auto curr = i_from; curr != m_tail; )
             {
-                if ((curr->m_next & 3) == 0)
+                if ((curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0)
                 {
                     return curr;
                 }
-                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
+                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_Flags);
             }
             return nullptr;
         }
@@ -1690,34 +1704,34 @@ namespace density
             DENSITY_ASSERT_INTERNAL(i_from != m_tail);
             for (auto curr = reinterpret_cast<ControlBlock*>(i_from->m_next & ~static_cast<uintptr_t>(3)); curr != m_tail; )
             {
-                if ((curr->m_next & 3) == 0)
+                if ((curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0)
                 {
                     return curr;
                 }
-                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
+                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_Flags);
             }
             return nullptr;
         }
 
-        static type_eraser_type * type_after_control(ControlBlock * i_control)
+        static runtime_type * type_after_control(ControlBlock * i_control) noexcept
         {
-            return reinterpret_cast<type_eraser_type*>(address_add(i_control, s_sizeof_ControlBlock));
+            return reinterpret_cast<runtime_type*>(address_add(i_control, s_sizeof_ControlBlock));
         }
 
-        static void * get_unaligned_element(detail::QueueControl<void> * i_control)
+        static void * get_unaligned_element(detail::QueueControl<void> * i_control) noexcept
         {
             auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
-            if (i_control->m_next & 4)
+            if (i_control->m_next & detail::Queue_External)
             {
                 result = static_cast<ExternalBlock*>(result)->m_block;
             }
             return result;
         }
 
-        static void * get_element(detail::QueueControl<void> * i_control)
+        static void * get_element(detail::QueueControl<void> * i_control) noexcept
         {
             auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
-            if (i_control->m_next & 4)
+            if (i_control->m_next & detail::Queue_External)
             {
                 result = static_cast<ExternalBlock*>(result)->m_block;
             }
@@ -1729,18 +1743,18 @@ namespace density
         }
 
         template <typename TYPE>
-            static void * get_unaligned_element(detail::QueueControl<TYPE> * i_control)
+            static void * get_unaligned_element(detail::QueueControl<TYPE> * i_control) noexcept
         {
             return i_control->m_element;
         }
 
         template <typename TYPE>
-            static TYPE * get_element(detail::QueueControl<TYPE> * i_control)
+            static TYPE * get_element(detail::QueueControl<TYPE> * i_control) noexcept
         {
             return i_control->m_element;
         }
 
-        static bool are_in_same_page(void * i_first, void * i_second)
+        static bool are_in_same_page(void * i_first, void * i_second) noexcept
         {
             return (reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) < allocator_type::page_size;
         }
@@ -1759,8 +1773,8 @@ namespace density
 
             new(inplace_put.m_element) ExternalBlock{external_block, i_sa.m_size, i_sa.m_alignment};
 
-            DENSITY_ASSERT((inplace_put.m_control_block->m_next & 4) == 0);
-            inplace_put.m_control_block->m_next |= 4;
+            DENSITY_ASSERT((inplace_put.m_control_block->m_next & detail::Queue_External) == 0);
+            inplace_put.m_control_block->m_next |= detail::Queue_External;
             return PutData{ inplace_put.m_control_block, external_block };
         }
 
@@ -1806,7 +1820,7 @@ namespace density
                 new(control_block) ControlBlock();
 
                 auto new_page = allocator_type::allocate_page();
-                control_block->m_next = reinterpret_cast<uintptr_t>(new_page) + 2;
+                control_block->m_next = reinterpret_cast<uintptr_t>(new_page) + detail::Queue_Dead;
                 m_tail = static_cast<ControlBlock *>(new_page);
             }
             else
@@ -1821,14 +1835,14 @@ namespace density
             const auto type_ptr = type_after_control(i_control_block);
             type_ptr->destroy(get_element(i_control_block));
 
-            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 0);
-            i_control_block->m_next+=2;
+            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+            i_control_block->m_next += detail::Queue_Dead;
         }
 
         static void commit_reentrant_put_impl(ControlBlock * i_control_block)
         {
-            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 1);
-            i_control_block->m_next--;
+            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
+            i_control_block->m_next -= detail::Queue_Busy;
         }
 
         DENSITY_NO_INLINE static void cancel_reentrant_put_impl(ControlBlock * i_control_block)
@@ -1836,8 +1850,8 @@ namespace density
             const auto type_ptr = type_after_control(i_control_block);
             type_ptr->destroy(get_element(i_control_block));
 
-            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 1);
-            i_control_block->m_next++;
+            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
+            i_control_block->m_next += (detail::Queue_Dead - detail::Queue_Busy);
         }
 
         ControlBlock * start_consume_impl() noexcept
@@ -1845,13 +1859,13 @@ namespace density
             auto curr = m_head;
             while (curr != m_tail)
             {
-                if ((curr->m_next & 3) == 0)
+                if ((curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0)
                 {
-                    curr->m_next |= 1;
+                    curr->m_next += detail::Queue_Busy;
                     return curr;
                 }
 
-                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
+                curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_Flags);
             }
 
             return nullptr;
@@ -1859,43 +1873,42 @@ namespace density
 
         void commit_consume_impl(ControlBlock * i_control_block) noexcept
         {
-            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 3) == 1);
-            i_control_block->m_next++;
+			DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
+            i_control_block->m_next += (detail::Queue_Dead - detail::Queue_Busy);
 
-            if(i_control_block == m_head)
-            {
-                auto curr = i_control_block;
-                DENSITY_ASSERT_INTERNAL(curr != m_tail);
-                do {
-                    if ((curr->m_next & 3) != 2)
-                    {
-                        break;
-                    }
+            auto curr = m_head;
+			while (curr != m_tail)
+			{
+				// break if the current block is busy or is not dead
+                if ((curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) != detail::Queue_Dead)
+                {
+                    break;
+                }
 
-                    auto next = reinterpret_cast<ControlBlock*>(curr->m_next & ~static_cast<uintptr_t>(7));
-                    if (curr->m_next & 4)
-                    {
-                        auto result = address_add(curr, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
-                        const auto & block = *static_cast<ExternalBlock*>(result);
-                        ALLOCATOR_TYPE::deallocate(block.m_block, block.m_size, block.m_alignment);
-                    }
+                auto next = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_Flags);
+                if (curr->m_next & detail::Queue_External)
+                {
+                    auto result = address_add(curr, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
+                    const auto & block = *static_cast<ExternalBlock*>(result);
+                    ALLOCATOR_TYPE::deallocate(block.m_block, block.m_size, block.m_alignment);
+                }
 
-                    if (!are_in_same_page(next, curr))
-                    {
-                        allocator_type::deallocate_page(address_lower_align(curr, allocator_type::page_size));
-                    }
+                if (!are_in_same_page(next, curr))
+                {
+                    allocator_type::deallocate_page(curr);
+                }
 
-                    curr = next;
-
-                } while (curr != m_tail);
-
-                m_head = curr;
+                curr = next;
             }
+
+			DENSITY_ASSERT_INTERNAL(curr == m_tail || 
+				(curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) != detail::Queue_Dead);
+            m_head = curr;
         }
 
         void cancel_consume_impl(ControlBlock * i_control_block) noexcept
         {
-            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & 7) == 1);
+            DENSITY_ASSERT_INTERNAL((i_control_block->m_next & detail::Queue_Flags) == detail::Queue_Busy);
             i_control_block->m_next--;
         }
 
@@ -1903,16 +1916,16 @@ namespace density
         {
             clear();
             DENSITY_ASSERT_INTERNAL(m_tail == m_head);
-            allocator_type::deallocate_page(address_lower_align(m_head, allocator_type::page_size));
+            allocator_type::deallocate_page(m_head);
         }
 
     private:
         ControlBlock * m_head, * m_tail;
     };
 
-    template <typename COMMON_TYPE, typename TYPE_ERASER_TYPE, typename ALLOCATOR_TYPE>
-        inline void swap(heterogeneous_queue<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE> & i_first,
-            heterogeneous_queue<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
+    template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
+        inline void swap(heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
+            heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
     {
         i_first.swap(i_second);
     }

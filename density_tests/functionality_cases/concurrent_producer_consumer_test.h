@@ -136,23 +136,21 @@ namespace density_tests
         {
             while (m_consumed.load() < m_cell_count)
             {
-                bool res = m_queue.try_consume([this](
-                        const typename QUEUE::runtime_type & i_complete_type,
-                        typename QUEUE::common_type * i_element) {
-                    for (const auto & test : m_tests)
-                    {
-                        if (test.m_type == i_complete_type)
-                        {
-                            auto const id = test.m_consumer(i_element);
-                            auto prev_val = m_cells[id].fetch_add(1);
-                            TESTITY_ASSERT(prev_val == 1);
-                            ++m_consumed;
-                            break;
-                        }
-                    }
-                });
-
-                if (!res)
+				if (auto consume = m_queue.start_consume())
+				{
+					for (const auto & test : m_tests)
+					{
+						if (test.m_type == consume.complete_type())
+						{
+							auto const id = test.m_consumer(consume.element_ptr());
+							auto prev_val = m_cells[id].fetch_add(1);
+							TESTITY_ASSERT(prev_val == 1);
+							++m_consumed;
+							break;
+						}
+					}
+				}
+				else
                 {
                     std::this_thread::yield();
                 }

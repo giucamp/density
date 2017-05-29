@@ -7,12 +7,8 @@
 #pragma once
 #include <cstdlib> // for std::max_align_t
 #include <density/density_common.h>
-#include <density/detail/page_allocator_imp.h>
-#if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-    #include <mutex>
-    #include <unordered_set>
-    #include <unordered_map>
-#endif
+#include <density/detail/system_page_manager.h>
+#include <density/detail/page_manager.h>
 
 namespace density
 {
@@ -75,7 +71,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        void_allocator meets the requirements of UntypedAllocator concept.
+        basic_void_allocator meets the requirements of UntypedAllocator concept.
     */
 
 
@@ -120,133 +116,187 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        void_allocator meets the requirements of PagedAllocator.
+        basic_void_allocator meets the requirements of PagedAllocator.
     */
+
+	template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
+		class basic_void_allocator;
+
+	/** Specialization of basic_void_allocator that uses the default page capacity. */
+	using void_allocator = basic_void_allocator<default_page_capacity>;
+
+	#define PAGE_PIN_DEBUG	false
+
+	#if PAGE_PIN_DEBUG
+
+		constexpr size_t pin_page_count = 4;
+		struct PinThreadData
+		{
+			void * pages[pin_page_count] = {};
+			uintptr_t counts[pin_page_count] = {};
+		};
+
+		inline PinThreadData & get_PinThreadData()
+		{
+			static thread_local PinThreadData pin_data;
+			return pin_data;
+		}
+
+		inline void notify_pin(void * i_page, uintptr_t i_multeplicity)
+		{
+			if (i_multeplicity > 0)
+			{
+				PinThreadData & data = get_PinThreadData();
+				size_t free_index = pin_page_count;
+				for (size_t i = 0; i < pin_page_count; i++)
+				{
+					if (data.pages[i] == i_page)
+					{
+						data.counts[i] += i_multeplicity;
+						return;
+					}
+					if (data.pages[i] == nullptr)
+					{
+						free_index = i;
+					}
+				}
+
+				DENSITY_ASSERT(free_index < pin_page_count);
+				data.pages[free_index] = i_page;
+				data.counts[free_index] = i_multeplicity;
+			}
+		}
+
+		inline void notify_unpin(void * i_page, uintptr_t i_multeplicity)
+		{
+			if (i_multeplicity > 0)
+			{
+				PinThreadData & data = get_PinThreadData();
+				for (size_t i = 0; i < pin_page_count; i++)
+				{
+					if (data.pages[i] == i_page)
+					{
+						DENSITY_ASSERT(data.counts[i] >= i_multeplicity);
+						data.counts[i] -= i_multeplicity;
+						if (data.counts[i] == 0)
+						{
+							data.pages[i] = nullptr;
+						}
+						return;
+					}
+				}
+				DENSITY_ASSERT(false);
+			}
+		}
+
+		inline uintptr_t get_local_pins(const void * i_page)
+		{
+			PinThreadData & data = get_PinThreadData();
+			if (i_page != nullptr)
+			{
+				for (size_t i = 0; i < pin_page_count; i++)
+				{
+					if (data.pages[i] == i_page)
+					{
+						return data.counts[i];
+					}
+				}
+				return 0;
+			}
+			else
+			{
+				uintptr_t count = 0;
+				for (size_t i = 0; i < pin_page_count; i++)
+				{
+					count += data.counts[i];
+				}
+				return count;
+			}
+		}
+
+	#endif
+
 
     /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
-        void_allocator is stateless. Any instance of void_allocator compares equal to any instance of void_allocator. This implies that
-        blocks and pages can be deallocated by any instance of void_allocator.
+        basic_void_allocator is stateless. Any instance of basic_void_allocator compares equal to any instance of basic_void_allocator. This implies that
+        blocks and pages can be deallocated by any instance of basic_void_allocator.
 
         \section Implementation
-        void_allocator redirects block allocations to the language built-in operator new. Whenever the requested alignment
-        is greater than alignof(std::max_align_t), void_allocator allocates an overhead whose size is the maximum between
+        basic_void_allocator redirects block allocations to the language built-in operator new. Whenever the requested alignment
+        is greater than alignof(std::max_align_t), basic_void_allocator allocates an overhead whose size is the maximum between
         the requested alignment and sizeof(void*). \n
 
         Every thread is associated to a free-page cache. When a page is deallocated, if the cache has less than 4 pages,
         the page to deallocate is pushed in this cache. When a page allocation is requested, a page from the cache is returned (if any).
         Pushing/peeking to\from the cache is very fast, and does not require thread synchronization. \n
-        Note: on win32 void_allocator is not redirecting page allocations to VirtualAlloc, since from several tests the latter resulted
+        Note: on win32 basic_void_allocator is not redirecting page allocations to VirtualAlloc, since from several tests the latter resulted
         around ten times slower than the operator new.
     */
-    class void_allocator
+	template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
+		class basic_void_allocator
     {
-    public:
+		using page_manager = typename detail::page_manager<typename detail::system_page_manager<PAGE_CAPACITY_AND_ALIGNMENT>>;
+    
+	public:
 
         /** Size (in bytes) of a memory page. */
-        static constexpr size_t page_size = 1024 * 4;
+        static constexpr size_t page_size = page_manager::page_size;
 
         /** Alignment (in bytes) of a memory page. */
-        static constexpr size_t page_alignment = page_size;
+        static constexpr size_t page_alignment = page_manager::page_alignment;
 
         /** Maximum number of free page that a thread can cache */
         static const size_t free_page_cache_size = 4;
 
-        void_allocator() noexcept = default;
-        void_allocator(const void_allocator&) noexcept = default;
-        void_allocator(void_allocator&&) noexcept = default;
-        void_allocator & operator = (const void_allocator&) noexcept = default;
-        void_allocator & operator = (void_allocator&&) noexcept = default;
+        basic_void_allocator() noexcept = default;
+        basic_void_allocator(const basic_void_allocator&) noexcept = default;
+        basic_void_allocator(basic_void_allocator&&) noexcept = default;
+        basic_void_allocator & operator = (const basic_void_allocator&) noexcept = default;
+        basic_void_allocator & operator = (basic_void_allocator&&) noexcept = default;
 
-        /** Allocates a memory block with at least the specified size and alignment.
-            @param i_size size of the requested memory block, in bytes
-            @param i_alignment alignment of the requested memory block, in bytes
-            @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
-                from the beginning of the block.
-            @return address of the new memory block
+		/** Allocates a memory block with at least the specified size and alignment.
+				@param i_size size of the requested memory block, in bytes
+				@param i_alignment alignment of the requested memory block, in bytes
+				@param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
+					from the beginning of the block.
+				@return address of the new memory block
 
-            \pre i_alignment is > 0 and is an integer power of 2
-            \pre i_alignment_offset is <= i_size
+			\pre i_alignment is > 0 and is an integer power of 2
+			\pre i_alignment_offset is <= i_size
 
-            A violation of any precondition results in undefined behavior.
+			A violation of any precondition results in undefined behavior.
 
-            \exception std::bad_alloc if the allocation fails
+			\exception std::bad_alloc if the allocation fails
 
-            The content of the newly allocated block is undefined. */
-        void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
-        {
-            DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-            DENSITY_ASSERT(i_alignment_offset <= i_size);
+			The content of the newly allocated block is undefined. */
+		void * allocate(size_t i_size,
+			size_t i_alignment = alignof(std::max_align_t),
+			size_t i_alignment_offset = 0) noexcept
+		{
+			return density::aligned_allocate(i_size, i_alignment, i_alignment_offset);
+		}
 
-            // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
-            void * user_block;
-            if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
-            {
-                user_block = operator new (i_size);
-            }
-            else
-            {
-                // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
-                size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
-                size_t const actual_size = i_size + extra_size;
-                auto complete_block = operator new (actual_size);
-                user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-                AlignmentHeader & header = *(static_cast<AlignmentHeader*>(user_block) - 1);
-                header.m_block = complete_block;
-                DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
-                    address_add(user_block, i_size) <= address_add(complete_block, actual_size));
-            }
-            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-                dbg_data().add_block(user_block, i_size, i_alignment);
-            #endif
-            return user_block;
-        }
+		/** Deallocates a memory block. After the call accessing the memory block results in undefined behavior.
+				@param i_block block to deallocate, or nullptr.
+				@param i_size size of the block to deallocate, in bytes.
+				@param i_alignment alignment of the memory block.
+				@param i_alignment_offset
 
-        /** Deallocates a memory block. After the call accessing the memory block results in undefined behavior.
-            @param i_block block to deallocate, or nullptr.
-            @param i_size size of the block to deallocate, in bytes.
-            @param i_alignment alignment of the memory block.
-            @param i_alignment_offset
+			\pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
+			\pre i_size and i_alignment are the same specified when allocating the block
 
-            \pre i_block is a memory block allocated with any instance of void_allocator, or nullptr
-            \pre i_size and i_alignment are the same specified when allocating the block
+			\exception never throws
 
-            \exception never throws
-
-            If i_block is nullptr, the call has no effect. */
-        void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
-        {
-            DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-
-            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-                dbg_data().remove_block(i_block, i_size, i_alignment);
-            #endif
-            if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
-            {
-                #if __cplusplus >= 201402L
-                    operator delete (i_block, i_size); // since C++14
-                #else
-                    (void)i_size;
-                    operator delete (i_block);
-                #endif
-            }
-            else
-            {
-                if(i_block != nullptr)
-                {
-                    const auto & header = *( static_cast<AlignmentHeader*>(i_block) - 1 );
-                    #if __cplusplus >= 201402L // since C++14
-                        size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
-                        size_t const actual_size = i_size + extra_size;
-                        operator delete (header.m_block, actual_size);
-                    #else
-                        (void)i_size;
-                        operator delete (header.m_block);
-                    #endif
-                }
-            }
-        }
+			If i_block is nullptr, the call has no effect. */
+		void deallocate(void * i_block,
+			size_t i_size, 
+			size_t i_alignment = alignof(std::max_align_t), 
+			size_t i_alignment_offset = 0) noexcept
+		{
+			density::aligned_deallocate(i_block, i_size, i_alignment, i_alignment_offset);
+		}
 
         /** Allocates a memory page.
             @return address of the new memory page
@@ -257,50 +307,74 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            /*auto page = thread_page_store().peek();
-            if (page == nullptr)
-            {
-                page = allocate_page_impl();
-            }*/
-            auto page = page_allocator().allocate_page();
-            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-                dbg_data().add_page(page);
-            #endif
-            return page;
+            return page_manager::allocate_page();
         }
+
+		void * allocate_page_zeroed()
+		{
+			return page_manager::allocate_page_zeroed();
+		}
 
         /** Deallocates a memory page. After the call accessing the page results in undefined behavior.
             @param i_page page to deallocate. Cannot be nullptr.
 
-            \pre i_page is a memory page allocated with any instance of void_allocator
+            \pre i_page is a memory page allocated with any instance of basic_void_allocator
 
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-            #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-                dbg_data().remove_page(i_page);
-            #endif
-            /*auto & page_store = thread_page_store();
-            if (page_store.size() < free_page_cache_size)
-            {
-                page_store.push(i_page);
-            }
-            else
-            {
-                deallocate_page_impl(i_page);
-            }*/
-
-            page_allocator().deallocate_page(i_page);
+			page_manager::deallocate_page(i_page);
         }
 
+		// the page may be not still zeroed, if it is pinned
+		void deallocate_page_zeroed(void * i_page) noexcept
+		{
+			page_manager::deallocate_page_zeroed(i_page);
+		}
+
+		/** Pins the page containing the specified address.
+			The owner page is obtained from the address as address_lower_align(i_address, page_alignment).
+			If the owner page is currently allocated, the return value is a non-empty scoped_pin.
+			If the owner page was allocated from this allocator instance, but was the deallocated, the
+			behaviour is implementation defined (no undefined behaviour): the scoped_pin may be empty or not.
+			The user is supposded to detect such cases in some way and discard the returned scoped_pin.
+			
+			While a page has a scoped_pin asdsociated with it, if the page gets deallocated, the allocator
+			will not alter its content in any way, and will not allocate a page in the samer address. */
+		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		{
+			page_manager::pin_page(i_address, i_multeplicity);
+			#if PAGE_PIN_DEBUG
+				notify_pin(address_lower_align(i_address, page_alignment), i_multeplicity);
+			#endif
+		}
+
+		/** @return the number of pins before the modification */
+		uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		{
+			#if PAGE_PIN_DEBUG
+				notify_unpin(address_lower_align(i_address, page_alignment), i_multeplicity);
+			#endif
+			return page_manager::unpin_page(i_address, i_multeplicity);
+		}
+
+		uintptr_t get_pin_count(const void * i_address) noexcept
+		{
+			#if PAGE_PIN_DEBUG
+				return get_local_pins(address_lower_align(i_address, page_alignment));
+			#else
+				return page_manager::get_pin_count(i_address);
+			#endif
+		}
+		
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
             @return always true. */
-        bool operator == (const void_allocator &) const noexcept
+        bool operator == (const basic_void_allocator &) const noexcept
             { return true; }
 
         /** Returns whether the right-side allocator cannot be used to deallocate block and pages allocated by this allocator.
             @return always false. */
-        bool operator != (const void_allocator &) const noexcept
+        bool operator != (const basic_void_allocator &) const noexcept
             { return false; }
 
         /** Allocates and constructs an object. The alignment of the object is always respected.
@@ -308,8 +382,8 @@ namespace density
                 @return a pointer to the new object
 
             Objects created by new_object must be deleted by delete_object. Using the language builtin delete on an object
-            created by new_object causes undefined behavior. Since all void_allocator objects compares equal, an instance of
-            void_allocator can delete an object created by another instance.
+            created by new_object causes undefined behavior. Since all basic_void_allocator objects compares equal, an instance of
+            basic_void_allocator can delete an object created by another instance.
         */
         template <typename TYPE, typename... CONSTRUCTION_PARAMS>
             TYPE * new_object(CONSTRUCTION_PARAMS && ... i_construction_params)
@@ -327,197 +401,6 @@ namespace density
                 deallocate(i_object, sizeof(TYPE), alignof(TYPE));
             }
         }
-
-
-    private:
-
-        static detail::PageAllocator<page_size> & page_allocator()
-        {
-            static detail::PageAllocator<page_size> page_alloc;
-            return page_alloc;
-        }
-
-        struct AlignmentHeader
-        {
-            void * m_block;
-        };
-
-        #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-            class DbgData
-            {
-            public:
-
-                void add_page(void * i_page)
-                {
-					DENSITY_ASSERT_INTERNAL(i_page != nullptr);
-
-                    std::lock_guard<sync::mutex> lock(m_mutex);
-                    if (m_enable)
-                    {
-                        try
-                        {
-                            const bool inserted = m_pages.insert(i_page).second;
-                            DENSITY_ASSERT_INTERNAL(inserted);
-                        }
-                        catch (...)
-                        {
-                            m_blocks.clear();
-                            m_pages.clear();
-                            m_enable = false;
-                        }
-                    }
-                }
-
-                void remove_page(void * i_page) noexcept
-                {
-					if (i_page != nullptr)
-					{
-						std::lock_guard<sync::mutex> lock(m_mutex);
-						auto const removed = m_pages.erase(i_page);
-						if (m_enable)
-						{
-							DENSITY_ASSERT_INTERNAL(removed == 1);
-						}
-					}
-                }
-
-                void add_block(void * i_block, size_t i_size, size_t i_alignment)
-                {
-					DENSITY_ASSERT_INTERNAL(i_block != nullptr);
-
-                    std::lock_guard<sync::mutex> lock(m_mutex);
-                    if (m_enable)
-                    {
-                        try
-                        {
-                            const bool inserted = m_blocks.insert(std::make_pair(i_block, BlockInfo{i_size, i_alignment})).second;
-                            DENSITY_ASSERT_INTERNAL(inserted);
-                        }
-                        catch (...)
-                        {
-                            m_blocks.clear();
-                            m_pages.clear();
-                            m_enable = false;
-                        }
-                    }
-                }
-
-                void remove_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
-                {
-					if (i_block != nullptr)
-					{
-						std::lock_guard<sync::mutex> lock(m_mutex);
-						if (m_enable)
-						{
-							auto const it = m_blocks.find(i_block);
-							DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
-							DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
-							m_blocks.erase(it);
-						}
-					}
-                }
-
-                void check_block(void * i_block, size_t i_size, size_t i_alignment) noexcept
-                {
-					if (i_block != nullptr)
-					{
-						std::lock_guard<sync::mutex> lock(m_mutex);
-						if (m_enable)
-						{
-							auto const it = m_blocks.find(i_block);
-							DENSITY_ASSERT_INTERNAL(it != m_blocks.end());
-							DENSITY_ASSERT_INTERNAL(it->second.m_size == i_size && it->second.m_alignment == i_alignment);
-						}
-					}
-                }
-
-                ~DbgData()
-                {
-                    DENSITY_ASSERT_INTERNAL(m_pages.size() == 0);
-                    DENSITY_ASSERT_INTERNAL(m_blocks.size() == 0);
-                }
-
-            private:
-
-                struct BlockInfo
-                {
-                    size_t m_size;
-                    size_t m_alignment;
-                };
-
-            private:
-                sync::mutex m_mutex;
-                std::unordered_set<void*> m_pages;
-                std::unordered_map<void*, BlockInfo> m_blocks;
-                bool m_enable = true;
-            };
-
-            static DbgData & dbg_data()
-            {
-                static DbgData s_dbg_data;
-                return s_dbg_data;
-            }
-        #endif // #if DENSITY_DEBUG_INTERNAL && DENSITY_ENV_HAS_THREADING
-
-        class PageList
-        {
-        public:
-
-            PageList() = default;
-            PageList(const PageList &) = delete;
-            PageList & operator = (const PageList &) = delete;
-
-            ~PageList()
-            {
-                auto curr = m_first;
-                while (curr != nullptr)
-                {
-                    auto next = curr->m_next;
-                    #if __cplusplus >= 201402L
-                        operator delete (curr, page_size); // since C++14
-                    #else
-                        operator delete (curr);
-                    #endif
-                    curr = next;
-                }
-            }
-
-            void push(void * i_page) noexcept
-            {
-                Header * page = static_cast<Header*>(i_page);
-                page->m_next = m_first;
-                m_first = page;
-                m_size++;
-            }
-
-            void * peek() noexcept
-            {
-                auto const result = m_first;
-                if (result != nullptr)
-                {
-                    DENSITY_ASSERT_INTERNAL(m_size > 0);
-                    m_first = result->m_next;
-                    m_size--;
-                }
-                return result;
-            }
-
-            size_t size() const noexcept { return m_size; }
-
-        private:
-            struct Header
-            {
-                Header * m_next;
-            };
-            Header * m_first = nullptr;
-            size_t m_size = 0;
-        };
-
-        /*static PageList & thread_page_store() noexcept
-        {
-            static thread_local PageList s_thread_page_store;
-            return s_thread_page_store;
-        }*/
     };
 
 } // namespace density

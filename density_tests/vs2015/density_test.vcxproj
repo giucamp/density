@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugClang|Win32">
       <Configuration>DebugClang</Configuration>
@@ -43,52 +43,52 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseClang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugClang|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_Clang_3_7</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseClang|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_Clang_3_7</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -137,6 +137,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
+      <CppLanguageStandard>c++1y</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -153,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CLanguageStandard>Default</CLanguageStandard>
-      <CppLanguageStandard>c++11</CppLanguageStandard>
+      <CppLanguageStandard>c++1y</CppLanguageStandard>
       <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -182,6 +183,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CppLanguageStandard>c++1y</CppLanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -211,7 +213,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <CppLanguageStandard>c++11</CppLanguageStandard>
+      <CppLanguageStandard>c++1y</CppLanguageStandard>
       <AdditionalIncludeDirectories>..\..;..\..\..\testity;..\..\..\boost_1_60_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG; _MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -222,7 +224,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\density_samples\function_queue_sample.cpp" />
-    <ClCompile Include="..\..\density_samples\heter_queue_samples.cpp" />
+    <ClCompile Include="..\..\density_samples\heterogeneous_queue_samples.cpp" />
     <ClCompile Include="..\..\density_samples\lifo_sample.cpp" />
     <ClCompile Include="..\..\density_samples\misc_samples.cpp" />
     <ClCompile Include="..\..\density_samples\producer_consumer_sample.cpp" />
@@ -236,6 +238,7 @@
     <ClCompile Include="..\functionality_cases\cases_concurrent_heterogeneous_queue.cpp" />
     <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp" />
     <ClCompile Include="..\functionality_cases\cases_lifo.cpp" />
+    <ClCompile Include="..\functionality_cases\cases_page_allocator.cpp" />
     <ClCompile Include="..\functionality_cases\cases_queue.cpp" />
     <ClCompile Include="..\main.cpp" />
   </ItemGroup>
@@ -244,18 +247,20 @@
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h" />
     <ClInclude Include="..\..\density\density_config.h" />
-    <ClInclude Include="..\..\density\detail\page_allocator_imp.h" />
-    <ClInclude Include="..\..\density\heterogeneous_array.h" />
+    <ClInclude Include="..\..\density\detail\page_manager.h" />
+    <ClInclude Include="..\..\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\density\density_common.h" />
-    <ClInclude Include="..\..\density\detail\array_impl.h" />
+    <ClInclude Include="..\..\density\heterogeneous_array.h" />
     <ClInclude Include="..\..\density\lifo.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
     <ClInclude Include="..\..\density\heterogeneous_queue.h" />
-    <ClInclude Include="..\..\density\nb_concurrent_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\nonblocking_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\raw_atomic.h" />
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
     <ClInclude Include="..\functionality_cases\concurrent_producer_consumer_test.h" />
     <ClInclude Include="..\functionality_cases\dynamic_type.h" />
+    <ClInclude Include="..\functionality_cases\queue_load_unload_test.h" />
     <ClInclude Include="..\functionality_cases\shadow_container.h" />
     <ClInclude Include="..\functionality_cases\test_void_allocator.h" />
   </ItemGroup>

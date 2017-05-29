@@ -8,6 +8,10 @@
 #include <vector>
 #include <testity/test_tree.h>
 #include <testity/test_session.h>
+#include "functionality_cases/queue_load_unload_test.h"
+#include <density/heterogeneous_queue.h>
+#include <density/concurrent_heterogeneous_queue.h>
+#include <density/nonblocking_heterogeneous_queue.h>
 
 namespace density_tests
 {
@@ -19,6 +23,7 @@ namespace density_tests
     void add_queue_cases(TestTree & i_dest);
     void add_function_queue_benchmarks(TestTree & i_dest);
     void add_any_cases(TestTree & i_dest);
+	void add_page_allocator_cases(TestTree & i_dest);
 
     // benchmarks
     void add_lifo_array_benchmarks(TestTree & i_dest);
@@ -36,6 +41,10 @@ namespace function_queue_sample
     void run();
 }
 
+namespace heter_queue_samples
+{
+	void run();
+}
 
 int main()
 {
@@ -43,19 +52,41 @@ int main()
     using namespace density_tests;
     using namespace std;
 
-    //function_queue_sample::run();
 
-    TestTree test_tree("density");
+	{
+		using namespace density;
+		using namespace density::experimental;
 
-    add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
-    add_queue_cases(test_tree["queue"]);
-    //add_queue_benchmarks(test_tree["queue"]);
-    add_lifo_cases(test_tree["lifo"]);
-    add_lifo_array_benchmarks(test_tree["lifo"]);
-    add_function_queue_benchmarks(test_tree["function_queue"]);
-    add_allocator_benchmarks(test_tree["allocator"]);
-    add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
-    add_any_cases(test_tree["any"]);
+		density_tests::run_queue_integrity_test<nonblocking_heterogeneous_queue<void>>(8, 8,
+			density_tests::LoadUnloadTestOptions{50,64, 0}, 0, 56);
+
+		/*density_tests::run_queue_integrity_test<heterogeneous_queue<void>>(1, 1,
+			density_tests::LoadUnloadTestOptions{}, 1000);
+
+		density_tests::run_queue_integrity_test<concurrent_heterogeneous_queue<void>>(1, 1,
+			density_tests::LoadUnloadTestOptions{}, 1000);*/
+	}
+
+	TestTree test_tree("density");
+
+	add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
+	add_queue_cases(test_tree["queue"]);
+	//add_queue_benchmarks(test_tree["queue"]);
+	add_lifo_cases(test_tree["lifo"]);
+	add_lifo_array_benchmarks(test_tree["lifo"]);
+	add_function_queue_benchmarks(test_tree["function_queue"]);
+	add_allocator_benchmarks(test_tree["allocator"]);
+	add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
+	add_any_cases(test_tree["any"]);
+	add_page_allocator_cases(test_tree["page_allocator"]);
+
+	run_session(test_tree["page_allocator"]);
+
+
+
+	heter_queue_samples::run();
+
+
 
     ////////////////////////
     run_session(test_tree["queue/base_tests"], TestFlags::FunctionalityTest);

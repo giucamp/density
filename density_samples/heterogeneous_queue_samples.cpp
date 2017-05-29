@@ -4,8 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <density/function_queue.h>
-#include <density/lifo.h>
+#include <density/heterogeneous_queue.h>
 #include <string>
 #include <functional> // for std::bind
 #include <iostream>
@@ -48,8 +47,9 @@ namespace heter_queue_samples
 	heterogeneous_queue<> queue;
 
 	using C = std::pair<double, double>;
-	const C c(1., 2.);
 	auto const type = runtime_type<>::make<C>();
+	
+	const C c(1., 2.);
 	queue.dyn_push_copy(type, &c ); // the new element is copy constructed
 
 	std::pair<double, double> sum(0., 0.);

@@ -40,9 +40,6 @@
     <ClCompile Include="..\functionality_cases\cases_lifo.cpp">
       <Filter>functionality_cases</Filter>
     </ClCompile>
-    <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp">
-      <Filter>functionality_cases</Filter>
-    </ClCompile>
     <ClCompile Include="..\functionality_cases\cases_queue.cpp">
       <Filter>functionality_cases</Filter>
     </ClCompile>
@@ -64,8 +61,14 @@
     <ClCompile Include="..\functionality_cases\cases_any.cpp">
       <Filter>functionality_cases</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\density_samples\heter_queue_samples.cpp">
+    <ClCompile Include="..\..\density_samples\heterogeneous_queue_samples.cpp">
       <Filter>samples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_page_allocator.cpp">
+      <Filter>functionality_cases</Filter>
+    </ClCompile>
+    <ClCompile Include="..\functionality_cases\cases_heterogeneous_array.cpp">
+      <Filter>functionality_cases</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -78,9 +81,6 @@
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\heterogeneous_array.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -89,9 +89,6 @@
     </ClInclude>
     <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\array_impl.h">
-      <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\functionality_cases\shadow_container.h">
       <Filter>functionality_cases</Filter>
@@ -108,9 +105,6 @@
     <ClInclude Include="..\..\density\density_config.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\page_allocator_imp.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\functionality_cases\dynamic_type.h">
       <Filter>functionality_cases</Filter>
     </ClInclude>
@@ -120,7 +114,22 @@
     <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\nb_concurrent_heterogeneous_queue.h">
+    <ClInclude Include="..\..\density\raw_atomic.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\nonblocking_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\functionality_cases\queue_load_unload_test.h">
+      <Filter>functionality_cases</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\page_manager.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\system_page_manager.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\heterogeneous_array.h">
       <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>

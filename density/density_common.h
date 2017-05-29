@@ -36,6 +36,19 @@ namespace density
         {
             return i_first > i_second ? i_first : i_second;
         }
+		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third) noexcept
+		{
+			return size_max(size_max(i_first, i_second), i_third);
+		}
+		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
+		{
+			return size_max(size_max(i_first, i_second, i_third), i_fourth);
+		}
+
+		struct AlignmentHeader
+        {
+            void * m_block;
+        };
 
         /** Computes the base2 logarithm of a size_t. If the argument is zero or is
             not a power of 2, the behavior is undefined. */
@@ -44,15 +57,7 @@ namespace density
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
 
-		struct SizeAndAlignment { size_t m_size, m_alignment; };
-
-		constexpr static detail::SizeAndAlignment adjust_alignment(detail::SizeAndAlignment i_input, size_t i_min_alignment) noexcept
-		{
-			return i_input.m_alignment >= i_min_alignment ? i_input :
-				detail::SizeAndAlignment{ uint_upper_align(i_input.m_size, min_alignment), i_min_alignment };
-		}
-
-        /*template <typename SCOPE_EXIT_ACTION>
+        template <typename SCOPE_EXIT_ACTION>
             class ScopeExit
         {
         public:
@@ -81,16 +86,9 @@ namespace density
         template <typename SCOPE_EXIT_ACTION>
             inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
         {
-            return ScopeExit<SCOPE_EXIT_ACTION>(std::move(i_scope_exit_action));
-        }*/
+            return ScopeExit<SCOPE_EXIT_ACTION>(std::forward<SCOPE_EXIT_ACTION>(i_scope_exit_action));
+        }
     }
-
-	enum concurrency_guarantee
-	{
-		obstruction_free,
-		conditionally_lockfree,
-		conditionally_waitfree
-	};
 
                 // address functions
 
@@ -245,12 +243,11 @@ namespace density
     }
 
     template <typename UINT>
-        inline UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
+        constexpr UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
     {
-        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-        auto const mask = i_alignment - 1;
-        return (i_uint + mask) & ~mask;
+        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT must be an unsigned integer");
+        // DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        return (i_uint + (i_alignment - 1)) & ~(i_alignment - 1);
     }
 
     /** Returns the smallest address greater than the first parameter, such that i_address + i_alignment_offset is aligned
@@ -333,6 +330,89 @@ namespace density
     template <typename TYPE>
         using unvoid_t = typename unvoid<TYPE>::type;
 
+
+    /** Allocates a memory block with at least the specified size and alignment.
+			@param i_size size of the requested memory block, in bytes
+			@param i_alignment alignment of the requested memory block, in bytes
+			@param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
+				from the beginning of the block.
+			@return address of the new memory block
+
+        \pre i_alignment is > 0 and is an integer power of 2
+        \pre i_alignment_offset is <= i_size
+
+        A violation of any precondition results in undefined behavior.
+
+        \exception std::bad_alloc if the allocation fails
+
+        The content of the newly allocated block is undefined. */
+    inline void * aligned_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
+    {
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(i_alignment_offset <= i_size);
+
+        // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
+        void * user_block;
+        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        {
+            user_block = operator new (i_size);
+        }
+        else
+        {
+            // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
+            size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const actual_size = i_size + extra_size;
+            auto complete_block = operator new (actual_size);
+            user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
+            detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+            header.m_block = complete_block;
+            DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
+                address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+        }
+        return user_block;
+    }
+
+    /** Deallocates a memory block. After the call accessing the memory block results in undefined behavior.
+			@param i_block block to deallocate, or nullptr.
+			@param i_size size of the block to deallocate, in bytes.
+			@param i_alignment alignment of the memory block.
+			@param i_alignment_offset
+
+        \pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
+        \pre i_size and i_alignment are the same specified when allocating the block
+
+        \exception never throws
+
+        If i_block is nullptr, the call has no effect. */
+    inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
+    {
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+
+        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        {
+            #if __cplusplus >= 201402L
+                operator delete (i_block, i_size); // since C++14
+            #else
+                (void)i_size;
+                operator delete (i_block);
+            #endif
+        }
+        else
+        {
+            if(i_block != nullptr)
+            {
+                const auto & header = *( static_cast<detail::AlignmentHeader*>(i_block) - 1 );
+                #if __cplusplus >= 201402L // since C++14
+                    size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
+                    size_t const actual_size = i_size + extra_size;
+                    operator delete (header.m_block, actual_size);
+                #else
+                    (void)i_size;
+                    operator delete (header.m_block);
+                #endif
+            }
+        }
+    }
 
     /*! \page wid_list_iter_bench Widget list benchmarks
 
