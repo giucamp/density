@@ -125,98 +125,6 @@ namespace density
 	/** Specialization of basic_void_allocator that uses the default page capacity. */
 	using void_allocator = basic_void_allocator<default_page_capacity>;
 
-	#define PAGE_PIN_DEBUG	false
-
-	#if PAGE_PIN_DEBUG
-
-		constexpr size_t pin_page_count = 4;
-		struct PinThreadData
-		{
-			void * pages[pin_page_count] = {};
-			uintptr_t counts[pin_page_count] = {};
-		};
-
-		inline PinThreadData & get_PinThreadData()
-		{
-			static thread_local PinThreadData pin_data;
-			return pin_data;
-		}
-
-		inline void notify_pin(void * i_page, uintptr_t i_multeplicity)
-		{
-			if (i_multeplicity > 0)
-			{
-				PinThreadData & data = get_PinThreadData();
-				size_t free_index = pin_page_count;
-				for (size_t i = 0; i < pin_page_count; i++)
-				{
-					if (data.pages[i] == i_page)
-					{
-						data.counts[i] += i_multeplicity;
-						return;
-					}
-					if (data.pages[i] == nullptr)
-					{
-						free_index = i;
-					}
-				}
-
-				DENSITY_ASSERT(free_index < pin_page_count);
-				data.pages[free_index] = i_page;
-				data.counts[free_index] = i_multeplicity;
-			}
-		}
-
-		inline void notify_unpin(void * i_page, uintptr_t i_multeplicity)
-		{
-			if (i_multeplicity > 0)
-			{
-				PinThreadData & data = get_PinThreadData();
-				for (size_t i = 0; i < pin_page_count; i++)
-				{
-					if (data.pages[i] == i_page)
-					{
-						DENSITY_ASSERT(data.counts[i] >= i_multeplicity);
-						data.counts[i] -= i_multeplicity;
-						if (data.counts[i] == 0)
-						{
-							data.pages[i] = nullptr;
-						}
-						return;
-					}
-				}
-				DENSITY_ASSERT(false);
-			}
-		}
-
-		inline uintptr_t get_local_pins(const void * i_page)
-		{
-			PinThreadData & data = get_PinThreadData();
-			if (i_page != nullptr)
-			{
-				for (size_t i = 0; i < pin_page_count; i++)
-				{
-					if (data.pages[i] == i_page)
-					{
-						return data.counts[i];
-					}
-				}
-				return 0;
-			}
-			else
-			{
-				uintptr_t count = 0;
-				for (size_t i = 0; i < pin_page_count; i++)
-				{
-					count += data.counts[i];
-				}
-				return count;
-			}
-		}
-
-	#endif
-
-
     /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
@@ -344,27 +252,17 @@ namespace density
 		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
 		{
 			page_manager::pin_page(i_address, i_multeplicity);
-			#if PAGE_PIN_DEBUG
-				notify_pin(address_lower_align(i_address, page_alignment), i_multeplicity);
-			#endif
 		}
 
 		/** @return the number of pins before the modification */
 		uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
 		{
-			#if PAGE_PIN_DEBUG
-				notify_unpin(address_lower_align(i_address, page_alignment), i_multeplicity);
-			#endif
 			return page_manager::unpin_page(i_address, i_multeplicity);
 		}
 
 		uintptr_t get_pin_count(const void * i_address) noexcept
 		{
-			#if PAGE_PIN_DEBUG
-				return get_local_pins(address_lower_align(i_address, page_alignment));
-			#else
-				return page_manager::get_pin_count(i_address);
-			#endif
+			return page_manager::get_pin_count(i_address);
 		}
 		
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.

@@ -339,22 +339,11 @@ namespace density
 				All the pages in the inclusive range { m_head, m_control } get pinned. */
 			ConsumeData start_consume_impl()
 			{
-				#if PAGE_PIN_DEBUG
-					uintptr_t const dbg_initial_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-				#endif
-
 				// pin the head
 				auto control = pin_head();
 				bool switched_page = false;
 				for (;;)
 				{
-					#if PAGE_PIN_DEBUG
-					{
-						uintptr_t const dbg_curr_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-						DENSITY_ASSERT_INTERNAL(dbg_curr_pins == dbg_initial_pins + 1);
-					}
-					#endif
-
 					auto const next_uint = raw_atomic_load(control->m_next, std::memory_order_seq_cst);
 					if ( (next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
 					{
@@ -364,12 +353,6 @@ namespace density
 							if (raw_atomic_compare_exchange_strong(control->m_next, expected, next_uint | detail::NbQueue_Busy,
 								std::memory_order_seq_cst, std::memory_order_relaxed))
 							{
-								#if PAGE_PIN_DEBUG
-								{
-									uintptr_t const dbg_curr_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-									DENSITY_ASSERT_INTERNAL(dbg_curr_pins == dbg_initial_pins + 1);
-								}
-								#endif
 								return ConsumeData{ control };
 							}
 						}
@@ -398,16 +381,10 @@ namespace density
 						/* We can't procrastinate the check on the tail anymore */
 						auto const tail = get_tail_for_consumers();
 
-						auto const first_nonzero = reverse_scan_for_nonzeroed(control, tail);
+						auto const first_nonzero = control == tail ? nullptr : reverse_scan_for_nonzeroed(control, tail);
 						if (first_nonzero == nullptr)
 						{
 							// no element to consume
-							#if PAGE_PIN_DEBUG
-							{
-								uintptr_t const dbg_curr_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-								DENSITY_ASSERT_INTERNAL(dbg_curr_pins == dbg_initial_pins);
-							}
-							#endif
 							return ConsumeData{ nullptr };
 						}
 
@@ -435,24 +412,19 @@ namespace density
 				DENSITY_ASSERT_INTERNAL(i_first != nullptr && i_tail != nullptr);
 				DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(i_first) > 0);
 
-				#if PAGE_PIN_DEBUG
-					uintptr_t const dbg_initial_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-				#endif
-
-				ControlBlock * curr = i_tail;
+				ControlBlock * first_in_page = i_first;
+				ControlBlock * end_control = get_end_control_block(address_lower_align(first_in_page, ALLOCATOR_TYPE::page_alignment));
+				ControlBlock * curr = end_control;
 				ControlBlock * last_nonzero = nullptr;
-
-				if (!same_page(curr, i_first))
+				for (;;)
 				{
-					pin_page(curr);
-				}
-
-				if (curr != i_first)
-				{
-					for (;;)
+					if (same_page(first_in_page, i_tail))
 					{
-						DENSITY_ASSERT_INTERNAL(curr != nullptr);
+						first_in_page = i_tail;
+					}
 
+					while (curr != first_in_page)
+					{
 						curr = static_cast<ControlBlock *>(address_sub(curr, min_alignment));
 						if (curr == i_first)
 							break;
@@ -460,59 +432,24 @@ namespace density
 						auto uint_next = raw_atomic_load(curr->m_next, std::memory_order_seq_cst) & ~detail::NbQueue_Busy;
 						if (uint_next != 0)
 						{
-							if (last_nonzero != nullptr && !same_page(last_nonzero, curr))
-							{
-								unpin_page(last_nonzero, true);
-							}
 							last_nonzero = curr;
 						}
-
-						if (address_is_aligned(curr, ALLOCATOR_TYPE::page_alignment))
-						{
-							auto const * end_block = get_end_control_block(curr);
-							auto const prev_page = end_block->m_prev_page;
-							DENSITY_ASSERT_INTERNAL(prev_page != nullptr);
-
-							if (!same_page(curr, last_nonzero))
-							{
-								unpin_page(curr, true);
-							}
-
-							curr = static_cast<ControlBlock *>(prev_page);
-
-							if (!same_page(curr, i_first))
-							{
-								pin_page(curr);
-							}
-
-							DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(curr) > 0);
-						}
-						else
-						{
-							DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(curr) > 0);
-						}
 					}
-					if (!same_page(curr, last_nonzero))
+
+					auto const uint_next = raw_atomic_load(end_control->m_next, std::memory_order_seq_cst);
+					first_in_page = reinterpret_cast<ControlBlock *>(uint_next & ~detail::NbQueue_AllFlags);
+					if (last_nonzero != nullptr || first_in_page == nullptr)
 					{
-						unpin_page(curr, true);
+						break;
 					}
-				}
-				else
-				{
-					unpin_page(i_first, true);
+
+					end_control = get_end_control_block(first_in_page);
+					unpin_page(curr, true);
+					pin_page(end_control);
+
+					curr = end_control;
 				}
 
-				#if PAGE_PIN_DEBUG
-					uintptr_t dbg_curr_pins = ALLOCATOR_TYPE::get_pin_count(nullptr);
-					if (last_nonzero)
-					{
-						DENSITY_ASSERT_INTERNAL(dbg_curr_pins == dbg_initial_pins);
-					}
-					else
-					{
-						DENSITY_ASSERT_INTERNAL(dbg_curr_pins + 1 == dbg_initial_pins);
-					}
-				#endif
 				return last_nonzero;
 			}
 

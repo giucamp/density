@@ -8,6 +8,7 @@
 #include <vector>
 #include <testity/test_tree.h>
 #include <testity/test_session.h>
+#include <density_tests/functionality_cases/test_void_allocator.h>
 #include "functionality_cases/queue_load_unload_test.h"
 #include <density/heterogeneous_queue.h>
 #include <density/concurrent_heterogeneous_queue.h>
@@ -57,7 +58,9 @@ int main()
 		using namespace density;
 		using namespace density::experimental;
 
-		density_tests::run_queue_integrity_test<nonblocking_heterogeneous_queue<void>>(8, 8,
+		using q = nonblocking_heterogeneous_queue<void, runtime_type<void>, density_tests::NonblockingTestAllocator<density::default_page_capacity> >;
+
+		density_tests::run_queue_integrity_test<q>(1, 1,
 			density_tests::LoadUnloadTestOptions{50,64, 0}, 0, 56);
 
 		/*density_tests::run_queue_integrity_test<heterogeneous_queue<void>>(1, 1,

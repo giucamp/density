@@ -8,6 +8,8 @@
 #include <density/void_allocator.h>
 #include <testity/testity_common.h>
 #include <testity/test_allocator.h>
+#include <atomic>
+#include <iostream>
 
 namespace density_tests
 {
@@ -69,6 +71,137 @@ namespace density_tests
         SharedBlockRegistry m_registry;
 		void_allocator m_underlying_allocator;
     };
+
+	template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
+		class NonblockingTestAllocator : private basic_void_allocator<PAGE_CAPACITY_AND_ALIGNMENT>
+	{
+		using Base = typename basic_void_allocator<PAGE_CAPACITY_AND_ALIGNMENT>;
+	
+	public:
+
+		
+		static constexpr size_t page_size = Base::page_size;
+
+		static constexpr size_t page_alignment = Base::page_alignment;
+
+		NonblockingTestAllocator() noexcept = default;
+        
+		
+		~NonblockingTestAllocator()
+		{
+			auto const living_pages = m_living_pages.load();
+			auto const total_allocated_pages = m_total_allocated_pages.load();
+			auto const living_pins = m_living_pins.load();
+			auto const living_allocations = m_living_allocations.load();
+			auto const living_bytes = m_living_bytes.load();
+			auto const total_allocations = m_total_allocations.load();
+
+			TESTITY_ASSERT(living_pages == 0);
+			TESTITY_ASSERT(living_pins == 0);
+			TESTITY_ASSERT(living_bytes == 0);
+			TESTITY_ASSERT(total_allocations == 0);
+
+			std::cout << "Destroying NonblockingTestAllocator."
+				<< " page_size: " << page_size
+				<< " page_alignment: " << page_alignment
+				<< " total_allocated_pages: " << total_allocated_pages
+				<< " total_allocations: " << total_allocations << std::endl;
+		}
+		
+		NonblockingTestAllocator(const NonblockingTestAllocator&) noexcept = delete;
+        NonblockingTestAllocator & operator = (const NonblockingTestAllocator&) noexcept = delete;
+
+		void * allocate(size_t i_size,
+			size_t i_alignment = alignof(std::max_align_t),
+			size_t i_alignment_offset = 0) noexcept
+		{
+			m_living_allocations.fetch_add(1, std::memory_order_relaxed);
+			m_living_bytes.fetch_add(i_size, std::memory_order_relaxed);
+			m_total_allocations.fetch_add(1, std::memory_order_relaxed);
+
+			return Base::allocate(i_size, i_alignment, i_alignment_offset);
+		}
+
+		void deallocate(void * i_block,
+			size_t i_size,
+			size_t i_alignment = alignof(std::max_align_t),
+			size_t i_alignment_offset = 0) noexcept
+		{
+			Base::deallocate(i_block, i_size, i_alignment, i_alignment_offset);
+
+			auto const prev_living_allocations = m_living_allocations.fetch_sub(1, std::memory_order_relaxed);
+			auto const prev_living_bytes = m_living_bytes.fetch_sub(i_size, std::memory_order_relaxed);
+			TESTITY_ASSERT(prev_living_allocations >= 1 && prev_living_bytes >= i_size);
+		}
+
+		void * allocate_page()
+        {
+			m_living_pages.fetch_add(1, std::memory_order_relaxed);
+			m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
+            return Base::allocate_page();
+        }
+
+		void * allocate_page_zeroed()
+		{
+			m_living_pages.fetch_add(1, std::memory_order_relaxed);
+			m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
+			return Base::allocate_page_zeroed();
+		}
+
+		void deallocate_page(void * i_page) noexcept
+        {
+			Base::deallocate_page(i_page);
+
+			auto const prev_living_pages = m_living_pages.fetch_sub(1, std::memory_order_relaxed);
+			TESTITY_ASSERT(prev_living_pages >= 1);
+        }
+
+		void deallocate_page_zeroed(void * i_page) noexcept
+		{
+			Base::deallocate_page_zeroed(i_page);
+
+			auto const prev_living_pages = m_living_pages.fetch_sub(1, std::memory_order_relaxed);
+			TESTITY_ASSERT(prev_living_pages >= 1);
+		}
+
+		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		{
+			m_living_pins.fetch_add(i_multeplicity, std::memory_order_relaxed);
+			Base::pin_page(i_address, i_multeplicity);
+		}
+
+		uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		{
+			auto const pin_count = Base::unpin_page(i_address, i_multeplicity);
+
+			auto const prev_living_pins = m_living_pins.fetch_sub(i_multeplicity, std::memory_order_relaxed);
+			TESTITY_ASSERT(prev_living_pins >= i_multeplicity);
+			return pin_count;
+		}
+
+		uintptr_t get_pin_count(const void * i_address) noexcept
+		{
+			return Base::get_pin_count(i_address);
+		}
+
+		bool operator == (const NonblockingTestAllocator & i_other) const noexcept
+        {
+			return this == &i_other;
+		}
+
+		bool operator != (const NonblockingTestAllocator & i_other) const noexcept
+        {
+			return this == &i_other;
+		}
+
+	private:
+		std::atomic<uintptr_t> m_living_pages{ 0 };
+		std::atomic<uintptr_t> m_total_allocated_pages{ 0 };
+		std::atomic<uintptr_t> m_living_pins{ 0 };
+		std::atomic<uintptr_t> m_living_allocations{ 0 };
+		std::atomic<uintptr_t> m_living_bytes{ 0 };
+		std::atomic<uintptr_t> m_total_allocations{ 0 };
+	};
 
 } // density_tests
 
