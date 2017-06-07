@@ -42,7 +42,7 @@ namespace density_tests
 	public:
 		
 		using id_t = uint64_t;
-		static constexpr id_t id_map_size = 128 * 1024;
+		static constexpr id_t id_map_size = 512 * 1024;
 
 		HeterLoadUnloadTest(const LoadUnloadTestOptions & i_options)
 			: m_end_id(id_map_size * static_cast<id_t>(i_options.m_lap_count)), m_options(i_options)

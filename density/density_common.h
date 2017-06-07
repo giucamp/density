@@ -403,7 +403,7 @@ namespace density
             {
                 const auto & header = *( static_cast<detail::AlignmentHeader*>(i_block) - 1 );
                 #if __cplusplus >= 201402L // since C++14
-                    size_t const extra_size = detail::size_max(i_alignment, sizeof(AlignmentHeader));
+                    size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
                     size_t const actual_size = i_size + extra_size;
                     operator delete (header.m_block, actual_size);
                 #else

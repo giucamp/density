@@ -98,12 +98,14 @@ namespace density
 
 			static void pin_page(void * i_address, uintptr_t i_multeplicity) noexcept
 			{
-				get_footer(i_address)->m_pin_count.fetch_add(i_multeplicity, std::memory_order_relaxed);
+				auto const footer = get_footer(i_address);
+				footer->m_pin_count.fetch_add(i_multeplicity, std::memory_order_relaxed);
 			}
 
 			static uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity) noexcept
 			{
-				auto const prev_pins = get_footer(i_address)->m_pin_count.fetch_sub(i_multeplicity, std::memory_order_acq_rel);
+				auto const footer = get_footer(i_address);
+				auto const prev_pins = footer->m_pin_count.fetch_sub(i_multeplicity, std::memory_order_acq_rel);
 				DENSITY_ASSERT(prev_pins > 0);
 				return prev_pins;
 			}
@@ -267,9 +269,9 @@ namespace density
 				{
 					FirstSlot()
 					{
-						std::atomic_init(&m_page_list, nullptr);
-						std::atomic_init(&m_zeroed_page_list, nullptr);
-						std::atomic_init(&m_next_slot, this);
+						std::atomic_init(&this->m_page_list, nullptr);
+						std::atomic_init(&this->m_zeroed_page_list, nullptr);
+						std::atomic_init(&this->m_next_slot, this);
 					}
 
 				} s_first_slot;

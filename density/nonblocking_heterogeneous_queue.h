@@ -37,12 +37,6 @@ namespace density
 			volatile uintptr_t m_next; // raw atomic
 		};
 
-		template<typename COMMON_TYPE> struct NbQueueEndControl // used by nonblocking_heterogeneous_queue<T,...>
-			: NbQueueControl<COMMON_TYPE>
-		{
-			void * m_prev_page;
-		};
-
 		enum NbQueue_Flags : uintptr_t
 		{
 			NbQueue_Busy = 1, // set on NbQueueControl::m_next when a thread is producing or consuming an element
@@ -67,7 +61,7 @@ namespace density
 		protected:
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
-			using EndControlBlock = typename detail::NbQueueEndControl<COMMON_TYPE>;
+			using EndControlBlock = ControlBlock;
 
 			struct ExternalBlock
 			{
@@ -93,8 +87,15 @@ namespace density
 				auto const first_page = ALLOCATOR_TYPE::allocate_page_zeroed();
 				auto const new_page_end_block = get_end_control_block(first_page);
 				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-				pin_page(first_page);
 				std::atomic_init(&m_tail, first_page);
+			}
+
+			~NonblockingQueueTail()
+			{
+				auto const tail = m_tail.load();
+				auto const end_block = get_end_control_block(address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
+				end_block->m_next = 0;
+				ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
 			}
 
 			static uintptr_t get_element_required_units(size_t i_size, size_t i_alignment) noexcept
@@ -153,16 +154,12 @@ namespace density
 						auto const new_page_end_block = get_end_control_block(new_page);
 
 						new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-						new_page_end_block->m_prev_page = end_block;
-						ALLOCATOR_TYPE::pin_page(new_page);
 
 						if (!raw_atomic_compare_exchange_strong(end_block->m_next, next_page, 
 							reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
 						{
 							// to do: destroy ControlBlock
 							new_page_end_block->m_next = 0;
-							new_page_end_block->m_prev_page = nullptr;
-							ALLOCATOR_TYPE::unpin_page(new_page);
 							ALLOCATOR_TYPE::deallocate_page_zeroed(new_page);
 						}
 						else
@@ -172,13 +169,20 @@ namespace density
 					}
 				}
 
-				unpin_page(end_block, false);
+				// to do: exception safeness
+				ALLOCATOR_TYPE::unpin_page(end_block);
 				auto const result = reinterpret_cast<ControlBlock*>(next_page & ~detail::NbQueue_AllFlags);
 				DENSITY_ASSERT_INTERNAL((uintptr_t)result == 0 || (uintptr_t)result > 200);
 				return result;
 			}
 
-			ControlBlock * inplace_allocate_impl(uintptr_t const i_units, intptr_t const i_flags)
+			struct Put
+			{
+				ControlBlock * m_control = nullptr;
+				uintptr_t m_next_ptr = 0;
+			};
+
+			Put inplace_allocate_impl(uintptr_t const i_units, intptr_t const i_flags)
 			{
 				DENSITY_ASSERT_INTERNAL(i_units <= page_unit_capacity && i_flags <= detail::NbQueue_AllFlags &&
 					(i_flags & detail::NbQueue_Busy) != 0);
@@ -186,6 +190,7 @@ namespace density
 				ControlBlock * block = nullptr;
 				bool padding = false;
 				bool couldnt_get_next_page = false;
+				uintptr_t next_ptr;
 				do {
 					auto tail = m_tail.load();
 					void * new_tail;
@@ -234,36 +239,39 @@ namespace density
 						because they that need this write happens before any other part of the
 						allocated memory is modified. */
 					auto const flags = padding ? detail::NbQueue_Dead : i_flags;
-					raw_atomic_store(block->m_next, reinterpret_cast<uintptr_t>(new_tail) + flags);
+					next_ptr = reinterpret_cast<uintptr_t>(new_tail) + flags;
+					raw_atomic_store(block->m_next, next_ptr);
 
 				} while (padding);
 
 				DENSITY_ASSERT_INTERNAL(block < get_end_control_block(address_lower_align(block, ALLOCATOR_TYPE::page_alignment)));
 
-				return block;
+				return { block, next_ptr };
 			}
 
-			static void commit_element_impl(ControlBlock * i_control) noexcept
+			static void commit_element_impl(const Put & i_put) noexcept
 			{
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_control, min_alignment));
-				DENSITY_ASSERT_INTERNAL((raw_atomic_load(i_control->m_next, std::memory_order_relaxed) &
-					(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control, min_alignment));
+				DENSITY_ASSERT_INTERNAL(
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, std::memory_order_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove the flag NbQueue_Busy
-				raw_atomic_sub(i_control->m_next, detail::NbQueue_Busy, std::memory_order_seq_cst);
+				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, std::memory_order_seq_cst);
 			}
 
-			static void cancel_element_impl(ControlBlock * i_control) noexcept
+			static void cancel_element_impl(const Put & i_put) noexcept
 			{
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_control, min_alignment));
-				DENSITY_ASSERT_INTERNAL((raw_atomic_load(i_control->m_next, std::memory_order_relaxed) &
-					(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control, min_alignment));
+				DENSITY_ASSERT_INTERNAL(
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, std::memory_order_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-				raw_atomic_add(i_control->m_next, addend, std::memory_order_seq_cst);
+				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr + addend, std::memory_order_seq_cst);
 			}
 
 			void * raw_allocate_impl(size_t i_size, size_t i_alignment)
@@ -271,16 +279,16 @@ namespace density
 				if (i_size <= max_internal_size)
 				{
 					// the allocation fits in a page
-					ControlBlock * const control = inplace_allocate_impl(get_raw_allocation_required_units(
+					auto const put = inplace_allocate_impl(get_raw_allocation_required_units(
 						i_size, i_alignment, detail::NbQueue_Dead));
-					return address_upper_align(address_add(control, type_eraser_offset), i_alignment);
+					return address_upper_align(address_add(put.m_control, type_eraser_offset), i_alignment);
 				}
 				else
 				{
 					// the allocation does not fit in a page, allocate inplace space for an ExternalBlock
-					ControlBlock * const control = inplace_allocate_impl(get_raw_allocation_required_units(
+					auto const put = inplace_allocate_impl(get_raw_allocation_required_units(
 						sizeof(ExternalBlock), alignof(ExternalBlock), detail::NbQueue_Dead | detail::NbQueue_External));
-					void * block_alloc = address_add(control, type_eraser_offset);
+					void * block_alloc = address_add(put.m_control, type_eraser_offset);
 					if (alignof(ExternalBlock) > alignof(TYPE_ERASER_TYPE))
 					{
 						block_alloc = address_upper_align(block_alloc, alignof(ExternalBlock));
@@ -325,354 +333,254 @@ namespace density
 				std::atomic_init(&m_head, get_tail_for_consumers());
 			}
 
-			/** /internal
-				Struct describing a consume operation in progress. If m_control is nullptr, the state is empty,
-				and m_head is undefined. */
-			struct ConsumeData
+			struct Consume
 			{
-				ControlBlock * m_control;
-			};
+				NonblockingQueueHead * m_queue = nullptr;
+				ControlBlock * m_control = nullptr;				
+				uintptr_t m_next_ptr = 0;
 
-			/** \internal
-				Tries to start a consume operation. The returned ConsumeData is empty if the operation fails.
-				Otherwise it contains a pointer to the head and a pointer to the element being consumed.
-				All the pages in the inclusive range { m_head, m_control } get pinned. */
-			ConsumeData start_consume_impl()
-			{
-				// pin the head
-				auto control = pin_head();
-				bool switched_page = false;
-				for (;;)
+				Consume() noexcept = default;
+
+				Consume(const Consume &) = delete;
+				Consume & operator = (const Consume &) = delete;
+
+				Consume(Consume && i_source) noexcept
+					: m_queue(i_source.m_queue), m_control(i_source.m_control), m_next_ptr(i_source.m_next_ptr)
 				{
-					auto const next_uint = raw_atomic_load(control->m_next, std::memory_order_seq_cst);
-					if ( (next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
-					{
-						if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
-						{
-							auto expected = next_uint;
-							if (raw_atomic_compare_exchange_strong(control->m_next, expected, next_uint | detail::NbQueue_Busy,
-								std::memory_order_seq_cst, std::memory_order_relaxed))
-							{
-								return ConsumeData{ control };
-							}
-						}
-
-						auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
-						DENSITY_ASSERT_INTERNAL(next != nullptr);
-
-						if (!same_page(control, next))
-						{
-							pin_page(next);
-							unpin_page(control, !switched_page);
-							switched_page = true;
-						}
-						control = next;
-					}
-					else
-					{
-						/////////////////////////////////
-						// avoid scans
-						//unpin_page(control, !switched_page);
-						//return ConsumeData{ nullptr };
-						////////////////////////////
-
-						// to do: handle detail::NbQueue_InvalidNextPage
-						
-						/* We can't procrastinate the check on the tail anymore */
-						auto const tail = get_tail_for_consumers();
-
-						auto const first_nonzero = control == tail ? nullptr : reverse_scan_for_nonzeroed(control, tail);
-						if (first_nonzero == nullptr)
-						{
-							// no element to consume
-							return ConsumeData{ nullptr };
-						}
-
-
-						auto new_next = raw_atomic_load(control->m_next) & ~detail::NbQueue_AllFlags;
-						if (new_next == 0)
-						{
-							control = first_nonzero;
-						}
-						else
-						{
-							control = reinterpret_cast<ControlBlock*>(new_next);
-						}
-						DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(control) > 0);
-					}
-				}
-			}
-
-			/** /internal
-				This function expects that the page containing i_start is pinned.
-				After exiting, only the page containing the return value (if non-null) is pinned
-			*/
-			ControlBlock * reverse_scan_for_nonzeroed(ControlBlock * const i_first, ControlBlock * const i_tail) noexcept
-			{
-				DENSITY_ASSERT_INTERNAL(i_first != nullptr && i_tail != nullptr);
-				DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(i_first) > 0);
-
-				ControlBlock * first_in_page = i_first;
-				ControlBlock * end_control = get_end_control_block(address_lower_align(first_in_page, ALLOCATOR_TYPE::page_alignment));
-				ControlBlock * curr = end_control;
-				ControlBlock * last_nonzero = nullptr;
-				for (;;)
-				{
-					if (same_page(first_in_page, i_tail))
-					{
-						first_in_page = i_tail;
-					}
-
-					while (curr != first_in_page)
-					{
-						curr = static_cast<ControlBlock *>(address_sub(curr, min_alignment));
-						if (curr == i_first)
-							break;
-
-						auto uint_next = raw_atomic_load(curr->m_next, std::memory_order_seq_cst) & ~detail::NbQueue_Busy;
-						if (uint_next != 0)
-						{
-							last_nonzero = curr;
-						}
-					}
-
-					auto const uint_next = raw_atomic_load(end_control->m_next, std::memory_order_seq_cst);
-					first_in_page = reinterpret_cast<ControlBlock *>(uint_next & ~detail::NbQueue_AllFlags);
-					if (last_nonzero != nullptr || first_in_page == nullptr)
-					{
-						break;
-					}
-
-					end_control = get_end_control_block(first_in_page);
-					unpin_page(curr, true);
-					pin_page(end_control);
-
-					curr = end_control;
+					i_source.m_control = nullptr;
+					i_source.m_next_ptr = 0;
 				}
 
-				return last_nonzero;
-			}
-
-			void commit_consume_impl(ConsumeData i_consume_data) noexcept
-			{
-				DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(i_consume_data.m_control) > 0);
-
-				// we expect to have NbQueue_Busy and not NbQueue_Dead...
-				DENSITY_ASSERT_INTERNAL((raw_atomic_load(i_consume_data.m_control->m_next, std::memory_order_relaxed) &
-					(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-				// remove NbQueue_Busy and add NbQueue_Dead
-				raw_atomic_add(i_consume_data.m_control->m_next, detail::NbQueue_Dead - detail::NbQueue_Busy, std::memory_order_seq_cst);
-
-				auto head = m_head.load();
-				void * additional_pinned_page = nullptr; 
-				if (!same_page(head, i_consume_data.m_control))
+				Consume & operator = (Consume && i_source) noexcept
 				{
-					pin_page(head);
-					additional_pinned_page = i_consume_data.m_control;
+					if (this != &i_source)
+					{
+						m_queue = i_source.m_queue;
+						m_control = i_source.m_control;
+						m_being_consumed = i_source.m_being_consumed;
+						i_source.m_control = nullptr;
+						i_source.m_being_consumed = nullptr;
+					}
+					return *this;
 				}
-				for (;;)
+
+				~Consume()
 				{
-					auto control = static_cast<ControlBlock*>(address_lower_align(head, min_alignment));
-					auto inplace_pins = address_diff(head, control);
-					
-					auto const next_uint = raw_atomic_load(control->m_next);
-					auto const next = reinterpret_cast<void*>(control->m_next & ~detail::NbQueue_AllFlags);
-					if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
+					if (m_control != nullptr)
 					{
-						// the element is not dead
-						break;
-					}
-
-					DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(head) > 0);
-					if (same_page(control, next))
-					{
-						auto new_head = address_add(next, inplace_pins);
-						auto const old_head = head;
-						if (!m_head.compare_exchange_strong(head, new_head,
-							std::memory_order_seq_cst, std::memory_order_relaxed))
-						{
-							// maybe another thread is advancing the head, give up
-							head = old_head;
-							break;
-						}
-
-						auto const address_of_next = const_cast<uintptr_t*>(&control->m_next);
-						std::memset(control, 0, address_diff(address_of_next, control));
-						raw_atomic_store(control->m_next, 0);
-						std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));
-
-						head = new_head;
-					}
-					else
-					{
-
-						ALLOCATOR_TYPE::pin_page(head, inplace_pins);
-
-						auto new_head = next;
-						auto const old_head = head;
-						if (!m_head.compare_exchange_strong(head, new_head,
-							std::memory_order_seq_cst, std::memory_order_relaxed))
-						{
-							// another thread is advancing the head, give up
-							head = old_head;
-							auto const prev_pins = ALLOCATOR_TYPE::unpin_page(head, inplace_pins);
-							DENSITY_ASSERT_INTERNAL(prev_pins - inplace_pins > 0);
-							break;
-						}
-
-						if (same_page(new_head, additional_pinned_page))
-						{
-							additional_pinned_page = nullptr;
-						}
-						else
-						{
-							ALLOCATOR_TYPE::pin_page(new_head);
-						}
-						
-
-						DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-						DENSITY_ASSERT_INTERNAL(get_end_control_block(address_lower_align(control, ALLOCATOR_TYPE::page_alignment)) == control);
-
-						unpin_page(head, false);
-						unpin_page(head, false);
-						head = new_head;
+						m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
 					}
 				}
-				unpin_page(head, true);
-				if (additional_pinned_page != nullptr)
+
+				/** Moves the Consume to the head */
+				void start_from_head(NonblockingQueueHead * i_queue) noexcept
 				{
-					unpin_page(additional_pinned_page, true);
-				}
-			}
+					ControlBlock * head = i_queue->m_head.load();
 
-			void cancel_consume_impl(ConsumeData i_consume_data) noexcept
-			{
-				DENSITY_ASSERT_INTERNAL(ALLOCATOR_TYPE::get_pin_count(i_consume_data.m_control) > 0);
-
-				auto const control = i_consume_data.m_control;
-
-				// we expect to have NbQueue_Busy and not NbQueue_Dead...
-				DENSITY_ASSERT_INTERNAL((raw_atomic_load(control->m_next, std::memory_order_relaxed) &
-					(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-				raw_atomic_sub(control->m_next, detail::NbQueue_Busy, std::memory_order_seq_cst);
-
-				unpin_page(i_consume_data.m_control, true);
-			}
-
-			ControlBlock * pin_head() noexcept
-			{
-				/*auto head = m_head.load();
-				void * new_head;
-				bool overflow = false;
-				do {
-					new_head = address_add(head, 1);
-					if (address_is_aligned(new_head, min_alignment))
+					while (!same_page(m_control, head))
 					{
-						overflow = true;
-					}
-				} while (!overflow && !m_head.compare_exchange_weak(head, new_head));
+						DENSITY_ASSERT_INTERNAL(m_control != head);
 
-				if (!overflow)
-				{
-					return address_lower_align(new_head, min_alignment);
+						if (m_control != nullptr)
+						{
+							i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+						}
+
+						i_queue->ALLOCATOR_TYPE::pin_page(head);
+
+						m_control = head;
+
+						head = i_queue->m_head.load();
+					}
+										
+					m_control = static_cast<ControlBlock*>(head);
+					m_queue = i_queue;					
 				}
-				else*/
-				
+
+				/** \internal
+					Tries to start a consume operation. The returned ConsumeData is empty if the operation fails.
+					Otherwise it contains a pointer to the head and a pointer to the element being consumed.
+					All the pages in the inclusive range { m_head, m_control } get pinned. */
+				void start_consume_impl(NonblockingQueueHead * i_queue) noexcept
 				{
-					/////////////////////////
-					auto head = m_head.load();
-					/////////////////////////
+					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
+
+					start_from_head(i_queue);
 
 					for (;;)
 					{
-						auto const pinned_page = head;
-						ALLOCATOR_TYPE::pin_page(pinned_page);
-						head = m_head.load();
-						if (same_page(pinned_page, head))
+						auto const next_uint = raw_atomic_load(m_control->m_next, std::memory_order_seq_cst);
+
+						// check if next_uint is non-zero (excluding the bit NbQueue_InvalidNextPage)
+						if ( (next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
 						{
-							return static_cast<ControlBlock*>(address_lower_align(head, min_alignment));
+							if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
+							{
+								auto expected = next_uint;
+								if (raw_atomic_compare_exchange_strong(m_control->m_next, expected, next_uint | detail::NbQueue_Busy,
+									std::memory_order_seq_cst, std::memory_order_relaxed))
+								{
+									m_next_ptr = next_uint | NbQueue_Dead;
+									return;
+								}
+							}
+
+							auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
+							DENSITY_ASSERT_INTERNAL(next != 0);
+
+							if (!same_page(m_control, next))
+							{
+								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
+								m_queue->ALLOCATOR_TYPE::pin_page(next);
+								m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+							}
+							m_control = next;
 						}
-						ALLOCATOR_TYPE::unpin_page(pinned_page);
+						else
+						{
+							DENSITY_ASSERT_INTERNAL(next_uint == 0 || next_uint == detail::NbQueue_InvalidNextPage);
+
+							/////////////////////////////////
+							// avoid scans
+							// return false;
+							////////////////////////////
+
+							// to do: handle detail::NbQueue_InvalidNextPage
+						
+							/* We can't procrastinate the check on the tail anymore */
+							auto const tail = m_queue->get_tail_for_consumers();
+
+							auto const first_nonzero = m_control == tail ? nullptr : reverse_scan_for_nonzeroed(tail);
+							if (first_nonzero == nullptr)
+							{
+								// no element to consume
+								return;
+							}
+
+							auto new_next = raw_atomic_load(m_control->m_next) & ~detail::NbQueue_AllFlags;
+							if (new_next == 0)
+							{
+								m_control = first_nonzero;
+							}
+							else
+							{
+								m_control = reinterpret_cast<ControlBlock*>(new_next);
+							}
+							DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+						}
 					}
 				}
-			}
 
-			void pin_page(void * i_page) noexcept
-			{
-				ALLOCATOR_TYPE::pin_page(i_page);
-			}
-
-			void unpin_page(void * i_page, bool i_check_head) noexcept
-			{
-				bool done = false;
-				/*if (i_check_head)
+				/** /internal
+					No pin/unpin is performed */
+				ControlBlock * reverse_scan_for_nonzeroed(ControlBlock * const i_tail) const noexcept
 				{
-					auto head = m_head.load();
-					do {
-						if (!same_page(head, i_page))
+					DENSITY_ASSERT_INTERNAL(m_control != nullptr && i_tail != nullptr);
+					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+
+					/* the scan starts from the tail if it is in the same page of m_control, otherwise it
+						starts from the end-block of the page. */
+					auto curr = i_tail;
+					if (!same_page(m_control, i_tail))
+					{
+						curr = get_end_control_block(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment));
+					}
+
+					ControlBlock * last_nonzero = nullptr;
+
+					if (curr != m_control)
+					{
+						for (;;)
 						{
+							curr = static_cast<ControlBlock *>(address_sub(curr, min_alignment));
+							if (curr == m_control)
+								break;
+
+							auto uint_next = raw_atomic_load(curr->m_next, std::memory_order_seq_cst) & ~detail::NbQueue_Busy;
+							if (uint_next != 0)
+							{
+								last_nonzero = curr;
+							}
+						}
+					}
+
+					return last_nonzero;
+				}
+
+				void commit_consume_impl() noexcept
+				{
+					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
+
+					// we expect to have NbQueue_Busy and not NbQueue_Dead...
+					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, std::memory_order_relaxed) &
+						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+
+					// remove NbQueue_Busy and add NbQueue_Dead
+					raw_atomic_store(m_control->m_next, m_next_ptr, std::memory_order_seq_cst);
+					m_next_ptr = 0;
+
+					start_from_head(m_queue);
+
+					for (;;)
+					{
+						auto const next_uint = raw_atomic_load(m_control->m_next);
+						auto const next = reinterpret_cast<ControlBlock*>(m_control->m_next & ~detail::NbQueue_AllFlags);
+						if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
+						{
+							// the element is not dead
 							break;
 						}
 
-						DENSITY_ASSERT_INTERNAL(!address_is_aligned(head, min_alignment));
+						auto expected = m_control;
+						if (!m_queue->m_head.compare_exchange_strong(expected, next,
+							std::memory_order_seq_cst, std::memory_order_relaxed))
+						{
+							// maybe another thread is advancing the head, give up
+							break;
+						}
 
-						auto new_head = address_sub(head, 1);
-						
-						done = m_head.compare_exchange_weak(head, new_head);
+						bool const is_same_page = same_page(m_control, next);
+						DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
+						auto const dbg_end_block = get_end_control_block(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment));
+						DENSITY_ASSERT_INTERNAL(is_same_page == (m_control != dbg_end_block));
 
-					} while (!done);
-				}*/
+						auto const address_of_next = const_cast<uintptr_t*>(&m_control->m_next);
+						std::memset(m_control, 0, address_diff(address_of_next, m_control));
+						raw_atomic_store(m_control->m_next, 0);
 
-				if (!done)
-				{
-					auto const prev_pins = ALLOCATOR_TYPE::unpin_page(i_page);
-					if (prev_pins == 1)
-					{
-						auto const page_start = address_lower_align(i_page, ALLOCATOR_TYPE::page_alignment);
-						auto const end_of_page = address_add(page_start, ALLOCATOR_TYPE::page_size);
-						auto const end_block = get_end_control_block(page_start);
-						auto const address_of_next = const_cast<uintptr_t*>(&end_block->m_next);
+						if (is_same_page)
+						{
+							std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));							
+						}
+						else
+						{
+							auto const end_of_page = address_add(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment), ALLOCATOR_TYPE::page_size);
+							std::memset(address_of_next, 0, address_diff(end_of_page, address_of_next + 1));
 
-						std::memset(end_block, 0, address_diff(address_of_next, end_block));
-						raw_atomic_store(end_block->m_next, 0);
-						std::memset(address_of_next, 0, address_diff(end_of_page, address_of_next + 1));
+							m_queue->ALLOCATOR_TYPE::pin_page(next);
+							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
+						}
 
-						ALLOCATOR_TYPE::deallocate_page_zeroed(i_page);
+						m_control = next;
 					}
 				}
-			}
 
-		private: // data members
-			alignas(concurrent_alignment)std::atomic<void *> m_head;
-		};
-	}
+				void cancel_consume_impl() noexcept
+				{
+					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
-	namespace experimental
-	{
-		/** \brief Concurrent heterogeneous FIFO container-like class template. 
-	
-		*/
-		template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
-				concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
-				concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple >
-			class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>
-		{
-		private:
-			using Base = detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-		
-		public:
+					// we expect to have NbQueue_Busy and not NbQueue_Dead...
+					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, std::memory_order_relaxed) &
+						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
-			using common_type = COMMON_TYPE;
-			using runtime_type = TYPE_ERASER_TYPE;
-			using value_type = std::pair<const runtime_type &, common_type* const>;
-			using allocator_type = ALLOCATOR_TYPE;
-			using pointer = value_type *;
-			using const_pointer = const value_type *;
-			using reference = value_type;
-			using const_reference = const value_type&;
-			using size_type = std::size_t;
+					raw_atomic_store(m_control->m_next, m_next_ptr | detail::NbQueue_Busy, std::memory_order_seq_cst);
+					m_next_ptr = 0;
+				}
+
+			}; // Consume
 
 			template <typename OUT_STREAM>
 				void report(OUT_STREAM & i_out_stream)
@@ -691,9 +599,10 @@ namespace density
 				i_out_stream << ", page_size: " << ALLOCATOR_TYPE::page_size;
 				i_out_stream << ", min_alignment: " << min_alignment;
 				i_out_stream << ", sizeof(ControlBlock): " << sizeof(ControlBlock);
-				i_out_stream << ", sizeof(runtime_type): " << sizeof(runtime_type);
+				i_out_stream << ", sizeof(runtime_type): " << sizeof(TYPE_ERASER_TYPE);
 				
-				auto const head = pin_head();
+#if 0
+				auto const head = ALLOCATOR_TYPE::pin_page(m_head.load());
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(head, min_alignment));
 				auto control = static_cast<ControlBlock*>(address_lower_align(head, ALLOCATOR_TYPE::page_alignment));
 				for (;;)
@@ -779,8 +688,8 @@ namespace density
 
 						if (!same_page(next, control))
 						{
-							pin_page(next);
-							unpin_page(control, true);
+							ALLOCATOR_TYPE::unpin_page(control, true);
+							ALLOCATOR_TYPE::pin_page(next);
 						}
 						control = next;	
 					}
@@ -804,7 +713,9 @@ namespace density
 					}
 				}
 
-				unpin_page(control, true);
+				do_unpin_page(3, control, true);
+
+#endif
 
 				i_out_stream << "\npages: " << stats.pages;
 				i_out_stream << "\ncontrols: " << stats.control_count;
@@ -812,6 +723,42 @@ namespace density
 				i_out_stream << "\nbusy elements: " << stats.busy_count;
 				i_out_stream << "\nexternal elements: " << stats.external_count;
 				i_out_stream << "\n\n";
+			}
+
+		private: // data members
+			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_head;
+		};
+	}
+
+	namespace experimental
+	{
+		/** \brief Concurrent heterogeneous FIFO container-like class template. 
+	
+		*/
+		template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
+				concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
+				concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple >
+			class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>
+		{
+		private:
+			using Base = detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+		
+		public:
+
+			using common_type = COMMON_TYPE;
+			using runtime_type = TYPE_ERASER_TYPE;
+			using value_type = std::pair<const runtime_type &, common_type* const>;
+			using allocator_type = ALLOCATOR_TYPE;
+			using pointer = value_type *;
+			using const_pointer = const value_type *;
+			using reference = value_type;
+			using const_reference = const value_type&;
+			using size_type = std::size_t;
+
+			template <typename OUT_STREAM>
+				void report(OUT_STREAM & i_out_stream)
+			{
+				Base::report(i_out_stream);
 			}
 
 			/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
@@ -841,7 +788,11 @@ namespace density
 			// Destructor
 			~nonblocking_heterogeneous_queue()
 			{
-
+				consume_operation consume_op;
+				while (start_consume(consume_op))
+				{
+					consume_op.commit();
+				}
 			}
 
 			/** Same to heterogeneous_queue::push.
@@ -871,12 +822,12 @@ namespace density
 				// allocate on the queue space for an ELEMENT_TYPE (or an ExternalBlock in case the element is very big)
 				constexpr bool inplace_element = sizeof(ELEMENT_TYPE) <= max_internal_size;
 				using inplace_type = typename std::conditional<inplace_element, ELEMENT_TYPE, ExternalBlock>::type;
-				ControlBlock * const control = inplace_allocate_impl(
+				auto const put = inplace_allocate_impl(
 					get_element_required_units(sizeof(inplace_type), alignof(inplace_type)),
 					detail::NbQueue_Busy | (inplace_element ? 0 : detail::NbQueue_External) );
 
 				// compute the address of the element
-				void * element_alloc = address_add(control, element_offset);
+				void * element_alloc = address_add(put.m_control, element_offset);
 				constexpr bool needs_alignment = alignof(inplace_type) > alignof(runtime_type);
 				if (needs_alignment)
 				{
@@ -900,7 +851,7 @@ namespace density
 					// construct the type eraser
 					try
 					{
-						auto type_eraser = address_add(control, type_eraser_offset);
+						auto type_eraser = address_add(put.m_control, type_eraser_offset);
 						DENSITY_ASSERT_INTERNAL(type_eraser != nullptr);
 						new(type_eraser) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 					}
@@ -910,11 +861,11 @@ namespace density
 						detail::destroy_obj(element); /* workaround for internal compiler error with Vs2017 RC */
 						throw;
 					}
-					return typed_put_transaction<ELEMENT_TYPE>(this, control, element);
+					return typed_put_transaction<ELEMENT_TYPE>(this, put, element);
 				}
 				catch (...)
 				{
-					cancel_element_impl(control);
+					cancel_element_impl(put);
 					throw;
 				}				
 			}
@@ -932,7 +883,7 @@ namespace density
 
 				/** Same to heterogeneous_queue::put_transaction::put_transaction(put_transaction &&). */
 				put_transaction(put_transaction && i_source) noexcept
-					: m_control(i_source.m_control), m_element(i_source.m_element), m_queue(i_source.m_queue)
+					: m_put(i_source.m_put), m_element(i_source.m_element), m_queue(i_source.m_queue)
 				{
 					i_source.m_queue = nullptr;
 				}
@@ -943,7 +894,7 @@ namespace density
 					if (this != &i_source)
 					{
 						m_queue = i_source.m_queue;
-						m_control = i_source.m_control;
+						m_put = i_source.m_put;
 						m_element = i_source.m_element;
 						i_source.m_queue = nullptr;
 					}
@@ -990,7 +941,7 @@ namespace density
 				void commit() noexcept
 				{
 					DENSITY_ASSERT(!empty());					
-					commit_element_impl(m_control);
+					commit_element_impl(m_put);
 					m_queue = nullptr;
 				}
 
@@ -998,7 +949,7 @@ namespace density
 				void cancel() noexcept
 				{
 					DENSITY_ASSERT(!empty());
-					cancel_element_impl(m_control);
+					cancel_element_impl(m_put);
 					m_queue = nullptr;
 				}
 
@@ -1015,7 +966,7 @@ namespace density
 				/** Same to heterogeneous_queue::put_transaction::type. */
 				const TYPE_ERASER_TYPE & type() const noexcept
 				{
-					return *static_cast<TYPE_ERASER_TYPE*>(address_add(m_control, type_eraser_offset));
+					return *static_cast<TYPE_ERASER_TYPE*>(address_add(m_put.m_control, type_eraser_offset));
 				}
 
 				/** Same to heterogeneous_queue::put_transaction::~put_transaction. */
@@ -1023,16 +974,16 @@ namespace density
 				{
 					if (m_queue != nullptr)
 					{
-						cancel_element_impl(m_control);
+						cancel_element_impl(m_put);
 					}
 				}
 
-			/** /internal */
-			put_transaction(nonblocking_heterogeneous_queue * i_queue, ControlBlock * i_control, COMMON_TYPE *  i_element) noexcept
-				: m_control(i_control), m_element(i_element), m_queue(i_queue) { }
+				/** /internal */
+				put_transaction(nonblocking_heterogeneous_queue * i_queue, const Put & i_put, COMMON_TYPE *  i_element) noexcept
+					: m_put(i_put), m_element(i_element), m_queue(i_queue) { }
 
 			private:
-				ControlBlock * m_control;
+				Put m_put;
 				COMMON_TYPE * m_element;
 				nonblocking_heterogeneous_queue * m_queue;
 			};
@@ -1058,10 +1009,12 @@ namespace density
 					{ return static_cast<TYPE *>(put_transaction::element_ptr()); }
 			};
 
-			/** Same to heterogeneous_queue::/** Same to heterogeneous_queue::start_consume. */
+			/** Same to heterogeneous_queue::consume_operation */
 			class consume_operation
 			{
 			public:
+
+				consume_operation() noexcept = default;
 
 				/** Copy construction is not allowed */
 				consume_operation(const consume_operation &) = delete;
@@ -1071,39 +1024,28 @@ namespace density
 
 				/** Same to heterogeneous_queue::consume_operation::consume_operation(put_transaction &&). */
 				consume_operation(consume_operation && i_source) noexcept
-					: m_consume_data(i_source.m_consume_data), m_queue(i_source.m_queue)
+					: m_consume_data(std::move(i_source.m_consume_data))
 				{
-					i_source.m_consume_data.m_control = nullptr;
 				}
 
-				/** Same to heterogeneous_queue::consume_operation::operator = (consume_operation &&). */
-				consume_operation & operator = (consume_operation && i_source) noexcept
-				{
-					if (this != &i_source)
-					{
-						m_queue = i_source.m_queue;
-						m_consume_data = i_source.m_consume_data;
-						i_source.m_consume_data.m_control = nullptr;
-					}
-					return *this;
-				}
+				consume_operation & operator = (consume_operation && i_source) = delete;
 
 				/** Destructor: cancel the operation (if any) */
 				~consume_operation()
 				{
-					if (m_consume_data.m_control != nullptr)
+					if (m_consume_data.m_next_ptr != 0)
 					{
-						m_queue->cancel_consume_impl(m_consume_data);
+						m_consume_data.cancel_consume_impl();
 					}
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::empty. */
-				bool empty() const noexcept { return m_consume_data.m_control == nullptr; }
+				bool empty() const noexcept { return m_consume_data.m_next_ptr == 0; }
 
 				/** Same to heterogeneous_queue::consume_operation::operator bool. */
 				explicit operator bool() const noexcept
 				{
-					return m_consume_data.m_control != nullptr;
+					return m_consume_data.m_next_ptr != 0;
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::commit. */
@@ -1115,8 +1057,7 @@ namespace density
 					auto const element = element_ptr();
 					type.destroy(element);
 
-					m_queue->commit_consume_impl(m_consume_data);
-					m_consume_data.m_control = nullptr;
+					m_consume_data.commit_consume_impl();
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::commit_nodestroy. */
@@ -1124,8 +1065,7 @@ namespace density
 				{
 					DENSITY_ASSERT(!empty());
 
-					m_queue->commit_consume_impl(m_consume_data.m_control);
-					m_consume_data.m_control = nullptr;
+					m_consume_data.commit_consume_impl();
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::cancel. */
@@ -1133,8 +1073,7 @@ namespace density
 				{
 					DENSITY_ASSERT(!empty());
 
-					m_queue->cancel_consume_impl(m_consume_data);
-					m_consume_data.m_control = nullptr;
+					m_consume_data.cancel_consume_impl();
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::complete_type. */
@@ -1170,9 +1109,22 @@ namespace density
 				}
 
 				/** /internal */
-				consume_operation(nonblocking_heterogeneous_queue * i_queue, ConsumeData i_consume_data) noexcept
-					: m_queue(i_queue), m_consume_data(i_consume_data)
+				consume_operation(nonblocking_heterogeneous_queue * i_queue) noexcept
 				{
+					m_consume_data.start_consume_impl(i_queue);
+				}
+
+				/** /internal */
+				bool start_consume(nonblocking_heterogeneous_queue * i_queue) noexcept
+				{
+					if(m_consume_data.m_next_ptr != 0)
+					{
+						m_consume_data.cancel_consume_impl();
+					}
+					
+					m_consume_data.start_consume_impl(i_queue);
+
+					return m_consume_data.m_next_ptr != 0;
 				}
 
 			private:
@@ -1219,14 +1171,19 @@ namespace density
 				}
 
 			private:
-				ConsumeData m_consume_data;
-				nonblocking_heterogeneous_queue * m_queue;
+				Consume m_consume_data;
 			};
+
 
 			/** Same to heterogeneous_queue::start_consume. */
 			consume_operation start_consume() noexcept
 			{
-				return consume_operation(this, start_consume_impl());
+				return consume_operation(this);
+			}
+
+			bool start_consume(consume_operation & io_consume) noexcept
+			{
+				return io_consume.start_consume(this);
 			}
 		};
 	}

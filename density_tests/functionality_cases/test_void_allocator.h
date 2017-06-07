@@ -103,9 +103,9 @@ namespace density_tests
 
 			std::cout << "Destroying NonblockingTestAllocator."
 				<< " page_size: " << page_size
-				<< " page_alignment: " << page_alignment
-				<< " total_allocated_pages: " << total_allocated_pages
-				<< " total_allocations: " << total_allocations << std::endl;
+				<< ", page_alignment: " << page_alignment
+				<< ", total_allocated_pages: " << total_allocated_pages
+				<< ", total_allocations: " << total_allocations << std::endl;
 		}
 		
 		NonblockingTestAllocator(const NonblockingTestAllocator&) noexcept = delete;
@@ -163,6 +163,10 @@ namespace density_tests
 			auto const prev_living_pages = m_living_pages.fetch_sub(1, std::memory_order_relaxed);
 			TESTITY_ASSERT(prev_living_pages >= 1);
 		}
+
+		void pin_page(void * i_address, bool) = delete;
+
+		uintptr_t unpin_page(void * i_address, bool) = delete;
 
 		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
 		{

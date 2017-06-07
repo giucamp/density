@@ -59,9 +59,14 @@ int main()
 		using namespace density::experimental;
 
 		using q = nonblocking_heterogeneous_queue<void, runtime_type<void>, density_tests::NonblockingTestAllocator<density::default_page_capacity> >;
-
-		density_tests::run_queue_integrity_test<q>(1, 1,
-			density_tests::LoadUnloadTestOptions{50,64, 0}, 0, 56);
+		{
+			q a;
+			for(int i = 0; i < 260; i++)
+				a.push(1);
+			a.start_consume().commit();
+		}
+		density_tests::run_queue_integrity_test<q>(4, 4,
+			density_tests::LoadUnloadTestOptions{50,20, 0}, 0, 56);
 
 		/*density_tests::run_queue_integrity_test<heterogeneous_queue<void>>(1, 1,
 			density_tests::LoadUnloadTestOptions{}, 1000);
