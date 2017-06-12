@@ -17,11 +17,16 @@
 
 namespace density
 {
+	/** This enum describes the concurrency supported by a set of functions. */
 	enum concurrent_cardinality
 	{
-		concurrent_cardinality_single,
-		concurrent_cardinality_multiple,
-		concurrent_cardinality_multiple_high_contention
+		concurrent_cardinality_single, /**< Functions with this concurrent cardinality can be called by only one thread,
+											or by multiple threads if externally synchronized with a mutex. */
+		concurrent_cardinality_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
+											without external synchronization. */
+		concurrent_cardinality_multiple_high_contention /**< Functionally equivalent to concurrent_cardinality_multiple, 
+											but adds an hint to the implementation that there is high contention between
+											threads on these functions. */
 	};
 
 	namespace detail
@@ -55,7 +60,7 @@ namespace density
 			i_obj->TYPE::~TYPE();
 		}
 
-		template < typename COMMON_TYPE, typename TYPE_ERASER_TYPE, typename ALLOCATOR_TYPE, concurrent_cardinality >
+		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, concurrent_cardinality >
 			class NonblockingQueueTail : protected ALLOCATOR_TYPE
 		{
 		protected:
@@ -73,7 +78,7 @@ namespace density
 			/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = detail::size_max(
 				detail::size_log2(detail::NbQueue_AllFlags + 1),
-				detail::size_max(alignof(EndControlBlock), alignof(TYPE_ERASER_TYPE)),
+				detail::size_max(alignof(EndControlBlock), alignof(RUNTIME_TYPE)),
 				sizeof(EndControlBlock), concurrent_alignment);
 
 			static bool same_page(const void * i_first, const void * i_second) noexcept
@@ -103,7 +108,7 @@ namespace density
 				size_t result = element_offset + i_size;
 
 				// add the padding required to align the element after the runtime_type
-				result += (i_alignment > alignof(TYPE_ERASER_TYPE) ? (i_alignment - alignof(TYPE_ERASER_TYPE)) : 0);
+				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
 
 				return (result + (min_alignment - 1)) / min_alignment;
 			}
@@ -113,7 +118,7 @@ namespace density
 				size_t result = type_eraser_offset + i_size;
 
 				// add the padding required to align the block
-				result += (i_alignment > alignof(TYPE_ERASER_TYPE) ? (i_alignment - alignof(TYPE_ERASER_TYPE)) : 0);
+				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
 
 				return (result + (min_alignment - 1)) / min_alignment;
 			}
@@ -132,7 +137,7 @@ namespace density
 				
 				ALLOCATOR_TYPE::pin_page(end_block);
 				auto next_page = reinterpret_cast<uintptr_t>(nullptr);
-				auto curr_tail = m_tail.load(std::memory_order_relaxed);
+				auto curr_tail = m_tail.load(detail::mem_relaxed);
 				if (curr_tail != end_block)
 				{
 					*i_pnt_tail = curr_tail;
@@ -254,11 +259,11 @@ namespace density
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control, min_alignment));
 				DENSITY_ASSERT_INTERNAL(
-					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, std::memory_order_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove the flag NbQueue_Busy
-				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, std::memory_order_seq_cst);
+				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
 			}
 
 			static void cancel_element_impl(const Put & i_put) noexcept
@@ -266,12 +271,12 @@ namespace density
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control, min_alignment));
 				DENSITY_ASSERT_INTERNAL(
-					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, std::memory_order_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr + addend, std::memory_order_seq_cst);
+				raw_atomic_store(i_put.m_control->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
 			void * raw_allocate_impl(size_t i_size, size_t i_alignment)
@@ -289,7 +294,7 @@ namespace density
 					auto const put = inplace_allocate_impl(get_raw_allocation_required_units(
 						sizeof(ExternalBlock), alignof(ExternalBlock), detail::NbQueue_Dead | detail::NbQueue_External));
 					void * block_alloc = address_add(put.m_control, type_eraser_offset);
-					if (alignof(ExternalBlock) > alignof(TYPE_ERASER_TYPE))
+					if (alignof(ExternalBlock) > alignof(RUNTIME_TYPE))
 					{
 						block_alloc = address_upper_align(block_alloc, alignof(ExternalBlock));
 					}
@@ -309,8 +314,8 @@ namespace density
 			}
 
 		protected:
-			constexpr static uintptr_t type_eraser_offset = uint_upper_align(sizeof(ControlBlock), alignof(TYPE_ERASER_TYPE));
-			constexpr static uintptr_t element_offset = type_eraser_offset + sizeof(TYPE_ERASER_TYPE);
+			constexpr static uintptr_t type_eraser_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
+			constexpr static uintptr_t element_offset = type_eraser_offset + sizeof(RUNTIME_TYPE);
 			constexpr static uintptr_t page_unit_capacity = (ALLOCATOR_TYPE::page_size / min_alignment);
 			constexpr static size_t max_internal_size = (page_unit_capacity / 2) * min_alignment;
 
@@ -318,13 +323,13 @@ namespace density
 			alignas(concurrent_alignment) std::atomic<void *> m_tail;
 		};
 
-		template < typename COMMON_TYPE, typename TYPE_ERASER_TYPE, typename ALLOCATOR_TYPE, 
+		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, 
 				concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY >
-			class NonblockingQueueHead : protected NonblockingQueueTail<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>
+			class NonblockingQueueHead : protected NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>
 		{
 		private:
 
-			using Base = NonblockingQueueTail<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>;
+			using Base = NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>;
 
 		protected:
 
@@ -409,7 +414,7 @@ namespace density
 
 					for (;;)
 					{
-						auto const next_uint = raw_atomic_load(m_control->m_next, std::memory_order_seq_cst);
+						auto const next_uint = raw_atomic_load(m_control->m_next, detail::mem_seq_cst);
 
 						// check if next_uint is non-zero (excluding the bit NbQueue_InvalidNextPage)
 						if ( (next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
@@ -418,7 +423,7 @@ namespace density
 							{
 								auto expected = next_uint;
 								if (raw_atomic_compare_exchange_strong(m_control->m_next, expected, next_uint | detail::NbQueue_Busy,
-									std::memory_order_seq_cst, std::memory_order_relaxed))
+									detail::mem_seq_cst, detail::mem_relaxed))
 								{
 									m_next_ptr = next_uint | NbQueue_Dead;
 									return;
@@ -488,7 +493,7 @@ namespace density
 
 					ControlBlock * last_nonzero = nullptr;
 
-					if (curr != m_control)
+					if (curr > m_control)
 					{
 						for (;;)
 						{
@@ -496,7 +501,7 @@ namespace density
 							if (curr == m_control)
 								break;
 
-							auto uint_next = raw_atomic_load(curr->m_next, std::memory_order_seq_cst) & ~detail::NbQueue_Busy;
+							auto uint_next = raw_atomic_load(curr->m_next, detail::mem_seq_cst) & ~detail::NbQueue_Busy;
 							if (uint_next != 0)
 							{
 								last_nonzero = curr;
@@ -513,11 +518,11 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
 					// we expect to have NbQueue_Busy and not NbQueue_Dead...
-					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, std::memory_order_relaxed) &
+					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, detail::mem_relaxed) &
 						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 					// remove NbQueue_Busy and add NbQueue_Dead
-					raw_atomic_store(m_control->m_next, m_next_ptr, std::memory_order_seq_cst);
+					raw_atomic_store(m_control->m_next, m_next_ptr, detail::mem_seq_cst);
 					m_next_ptr = 0;
 
 					start_from_head(m_queue);
@@ -534,7 +539,7 @@ namespace density
 
 						auto expected = m_control;
 						if (!m_queue->m_head.compare_exchange_strong(expected, next,
-							std::memory_order_seq_cst, std::memory_order_relaxed))
+							detail::mem_seq_cst, detail::mem_relaxed))
 						{
 							// maybe another thread is advancing the head, give up
 							break;
@@ -549,21 +554,18 @@ namespace density
 						std::memset(m_control, 0, address_diff(address_of_next, m_control));
 						raw_atomic_store(m_control->m_next, 0);
 
-						if (is_same_page)
+						if (DENSITY_LIKELY(is_same_page))
 						{
-							std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));							
+							std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));
+							m_control = next;
 						}
 						else
 						{
-							auto const end_of_page = address_add(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment), ALLOCATOR_TYPE::page_size);
-							std::memset(address_of_next, 0, address_diff(end_of_page, address_of_next + 1));
-
 							m_queue->ALLOCATOR_TYPE::pin_page(next);
 							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
 							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
+							m_control = next;
 						}
-
-						m_control = next;
 					}
 				}
 
@@ -573,10 +575,10 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
 					// we expect to have NbQueue_Busy and not NbQueue_Dead...
-					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, std::memory_order_relaxed) &
+					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, detail::mem_relaxed) &
 						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
-					raw_atomic_store(m_control->m_next, m_next_ptr | detail::NbQueue_Busy, std::memory_order_seq_cst);
+					raw_atomic_store(m_control->m_next, m_next_ptr | detail::NbQueue_Busy, detail::mem_seq_cst);
 					m_next_ptr = 0;
 				}
 
@@ -599,7 +601,7 @@ namespace density
 				i_out_stream << ", page_size: " << ALLOCATOR_TYPE::page_size;
 				i_out_stream << ", min_alignment: " << min_alignment;
 				i_out_stream << ", sizeof(ControlBlock): " << sizeof(ControlBlock);
-				i_out_stream << ", sizeof(runtime_type): " << sizeof(TYPE_ERASER_TYPE);
+				i_out_stream << ", sizeof(runtime_type): " << sizeof(RUNTIME_TYPE);
 				
 #if 0
 				auto const head = ALLOCATOR_TYPE::pin_page(m_head.load());
@@ -611,7 +613,7 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(tail, min_alignment));
 
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(control, min_alignment));
-					auto next_uint = raw_atomic_load(control->m_next, std::memory_order_seq_cst);
+					auto next_uint = raw_atomic_load(control->m_next, detail::mem_seq_cst);
 					DENSITY_ASSERT_INTERNAL((next_uint & (min_alignment - 1)) <= detail::NbQueue_AllFlags);
 
 					auto const page_start = address_lower_align(control, ALLOCATOR_TYPE::page_alignment);
@@ -642,7 +644,7 @@ namespace density
 							#endif
 							zeroed_size += min_alignment;
 							control = static_cast<ControlBlock*>(address_add(control, min_alignment));
-							next_uint = raw_atomic_load(control->m_next, std::memory_order_seq_cst);
+							next_uint = raw_atomic_load(control->m_next, detail::mem_seq_cst);
 						} while (next_uint == 0 && control != end_control_block &&
 							control != head && control != tail );
 
@@ -735,18 +737,18 @@ namespace density
 		/** \brief Concurrent heterogeneous FIFO container-like class template. 
 	
 		*/
-		template < typename COMMON_TYPE = void, typename TYPE_ERASER_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
+		template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
 				concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
 				concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple >
-			class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>
+			class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>
 		{
 		private:
-			using Base = detail::NonblockingQueueHead<COMMON_TYPE, TYPE_ERASER_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+			using Base = detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 		
 		public:
 
 			using common_type = COMMON_TYPE;
-			using runtime_type = TYPE_ERASER_TYPE;
+			using runtime_type = RUNTIME_TYPE;
 			using value_type = std::pair<const runtime_type &, common_type* const>;
 			using allocator_type = ALLOCATOR_TYPE;
 			using pointer = value_type *;
@@ -764,8 +766,8 @@ namespace density
 			/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = Base::min_alignment;
 
-			static_assert(std::is_same<COMMON_TYPE, typename TYPE_ERASER_TYPE::common_type>::value,
-				"COMMON_TYPE and TYPE_ERASER_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
+			static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
+				"COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
 
 			static_assert(std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
 				"COMMON_TYPE can't be cv-qualified, an array or a reference");
@@ -964,9 +966,9 @@ namespace density
 				}
 
 				/** Same to heterogeneous_queue::put_transaction::type. */
-				const TYPE_ERASER_TYPE & type() const noexcept
+				const RUNTIME_TYPE & type() const noexcept
 				{
-					return *static_cast<TYPE_ERASER_TYPE*>(address_add(m_put.m_control, type_eraser_offset));
+					return *static_cast<RUNTIME_TYPE*>(address_add(m_put.m_control, type_eraser_offset));
 				}
 
 				/** Same to heterogeneous_queue::put_transaction::~put_transaction. */
@@ -1077,7 +1079,7 @@ namespace density
 				}
 
 				/** Same to heterogeneous_queue::consume_operation::complete_type. */
-				const TYPE_ERASER_TYPE & complete_type() const noexcept
+				const RUNTIME_TYPE & complete_type() const noexcept
 				{
 					DENSITY_ASSERT(!empty());
 					return *type_after_control(m_consume_data.m_control);

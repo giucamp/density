@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <utility>
 
-#define DENSITY_VERSION            0x0008
+#define DENSITY_VERSION            0x0009
 /**
     Breaking changes from version 0x0007:
         - The \ref PagedAllocator_concept "PagedAllocator" concept previously required page_size and page_alignment
@@ -49,6 +49,25 @@ namespace density
         {
             void * m_block;
         };
+
+		inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
+		{
+			auto const chars = static_cast<const unsigned char *>(i_start);
+			for (size_t char_index = 0; char_index < i_size; char_index++)
+			{
+				if (chars[char_index] != i_value)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
+		constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
+		constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
+		constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
+		constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
 
         /** Computes the base2 logarithm of a size_t. If the argument is zero or is
             not a power of 2, the behavior is undefined. */

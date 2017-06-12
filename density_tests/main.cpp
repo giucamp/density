@@ -65,8 +65,8 @@ int main()
 				a.push(1);
 			a.start_consume().commit();
 		}
-		density_tests::run_queue_integrity_test<q>(4, 4,
-			density_tests::LoadUnloadTestOptions{50,20, 0}, 0, 56);
+		density_tests::run_queue_integrity_test<q>(32, 32,
+			density_tests::LoadUnloadTestOptions{50,4, 0}, 0, 56);
 
 		/*density_tests::run_queue_integrity_test<heterogeneous_queue<void>>(1, 1,
 			density_tests::LoadUnloadTestOptions{}, 1000);

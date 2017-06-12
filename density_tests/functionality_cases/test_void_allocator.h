@@ -40,8 +40,6 @@ namespace density_tests
 
         static constexpr size_t page_alignment = void_allocator::page_alignment;
 
-        static const size_t free_page_cache_size = void_allocator::free_page_cache_size;
-
         void * allocate_page()
         {
             auto page = m_underlying_allocator.allocate_page();
@@ -138,14 +136,18 @@ namespace density_tests
         {
 			m_living_pages.fetch_add(1, std::memory_order_relaxed);
 			m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
-            return Base::allocate_page();
+            auto const result = Base::allocate_page();
+			TESTITY_ASSERT(result != nullptr && address_is_aligned(result, page_alignment));
+			return result;
         }
 
 		void * allocate_page_zeroed()
 		{
 			m_living_pages.fetch_add(1, std::memory_order_relaxed);
 			m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
-			return Base::allocate_page_zeroed();
+			auto const result = Base::allocate_page_zeroed();
+			TESTITY_ASSERT(result != nullptr && address_is_aligned(result, page_alignment));
+			return result;
 		}
 
 		void deallocate_page(void * i_page) noexcept
@@ -164,23 +166,18 @@ namespace density_tests
 			TESTITY_ASSERT(prev_living_pages >= 1);
 		}
 
-		void pin_page(void * i_address, bool) = delete;
-
-		uintptr_t unpin_page(void * i_address, bool) = delete;
-
-		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		void pin_page(void * i_address) noexcept
 		{
-			m_living_pins.fetch_add(i_multeplicity, std::memory_order_relaxed);
-			Base::pin_page(i_address, i_multeplicity);
+			m_living_pins.fetch_add(1, std::memory_order_relaxed);
+			Base::pin_page(i_address);
 		}
 
-		uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		void unpin_page(void * i_address) noexcept
 		{
-			auto const pin_count = Base::unpin_page(i_address, i_multeplicity);
+			Base::unpin_page(i_address);
 
-			auto const prev_living_pins = m_living_pins.fetch_sub(i_multeplicity, std::memory_order_relaxed);
-			TESTITY_ASSERT(prev_living_pins >= i_multeplicity);
-			return pin_count;
+			auto const prev_living_pins = m_living_pins.fetch_sub(1, std::memory_order_relaxed);
+			TESTITY_ASSERT(prev_living_pins >= 1);
 		}
 
 		uintptr_t get_pin_count(const void * i_address) noexcept

@@ -29,7 +29,7 @@ namespace density_tests
         // void_allocator
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             void_allocator allocator;
-            void * pages[void_allocator::free_page_cache_size];
+            void * pages[8];
             for( size_t i = 0; i < i_cardinality; i++)
             {
                 for (auto & page : pages)
@@ -41,7 +41,7 @@ namespace density_tests
 
         // new and delete
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            void * pages[void_allocator::free_page_cache_size];
+            void * pages[8];
             for (size_t i = 0; i < i_cardinality; i++)
             {
                 for (auto & page : pages)
@@ -51,9 +51,9 @@ namespace density_tests
             }
         }, __LINE__);
 
-        // new and delete
+        // VirtualAlloc and VirtualFree
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            void * pages[void_allocator::free_page_cache_size];
+            void * pages[8];
             for (size_t i = 0; i < i_cardinality; i++)
             {
                 for (auto & page : pages)

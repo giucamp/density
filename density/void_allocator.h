@@ -85,7 +85,8 @@ namespace density
         <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
 
         <tr><td>Static constexpr member variable: @code static size_t page_size; @endcode </td></tr>
-        <td>Specifies the size of a page in bytes. </td> </tr>
+        <td>Specifies the size of a page in bytes, that is always less than or equal to the alignment.\n Note: there is no
+			constraint on the page size. Accessing memory past the end of a page is undefined behaviour. </td> </tr>
 
         <tr><td>Static constexpr member variable: @code static const size_t page_alignment; @endcode </td></tr>
         <td>Specifies the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. </td> </tr>
@@ -155,9 +156,6 @@ namespace density
         /** Alignment (in bytes) of a memory page. */
         static constexpr size_t page_alignment = page_manager::page_alignment;
 
-        /** Maximum number of free page that a thread can cache */
-        static const size_t free_page_cache_size = 4;
-
         basic_void_allocator() noexcept = default;
         basic_void_allocator(const basic_void_allocator&) noexcept = default;
         basic_void_allocator(basic_void_allocator&&) noexcept = default;
@@ -215,12 +213,12 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            return page_manager::allocate_page();
+            return page_manager::allocate_page<detail::page_allocation_type::uninitialized>();
         }
 
 		void * allocate_page_zeroed()
 		{
-			return page_manager::allocate_page_zeroed();
+			return page_manager::allocate_page<detail::page_allocation_type::zeroed>();
 		}
 
         /** Deallocates a memory page. After the call accessing the page results in undefined behavior.
@@ -231,13 +229,13 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-			page_manager::deallocate_page(i_page);
+			page_manager::deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
         }
 
 		// the page may be not still zeroed, if it is pinned
 		void deallocate_page_zeroed(void * i_page) noexcept
 		{
-			page_manager::deallocate_page_zeroed(i_page);
+			page_manager::deallocate_page<detail::page_allocation_type::zeroed>(i_page);
 		}
 
 		/** Pins the page containing the specified address.
@@ -249,15 +247,15 @@ namespace density
 			
 			While a page has a scoped_pin asdsociated with it, if the page gets deallocated, the allocator
 			will not alter its content in any way, and will not allocate a page in the samer address. */
-		void pin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		void pin_page(void * i_address) noexcept
 		{
-			page_manager::pin_page(i_address, i_multeplicity);
+			page_manager::pin_page(i_address);
 		}
 
 		/** @return the number of pins before the modification */
-		uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity = 1) noexcept
+		void unpin_page(void * i_address) noexcept
 		{
-			return page_manager::unpin_page(i_address, i_multeplicity);
+			page_manager::unpin_page(i_address);
 		}
 
 		uintptr_t get_pin_count(const void * i_address) noexcept

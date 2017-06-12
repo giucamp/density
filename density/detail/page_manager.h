@@ -19,6 +19,347 @@ namespace density
 {
 	namespace detail
 	{
+		/** \internal Structure allocated at the end of every page. 
+			This struct is the reason why page_manager::page_size is less than SYSTYEM_PAGE_MANAGER::page_size. */
+		struct alignas(concurrent_alignment) PageFooter
+		{
+			/** Pointer to the next page when the page is inside a stack, undefined otherwise. */
+			PageFooter * m_next_page{ nullptr };
+
+			/* Number of times the page has been pinned. The allocator can't modify the content 
+				of a page while the pin count is greater than zero. */
+			std::atomic<uintptr_t> m_pin_count{ 0 };
+		};
+
+		#if 0 // currently not used
+
+		/** \internal This class implements a lock-free stack of free pages. This is not a general purpose
+			stack, rather it is designed and specialized to be used by the page manager.
+			The push inserts a page always on the top. The pop removes the first unpinned page, which may
+			not be the page on the top.
+
+			PageStack allows a limited concurrency: only one thread at time is allowed to 
+			call the functions push/pop/steal_all_and_pop. Anyway a stack can be used as argument for 
+			steal_all_and_pop by any thread in any moment within the lifetime of the object. 
+			Implementation note: the reason for this limited concurrency are the stores on m_first,
+			which are assuming that no other thread is pushing pages. */
+		class PageStack
+		{
+		private:
+			std::atomic<PageFooter*> m_first{ nullptr }; /**< Top of the stack. */
+
+		public:
+
+			/* Pushes a (possibly still pinned) page on the stack. 
+				@param i_page The page to push. The member initial value of m_next_page is ignored
+			*/
+			void push(PageFooter * i_page) noexcept
+			{
+				auto first = m_first.load(detail::mem_relaxed);
+				do {
+					i_page->m_next_page = first;
+
+					/* Here a thread may set m_first to nullptr while executing steal_all_and_pop
+					   using this stack as victim (the parameter). */
+
+				} while (!m_first.compare_exchange_weak(first, i_page, detail::mem_release, detail::mem_acquire));
+			}
+
+			/** Removes from the stack the first unpinned page. 
+				As first operation, a pop temporary steals the whole stack. So it can safely walk and analyze
+				the pages, and can edit the stack without incurring in the ABA problem. In the meanwhile,
+				the stack is empty. After finishing the work, the stack is restored (possibly with one 
+				less page). Another benefit of this mechanism is that PageFooter::m_next does not need to be
+				an atomic.
+				This function is optimized for the execution path in which a page is found.
+			
+				@return The page removed from the stack, or nullptr in case of failure.
+			*/
+			PageFooter * pop() noexcept
+			{
+				auto stack = m_first.exchange(nullptr, detail::mem_acquire);
+				if (stack != nullptr)
+				{
+					auto const result = stack != nullptr ? remove_unpinned(stack) : nullptr;
+
+					// assuming that m_first is still nullptr...
+					DENSITY_ASSERT_INTERNAL(m_first.load(detail::mem_relaxed) == nullptr);
+					m_first.store(stack, detail::mem_release);
+					return result;
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
+
+			/** Tries to steal all the page from the victim stack. In case of success all the pages
+				are transfered to this stack. Then tries to pop an unpinned page (if any). 
+				@param i_victim Stack to steal from. After the call the victim is always empty.
+
+				@return The page removed from the stack, or nullptr in case of failure.
+			*/
+			PageFooter * steal_all_and_pop(PageStack & i_victim) noexcept
+			{
+				auto pages = i_victim.m_first.exchange(nullptr, detail::mem_acquire);
+				if (pages == nullptr)
+				{
+					return nullptr;
+				}
+				else
+				{
+					auto const result = remove_unpinned(pages);
+
+					// assuming that m_first is still nullptr...
+					DENSITY_ASSERT_INTERNAL(m_first.load(detail::mem_relaxed) == nullptr);
+					m_first.store(pages, detail::mem_release);
+					return result;
+				}
+			}
+
+		private:
+				
+			/** Search for a page with pin-count == 0 in the stack of pages starting from i_first.
+				If such page is found, it is removed, possibly modifying i_first. No exception is ever thrown.
+				@param i_first reference to the pointer to the first page of the stack
+				@return the page removed from the list, or nullptr */
+			static PageFooter * remove_unpinned(PageFooter * & i_first) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_first != nullptr);
+				PageFooter * curr = i_first;
+				PageFooter * prev = nullptr;
+				do {
+					DENSITY_ASSERT_INTERNAL((prev == nullptr) == (curr == i_first));
+
+					if (curr->m_pin_count.load(detail::mem_relaxed) == 0)
+					{
+						if (prev != nullptr)
+							prev->m_next_page = curr->m_next_page;
+						else
+							i_first = curr->m_next_page;
+						return curr;
+					}
+
+					prev = curr;
+					curr = curr->m_next_page;
+				} while (curr != nullptr);
+
+				return nullptr;
+			}
+		};
+		#endif // #if 0
+
+
+		/** \internal This class implements a lock-free stack of free pages. This is not a general purpose
+			stack, rather it is designed and specialized to be used by the page manager.
+			While a thread is doing a pop, the other threads may observe an empty stack. */
+		class PageStack1
+		{
+		private:
+			std::atomic<PageFooter*> m_first{ nullptr }; /**< Top of the stack. */
+
+		public:
+
+			/* Pushes a (possibly still pinned) single page on the stack. 
+				@param i_page The page to push. The initial value of i_page->m_next_page is ignored. 
+					This parameter can't be nullptr.
+					If this page is already in the list the behavior is undefined. 
+			*/
+			void push(PageFooter * i_page) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_page != nullptr);
+
+				auto first = m_first.load(detail::mem_relaxed);
+				do {
+					i_page->m_next_page = first;
+
+					/* The ABA problem may happen, but here is harmless: even if m_first has been changed 
+						to B and then back to first, the push can be safely committed. */
+
+				} while (!m_first.compare_exchange_weak(first, i_page, detail::mem_release, detail::mem_acquire));
+			}
+
+			/* Pushes a list of (possibly still pinned) pages on the stack. 
+				@param i_first Null-terminated list of pages to push. If any page in this list is 
+					already in the list the behavior is undefined. 
+					This parameter can be nullptr, in which case the function has no effects.
+			*/
+			void push_list(PageFooter * i_list_first) noexcept
+			{
+				if (i_list_first != nullptr)
+				{
+					PageFooter * list_last = nullptr;
+
+					auto first = m_first.load(detail::mem_relaxed);
+					do {
+
+						/* we have to set the value we have read from m_first as the next of the last of the
+							input list. Anyway, if m_first was null, we avoid an expensive linear scan, as
+							the input list is null-terminated. */
+						if (first != nullptr)
+						{
+							if (list_last == nullptr) /* we have to do the scan only once, otherwise we would
+								would reach first (because we append it to the input list). */
+							{
+								list_last = i_list_first;
+								while (list_last->m_next_page != nullptr)
+								{
+									list_last = list_last->m_next_page;
+								}
+							}
+							list_last->m_next_page = first;
+						}
+						else if (list_last != nullptr)
+						{
+							/* m_first was null, but we already have scanned the input list in a previous
+								iteration, so we have set list_last->m_next_page to something else. So we need
+								to set is to null. */
+							list_last->m_next_page = nullptr;
+						}
+
+						/* The ABA problem may happen, but here it is harmless: even if m_first has been changed
+							to B and then back to first, the push can be safely committed. */
+
+					} while (!m_first.compare_exchange_weak(first, i_list_first, detail::mem_release, detail::mem_acquire));
+				}
+			}
+
+			/** Removes from the stack the first unpinned page. 
+				As first operation, a pop temporary steals the whole stack. So it can safely walk and analyze
+				the pages, and can edit the stack without incurring in the ABA problem. In the meanwhile,
+				any other thread will observe the stack as empty. After finishing the work, the stack is restored 
+				(possibly with one less page). Another benefit of this mechanism is that PageFooter::m_next does 
+				not need to be an atomic.
+				This function is optimized for the execution path in which a page is found.
+			
+				@return The page removed from the stack, or nullptr in case of failure.
+			*/
+			PageFooter * pop() noexcept
+			{
+				auto stack = m_first.exchange(nullptr, detail::mem_acquire);
+				if (stack != nullptr)
+				{
+					auto const page = stack != nullptr ? remove_unpinned(stack) : nullptr;
+
+					// now we have to restore the stack
+					auto const list = m_first.exchange(stack, detail::mem_acq_rel);
+					if (list != nullptr)
+					{
+						/* Another thread has pushed pages since we did the first exchange. So
+							with the second exchange we have removed those page, and we are 
+							going to push them again on the stack. */
+						push_list(list);
+					}
+
+					return page;
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
+
+			/** Empties the stack, removing all the pages. A null-terminated list of the removed pages is returned. 
+				This function is optimized for the execution path in which at least a page was present.
+				@return The pages removed, or nullptr in the case the stack was already empty.
+			*/
+			PageFooter * remove_all_optimistic() noexcept
+			{
+				return m_first.exchange(nullptr, detail::mem_acquire);
+			}
+
+			/** Empties the stack, removing all the pages. A null-terminated list of the removed pages is returned. 
+				This function is optimized for the execution path in which the stack was empty.
+
+				@return The pages removed, or nullptr in the case the stack was already empty.
+			*/
+			PageFooter * remove_all_pessimistic() noexcept
+			{
+				if ( m_first.load(detail::mem_relaxed) == nullptr)
+				{
+					return nullptr;
+				}
+				else
+				{
+					return remove_all_optimistic();
+				}
+			}
+
+		private:
+				
+			/** Search for a page with pin-count == 0 in the stack of pages starting from i_first.
+				If such page is found, it is removed, possibly modifying i_first. No exception is ever thrown.
+				@param i_first reference to the pointer to the first page of the stack
+				@return the page removed from the list, or nullptr */
+			static PageFooter * remove_unpinned(PageFooter * & i_first) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_first != nullptr);
+				PageFooter * curr = i_first;
+				PageFooter * prev = nullptr;
+				do {
+					DENSITY_ASSERT_INTERNAL((prev == nullptr) == (curr == i_first));
+
+					if (curr->m_pin_count.load(detail::mem_relaxed) == 0)
+					{
+						if (prev != nullptr)
+							prev->m_next_page = curr->m_next_page;
+						else
+							i_first = curr->m_next_page;
+						return curr;
+					}
+
+					prev = curr;
+					curr = curr->m_next_page;
+				} while (curr != nullptr);
+
+				return nullptr;
+			}
+		};
+
+		/** \internal 
+			
+		*/
+		struct alignas(concurrent_alignment) FreePageStore
+		{
+		private:
+
+			FreePageStore(FreePageStore * i_next_slot) noexcept
+				: m_next_slot(i_next_slot)
+			{
+			}
+
+			~FreePageStore() noexcept = default;
+
+		public:
+
+			PageStack1 m_page_stack;
+			PageStack1 m_zeroed_page_stack;
+			std::atomic<FreePageStore*> m_next_slot;
+
+			/** Creates a new thread slot.
+				May throw an std::bad_alloc. */
+			static FreePageStore * create(FreePageStore * i_next_slot)
+			{
+				auto const block = aligned_allocate(sizeof(FreePageStore), alignof(FreePageStore));
+				DENSITY_ASSERT_INTERNAL(block != nullptr);
+				return new(block) FreePageStore(i_next_slot);
+			}
+
+			/** Destroy a thread slot */
+			static void destroy(FreePageStore * i_slot) noexcept
+			{
+				DENSITY_ASSERT_INTERNAL(i_slot != nullptr);
+				i_slot->~FreePageStore();
+				return aligned_deallocate(i_slot, sizeof(FreePageStore), alignof(FreePageStore));
+			}
+		};
+
+		enum class page_allocation_type
+		{
+			uninitialized,
+			zeroed,
+		};
+
 		/** \internal 
 			Class template providing page based memory management.
 			page_manager allows allocation and deallocation of pages.
@@ -33,222 +374,66 @@ namespace density
 		{
 		private:
 
-			/** Struct allocated at the end of every page. This struct is the reason why the page sized is
-				less than SYSTYEM_PAGE_MANAGER::page_size. */
-			struct alignas(concurrent_alignment) PageFooter
+			struct ThreadEntry
 			{
-				/** Pointer to the next page when the page is inside a stack, undefined otherwise. */
-				PageFooter * m_next_page{ nullptr };
+				FreePageStore * m_current_slot, * m_victim_slot;
 
-				/* Number of times the page has been pinned. The allocator can't invalidate the content 
-					of a page while the pint count is greater than zero. */
-				std::atomic<uintptr_t> m_pin_count{ 0 };
-			};
-
-			struct alignas(concurrent_alignment) Slot
-			{
-				std::atomic<PageFooter*> m_page_list;
-				std::atomic<PageFooter*> m_zeroed_page_list;
-				std::atomic<Slot*> m_next_slot;
-
-				Slot() = default;
-
-				Slot(Slot * i_next_slot, PageFooter * i_page_list, PageFooter * i_zeroed_page_list) noexcept
-					: m_page_list(i_page_list), m_zeroed_page_list(i_zeroed_page_list), m_next_slot(i_next_slot)
+				ThreadEntry()
 				{
+					auto & global_data = get_global_data();
+					m_current_slot = global_data.assign_one();
+					m_victim_slot = m_current_slot->m_next_slot.load();
 				}
 			};
+			
+			static thread_local ThreadEntry t_thread_entry;
 
-		public:
-
-			/** Alignment guaranteed for the pages */
-			static constexpr size_t page_alignment = SYSTYEM_PAGE_MANAGER::page_alignment;
-
-			/** Usable size of the pages. */
-			static constexpr size_t page_size = SYSTYEM_PAGE_MANAGER::page_size - sizeof(PageFooter);
-
-			static void * allocate_page()
+			struct GlobalData
 			{
-				auto page = pop_page<false>();
-				return page;
-			}
+				SYSTYEM_PAGE_MANAGER m_sys_page_manager;
 
-			static void * allocate_page_zeroed()
-			{
-				auto page = pop_page<true>();
-				#if DENSITY_DEBUG_INTERNAL
-					auto chars = static_cast<const char*>(page);
-					for (size_t i = 0; i < page_size; i++)
-					{
-						DENSITY_ASSERT_INTERNAL(chars[i] == 0);
-					}
-				#endif
-				return page;
-			}
-
-			static void deallocate_page(void * i_page) noexcept
-			{
-				push_page<false>(i_page);
-			}
-
-			static void deallocate_page_zeroed(void * i_page) noexcept
-			{
-				push_page<true>(i_page);
-			}
-
-			static void pin_page(void * i_address, uintptr_t i_multeplicity) noexcept
-			{
-				auto const footer = get_footer(i_address);
-				footer->m_pin_count.fetch_add(i_multeplicity, std::memory_order_relaxed);
-			}
-
-			static uintptr_t unpin_page(void * i_address, uintptr_t i_multeplicity) noexcept
-			{
-				auto const footer = get_footer(i_address);
-				auto const prev_pins = footer->m_pin_count.fetch_sub(i_multeplicity, std::memory_order_acq_rel);
-				DENSITY_ASSERT(prev_pins > 0);
-				return prev_pins;
-			}
-
-			static uintptr_t get_pin_count(const void * i_address) noexcept
-			{
-				return get_footer(i_address)->m_pin_count.load(std::memory_order_relaxed);
-			}
-
-		private:
-
-			static SYSTYEM_PAGE_MANAGER & system_page_manager()
-			{
-				static SYSTYEM_PAGE_MANAGER s_instance;
-				return s_instance;
-			}
-
-			template <bool ZEROED>
-				static void * pop_page()
-			{
-				auto constexpr list_memb = ZEROED ? &Slot::m_zeroed_page_list : &Slot::m_page_list;
-
-				/* loop the slots until we reach the one we started from, searching for
-					a free page. Note: the slots are arranged in a circular linked list 
-					(i.e. m_current_slot->m_next_slot is always valid). */
-				auto const initial_slot = m_current_slot;
-				do {
-
-					/* try to acquire the stack of pages of the current slot */
-					auto list = (m_current_slot->*list_memb).exchange(nullptr, std::memory_order_acquire);
-					if (list != nullptr)
-					{
-						// list acquired: search for an unpinned page
-						auto page = allocate_in_list<ZEROED>(list);
-						if (page != nullptr)
-						{
-							return page;
-						}
-					}
-
-					m_current_slot = m_current_slot->m_next_slot.load();
-				} while (m_current_slot != initial_slot);
+				std::atomic<FreePageStore*> m_last_assigned{nullptr};
+				std::atomic<FreePageStore*> m_first_slot{nullptr};
 				
-				// allocate a new one from the system
-				auto const new_page = system_page_manager().allocate_page();
-				if (new_page == nullptr)
+				GlobalData()
 				{
-					throw std::bad_alloc();
+					auto const first = FreePageStore::create(nullptr);
+					auto prev = first;
+					for (int i = 0; i < 7; i++)
+					{
+						auto const curr = FreePageStore::create(nullptr);
+						prev->m_next_slot.store(curr);
+						prev = curr;
+					}
+					prev->m_next_slot.store(first);
+					m_first_slot.store(first);
+					m_last_assigned = first;
 				}
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(new_page, SYSTYEM_PAGE_MANAGER::page_alignment));
-				auto const should_memset = ZEROED && !SYSTYEM_PAGE_MANAGER::pages_are_zeroed;
-				if (should_memset)
+
+				~GlobalData()
 				{
-					std::memset(new_page, 0, page_size);
+					auto curr = m_first_slot.load();
+					while (curr != nullptr)
+					{
+						auto const next = curr->m_next_slot.load();
+						FreePageStore::destroy(curr);
+						curr = next;
+					}
 				}
-				new(get_footer(new_page)) PageFooter();
-				return new_page;
-			}
 
-			template <bool ZEROED>
-				static void * allocate_in_list(PageFooter * i_list) noexcept
-			{
-				auto constexpr list_memb = ZEROED ? &Slot::m_zeroed_page_list : &Slot::m_page_list;
+				FreePageStore * assign_one() noexcept
+				{
+					auto result = m_last_assigned.load();
+					m_last_assigned.store(result->m_next_slot.load());
+					return m_last_assigned;
+				}
+			};
 
-				// search for an unpinned page
-				auto list = i_list;
-				auto page = list;
-				PageFooter * prev = nullptr;
-				do {
-					if (page->m_pin_count.load(std::memory_order_acquire) == 0)
-					{
-						if (page == list)
-						{
-							list = page->m_next_page;
-						}
-						else
-						{
-							prev->m_next_page = page->m_next_page;
-						}
-						break;
-					}
-					prev = page;
-					page = prev->m_next_page;
-				} while (page != nullptr);
-
-				// release the list
-				auto const initial_slot = m_current_slot;
-				do {
-					PageFooter * expected = nullptr;
-					if ((m_current_slot->*list_memb).compare_exchange_strong(expected, list,
-						std::memory_order_release, std::memory_order_relaxed))
-					{
-						break;
-					}
-					
-					auto next_slot = m_current_slot->m_next_slot.load();
-					if (next_slot == initial_slot)
-					{
-						void * new_slot_block = aligned_allocate(sizeof(Slot), alignof(Slot));
-						DENSITY_ASSERT_INTERNAL(new_slot_block != nullptr);
-						auto new_slot = new(new_slot_block) Slot(next_slot, 
-							ZEROED ? nullptr : list, !ZEROED ? nullptr : list);
-
-						if (m_current_slot->m_next_slot.compare_exchange_strong(next_slot, new_slot))
-						{
-							break;
-						}
-						else
-						{
-							delete new_slot;
-						}
-					}
-
-					m_current_slot = next_slot;
-				} while (m_current_slot != initial_slot);
-
-				return address_lower_align(page, page_alignment);
-			}
-
-			template <bool ZEROED>
-				static void push_page(void * i_address)
-			{
-				auto constexpr list_memb = ZEROED ? &Slot::m_zeroed_page_list : &Slot::m_page_list;
-				auto const page = get_footer(address_lower_align(i_address, page_alignment));
 				
-				/* loop the slots until we reach the one we started from, searching for
-					a free page. Note: the slots are arranged in a circular linked list 
-					(i.e. m_current_slot->m_next_slot is always valid). */
-				auto const initial_slot = m_current_slot;
-				do {
-
-					auto list = (m_current_slot->*list_memb).load();
-
-					page->m_next_page = list;
-
-					if ((m_current_slot->*list_memb).compare_exchange_weak(list, page,
-						std::memory_order_release, std::memory_order_relaxed))
-					{
-						break;
-					}
-
-					m_current_slot = m_current_slot->m_next_slot.load();
-				} while (m_current_slot != initial_slot);
+			static GlobalData & get_global_data()
+			{
+				static GlobalData s_global_data;
+				return s_global_data;
 			}
 
 			static PageFooter * get_footer(void * i_address) noexcept
@@ -263,27 +448,144 @@ namespace density
 				return static_cast<const PageFooter*>(address_add(page, page_size));
 			}
 
-			static Slot * first_slot() noexcept
+			template <page_allocation_type allocation_type>
+				static PageFooter * allocate_page_slow_path()
 			{
-				static struct FirstSlot : Slot
+				auto constexpr list_memb = allocation_type == page_allocation_type::zeroed ? &FreePageStore::m_zeroed_page_stack : &FreePageStore::m_page_stack;
+
+				PageFooter * new_page = nullptr;
+
+				// First we try to use the memory already allocated from the system...
+				GlobalData & global_data = get_global_data();
+				void * new_page_mem = global_data.m_sys_page_manager.allocate_page(allocate_page_opt::only_available);
+				if (new_page_mem != nullptr)
 				{
-					FirstSlot()
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(new_page_mem, page_alignment));
+					new_page = new(get_footer(new_page_mem)) PageFooter();
+					bool should_zero = allocation_type == page_allocation_type::zeroed && !SYSTYEM_PAGE_MANAGER::pages_are_zeroed;
+					if (should_zero)
 					{
-						std::atomic_init(&this->m_page_list, nullptr);
-						std::atomic_init(&this->m_zeroed_page_list, nullptr);
-						std::atomic_init(&this->m_next_slot, this);
+						std::memset(new_page_mem, 0, page_size);
+					}
+					return new_page;
+				}
+				else
+				{
+					// ...then try to steal from m_victim_slot, looping all the slots...
+					auto const starting_victim_slot = t_thread_entry.m_victim_slot;
+					do {
+
+						new_page = (t_thread_entry.m_victim_slot->*list_memb).remove_all_pessimistic();
+						if (new_page != nullptr)
+						{
+							(t_thread_entry.m_current_slot->*list_memb).push_list(new_page->m_next_page);
+							break;
+						}
+
+						t_thread_entry.m_victim_slot = t_thread_entry.m_victim_slot->m_next_slot.load();
+
+					} while (t_thread_entry.m_victim_slot != starting_victim_slot);
+
+					if (new_page == nullptr)
+					{
+						// ...last chance, try possibly allocating new memory from the system
+						new_page_mem = global_data.m_sys_page_manager.allocate_page(allocate_page_opt::allow_system_alloc);
+						if (new_page_mem != nullptr)
+						{
+							DENSITY_ASSERT_INTERNAL(address_is_aligned(new_page_mem, page_alignment));
+							new_page = new(get_footer(new_page_mem)) PageFooter();
+							bool should_zero = allocation_type == page_allocation_type::zeroed && !SYSTYEM_PAGE_MANAGER::pages_are_zeroed;
+							if (should_zero)
+							{
+								std::memset(new_page_mem, 0, page_size);
+							}
+						}
+						else
+						{
+							throw std::bad_alloc();
+						}
 					}
 
-				} s_first_slot;
-				return &s_first_slot;
+					return new_page;
+				}
 			}
 
-			static thread_local Slot * m_current_slot;
+		public:
+
+			/** Alignment guaranteed for the pages */
+			static constexpr size_t page_alignment = SYSTYEM_PAGE_MANAGER::page_alignment;
+
+			/** Usable size of the pages. */
+			static constexpr size_t page_size = SYSTYEM_PAGE_MANAGER::page_size - sizeof(PageFooter);
+
+			template <page_allocation_type allocation_type>
+				static void * allocate_page()
+			{
+				static_assert(allocation_type == page_allocation_type::uninitialized || allocation_type == page_allocation_type::zeroed, "");
+				auto constexpr list_memb = allocation_type == page_allocation_type::zeroed ? &FreePageStore::m_zeroed_page_stack : &FreePageStore::m_page_stack;
+
+				// First try to pop from the current slot...
+				PageFooter * new_page = (t_thread_entry.m_current_slot->*list_memb).pop();
+				if (new_page == nullptr)
+				{
+					// ...else try to steal all the pages from the victim slot
+					new_page = (t_thread_entry.m_victim_slot->*list_memb).remove_all_optimistic();
+					if (new_page != nullptr)
+					{
+						(t_thread_entry.m_current_slot->*list_memb).push_list(new_page->m_next_page);
+					}
+					else
+					{
+						new_page = allocate_page_slow_path<allocation_type>();
+					}
+				}
+
+				// new_page is a PageFooter, we have to return the address of the first byte of the page
+				DENSITY_ASSERT_INTERNAL(get_footer(new_page) == new_page);
+				return address_lower_align(new_page, page_alignment);
+			}
+
+			template <page_allocation_type allocation_type>
+				static void deallocate_page(void * i_page) noexcept
+			{
+				static_assert(allocation_type == page_allocation_type::uninitialized || allocation_type == page_allocation_type::zeroed, "");
+				auto constexpr list_memb = allocation_type == page_allocation_type::zeroed ? &FreePageStore::m_zeroed_page_stack : &FreePageStore::m_page_stack;
+				
+				auto const footer = get_footer(i_page);
+				(t_thread_entry.m_current_slot->*list_memb).push(footer);
+			}
+
+			static void pin_page(void * i_address) noexcept
+			{
+				auto const footer = get_footer(i_address);
+				footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
+			}
+
+			static void unpin_page(void * i_address) noexcept
+			{
+				auto const footer = get_footer(i_address);
+				#if DENSITY_DEBUG
+					auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
+					DENSITY_ASSERT(prev_pins > 0);
+				#else
+					footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
+				#endif
+			}
+
+			static uintptr_t get_pin_count(const void * i_address) noexcept
+			{
+				return get_footer(i_address)->m_pin_count.load(detail::mem_relaxed);
+			}
+
+		private:
+
+
 		};
 
 		template <typename SYSTYEM_PAGE_MANAGER>
-			thread_local typename page_manager<SYSTYEM_PAGE_MANAGER>::Slot *
-				page_manager<SYSTYEM_PAGE_MANAGER>::m_current_slot = page_manager<SYSTYEM_PAGE_MANAGER>::first_slot();
+			thread_local typename page_manager<SYSTYEM_PAGE_MANAGER>::ThreadEntry 
+				page_manager<SYSTYEM_PAGE_MANAGER>::t_thread_entry;
+
 	
 	} // namespace detail
 

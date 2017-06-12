@@ -81,24 +81,16 @@ namespace density
         using std::atomic;
         namespace this_thread = std::this_thread;
         using memory_order = std::memory_order;
-
-        /* concurrent data structures has been tested on x86-x64, but not on architectures with weak
-            memory ordering. If you are willing to contribute to density, running the tests on other
-            architectures, you can change these constants. */
-        #if defined(_M_IX86) || defined(_M_X64)
-            constexpr memory_order hint_memory_order_relaxed = std::memory_order_relaxed;
-            constexpr memory_order hint_memory_order_acquire = std::memory_order_acquire;
-            constexpr memory_order hint_memory_order_release = std::memory_order_release;
-            constexpr memory_order hint_memory_order_acq_rel = std::memory_order_acq_rel;
-            constexpr memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
-        #else
-            constexpr memory_order hint_memory_order_relaxed = std::memory_order_seq_cst;
-            constexpr memory_order hint_memory_order_acquire = std::memory_order_seq_cst;
-            constexpr memory_order hint_memory_order_release = std::memory_order_seq_cst;
-            constexpr memory_order hint_memory_order_acq_rel = std::memory_order_seq_cst;
-            constexpr memory_order hint_memory_order_seq_cst = std::memory_order_seq_cst;
-        #endif
     }
+
+	/* concurrent data structures has been tested on x86-x64, but not on architectures with weak
+        memory ordering. If you are willing to contribute to density, running the tests on other
+        architectures, you can change this constant. */
+    #if defined(_M_IX86) || defined(_M_X64)
+		constexpr bool enable_relaxed_atomics = true;
+    #else
+        constexpr bool enable_relaxed_atomics = false;
+    #endif
 
     // very minimal implementation of std::optional
     template <typename TYPE>
