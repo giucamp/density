@@ -66,8 +66,7 @@ namespace density
 		protected:
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
-			using EndControlBlock = ControlBlock;
-
+			
 			struct ExternalBlock
 			{
 				COMMON_TYPE * m_element = nullptr;
@@ -78,8 +77,8 @@ namespace density
 			/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = detail::size_max(
 				detail::size_log2(detail::NbQueue_AllFlags + 1),
-				detail::size_max(alignof(EndControlBlock), alignof(RUNTIME_TYPE)),
-				sizeof(EndControlBlock), concurrent_alignment);
+				detail::size_max(alignof(ControlBlock), alignof(RUNTIME_TYPE)),
+				sizeof(ControlBlock), concurrent_alignment);
 
 			static bool same_page(const void * i_first, const void * i_second) noexcept
 			{
@@ -98,87 +97,35 @@ namespace density
 			~NonblockingQueueTail()
 			{
 				auto const tail = m_tail.load();
-				auto const end_block = get_end_control_block(address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
+				auto const end_block = get_end_control_block(tail);
 				end_block->m_next = 0;
 				ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
 			}
 
-			static uintptr_t get_element_required_units(size_t i_size, size_t i_alignment) noexcept
+			static constexpr uintptr_t get_element_required_size(size_t i_size, size_t i_alignment) noexcept
 			{
-				size_t result = element_offset + i_size;
+				size_t result = s_element_offset + i_size;
 
 				// add the padding required to align the element after the runtime_type
 				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
 
-				return (result + (min_alignment - 1)) / min_alignment;
+				return uint_upper_align(result, min_alignment);
 			}
 
-			static uintptr_t get_raw_allocation_required_units(size_t i_size, size_t i_alignment) noexcept
+			static constexpr uintptr_t get_raw_allocation_required_size(size_t i_size, size_t i_alignment) noexcept
 			{
-				size_t result = type_eraser_offset + i_size;
+				size_t result = s_type_eraser_offset + i_size;
 
 				// add the padding required to align the block
 				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
 
-				return (result + (min_alignment - 1)) / min_alignment;
+				return uint_upper_align(result, min_alignment);
 			}
 
-			static EndControlBlock * get_end_control_block(void * i_page)
+			static ControlBlock * get_end_control_block(void * i_address)
 			{
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_page, ALLOCATOR_TYPE::page_alignment));
-				return static_cast<EndControlBlock *>(address_add(i_page, (page_unit_capacity - 1) * min_alignment));
-			}
-
-			ControlBlock * get_or_allocate_next_page(void * * i_pnt_tail)
-			{
-				// *i_pnt_tail must point to an end control block
-				auto const end_block = static_cast<ControlBlock*>(*i_pnt_tail);
-				DENSITY_ASSERT_INTERNAL( get_end_control_block(address_lower_align(end_block, ALLOCATOR_TYPE::page_alignment)) == end_block );
-				
-				ALLOCATOR_TYPE::pin_page(end_block);
-				auto next_page = reinterpret_cast<uintptr_t>(nullptr);
-				auto curr_tail = m_tail.load(detail::mem_relaxed);
-				if (curr_tail != end_block)
-				{
-					*i_pnt_tail = curr_tail;
-				}
-				else
-				{
-					next_page = raw_atomic_load(end_block->m_next);
-					if (next_page == 0)
-					{
-						*i_pnt_tail = curr_tail;
-					}
-					else if(next_page == detail::NbQueue_InvalidNextPage)
-					{
-						/* Try to set the new page to the last block */
-						auto const new_page = ALLOCATOR_TYPE::allocate_page_zeroed();
-
-						DENSITY_ASSERT(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
-
-						auto const new_page_end_block = get_end_control_block(new_page);
-
-						new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-
-						if (!raw_atomic_compare_exchange_strong(end_block->m_next, next_page, 
-							reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
-						{
-							// to do: destroy ControlBlock
-							new_page_end_block->m_next = 0;
-							ALLOCATOR_TYPE::deallocate_page_zeroed(new_page);
-						}
-						else
-						{
-							next_page = reinterpret_cast<uintptr_t>(new_page);
-						}
-					}
-				}
-
-				// to do: exception safeness
-				ALLOCATOR_TYPE::unpin_page(end_block);
-				auto const result = reinterpret_cast<ControlBlock*>(next_page & ~detail::NbQueue_AllFlags);
-				DENSITY_ASSERT_INTERNAL((uintptr_t)result == 0 || (uintptr_t)result > 200);
-				return result;
+				auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
+				return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
 			}
 
 			struct Put
@@ -187,71 +134,124 @@ namespace density
 				uintptr_t m_next_ptr = 0;
 			};
 
-			Put inplace_allocate_impl(uintptr_t const i_units, intptr_t const i_flags)
+			/** Appends a block of memory in the last page, after the tail, and then moves it. 
+					This function pass-through any exception thrown by the page allocator.
+				@param i_size size in bytes of the block to allocate. It must be greater than zero, and
+					a multiple of min_alignment
+				@param i_flags Combination of flags to set on the allocated block. The flag NbQueue_InvalidNextPage is not allowed.
+				@return Instance of Put that holds a pointer to the allocated block, and the value of its field m_next
+						when the function has returned. This information is returned just to avoid a redundant atomic load
+						to the caller. */
+			Put inplace_allocate_impl(uintptr_t const i_size, intptr_t const i_flags)
 			{
-				DENSITY_ASSERT_INTERNAL(i_units <= page_unit_capacity && i_flags <= detail::NbQueue_AllFlags &&
-					(i_flags & detail::NbQueue_Busy) != 0);
+				DENSITY_ASSERT_INTERNAL(i_size > 0 && i_size <= s_max_internal_size &&
+					uint_is_aligned(i_size, min_alignment) &&
+					i_flags <= detail::NbQueue_AllFlags && (i_flags & detail::NbQueue_InvalidNextPage) == 0);
 
-				ControlBlock * block = nullptr;
-				bool padding = false;
-				bool couldnt_get_next_page = false;
-				uintptr_t next_ptr;
-				do {
-					auto tail = m_tail.load();
-					void * new_tail;
-					do {
+				auto tail = m_tail.load(detail::mem_relaxed);
+				for(;;)
+				{					
+					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, min_alignment));
+						
+					auto const new_tail = address_add(tail, i_size);
+					auto const page_end = get_end_control_block(tail);
 
-						padding = false;
-						couldnt_get_next_page = false;
-						
-						DENSITY_ASSERT_INTERNAL(address_is_aligned(tail, min_alignment));
-						
-						auto const curr_page = address_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-						auto const page_end = get_end_control_block(curr_page);
-						
-						new_tail = address_add(tail, i_units * min_alignment);
-						if (new_tail >= page_end)
+					// the page overflow detection relies on the fact that the last page of the address space is never used
+					// page 0 can't be used too
+					
+					if (new_tail <= page_end)
+					{
+						if (m_tail.compare_exchange_weak(tail, new_tail, detail::mem_acquire, detail::mem_relaxed))
 						{
-							if (tail != page_end)
-							{
-								// there is space between tail and page_end. We pad it with a dead control block
-								new_tail = page_end;
-								block = static_cast<ControlBlock*>(tail);
-								padding = true;
-							}
-							else
-							{
-								// tail equals to page_end
-								auto new_page = get_or_allocate_next_page(&tail);
-								if (new_page == nullptr)
-								{
-									couldnt_get_next_page = true;
-									DENSITY_ASSERT_INTERNAL(tail != nullptr);
-									continue;
-								}
-								block = new_page;
-								new_tail = address_add(new_page, i_units * min_alignment);
-							}
+							/* Assign m_next, and set the flags. This is very important for the consumers,
+								because they that need this write happens before any other part of the
+								allocated memory is modified. */
+							auto const block = static_cast<ControlBlock*>(tail);
+							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_flags;
+							DENSITY_ASSERT_INTERNAL(raw_atomic_load(block->m_next, detail::mem_relaxed) == 0);
+							raw_atomic_store(block->m_next, next_ptr, detail::mem_release);
+
+							DENSITY_ASSERT_INTERNAL(block < page_end);
+							return { block, next_ptr };
+						}
+					}
+					else if (tail < page_end)
+					{
+						// padding until page_end
+						if (m_tail.compare_exchange_weak(tail, page_end, detail::mem_relaxed, detail::mem_relaxed))
+						{
+							auto const block = static_cast<ControlBlock*>(tail);
+							raw_atomic_store(block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead,
+								detail::mem_release);
+						}
+					}
+					else
+					{
+						// get or allocate a new page
+						tail = get_or_allocate_next_page(tail);
+					}
+				}
+			}
+
+			void * get_or_allocate_next_page(void * const i_end_control)
+			{
+				DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
+					address_is_aligned(i_end_control, min_alignment) &&
+					i_end_control == get_end_control_block(i_end_control) );
+
+				struct ScopedPin
+				{
+					ALLOCATOR_TYPE * const m_allocator;
+					ControlBlock * const m_control;
+
+					ScopedPin(ALLOCATOR_TYPE * i_allocator, ControlBlock * i_control)
+						: m_allocator(i_allocator), m_control(i_control)
+					{
+						m_allocator->ALLOCATOR_TYPE::pin_page(m_control);
+					}
+
+					~ScopedPin()
+					{
+						m_allocator->ALLOCATOR_TYPE::unpin_page(m_control);
+					}
+				};
+
+				ScopedPin const end_block(this, static_cast<ControlBlock*>(i_end_control));
+				auto const updated_tail = m_tail.load(detail::mem_relaxed);
+				if (updated_tail == end_block.m_control)
+				{
+					// now the end control block is pinned
+					if (raw_atomic_load(end_block.m_control->m_next, detail::mem_acquire) == detail::NbQueue_InvalidNextPage)
+					{
+						auto const new_page = ALLOCATOR_TYPE::allocate_page_zeroed();
+						DENSITY_ASSERT(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+
+						auto const new_page_end_block = get_end_control_block(new_page);
+						new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
+
+						uintptr_t expected = detail::NbQueue_InvalidNextPage;
+						if (!raw_atomic_compare_exchange_strong(end_block.m_control->m_next, expected,
+							reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Busy))
+						{
+							new_page_end_block->m_next = 0;
+							ALLOCATOR_TYPE::deallocate_page_zeroed(new_page);
+
+							// to do: we are blocking until the thread that allocated the page sets m_tail
+							// we should help it
 						}
 						else
 						{
-							block = static_cast<ControlBlock*>(tail);
-						}						
+							m_tail.store(new_page, detail::mem_relaxed);
 
-					} while (couldnt_get_next_page || !m_tail.compare_exchange_weak(tail, new_tail));
+							raw_atomic_store(end_block.m_control->m_next,
+								reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead,
+								detail::mem_release);
+							return new_page;
+						}
+					}
+				}
 
-					/* Assign m_next, and set the flags. This is very important for the consumers,
-						because they that need this write happens before any other part of the
-						allocated memory is modified. */
-					auto const flags = padding ? detail::NbQueue_Dead : i_flags;
-					next_ptr = reinterpret_cast<uintptr_t>(new_tail) + flags;
-					raw_atomic_store(block->m_next, next_ptr);
-
-				} while (padding);
-
-				DENSITY_ASSERT_INTERNAL(block < get_end_control_block(address_lower_align(block, ALLOCATOR_TYPE::page_alignment)));
-
-				return { block, next_ptr };
+				return m_tail.load(detail::mem_relaxed);
 			}
 
 			static void commit_element_impl(const Put & i_put) noexcept
@@ -281,19 +281,19 @@ namespace density
 
 			void * raw_allocate_impl(size_t i_size, size_t i_alignment)
 			{
-				if (i_size <= max_internal_size)
+				if (i_size <= s_max_internal_size)
 				{
 					// the allocation fits in a page
-					auto const put = inplace_allocate_impl(get_raw_allocation_required_units(
+					auto const put = inplace_allocate_impl(get_raw_allocation_required_size(
 						i_size, i_alignment, detail::NbQueue_Dead));
-					return address_upper_align(address_add(put.m_control, type_eraser_offset), i_alignment);
+					return address_upper_align(address_add(put.m_control, s_type_eraser_offset), i_alignment);
 				}
 				else
 				{
 					// the allocation does not fit in a page, allocate inplace space for an ExternalBlock
-					auto const put = inplace_allocate_impl(get_raw_allocation_required_units(
+					auto const put = inplace_allocate_impl(get_raw_allocation_required_size(
 						sizeof(ExternalBlock), alignof(ExternalBlock), detail::NbQueue_Dead | detail::NbQueue_External));
-					void * block_alloc = address_add(put.m_control, type_eraser_offset);
+					void * block_alloc = address_add(put.m_control, s_type_eraser_offset);
 					if (alignof(ExternalBlock) > alignof(RUNTIME_TYPE))
 					{
 						block_alloc = address_upper_align(block_alloc, alignof(ExternalBlock));
@@ -314,10 +314,11 @@ namespace density
 			}
 
 		protected:
-			constexpr static uintptr_t type_eraser_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
-			constexpr static uintptr_t element_offset = type_eraser_offset + sizeof(RUNTIME_TYPE);
-			constexpr static uintptr_t page_unit_capacity = (ALLOCATOR_TYPE::page_size / min_alignment);
-			constexpr static size_t max_internal_size = (page_unit_capacity / 2) * min_alignment;
+			constexpr static uintptr_t s_type_eraser_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
+			constexpr static uintptr_t s_element_offset = s_type_eraser_offset + sizeof(RUNTIME_TYPE);
+			constexpr static uintptr_t s_page_unit_capacity = (ALLOCATOR_TYPE::page_size / min_alignment);
+			constexpr static size_t s_max_internal_size = (s_page_unit_capacity / 2) * min_alignment;
+			constexpr static uintptr_t s_end_control_offset = ALLOCATOR_TYPE::page_size - min_alignment;
 
 		private: // data members
 			alignas(concurrent_alignment) std::atomic<void *> m_tail;
@@ -386,12 +387,12 @@ namespace density
 					{
 						DENSITY_ASSERT_INTERNAL(m_control != head);
 
+						i_queue->ALLOCATOR_TYPE::pin_page(head);
+
 						if (m_control != nullptr)
 						{
 							i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
 						}
-
-						i_queue->ALLOCATOR_TYPE::pin_page(head);
 
 						m_control = head;
 
@@ -447,7 +448,7 @@ namespace density
 
 							/////////////////////////////////
 							// avoid scans
-							// return false;
+							//return;
 							////////////////////////////
 
 							// to do: handle detail::NbQueue_InvalidNextPage
@@ -488,7 +489,7 @@ namespace density
 					auto curr = i_tail;
 					if (!same_page(m_control, i_tail))
 					{
-						curr = get_end_control_block(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment));
+						curr = get_end_control_block(m_control);
 					}
 
 					ControlBlock * last_nonzero = nullptr;
@@ -547,7 +548,7 @@ namespace density
 
 						bool const is_same_page = same_page(m_control, next);
 						DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-						auto const dbg_end_block = get_end_control_block(address_lower_align(m_control, ALLOCATOR_TYPE::page_alignment));
+						auto const dbg_end_block = get_end_control_block(m_control);
 						DENSITY_ASSERT_INTERNAL(is_same_page == (m_control != dbg_end_block));
 
 						auto const address_of_next = const_cast<uintptr_t*>(&m_control->m_next);
@@ -822,14 +823,14 @@ namespace density
 				typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
 			{
 				// allocate on the queue space for an ELEMENT_TYPE (or an ExternalBlock in case the element is very big)
-				constexpr bool inplace_element = sizeof(ELEMENT_TYPE) <= max_internal_size;
+				constexpr bool inplace_element = sizeof(ELEMENT_TYPE) <= s_max_internal_size;
 				using inplace_type = typename std::conditional<inplace_element, ELEMENT_TYPE, ExternalBlock>::type;
 				auto const put = inplace_allocate_impl(
-					get_element_required_units(sizeof(inplace_type), alignof(inplace_type)),
+					get_element_required_size(sizeof(inplace_type), alignof(inplace_type)),
 					detail::NbQueue_Busy | (inplace_element ? 0 : detail::NbQueue_External) );
 
 				// compute the address of the element
-				void * element_alloc = address_add(put.m_control, element_offset);
+				void * element_alloc = address_add(put.m_control, s_element_offset);
 				constexpr bool needs_alignment = alignof(inplace_type) > alignof(runtime_type);
 				if (needs_alignment)
 				{
@@ -853,7 +854,7 @@ namespace density
 					// construct the type eraser
 					try
 					{
-						auto type_eraser = address_add(put.m_control, type_eraser_offset);
+						auto type_eraser = address_add(put.m_control, s_type_eraser_offset);
 						DENSITY_ASSERT_INTERNAL(type_eraser != nullptr);
 						new(type_eraser) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 					}
@@ -968,7 +969,7 @@ namespace density
 				/** Same to heterogeneous_queue::put_transaction::type. */
 				const RUNTIME_TYPE & type() const noexcept
 				{
-					return *static_cast<RUNTIME_TYPE*>(address_add(m_put.m_control, type_eraser_offset));
+					return *static_cast<RUNTIME_TYPE*>(address_add(m_put.m_control, s_type_eraser_offset));
 				}
 
 				/** Same to heterogeneous_queue::put_transaction::~put_transaction. */
@@ -1133,12 +1134,12 @@ namespace density
 
 				static runtime_type * type_after_control(ControlBlock * i_control) noexcept
 				{
-					return static_cast<runtime_type*>(address_add(i_control, type_eraser_offset));
+					return static_cast<runtime_type*>(address_add(i_control, s_type_eraser_offset));
 				}
 
 				static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
 				{
-					auto result = address_add(i_control, element_offset);
+					auto result = address_add(i_control, s_element_offset);
 					if (i_control->m_next & detail::NbQueue_External)
 					{
 						result = static_cast<ExternalBlock*>(result)->m_block;
@@ -1148,7 +1149,7 @@ namespace density
 
 				static void * get_element(detail::NbQueueControl<void> * i_control)
 				{
-					auto result = address_add(i_control, element_offset);
+					auto result = address_add(i_control, s_element_offset);
 					if (i_control->m_next & detail::NbQueue_External)
 					{
 						result = static_cast<ExternalBlock*>(result)->m_block;

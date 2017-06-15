@@ -21,26 +21,6 @@ namespace density
 		return (uintptr_t)_InterlockedExchangeAdd64((volatile __int64*)&i_atomic, 0);
 	}
 
-	inline uintptr_t raw_atomic_add(volatile uintptr_t & io_atomic, uintptr_t i_operand, std::memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return (uintptr_t)_InterlockedExchangeAdd64((volatile __int64*)&io_atomic, (__int64)i_operand);
-	}
-
-	inline uintptr_t raw_atomic_sub(volatile uintptr_t & io_atomic, uintptr_t i_operand, std::memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return (uintptr_t)_InterlockedExchangeAdd64((volatile __int64*)&io_atomic, -(__int64)i_operand);
-	}
-
-	inline uintptr_t raw_atomic_or(volatile uintptr_t & io_atomic, uintptr_t i_operand, std::memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return (uintptr_t)_InterlockedOr64((volatile __int64*)&io_atomic, (__int64)i_operand);
-	}
-
-	inline uintptr_t raw_atomic_and(volatile uintptr_t & io_atomic, uintptr_t i_operand, std::memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return (uintptr_t)_InterlockedAnd64((volatile __int64*)&io_atomic, (__int64)i_operand);
-	}
-
 	inline bool raw_atomic_compare_exchange_strong(volatile uintptr_t & io_atomic,
 		uintptr_t & io_expected, uintptr_t i_desired, 
 		std::memory_order i_success = std::memory_order_seq_cst,

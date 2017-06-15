@@ -119,7 +119,7 @@ namespace density_tests
 			}
 		}
 
-		void final_check()
+		DENSITY_NO_INLINE void final_check()
 		{
 			TESTITY_ASSERT(m_consume_count.load(std::memory_order_relaxed) == m_end_id);
 			for (size_t i = 0; i < id_map_size; i++)

@@ -87,7 +87,7 @@ namespace density
         memory ordering. If you are willing to contribute to density, running the tests on other
         architectures, you can change this constant. */
     #if defined(_M_IX86) || defined(_M_X64)
-		constexpr bool enable_relaxed_atomics = true;
+		constexpr bool enable_relaxed_atomics = false;
     #else
         constexpr bool enable_relaxed_atomics = false;
     #endif
