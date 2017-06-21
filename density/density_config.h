@@ -25,18 +25,22 @@
     #endif
 #else
     #if defined( __clang__ )
-        #define DENSITY_ASSERT(bool_expr)                _Pragma("clang diagnostic push")\
+        #define DENSITY_ASSERT(bool_expr)               _Pragma("clang diagnostic push")\
                                                         _Pragma("clang diagnostic ignored \"-Wassume\"")\
-                                                        __assume((bool_expr))\
+                                                         __builtin_assume((bool_expr))\
                                                         _Pragma("clang diagnostic pop")
+		#define DENSITY_ASSERT_NO_ASSUME(bool_expr)     (void)0
     #elif defined(_MSC_VER)
         #define DENSITY_ASSERT(bool_expr)                __assume((bool_expr))
+		#define DENSITY_ASSERT_NO_ASSUME(bool_expr)      (void)0
     #else
-        #define DENSITY_ASSERT(bool_expr)
+        #define DENSITY_ASSERT(bool_expr)				(void)0
+		#define DENSITY_ASSERT_NO_ASSUME(bool_expr)		(void)0
     #endif
 #endif
 
-#define DENSITY_ASSERT_INTERNAL(bool_expr)     DENSITY_ASSERT((bool_expr))
+#define DENSITY_ASSERT_INTERNAL(bool_expr)				DENSITY_ASSERT((bool_expr))
+#define DENSITY_ASSERT_INTERNAL_NO_ASSUME(bool_expr)	DENSITY_ASSERT_NO_ASSUME((bool_expr))
 
 #define DENSITY_LIKELY(bool_expr)                    (bool_expr)
 #define DENSITY_UNLIKELY(bool_expr)                  (bool_expr)

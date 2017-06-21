@@ -147,6 +147,8 @@ namespace density_tests
 			m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
 			auto const result = Base::allocate_page_zeroed();
 			TESTITY_ASSERT(result != nullptr && address_is_aligned(result, page_alignment));
+
+			TESTITY_ASSERT(density::detail::mem_equal(result, page_size, 0));
 			return result;
 		}
 

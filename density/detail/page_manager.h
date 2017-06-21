@@ -224,6 +224,25 @@ namespace density
 				}
 			}
 
+			/* Pushes a list of (possibly still pinned) pages on the stack. Then tries to pop an unpinned page
+				searching among those just pushed.
+				On an empty stack, this function is equivalent to a call to push_list followed by a call to pop.
+				@param i_first Null-terminated list of pages to push. If any page in this list is 
+					already in the list the behavior is undefined. 
+					This parameter can be nullptr, in which case the function has no effects, and the return value is nullptr.
+				@return Unpinned page, if any, or nullptr.
+			*/
+			PageFooter * push_list_and_pop_one(PageFooter * i_list_first) noexcept
+			{
+				PageFooter * unpinned = nullptr;
+				if (i_list_first != nullptr)
+				{
+					unpinned = remove_unpinned(i_list_first);
+					push_list(i_list_first);
+				}
+				return unpinned;
+			}
+
 			/** Removes from the stack the first unpinned page. 
 				As first operation, a pop temporary steals the whole stack. So it can safely walk and analyze
 				the pages, and can edit the stack without incurring in the ABA problem. In the meanwhile,
@@ -275,7 +294,7 @@ namespace density
 			*/
 			PageFooter * remove_all_pessimistic() noexcept
 			{
-				if ( m_first.load(detail::mem_relaxed) == nullptr)
+				if (m_first.load(detail::mem_relaxed) == nullptr)
 				{
 					return nullptr;
 				}
@@ -475,10 +494,10 @@ namespace density
 					auto const starting_victim_slot = t_thread_entry.m_victim_slot;
 					do {
 
-						new_page = (t_thread_entry.m_victim_slot->*list_memb).remove_all_pessimistic();
+						auto const stolen_list = (t_thread_entry.m_victim_slot->*list_memb).remove_all_pessimistic();
+						new_page = (t_thread_entry.m_current_slot->*list_memb).push_list_and_pop_one(stolen_list);
 						if (new_page != nullptr)
 						{
-							(t_thread_entry.m_current_slot->*list_memb).push_list(new_page->m_next_page);
 							break;
 						}
 
@@ -528,13 +547,12 @@ namespace density
 				PageFooter * new_page = (t_thread_entry.m_current_slot->*list_memb).pop();
 				if (new_page == nullptr)
 				{
-					// ...else try to steal all the pages from the victim slot
-					new_page = (t_thread_entry.m_victim_slot->*list_memb).remove_all_optimistic();
-					if (new_page != nullptr)
-					{
-						(t_thread_entry.m_current_slot->*list_memb).push_list(new_page->m_next_page);
-					}
-					else
+					// ...else try to steal all the pages from the victim slot					
+					auto const all_stolen_pages = (t_thread_entry.m_victim_slot->*list_memb).remove_all_optimistic();
+
+					// push the list to the current slot, possibly getting an unpinned page
+					new_page = (t_thread_entry.m_current_slot->*list_memb).push_list_and_pop_one(all_stolen_pages);					
+					if (new_page == nullptr)
 					{
 						new_page = allocate_page_slow_path<allocation_type>();
 					}

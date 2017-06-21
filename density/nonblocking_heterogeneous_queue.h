@@ -400,7 +400,7 @@ namespace density
 					}
 										
 					m_control = static_cast<ControlBlock*>(head);
-					m_queue = i_queue;					
+					m_queue = i_queue;	
 				}
 
 				/** \internal
@@ -438,6 +438,18 @@ namespace density
 							{
 								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
 								m_queue->ALLOCATOR_TYPE::pin_page(next);
+
+								auto const updated_next_uint = raw_atomic_load(m_control->m_next, detail::mem_seq_cst);
+								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
+								if (updated_next == nullptr)
+								{
+									start_from_head(i_queue);
+									m_queue->ALLOCATOR_TYPE::unpin_page(next);
+									continue;
+								}
+
+								DENSITY_ASSERT_INTERNAL(next == updated_next);
+
 								m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
 							}
 							m_control = next;
@@ -445,11 +457,6 @@ namespace density
 						else
 						{
 							DENSITY_ASSERT_INTERNAL(next_uint == 0 || next_uint == detail::NbQueue_InvalidNextPage);
-
-							/////////////////////////////////
-							// avoid scans
-							//return;
-							////////////////////////////
 
 							// to do: handle detail::NbQueue_InvalidNextPage
 						
@@ -531,7 +538,7 @@ namespace density
 					for (;;)
 					{
 						auto const next_uint = raw_atomic_load(m_control->m_next);
-						auto const next = reinterpret_cast<ControlBlock*>(m_control->m_next & ~detail::NbQueue_AllFlags);
+						auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 						if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
 						{
 							// the element is not dead
@@ -542,7 +549,7 @@ namespace density
 						if (!m_queue->m_head.compare_exchange_strong(expected, next,
 							detail::mem_seq_cst, detail::mem_relaxed))
 						{
-							// maybe another thread is advancing the head, give up
+							// another thread is advancing the head, give up
 							break;
 						}
 
@@ -553,18 +560,29 @@ namespace density
 
 						auto const address_of_next = const_cast<uintptr_t*>(&m_control->m_next);
 						std::memset(m_control, 0, address_diff(address_of_next, m_control));
-						raw_atomic_store(m_control->m_next, 0);
 
 						if (DENSITY_LIKELY(is_same_page))
 						{
+							raw_atomic_store(m_control->m_next, 0);
+
 							std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));
 							m_control = next;
 						}
 						else
 						{
 							m_queue->ALLOCATOR_TYPE::pin_page(next);
-							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+
+							#if DENSITY_DEBUG_INTERNAL
+								auto const updated_next_uint = raw_atomic_load(m_control->m_next);
+								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
+							#endif
+
+							raw_atomic_store(m_control->m_next, 0);
 							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
+
+							DENSITY_ASSERT_INTERNAL_NO_ASSUME(updated_next == next);
+							
+							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
 							m_control = next;
 						}
 					}
