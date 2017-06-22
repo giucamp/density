@@ -23,6 +23,7 @@
     #else
         #define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
     #endif
+	#define DENSITY_ASSERT_NO_ASSUME				DENSITY_ASSERT
 #else
     #if defined( __clang__ )
         #define DENSITY_ASSERT(bool_expr)               _Pragma("clang diagnostic push")\
