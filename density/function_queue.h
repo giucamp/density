@@ -6,10 +6,14 @@
 
 #pragma once
 #include <density/heterogeneous_queue.h>
+#include <density/detail/function_queue_impl.h>
 
 namespace density
 {
-    template < typename FUNCTION > class function_queue;
+	template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
+		using function_queue = detail::FunctionQueueImpl< heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+
+#if 0
 
     /** Queue of callable objects (or function object).
 
@@ -26,38 +30,33 @@ namespace density
         For example:
 
         \code{.cpp}
-            function_queue<void()> queue_1;
+            function_queue_impl<void()> queue_1;
             queue_1.push([]() { std::cout << "hello!" << std::endl; });
             queue_1.consume_front();
 
-            function_queue<int(double, double)> queue_2;
+            function_queue_impl<int(double, double)> queue_2;
             queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
             std::cout << queue_2.consume_front(40., 2.) << std::endl;
         \endcode
 
         small_function_queue internally uses a void heterogeneous_queue (a queue that can contain elements of any type).
-        function_queue never moves or reallocates its elements, and has both better performances and better behavior
+        function_queue_impl never moves or reallocates its elements, and has both better performances and better behavior
         respect to small_function_queue when the number of elements is not small.
 
         \n<b> Thread safeness</b>: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of function_queue is noexcept or provides the strong exception guarantee.
+        \n<b>Exception safeness</b>: Any function of function_queue_impl is noexcept or provides the strong exception guarantee.
 
-        There is not a constant time function that gives the number of elements in a function_queue in constant time,
-        but std::distance will do (in linear time). Anyway function_queue::mem_size, function_queue::mem_capacity and
-        function_queue::empty work in constant time.
-        Insertion is allowed only at the end (with the methods function_queue::push or function_queue::emplace).
-        Removal is allowed only at the begin (with the methods function_queue::pop or function_queue::consume). */
-    template < typename RET_VAL, typename... PARAMS >
-        class function_queue<RET_VAL (PARAMS...)> final
+        There is not a constant time function that gives the number of elements in a function_queue_impl in constant time,
+        but std::distance will do (in linear time). Anyway function_queue_impl::mem_size, function_queue_impl::mem_capacity and
+        function_queue_impl::empty work in constant time.
+        Insertion is allowed only at the end (with the methods function_queue_impl::push or function_queue_impl::emplace).
+        Removal is allowed only at the begin (with the methods function_queue_impl::pop or function_queue_impl::consume). */
+    template < typename QUEUE, typename RET_VAL, typename... PARAMS >
+        class function_queue_impl<RET_VAL (PARAMS...)> final
     {
     public:
 
         using value_type = RET_VAL(PARAMS...);
-        using features = type_features::feature_list<
-            type_features::size, type_features::alignment,
-            type_features::copy_construct, type_features::move_construct,
-            type_features::destroy, typename type_features::invoke<value_type>, typename type_features::invoke_destroy<value_type> >;
-        using underlying_queue = heterogeneous_queue<void, runtime_type<void, features >, void_allocator >;
 
         /** Adds a new function at the end of queue.
             @param i_source object to be used as source to construct of new element.
@@ -65,7 +64,7 @@ namespace density
                 - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
 
             \n\b Requires:
-                - ELEMENT_COMPLETE_TYPE must be a calable object that has RET_VAL as return type and PARAMS... as parameters
+                - ELEMENT_COMPLETE_TYPE must be a callable object that has RET_VAL as return type and PARAMS... as parameters
                 - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
@@ -78,22 +77,6 @@ namespace density
             m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
-        /** Invokes the first function object of the queue
-            If the queue is empty, the behavior is undefined.
-                @param i_params... parameters to be passed to the function object
-                @return the value returned by the function object
-
-            \n<b> Effects on iterators </b>: no iterator is invalidated
-            \n\b Throws: anything that the function object invocation throws
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            \n\b Complexity: constant. */
-        RET_VAL invoke_front(PARAMS... i_params) const
-        {
-            auto first = m_queue.begin();
-            return first.complete_type().template get_feature<typename type_features::invoke<value_type>>()(
-                first.element_ptr(), std::forward<PARAMS>(i_params)...);
-        }
-
         /** Invokes the first function object of the queue and then deletes it from the queue.
             This function is equivalent to a call to invoke_front followed by a call to pop, but has better performance.
             If the queue is empty, the behavior is undefined.
@@ -104,19 +87,9 @@ namespace density
             \n\b Throws: anything that the function object invocation throws
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: constant. */
-        RET_VAL consume_front(PARAMS... i_params)
+        optional_or_bool<RET_VAL> consume_front(PARAMS... i_params)
         {
 			return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
-        }
-
-        /** Deletes the first function object in the queue.
-            \n<b> Effects on iterators </b>: all the iterators are invalidated
-            \n\b Throws: nothing
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            \n\b Complexity: constant */
-        void pop() noexcept
-        {
-            m_queue.pop();
         }
 
         /** Deletes all the function objects in the queue.
@@ -135,72 +108,44 @@ namespace density
             return m_queue.empty();
         }
 
-        /** Returns the capacity in bytes of this queue, that is the size of the memory buffer used to store the elements.
-            \remark There is no way to predict if the next push\emplace will cause a reallocation.
-
-            \n\b Throws: nothing
-            \n\b Complexity: constant */
-        size_t mem_capacity() const noexcept
-        {
-            return m_queue.mem_capacity();
-        }
-
-        /** Returns the used size in bytes.
-
-            \n\b Throws: nothing
-            \n\b Complexity: constant */
-        size_t mem_size() const noexcept
-        {
-            return m_queue.mem_size();
-        }
-
-        /** Returns the free size in bytes. This is equivalent to function_queue::mem_capacity decreased by function_queue::mem_size.
-
-            \n\b Throws: nothing
-            \n\b Complexity: constant */
-        size_t mem_free() const noexcept
-        {
-            return m_queue.mem_free();
-        }
-
-        typename underlying_queue::iterator begin() noexcept { return m_queue.begin(); }
-        typename underlying_queue::iterator end() noexcept { return m_queue.end(); }
-
-        typename underlying_queue::const_iterator cbegin() noexcept { return m_queue.cbegin(); }
-        typename underlying_queue::const_iterator cend() noexcept { return m_queue.cend(); }
-
-        typename underlying_queue::const_iterator begin() const noexcept { return m_queue.cbegin(); }
-        typename underlying_queue::const_iterator end() const noexcept { return m_queue.cend(); }
-
-
 	private:
 
-		RET_VAL consume_front_impl(std::false_type, PARAMS... i_params)
+		optional<RET_VAL> consume_front_impl(std::false_type, PARAMS... i_params)
 		{
-			auto transaction = m_queue.start_consume();
-			DENSITY_ASSERT((bool)transaction);
-
-			auto result = transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
-				transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
-
-			transaction.commit();
-
-			return std::move(result);
+			auto cons = m_queue.start_consume();
+			if (cons)
+			{
+				auto && result = cons.complete_type().align_invoke_destroy(
+					cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+				cons.commit_nodestroy();
+				return std::forward<RET_VAL>(result);
+			}
+			else
+			{
+				return optional<RET_VAL>();
+			}
 		}
 
-		void consume_front_impl(std::true_type, PARAMS... i_params)
+		bool consume_front_impl(std::true_type, PARAMS... i_params)
 		{
-			auto transaction = m_queue.start_consume();
-			DENSITY_ASSERT((bool)transaction);
-
-			transaction.complete_type().template get_feature<typename type_features::invoke_destroy<value_type>>()(
-				transaction.element_ptr(), std::forward<PARAMS>(i_params)...);
-
-			transaction.commit();
+			auto cons = m_queue.start_consume();
+			if (cons)
+			{
+				cons.complete_type().align_invoke_destroy(
+					cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+				cons.commit_nodestroy();
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
     private:
-        underlying_queue m_queue;
+        QUEUE m_queue;
     };
+
+#endif
 
 } // namespace density

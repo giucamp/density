@@ -1,127 +1,38 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
-
+#include "test_framework/density_test_common.h"
+#include "test_framework/progress.h"
+#include "tests/queue_generic_tests.h"
 #include <iostream>
-#include <vector>
-#include <testity/test_tree.h>
-#include <testity/test_session.h>
-#include <density_tests/functionality_cases/test_void_allocator.h>
-#include "functionality_cases/queue_load_unload_test.h"
-#include <density/heterogeneous_queue.h>
-#include <density/concurrent_heterogeneous_queue.h>
-#include <density/nonblocking_heterogeneous_queue.h>
+#include <cstdlib>
 
 namespace density_tests
 {
-    using namespace testity;
-
-    // functionality cases
-    void add_heterogeneous_array_cases(TestTree & i_dest);
-    void add_lifo_cases(TestTree & i_dest);
-    void add_queue_cases(TestTree & i_dest);
-    void add_function_queue_benchmarks(TestTree & i_dest);
-    void add_any_cases(TestTree & i_dest);
-	void add_page_allocator_cases(TestTree & i_dest);
-
-    // benchmarks
-    void add_lifo_array_benchmarks(TestTree & i_dest);
-    //void add_queue_benchmarks(TestTree & i_dest);
-    void add_allocator_benchmarks(TestTree & i_dest);
-
-    void add_concurrent_function_queue_cases(TestTree & i_dest);
-    void test_concurrent_function_queue(std::mt19937 &);
-
-    void add_concurrent_heterogeneous_queue_cases(TestTree & i_dest);
+	void heterogeneous_queue_samples();
+	void heterogeneous_queue_basic_tests();
 }
 
-namespace function_queue_sample
+void do_tests(std::ostream & i_ostream)
 {
-    void run();
-}
+	using namespace density_tests;
 
-namespace heter_queue_samples
-{
-	void run();
+	DurationPrint dur(i_ostream, "*** All test completed ");
+
+	i_ostream << "*** executing samples..." << std::endl;
+	heterogeneous_queue_samples();
+
+	i_ostream << "\n*** executing basic tests..." << std::endl;
+	heterogeneous_queue_basic_tests();
+
+	i_ostream << "\n*** executing generic tests..." << std::endl;
+	all_queues_generic_tests(QueueTesterFlags::eNone, i_ostream, 3, 100000);
+
+	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
+	all_queues_generic_tests(QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
 }
 
 int main()
 {
-    using namespace testity;
-    using namespace density_tests;
-    using namespace std;
-
-
-	{
-		using namespace density;
-		using namespace density::experimental;
-
-		using q = nonblocking_heterogeneous_queue<void, runtime_type<void>, density_tests::NonblockingTestAllocator<density::default_page_capacity> >;
-		{
-			q a;
-			for(int i = 0; i < 260; i++)
-				a.push(1);
-			a.start_consume().commit();
-		}
-		density_tests::run_queue_integrity_test<q>(4000, 4000,
-			density_tests::LoadUnloadTestOptions{50,30, 0}, 0, 56);
-
-		/*density_tests::run_queue_integrity_test<heterogeneous_queue<void>>(1, 1,
-			density_tests::LoadUnloadTestOptions{}, 1000);
-
-		density_tests::run_queue_integrity_test<concurrent_heterogeneous_queue<void>>(1, 1,
-			density_tests::LoadUnloadTestOptions{}, 1000);*/
-	}
-
-	TestTree test_tree("density");
-
-	add_heterogeneous_array_cases(test_tree["heterogeneous_array"]);
-	add_queue_cases(test_tree["queue"]);
-	//add_queue_benchmarks(test_tree["queue"]);
-	add_lifo_cases(test_tree["lifo"]);
-	add_lifo_array_benchmarks(test_tree["lifo"]);
-	add_function_queue_benchmarks(test_tree["function_queue"]);
-	add_allocator_benchmarks(test_tree["allocator"]);
-	add_concurrent_heterogeneous_queue_cases(test_tree["concurrent_heterogeneous_queue"]);
-	add_any_cases(test_tree["any"]);
-	add_page_allocator_cases(test_tree["page_allocator"]);
-
-	run_session(test_tree["page_allocator"]);
-
-
-
-	heter_queue_samples::run();
-
-
-
-    ////////////////////////
-    run_session(test_tree["queue/base_tests"], TestFlags::FunctionalityTest);
-    run_session(test_tree["queue"], TestFlags::FunctionalityTest);
-    run_session(test_tree["any"], TestFlags::FunctionalityTest);
-    run_session(test_tree["concurrent_heterogeneous_queue"], TestFlags::FunctionalityTest);
-    ////////////////////////
-
-    #ifdef NDEBUG
-        auto const flags = TestFlags::PerformanceTests | TestFlags::FunctionalityTest;
-    #else
-        auto const flags = TestFlags::FunctionalityTest | TestFlags::FunctionalityExceptionTest;
-    #endif // _DEBUG
-		
-    string last_label;
-    auto test_results = run_session(test_tree, flags, TestConfig(),
-        [&last_label](const Progression & i_progression) {
-            if (last_label != i_progression.m_label)
-            {
-                last_label = i_progression.m_label;
-                cout << endl << last_label << endl;
-            }
-            cout << static_cast<int>(i_progression.m_completion_factor * 100. + 0.5) << "%, remaining " <<
-                i_progression.m_remaining_time_extimate.count() << " secs" << endl;
-    });
-
-    test_results.save_to("perf_2.txt");
-
-    return 0;
+	do_tests(std::cout);
+	system("PAUSE");
+	return 0;
 }

@@ -5,11 +5,10 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/concurrent_heterogeneous_queue.h>
-#include <density/detail/function_queue_impl.h>
+#include <density/nonblocking_heterogeneous_queue.h>
 
 namespace density
 {
 	template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
-		using concurrent_function_queue = detail::FunctionQueueImpl< concurrent_heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+		using nonblocking_function_queue = detail::FunctionQueueImpl< experimental::nonblocking_heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
 }

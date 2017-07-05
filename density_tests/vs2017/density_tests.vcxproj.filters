@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\test_framework\line_updater_stream_adapter.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\shared_block_registry.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\test_objects.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\exception_tests.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\queue_generic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\density\any.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\density_common.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\density_config.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\heterogeneous_array.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\lifo.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\nonblocking_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\nonblocking_heterogeneous_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\raw_atomic.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\runtime_type.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\void_allocator.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\array_impl.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\function_queue_impl.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\page_manager.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\system_page_manager.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\exception_tests.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\line_updater_stream_adapter.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\progress.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\queue_tester.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\shared_block_registry.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\test_allocators.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\test_objects.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\density_test_common.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\easy_random.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tests\complex_polymorphism.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tests\queue_generic_tests.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="tests">
+      <UniqueIdentifier>{20f63f8b-1e24-42cd-a977-33e8be7c7250}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="density">
+      <UniqueIdentifier>{70dc5103-db55-45ee-a79b-bb51ec514f26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="density\detail">
+      <UniqueIdentifier>{ed5d6b86-dc0a-4f64-95d1-ce60df6aa01e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test_framework">
+      <UniqueIdentifier>{4872a579-9205-41c8-b31d-3392836d6690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="examples">
+      <UniqueIdentifier>{e16a494e-a770-4365-bfb5-871bcfaf855e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

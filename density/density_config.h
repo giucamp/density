@@ -7,7 +7,7 @@
 #pragma once
 #include <assert.h>
 #include <utility> // for std::move
-#include <type_traits> // for std::aligned_storage
+#include <type_traits> // for std::aligned_storage and std::conditional
 
 #if !defined(NDEBUG)
     #define DENSITY_DEBUG                    1
@@ -181,5 +181,8 @@ namespace density
         new(&res.m_storage) TYPE(std::forward<PARAMS>(i_construction_params)...);
         return res;
     }
+
+	template <typename TYPE>
+		using optional_or_bool = typename std::conditional<std::is_void<TYPE>::value, bool, optional<TYPE>>::type;
 }
 

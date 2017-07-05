@@ -337,7 +337,7 @@ namespace density
                 { return static_cast<TYPE *>(put_transaction::element_ptr()); }
         };
 
-        /** Move-only class that holds the state of a consumes, or is empty. */
+        /** Move-only class that holds the state of a consume, or is empty. */
         class consume_operation
         {
         public:
@@ -383,6 +383,14 @@ namespace density
             {
 				DENSITY_ASSERT_INTERNAL(m_lock.owns_lock());
 				m_consume_operation.commit();
+				m_lock.unlock();
+            }
+
+			/** Same to heterogeneous_queue::consume_operation::commit_nodestroy. */
+            void commit_nodestroy() noexcept
+            {
+				DENSITY_ASSERT_INTERNAL(m_lock.owns_lock());
+				m_consume_operation.commit_nodestroy();
 				m_lock.unlock();
             }
 
@@ -648,7 +656,7 @@ namespace density
 		const heter_queue & inner_queue() const { return *this; }
 
 	private:
-		sync::mutex m_mutex;
+		mutable sync::mutex m_mutex;
 	};
 
 } // namespace density

@@ -158,7 +158,8 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, min_alignment));
 						
 					auto const new_tail = static_cast<ControlBlock*>(address_add(tail, i_size));
-					auto const new_tail_offset = reinterpret_cast<uintptr_t>(new_tail) & (ALLOCATOR_TYPE::page_alignment - 1);
+					auto const tail_offset = reinterpret_cast<uintptr_t>(tail) & (ALLOCATOR_TYPE::page_alignment - 1);
+					auto const new_tail_offset = tail_offset + i_size;
 
 					if ( DENSITY_LIKELY( new_tail_offset <= s_end_control_offset) )
 					{
@@ -187,7 +188,7 @@ namespace density
 			/** Handles a page overflow of the tail. This function may allocate a new page.
 				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail 
 					in then meanwhile.
-				@return an update value of tail, that makes the curremt thread progress. */
+				@return an update value of tail, that makes the current thread progress. */
 			DENSITY_NO_INLINE ControlBlock * page_overflow(ControlBlock * const i_tail)
 			{
 				auto const page_end = get_end_control_block(i_tail);
@@ -216,6 +217,11 @@ namespace density
 				}
 			}
 
+
+			/** Tries to allocate a new page. In any case returns an update value of m_tail.
+				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail 
+					in then meanwhile.
+				@return an update value of tail, that makes the current thread progress. */
 			ControlBlock * get_or_allocate_next_page(ControlBlock * const i_end_control)
 			{
 				DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
@@ -368,10 +374,10 @@ namespace density
 
 			struct Consume
 			{
-				NonblockingQueueHead * m_queue = nullptr;
-				ControlBlock * m_control = nullptr;				
-				uintptr_t m_next_ptr = 0;
-
+				NonblockingQueueHead * m_queue = nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
+				ControlBlock * m_control = nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */	
+				uintptr_t m_next_ptr = 0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and only if m_next_ptr == 0 */
+		
 				Consume() noexcept = default;
 
 				Consume(const Consume &) = delete;
@@ -405,8 +411,8 @@ namespace density
 					}
 				}
 
-				/** Moves the Consume to the head */
-				void start_from_head(NonblockingQueueHead * i_queue) noexcept
+				/** Moves the Consume to the head, pinning it. The previously pinned page is unpinned.*/
+				void move_to_head(NonblockingQueueHead * i_queue) noexcept
 				{
 					ControlBlock * head = i_queue->m_head.load();
 
@@ -431,14 +437,15 @@ namespace density
 				}
 
 				/** \internal
-					Tries to start a consume operation. The returned ConsumeData is empty if the operation fails.
-					Otherwise it contains a pointer to the head and a pointer to the element being consumed.
-					All the pages in the inclusive range { m_head, m_control } get pinned. */
+					Tries to start a consume operation. The Consume must be initially empty. 
+					If there are no consumable elements, the Consume remains empty (m_next_ptr == 0).
+					Otherwise m_next_ptr is the value to set on the ControlBox to commit the consume 
+					(it has the NbQueue_Dead flag). */
 				void start_consume_impl(NonblockingQueueHead * i_queue) noexcept
 				{
 					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 
-					start_from_head(i_queue);
+					move_to_head(i_queue);
 
 					for (;;)
 					{
@@ -447,8 +454,11 @@ namespace density
 						// check if next_uint is non-zero (excluding the bit NbQueue_InvalidNextPage)
 						if ( (next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
 						{
+							/* here we have observed a non-zero m_control->m_next. We handle
+								detail::NbQueue_InvalidNextPage with the zero case.*/
 							if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
 							{
+								/** This element is ready to be consumed, so we try to set the flag NbQueue_Busy on it */
 								auto expected = next_uint;
 								if (raw_atomic_compare_exchange_strong(m_control->m_next, expected, next_uint | detail::NbQueue_Busy,
 									detail::mem_seq_cst, detail::mem_relaxed))
@@ -458,11 +468,20 @@ namespace density
 								}
 							}
 
+							// advance m_control to the next element
 							auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 							DENSITY_ASSERT_INTERNAL(next != 0);
-
-							if (!same_page(m_control, next))
+							if (DENSITY_LIKELY(same_page(m_control, next)))
 							{
+								// no page switch
+								DENSITY_ASSERT_INTERNAL(m_control != get_end_control_block(m_control));
+								m_control = next;
+							}
+							else
+							{
+								/* page switch: we have to do a safe pinning of the next page */
+								DENSITY_ASSERT_INTERNAL(m_control == get_end_control_block(m_control));
+
 								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
 								m_queue->ALLOCATOR_TYPE::pin_page(next);
 
@@ -470,7 +489,7 @@ namespace density
 								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
 								if (updated_next == nullptr)
 								{
-									start_from_head(i_queue);
+									move_to_head(i_queue);
 									m_queue->ALLOCATOR_TYPE::unpin_page(next);
 									continue;
 								}
@@ -478,8 +497,8 @@ namespace density
 								DENSITY_ASSERT_INTERNAL(next == updated_next);
 
 								m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+								m_control = next;
 							}
-							m_control = next;
 						}
 						else
 						{
@@ -560,7 +579,7 @@ namespace density
 					raw_atomic_store(m_control->m_next, m_next_ptr, detail::mem_seq_cst);
 					m_next_ptr = 0;
 
-					start_from_head(m_queue);
+					move_to_head(m_queue);
 
 					for (;;)
 					{

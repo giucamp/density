@@ -560,8 +560,5 @@ namespace density
     /*! \page function_queue_sample A sample with function queues
     \include function_queue_sample.cpp
     */
-    /*! \page producer_consumer_sample A producer-consumer sample
-    \include producer_consumer_sample.cpp
-    */
 
 } // namespace density

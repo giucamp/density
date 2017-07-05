@@ -9,6 +9,7 @@
 #include <limits>
 #include <utility>
 #include <typeinfo>
+#include <functional> // for std::hash
 #include <density/density_common.h>
 
 namespace density
@@ -329,20 +330,16 @@ namespace density
                 @param i_complete_dest pointer to the storage in which the TYPE must be constructed.
                 @param i_base_source pointer to a subobject (of type BASE) of an object whose complete
                     type is TYPE, that is to be used as source of the move.
-                @return pointer to a subobject (of type BASE) of the new object.
-            The move constructor must be noexcept, otherwise a compile time error is raised. */
+                @return pointer to a subobject (of type BASE) of the new object. */
         struct move_construct
         {
             using type = void * (*)(void * i_dest, void * i_source);
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static void * invoke(void * i_complete_dest, void * i_base_source) noexcept
+                static void * invoke(void * i_complete_dest, void * i_base_source)
                 {
-                    static_assert(std::is_nothrow_move_constructible<TYPE>::value,
-                        "The move constructor is required to be noexcept");
-
-                    DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
+					DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
 
                     BASE * base_source = static_cast<BASE*>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
@@ -355,7 +352,7 @@ namespace density
         template <typename TYPE, typename BASE>
             const uintptr_t move_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature allows to invoke a function object. The template parameter must be a callable type.
+        /** This feature invokes a function object. The template parameter must be a callable type.
                 @tparam CALLABLE signature of the object function
 
             Example:
@@ -387,7 +384,7 @@ namespace density
         template <typename TYPE, typename BASE>
         const uintptr_t invoke<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature allows to invoke and destroys a function object. The template parameter must be a callable type.
+        /** This feature invokes and destroys a function object. The template parameter must be a callable type.
             The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
             it is faster than using the latter features in sequence.
                 @tparam CALLABLE signature of the object function.
@@ -422,15 +419,67 @@ namespace density
                 }
                 static void invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
                 {
-                    const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    (*detail::down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
-                    detail::down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
+                    auto const base_dest = static_cast<BASE*>(i_base_dest);
+					auto const ptr = detail::down_cast<TYPE*>(base_dest);
+                    (*ptr)(std::forward<PARAMS>(i_params)...);
+                    ptr->TYPE::~TYPE();
                 }
             };
         };
         template <typename RET, typename... PARAMS>
         template <typename TYPE, typename BASE>
             const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke_and_destroy);
+
+
+        /** This feature aligns, invokes and destroys a function object. The template parameter must be a callable type.
+            The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
+            it is faster than using the latter features in sequence.
+                @tparam CALLABLE signature of the object function.
+            \sa type_features::invoke
+            \sa type_features::destroy */
+        #ifndef DOXYGEN_DOC_GENERATION
+            template <typename> struct align_invoke_destroy;
+            template <typename RET, typename... PARAMS>
+            struct align_invoke_destroy<RET(PARAMS...)>
+        #else
+            template <typename CALLABLE>
+                struct align_invoke_destroy
+        #endif
+        {
+            using type = RET(*)(void * i_base_dest, PARAMS... i_params);
+
+			template <typename BASE, typename TYPE> struct Impl
+            {
+				static_assert(std::is_void<BASE>::value, "align_invoke_destroy: BASE must be a void type");
+
+                static RET align_and_invoke_and_destroy(void * i_base_dest, PARAMS... i_params)
+                {
+                    return align_and_invoke_and_destroy_impl(i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
+                }
+                static const uintptr_t value;
+
+            private:
+                static RET align_and_invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
+                {
+                    auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
+					auto const derived = detail::down_cast<TYPE*>(base_dest);
+					auto && result = (*derived)(std::forward<PARAMS>(i_params)...);
+                    derived->TYPE::~TYPE();
+                    return result;
+                }
+                static void align_and_invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
+                {
+                    auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
+					auto const ptr = detail::down_cast<TYPE*>(base_dest);
+					(*ptr)(std::forward<PARAMS>(i_params)...);
+                    ptr->TYPE::~TYPE();
+                }
+            };
+        };
+        template <typename RET, typename... PARAMS>
+        template <typename TYPE, typename BASE>
+            const uintptr_t align_invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(align_and_invoke_and_destroy);
+
 
         /** This feature stores a pointer to the destructor of a type.
                 @param i_base_dest pointer to the object to be destroyed. */
@@ -851,9 +900,8 @@ namespace density
             \n\b Requires:
                 - the feature type_features::move_construct must be included in the FEATURE_LIST
                 - the runtime_type must be non-empty
-
-            \n\b Throws: nothing. Move constructors are required to be noexcept. */
-        common_type * move_construct(void * i_dest, common_type * i_source) const noexcept
+			*/
+        common_type * move_construct(void * i_dest, common_type * i_source) const 
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -954,6 +1002,22 @@ namespace density
             return m_table != i_other.m_table;
         }
 
+		/** Returns whether the target type of this runtime_type is exactly the one specified in the
+			template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
+		template <typename TYPE>
+			bool is() const noexcept
+		{
+			return m_table == detail::FeatureTable<common_type,
+                typename std::decay<TYPE>::type, FEATURE_LIST>::s_table;
+		}
+
+		/** Returns an hash. This function is used for the partial specialization of std::hash
+			for runtime_type. */
+		size_t hash() const noexcept
+		{
+			return std::hash<const void*>()(m_table);
+		}
+
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
 
@@ -974,4 +1038,18 @@ namespace density
     private:
         void * const * m_table;
     };
+}
+
+namespace std
+{
+	/** Partial specialization of std::hash to allow the use of density::runtime_type as keys
+		of unordered associative containers. */
+	template <typename COMMON_TYPE, typename FEATURE_LIST>
+		struct hash< density::runtime_type<COMMON_TYPE, FEATURE_LIST> >
+	{
+		size_t operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const noexcept
+		{
+			return i_runtime_type.hash();
+		}
+	};
 }

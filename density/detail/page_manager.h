@@ -431,13 +431,13 @@ namespace density
 
 				~GlobalData()
 				{
-					auto curr = m_first_slot.load();
-					while (curr != nullptr)
-					{
+					auto const first = m_first_slot.load();
+					auto curr = first;
+					do {
 						auto const next = curr->m_next_slot.load();
 						FreePageStore::destroy(curr);
 						curr = next;
-					}
+					} while (curr != first);
 				}
 
 				FreePageStore * assign_one() noexcept
