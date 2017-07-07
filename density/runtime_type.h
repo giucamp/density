@@ -564,8 +564,8 @@ namespace density
     {
         /* GetDefaultFeatures<TYPE>::type. Implementation of default_type_features */
         template <typename TYPE,
-            bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_same<void, TYPE>::value,
-            bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_same<void, TYPE>::value
+            bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_void<TYPE>::value,
+            bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_void<void>::value
         > struct GetDefaultFeatures;
 
         template <typename TYPE> struct GetDefaultFeatures<TYPE, false, false >

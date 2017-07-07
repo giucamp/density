@@ -22,11 +22,7 @@ namespace density_tests
 	public:
 
 		/** Constructs a Progress, assigning the target count. The target count can't be changed. */
-		Progress(size_t i_target_count) noexcept
-			: m_target_count(i_target_count), m_target_count_reciprocal_times_100(100.0 / i_target_count)
-		{
-
-		}
+		Progress(size_t i_target_count) noexcept;
 
 		// copy and move not allowed
 		Progress(const Progress &) = delete;
@@ -64,70 +60,34 @@ namespace density_tests
 		}
 
 		/** Writes the progress in an human readable format. */
-		void write_to_stream(std::ostream & i_ostream) const
-		{
-			// compute the completion percentage
-			auto const curr_count = m_curr_count.load(std::memory_order_relaxed);
-			auto const percentage = static_cast<int>(curr_count * m_target_count_reciprocal_times_100);
-
-			// compute the elapsed time (is seconds)
-			using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-			auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
-
-			if (curr_count < m_target_count)
-			{
-				/* compute a linear estimate of the remaining time, based on the equation:
-						percentage / 100 = elapsed / (remaining + elapsed)						*/
-				auto const remaining = (percentage < 0.0001) ? -1. : elapsed.count() * (100. / percentage - 1.);
-
-				// actual write
-				i_ostream << percentage;
-				if (remaining == -1.)
-					i_ostream << "%";
-				else
-					i_ostream << "%, remaining time estimate: " << remaining << " seconds";
-			}
-			else
-			{
-				i_ostream << "completed in " << elapsed.count() << " seconds";				
-			}
-		}
+		void write_to_stream(std::ostream & i_ostream) const;
 
 		/** Writes the progress in an human readable format. */
-		template <typename OSTREAM>
-			friend OSTREAM & operator << (OSTREAM & i_ostream, const Progress & i_progress)
+		friend std::ostream & operator << (std::ostream & i_ostream, const Progress & i_progress)
 		{
 			i_progress.write_to_stream(i_ostream);
 			return i_ostream;
 		}
 	};
 
-	class DurationPrint
+	/** */
+	class PrintScopeDuration
 	{
 	public:
 
-		DurationPrint(std::ostream & i_ostream, const char * i_label)
-			: m_ostream(i_ostream), m_label(i_label)
-		{
-			
-		}
+		PrintScopeDuration(std::ostream & i_ostream, const char * i_label);
 
-		DurationPrint(const DurationPrint &) = delete;
-		DurationPrint & operator = (const DurationPrint &) = delete;
+		PrintScopeDuration(const PrintScopeDuration &) = delete;
+		PrintScopeDuration & operator = (const PrintScopeDuration &) = delete;
 		
-		~DurationPrint()
-		{
-			// compute the elapsed time (is seconds)
-			using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-			auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
-
-			m_ostream << m_label << "(" << elapsed.count() << ")" << std::endl;
-		}
+		~PrintScopeDuration();
 
 	private:
 		std::ostream & m_ostream;
 		std::string const m_label;
 		std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
 	};
+
+	void write_duration(std::ostream & i_ostream, double i_seconds);
 
 } // namespace density_tests

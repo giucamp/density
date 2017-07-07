@@ -1,12 +1,16 @@
 
-#include <density/heterogeneous_queue.h>
 #include <string>
+#include <ostream>
 #include <assert.h>
+#include <density/heterogeneous_queue.h>
+#include "../density_tests/test_framework/progress.h"
 
 namespace density_tests
 {
-void heterogeneous_queue_samples()
+void heterogeneous_queue_samples(std::ostream & i_ostream)
 {
+	PrintScopeDuration(i_ostream, "heterogeneous queue samples");
+
 	using namespace density;
 		
 	//! [heterogeneous_queue example 1]

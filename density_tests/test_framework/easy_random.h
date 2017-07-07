@@ -60,10 +60,23 @@ namespace density_tests
 			return std::uniform_int_distribution<INT>(0, i_max)(m_rand);
 		}
 
+		/** Returns a random integer*/
+		template <typename INT>
+			INT get_int()
+		{
+			return std::uniform_int_distribution<INT>()(m_rand);
+		}
+
 		/** Returns a random boolean */
 		int32_t get_bool()
 		{
 			return std::uniform_int_distribution<int32_t>(0, 1)(m_rand) == 0;
+		}
+
+		/** Returns a random boolean */
+		int32_t get_bool(double i_true_probability)
+		{
+			return std::uniform_real_distribution<double>(0.0, 1.0)(m_rand) < i_true_probability;
 		}
 
 	private:

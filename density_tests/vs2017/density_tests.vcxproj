@@ -149,8 +149,11 @@
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\queue_generic_tests.cpp" />
+    <ClCompile Include="..\test_framework\density_test_common.cpp" />
+    <ClCompile Include="..\test_framework\dynamic_type.cpp" />
     <ClCompile Include="..\test_framework\exception_tests.cpp" />
     <ClCompile Include="..\test_framework\line_updater_stream_adapter.cpp" />
+    <ClCompile Include="..\test_framework\progress.cpp" />
     <ClCompile Include="..\test_framework\shared_block_registry.cpp" />
     <ClCompile Include="..\test_framework\test_objects.cpp" />
   </ItemGroup>
@@ -176,6 +179,7 @@
     <ClInclude Include="..\tests\complex_polymorphism.h" />
     <ClInclude Include="..\tests\queue_generic_tests.h" />
     <ClInclude Include="..\test_framework\density_test_common.h" />
+    <ClInclude Include="..\test_framework\dynamic_type.h" />
     <ClInclude Include="..\test_framework\easy_random.h" />
     <ClInclude Include="..\test_framework\exception_tests.h" />
     <ClInclude Include="..\test_framework\line_updater_stream_adapter.h" />

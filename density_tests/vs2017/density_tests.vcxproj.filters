@@ -23,6 +23,15 @@
     <ClCompile Include="..\tests\queue_generic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_framework\progress.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\dynamic_type.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\density_test_common.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\any.h">
@@ -111,6 +120,9 @@
     </ClInclude>
     <ClInclude Include="..\tests\queue_generic_tests.h">
       <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\dynamic_type.h">
+      <Filter>test_framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

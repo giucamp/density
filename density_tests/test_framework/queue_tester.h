@@ -20,7 +20,7 @@ namespace density_tests
 	template <typename QUEUE>
 		class QueueTester
 	{
-		using PutTestCase = void (*)(QUEUE & i_queue);
+		using PutTestCase = void (*)(QUEUE & i_queue, EasyRandom &);
 		using ConsumeTestCase = void (*)(typename QUEUE::consume_operation & i_queue);
 
 	public:
@@ -94,7 +94,7 @@ namespace density_tests
 
 			auto put_func = [&] {
 
-				(*m_put_cases[put_index])(i_queue);
+				(*m_put_cases[put_index])(i_queue, i_random);
 
 				// done! From now on no exception can occur
 				auto & counters = i_state.m_put_counters[put_index];
@@ -120,7 +120,8 @@ namespace density_tests
 				if (auto consume = i_queue.try_start_consume())
 				{
 					// find the type to get the index
-					auto const type_it = m_put_types.find(consume.complete_type());
+					auto const type = consume.complete_type();
+					auto const type_it = m_put_types.find(type);
 					DENSITY_TEST_ASSERT(type_it != m_put_types.end());
 
 					// call the user-provided callback

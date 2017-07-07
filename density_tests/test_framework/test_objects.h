@@ -1,12 +1,19 @@
 #pragma once
+
+#define DENSITY_TEST_INSTANCE_PROGRESSIVE	0
+#define DENSITY_TEST_INSTANCE_REGISTRY		0
+
 #include <atomic>
 #include <type_traits>
 #include <limits>
 #include <density/runtime_type.h>
 #include "density_test_common.h"
 #include "exception_tests.h"
-
-#define DENSITY_TEST_INSTANCE_PROGRESSIVE 1
+#if DENSITY_TEST_INSTANCE_REGISTRY
+	#include <mutex>
+	#include <unordered_set>
+	#include <ostream>
+#endif
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -23,19 +30,13 @@ namespace density_tests
 		{
 		public:
 
-			ScopedLeakCheck()
-				: m_instances(s_instance_counter.load())
-			{
+			ScopedLeakCheck();
 
-			}
-
-			~ScopedLeakCheck()
-			{
-				DENSITY_TEST_ASSERT(m_instances == s_instance_counter.load());
-			}
+			~ScopedLeakCheck();
 
 			ScopedLeakCheck(const ScopedLeakCheck &) = delete;
 			ScopedLeakCheck & operator = (const ScopedLeakCheck &) = delete;
+
 		private:
 			size_t m_instances;
 		};
@@ -45,6 +46,12 @@ namespace density_tests
 			new_instance();
 		}
 
+		#if DENSITY_TEST_INSTANCE_REGISTRY
+
+			virtual void write_leak(std::ostream & i_ostream) const;
+
+		#endif
+
 		InstanceCounted(const InstanceCounted &) noexcept
 		{
 			new_instance();
@@ -52,19 +59,28 @@ namespace density_tests
 
 		~InstanceCounted()
 		{
+			#if DENSITY_TEST_INSTANCE_REGISTRY
+				unregister_instance(this);
+			#endif
+
 			auto const prev_count = s_instance_counter.fetch_sub(1, std::memory_order_relaxed);
 			DENSITY_TEST_ASSERT(prev_count > 0);
 		}
 
 	private:
 
-		void new_instance() noexcept
-		{
-			s_instance_counter.fetch_add(1, std::memory_order_relaxed);
-			#if DENSITY_TEST_INSTANCE_PROGRESSIVE
-				m_instance_progr = s_next_instance_progr.fetch_add(1, std::memory_order_relaxed);
-			#endif
-		}
+		void new_instance();
+
+		#if DENSITY_TEST_INSTANCE_REGISTRY
+
+			struct Registry;
+
+			static Registry & get_registry();
+
+			static void register_instance(InstanceCounted *);
+			static void unregister_instance(InstanceCounted *);
+
+		#endif
 
 	private:
 		#if DENSITY_TEST_INSTANCE_PROGRESSIVE

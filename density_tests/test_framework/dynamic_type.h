@@ -6,8 +6,9 @@
 
 #pragma once
 #include <density\density_common.h>
-#include <testity/testity_common.h>
-#include <random>
+#include <limits>
+#include "density_test_common.h"
+#include "easy_random.h"
 
 namespace density_tests
 {
@@ -17,18 +18,19 @@ namespace density_tests
 
         using common_type = void*;
 
-        static DynamicType make_random(std::mt19937 & i_random)
+        static DynamicType make_random(EasyRandom & i_random)
         {
-            auto const id = std::uniform_int_distribution<size_t>()(i_random);
-            auto const alignment = size_t(1) << std::uniform_int_distribution<size_t>(0, 16)(i_random);
-            auto const size = alignment * std::binomial_distribution<size_t>(16, 0.5)(i_random);
+			auto const id = i_random.get_int<size_t>();
+            auto const alignment = size_t(1) << i_random.get_int<size_t>(0, 16);
+            auto const size = alignment * i_random.get_int<size_t>(1, 32);
             return DynamicType(id, size, alignment);
         }
 
         DynamicType(size_t i_id, size_t i_size, size_t i_alignment)
             : m_id(i_id), m_size(i_size), m_alignment(i_alignment)
         {
-            TESTITY_ASSERT(i_alignment > 0 && density::is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
+            DENSITY_TEST_ASSERT(i_alignment > 0 && density::is_power_of_2(i_alignment) &&
+				i_size >= i_alignment && (i_size % i_alignment) == 0);
         }
 
         size_t size() const noexcept { return m_size; }
@@ -37,7 +39,7 @@ namespace density_tests
 
         common_type * default_construct(void * i_dest) const
         {
-            TESTITY_ASSERT(density::address_is_aligned(i_dest, m_alignment));
+            DENSITY_TEST_ASSERT(density::address_is_aligned(i_dest, m_alignment));
             memset(i_dest, static_cast<int>(m_id & std::numeric_limits<unsigned char>::max()), m_size);
             auto const result = to_base(i_dest);
             check_content(result);
@@ -47,7 +49,7 @@ namespace density_tests
         common_type * copy_construct(void * i_dest, const common_type * i_source) const
         {
             check_content(i_source);
-            TESTITY_ASSERT(density::address_is_aligned(i_dest, m_alignment));
+            DENSITY_TEST_ASSERT(density::address_is_aligned(i_dest, m_alignment));
             memcpy(i_dest, from_base(i_source), m_size);
             auto const result = to_base(i_dest);
             check_content(result);
@@ -94,10 +96,10 @@ namespace density_tests
         void check_content(const common_type * i_ptr) const
         {
             auto const chars = static_cast<const unsigned char *>(from_base(i_ptr));
-            TESTITY_ASSERT(density::address_is_aligned(chars, m_alignment));
+            DENSITY_TEST_ASSERT(density::address_is_aligned(chars, m_alignment));
             for (size_t index = 0; index < m_size; index++)
             {
-                TESTITY_ASSERT(chars[index] == (m_id & std::numeric_limits<unsigned char>::max()));
+                DENSITY_TEST_ASSERT(chars[index] == (m_id & std::numeric_limits<unsigned char>::max()));
             }
         }
 

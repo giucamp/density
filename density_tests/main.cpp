@@ -7,21 +7,20 @@
 
 namespace density_tests
 {
-	void heterogeneous_queue_samples();
-	void heterogeneous_queue_basic_tests();
+	void heterogeneous_queue_samples(std::ostream & i_ostream);
+	void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 }
 
 void do_tests(std::ostream & i_ostream)
 {
 	using namespace density_tests;
 
-	DurationPrint dur(i_ostream, "*** All test completed ");
+	PrintScopeDuration dur(i_ostream, "all tests");
 
-	i_ostream << "*** executing samples..." << std::endl;
-	heterogeneous_queue_samples();
 
-	i_ostream << "\n*** executing basic tests..." << std::endl;
-	heterogeneous_queue_basic_tests();
+	heterogeneous_queue_samples(i_ostream);
+
+	heterogeneous_queue_basic_tests(i_ostream);
 
 	i_ostream << "\n*** executing generic tests..." << std::endl;
 	all_queues_generic_tests(QueueTesterFlags::eNone, i_ostream, 3, 100000);

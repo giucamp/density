@@ -14,7 +14,7 @@ namespace density_tests
 		using ElementType = int;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue)
+			static void put(QUEUE & queue, EasyRandom &)
 		{
 			//! [queue push example 1]
 	queue.push(1);
@@ -33,7 +33,7 @@ namespace density_tests
 		using ElementType = std::string;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue)
+			static void put(QUEUE & queue, EasyRandom &)
 		{
 			//! [queue push example 1]
 				std::string str("hello world!");
@@ -53,11 +53,23 @@ namespace density_tests
 		using ElementType = uint8_t;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue)
+			static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
-		//! [queue push emplace 2]
+			if (i_rand.get_bool(.9))
+			{
+	//! [queue push emplace 2]
 	queue.emplace<uint8_t>(static_cast<uint8_t>(8));
-		//! [queue push emplace 2]
+	//! [queue push emplace 2]
+			}
+			else
+			{
+				ElementType val = 8;
+				auto type = QUEUE::runtime_type::make<ElementType>();
+				if(i_rand.get_bool())
+					queue.dyn_push_copy(type, &val);
+				else
+					queue.dyn_push_move(type, &val);
+			}
 		}
 
 		template <typename CONSUME>
@@ -72,7 +84,7 @@ namespace density_tests
 		using ElementType = uint16_t;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue)
+			static void put(QUEUE & queue, EasyRandom &)
 		{
 		//! [queue push emplace 2]
 	auto put = queue.start_emplace<uint16_t>(static_cast<uint16_t>(15));
@@ -94,16 +106,70 @@ namespace density_tests
 		using ElementType = TestObject<SIZE, ALIGNMENT>;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue)
+			static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
-			//! [queue push example 1]
-	queue.push(ElementType());
-			//! [queue push example 1]
+			if (i_rand.get_bool(.9))
+			{
+				queue.push(ElementType());
+			}
+			else
+			{
+				auto type = QUEUE::runtime_type::make<ElementType>();
+				ElementType source;
+				queue.dyn_push_copy(type, &source);
+			}
 		}
 
 		template <typename CONSUME>
 			static void consume(CONSUME & /*i_consume*/)
 		{
+		}
+	};
+
+	struct PutRawBlocks
+	{
+		struct Data : InstanceCounted
+		{
+			std::vector<char*> m_blocks;
+		};
+
+		using ElementType = Data;
+
+		template <typename QUEUE>
+			static void put(QUEUE & queue, EasyRandom & i_rand)
+		{
+			auto put = queue.start_emplace<ElementType>();
+			size_t count = i_rand.get_int<size_t>(0, 200);
+			for (size_t index = 0; index < count; index++)
+			{
+				auto const size = count - index;
+				auto const fill_char = static_cast<char>('0' + size % 10);
+				auto const chars = static_cast<char*>(put.raw_allocate(size + 1, 1));
+				memset(chars, fill_char, size);
+				chars[size] = 0;
+				put.element().m_blocks.push_back(chars);
+			}
+			exception_checkpoint();
+			put.commit();
+		}
+
+		template <typename CONSUME>
+			static void consume(CONSUME & i_consume)
+		{
+			auto & data = i_consume.element<ElementType>();
+			auto const count = data.m_blocks.size();
+			
+			for (size_t index = 0; index < count; index++)
+			{
+				auto const size = count - index;
+				auto const fill_char = static_cast<char>('0' + size % 10);
+				auto const chars = data.m_blocks[index];
+				for (size_t i = 0; i < size; i++)
+				{
+					DENSITY_TEST_ASSERT(chars[i] == fill_char);
+				}
+				DENSITY_TEST_ASSERT(chars[size] == 0);
+			}
 		}
 	};
 
@@ -117,6 +183,8 @@ namespace density_tests
 		tester.add_put_case(PutString());
 		tester.add_put_case(PutTestObject<128, 8>());
 		tester.add_put_case(PutTestObject<256, 128>());
+		tester.add_put_case(PutRawBlocks());
+		
 		tester.run(i_flags, i_random, i_element_count);
 	}
 

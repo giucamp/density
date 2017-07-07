@@ -234,7 +234,7 @@ namespace density
 		constexpr static size_t s_sizeof_RuntimeType = uint_upper_align(sizeof(RUNTIME_TYPE), min_alignment);
 
 		/** Maximum size for an element to be allocated in the pages. */
-        constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType;
+        constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType - s_sizeof_ControlBlock;
 
         struct PutData
         {
@@ -576,16 +576,20 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-			auto push_data = actual_size <= s_max_size_inpage ?
+			auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<0>(actual_size, actual_alignment) : external_allocate<0>(actual_size, actual_alignment);
 
-            DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
+            DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr);
             
 			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;
+			runtime_type * type = nullptr; 
 			try
 			{
-				type = new (type_after_control(push_data.m_control_block)) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+				auto const type_storage = type_after_control(push_data.m_control_block);
+				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+				type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+
+				DENSITY_ASSERT_INTERNAL(push_data.m_element != nullptr);
 				element = new (push_data.m_element) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
 			}
 			catch (...)
@@ -597,7 +601,7 @@ namespace density
 				throw;
 			}
 
-            return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Begins a transaction to add at the end of queue an element of a type known at runtime, default-constructing it.
@@ -626,14 +630,32 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<0>(actual_size, actual_alignment) : external_allocate<0>(actual_size, actual_alignment);
 
-            DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
-            auto const element = i_type.default_construct(push_data.m_element);
+			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr);            
+			
+			COMMON_TYPE * element = nullptr;
+			runtime_type * type = nullptr;
+			try
+			{
+				auto const type_storage = type_after_control(push_data.m_control_block);
+				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+				type = new (type_storage) runtime_type(i_type);
+				
+				DENSITY_ASSERT_INTERNAL(push_data.m_element != nullptr);
+				element = i_type.default_construct(push_data.m_element);
+			}
+			catch (...)
+			{
+				if (type != nullptr)
+					type->RUNTIME_TYPE::~RUNTIME_TYPE();
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				push_data.m_control_block->m_next += detail::Queue_Dead;
+				throw;
+			}
 
-            return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction(this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
 
@@ -666,12 +688,30 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<0>(actual_size, actual_alignment) : external_allocate<0>(actual_size, actual_alignment);
 
-            DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
-            auto const element = i_type.copy_construct(push_data.m_element, i_source);
+			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr);            
+			
+			COMMON_TYPE * element = nullptr;
+			runtime_type * type = nullptr;			
+			try
+			{
+				auto const type_storage = type_after_control(push_data.m_control_block);
+				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+				type = new (type_storage) runtime_type(i_type);
+				
+				DENSITY_ASSERT_INTERNAL(push_data.m_element != nullptr);
+				element = i_type.copy_construct(push_data.m_element, i_source);
+			}
+			catch (...)
+			{
+				if (type != nullptr)
+					type->RUNTIME_TYPE::~RUNTIME_TYPE();
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				push_data.m_control_block->m_next += detail::Queue_Dead;
+				throw;
+			}
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
@@ -705,12 +745,30 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<0>(actual_size, actual_alignment) : external_allocate<0>(actual_size, actual_alignment);
 
-            DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr && push_data.m_element != nullptr);
-            new (type_after_control(push_data.m_control_block)) runtime_type(i_type);
-            auto const element = i_type.move_construct(push_data.m_element, i_source);
+			DENSITY_ASSERT_INTERNAL(push_data.m_control_block != nullptr);            
+			
+			COMMON_TYPE * element = nullptr;
+			runtime_type * type = nullptr;			
+			try
+			{
+				auto const type_storage = type_after_control(push_data.m_control_block);
+				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+				type = new (type_storage) runtime_type(i_type);
+				
+				DENSITY_ASSERT_INTERNAL(push_data.m_element != nullptr);
+				element = i_type.move_construct(push_data.m_element, i_source);
+			}
+			catch (...)
+			{
+				if (type != nullptr)
+					type->RUNTIME_TYPE::~RUNTIME_TYPE();
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				push_data.m_control_block->m_next += detail::Queue_Dead;
+				throw;
+			}
 
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
@@ -761,7 +819,8 @@ namespace density
                     content of the block is undefined.
 
                 @param i_size size in bytes of the block to allocate.
-                @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2.
+                @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2, and less than or
+						equal to i_size.
 
                 \pre The behavior is undefined if either:
 					- this transaction is empty
@@ -784,7 +843,7 @@ namespace density
 					actual_size = uint_upper_align(actual_size, min_alignment);
 				}
 
-                auto push_data = actual_size <= s_max_size_inpage ?
+                auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                     m_queue->implace_allocate<detail::Queue_Dead>(actual_size, actual_alignment) :
 					m_queue->external_allocate<detail::Queue_Dead>(actual_size, actual_alignment);
 
@@ -1293,7 +1352,7 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<detail::Queue_Busy>(actual_size, actual_alignment) :
 				external_allocate<detail::Queue_Busy>(actual_size, actual_alignment);
 
@@ -1319,7 +1378,7 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<detail::Queue_Busy>(actual_size, actual_alignment) :
 				external_allocate<detail::Queue_Busy>(actual_size, actual_alignment);
 
@@ -1346,7 +1405,7 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<detail::Queue_Busy>(actual_size, actual_alignment) :
 				external_allocate<detail::Queue_Busy>(actual_size, actual_alignment);
 
@@ -1372,7 +1431,7 @@ namespace density
                 actual_size = uint_upper_align(actual_size, min_alignment);
             }
 
-            auto push_data = actual_size <= s_max_size_inpage ?
+            auto push_data = actual_size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                 implace_allocate<detail::Queue_Busy>(actual_size, actual_alignment) :
 				external_allocate<detail::Queue_Busy>(actual_size, actual_alignment);
 
@@ -1450,7 +1509,7 @@ namespace density
 					actual_alignment = min_alignment;
 					actual_size = uint_upper_align(actual_size, min_alignment);
 				}
-                auto push_data = size <= s_max_size_inpage ?
+                auto push_data = size + (actual_alignment - min_alignment) <= s_max_size_inpage ?
                     m_queue->implace_allocate<detail::Queue_Dead>(size, alignment) :
                     m_queue->external_allocate<detail::Queue_Dead>(size, alignment);
                 return push_data.m_element;
@@ -2011,6 +2070,8 @@ namespace density
         {
             const auto type_ptr = type_after_control(i_control_block);
             type_ptr->destroy(get_element(i_control_block));
+
+			type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
 
             DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
             i_control_block->m_next += detail::Queue_Dead;
