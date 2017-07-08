@@ -67,6 +67,16 @@ namespace density_tests
 		*/
 		void run(uint32_t i_thread_count, uint32_t i_produces_per_thread, std::ostream & i_ostream)
 		{
+			i_ostream << "starting queue load unload test with " << i_thread_count << " threads and ";
+			i_ostream << i_produces_per_thread << " puts per thread";
+			i_ostream << "\nheterogeneous_queue: " << truncated_type_name<QUEUE>();
+			i_ostream << "\ncommon_type: " << truncated_type_name<typename QUEUE::common_type>();
+			i_ostream << "\nruntime_type: " << truncated_type_name<typename QUEUE::runtime_type>();
+			i_ostream << "\nallocator_type: " << truncated_type_name<typename QUEUE::allocator_type>();
+			i_ostream << "\npage_alignment: " << QUEUE::allocator_type::page_alignment;
+			i_ostream << "\npage_size: " << QUEUE::allocator_type::page_size;
+			i_ostream << std::endl;
+
 			// start the threads
 			std::vector<ThreadEntry> threads(i_thread_count);
 			uint32_t thread_index = 0;
@@ -105,13 +115,16 @@ namespace density_tests
 				{
 					thread_entry.m_thread.join();
 				}
-
-				while (consume_one());
-
-				final_check();
 			}
 
-			histogram<size_t> produced_hist("produced"), consumed_hist("consumed");
+			size_t consumed_by_main = 0;
+			while (consume_one())
+				consumed_by_main++;
+			i_ostream << consumed_by_main << " remaining items were consumed by the main thread" << std::endl;
+
+			final_check();
+
+			histogram<size_t> produced_hist("produced by i-th thread"), consumed_hist("consumed by i-th thread");
 			for (const auto & thread_entry : threads)
 			{
 				produced_hist << thread_entry.m_stats.m_produced.load();
@@ -120,6 +133,7 @@ namespace density_tests
 
 			i_ostream << produced_hist;
 			i_ostream << consumed_hist;
+			i_ostream << "--------------------------------------------\n" << std::endl;
 		}
 
 	private:

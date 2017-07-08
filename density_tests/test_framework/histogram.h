@@ -32,14 +32,14 @@ std::cout << hist;
 
 		Output:
 		\code
-Throwing two dices 2000 times     2 *           97.6
-                                  2 ***        174.6
-                                  3 ******     300.1
-                                  4 *********  418.7
-                                  4 ********** 439.5
-                                  5 ******     313.1
-                                  6 ***        177.2
-                                 12             79.2
+Throwing two dices 2000 times:         2|*         |97.6
+  [histogram]                          3|***       |174.6
+                                       4|******    |300.1
+                                       6|********* |418.7
+                                       7|**********|439.5
+                                       9|******    |313.1
+                                      10|***       |177.2
+                                      12|          |79.2
 		\endcode
 	*/
 	template <typename TYPE>
@@ -98,7 +98,13 @@ Throwing two dices 2000 times     2 *           97.6
 		{
 			std::vector<double> rows(m_row_count);
 
-			auto title = m_title.str();
+			std::string histogram_str("  [histogram]");
+			auto title = m_title.str() + ':';
+
+			auto const strings_len = std::max(title.size(), histogram_str.size());
+			title.resize(strings_len, ' ');
+			histogram_str.resize(strings_len, ' ');
+			std::string const spaces(title.size(), ' ');
 
 			if (m_values.size() == 0)
 			{
@@ -156,9 +162,7 @@ Throwing two dices 2000 times     2 *           97.6
 					}
 
 					// write on the stream
-					std::string const spaces(title.size(), ' ');
-					std::string stars(" ");
-					std::string padding("");
+					std::string stars, padding;
 					auto const minmax_rowlen_its = std::minmax_element(rows.begin(), rows.end());
 					auto const min_row_len = *minmax_rowlen_its.first;
 					auto const max_row_len = *minmax_rowlen_its.second;
@@ -166,7 +170,12 @@ Throwing two dices 2000 times     2 *           97.6
 
 					for (size_t i = 0; i < rows.size(); i++)
 					{
-						i_ostream << (i == 0 ? title : spaces);
+						if (i == 0)
+							i_ostream << title;
+						else if (i == 1)
+							i_ostream << histogram_str;
+						else
+							i_ostream << spaces;
 
 						TYPE row_value;
 						if (i == 0)
@@ -175,17 +184,17 @@ Throwing two dices 2000 times     2 *           97.6
 							row_value = max;
 						else
 							row_value = static_cast<TYPE>(min + i * row_to_value_factor);
-						i_ostream << std::setw(10) << row_value;
+						i_ostream << std::setw(10) << row_value << "|";
 
 						double row_length_float = m_row_length * (rows[i] - min_row_len) / (max_row_len - min_row_len);
 						auto row_length = clamp<int64_t>(static_cast<int64_t>(row_length_float + 0.5), 0,
 							static_cast<int64_t>(m_row_length));
 
-						stars.resize(1 + static_cast<size_t>(row_length), '*');
+						stars.resize(static_cast<size_t>(row_length), '*');
 						i_ostream << stars;
 
 						padding.resize(m_row_length - static_cast<size_t>(row_length), ' ');
-						i_ostream << padding << std::setw(10) << rows[i] << '\n';
+						i_ostream << padding << "|" << rows[i] << '\n';
 					}
 				}
 			}

@@ -4,11 +4,13 @@
 #include "easy_random.h"
 #include "line_updater_stream_adapter.h"
 #include "test_objects.h"
+#include "histogram.h"
 #include <density/density_common.h> // for density::concurrent_alignment
 #include <vector>
 #include <thread>
 #include <unordered_map>
 #include <ostream>
+#include <numeric>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -45,8 +47,20 @@ namespace density_tests
 			EasyRandom & i_random,
 			size_t i_target_put_count) const
 		{
+			m_output << "starting queue generic test with " << m_thread_count << " threads and ";
+			m_output << i_target_put_count << " total puts";
+			m_output << "\nheterogeneous_queue: " << truncated_type_name<QUEUE>();
+			m_output << "\ncommon_type: " << truncated_type_name<typename QUEUE::common_type>();
+			m_output << "\nruntime_type: " << truncated_type_name<typename QUEUE::runtime_type>();
+			m_output << "\nallocator_type: " << truncated_type_name<typename QUEUE::allocator_type>();
+			m_output << "\npage_alignment: " << QUEUE::allocator_type::page_alignment;
+			m_output << "\npage_size: " << QUEUE::allocator_type::page_size;
+			m_output << std::endl;
+
 			InstanceCounted::ScopedLeakCheck objecty_leak_check;
 			run_impl(i_flags, i_random, i_target_put_count);
+
+			m_output << "--------------------------------------------\n" << std::endl;
 		}
 
 	private:
@@ -194,6 +208,8 @@ namespace density_tests
 
 		void run_impl(QueueTesterFlags i_flags, EasyRandom & i_random, size_t i_target_put_count) const
 		{
+			bool const with_exceptions = (i_flags & QueueTesterFlags::eTestExceptions) != QueueTesterFlags::eNone;
+
 			QUEUE queue;
 
 			/* prepare the array of threads. The initialization of the random generator
@@ -240,15 +256,41 @@ namespace density_tests
 				threads[thread_index].m_thread.join();
 			}
 
+			histogram<size_t> histogram_spawned("spawned by i-th thread");
+			histogram<size_t> histogram_except_puts("exceptions_during_puts");
+			histogram<size_t> histogram_except_cons("exceptions_during_consumes");
+
 			State final_state(m_put_cases.size());
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
-				final_state += threads[thread_index].m_state;
+				auto const & thread_state = threads[thread_index].m_state;
+				final_state += thread_state;
+
+				auto const spawned = std::accumulate(
+					thread_state.m_put_counters.begin(), 
+					thread_state.m_put_counters.end(),
+					static_cast<size_t>(0),
+					[](size_t i_sum, const PutTypeCounters & i_counter) {
+						return i_sum + i_counter.m_spawned; });
+				histogram_spawned << spawned;
+
+				if (with_exceptions)
+				{
+					histogram_except_puts << thread_state.m_exceptions_during_puts;
+					histogram_except_cons << thread_state.m_exceptions_during_consumes;
+				}
 			}
 
 			for (auto const & counter : final_state.m_put_counters)
 			{
 				DENSITY_TEST_ASSERT(counter.m_existing == 0);
+			}
+
+			m_output << histogram_spawned;
+			if (with_exceptions)
+			{
+				m_output << histogram_except_puts;
+				m_output << histogram_except_cons;
 			}
 		}
 

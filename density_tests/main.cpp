@@ -50,6 +50,5 @@ int main()
 	sandbox();
 
 	do_tests(std::cout);
-	system("PAUSE");
 	return 0;
 }
