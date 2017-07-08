@@ -35,9 +35,9 @@ namespace density_tests
 			void add_put_case(PUT_CASE)
 		{
 			using ElementType = typename PUT_CASE::ElementType;
-			m_put_types.insert(std::make_pair(QUEUE::runtime_type::make<ElementType>(), m_put_cases.size()));
-			m_put_cases.push_back(&PUT_CASE::put<QUEUE>);
-			m_consume_cases.push_back(&PUT_CASE::consume<QUEUE::consume_operation>);
+			m_put_types.insert(std::make_pair(QUEUE::runtime_type::template make<ElementType>(), m_put_cases.size()));
+			m_put_cases.push_back(&PUT_CASE::template put<QUEUE>);
+			m_consume_cases.push_back(&PUT_CASE::template consume<typename QUEUE::consume_operation>);
 		}
 
 		/** Runs a test session. This function does not alter the object. */

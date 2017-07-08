@@ -4,19 +4,35 @@
 #include "tests/queue_generic_tests.h"
 #include <iostream>
 #include <cstdlib>
+#include <density/heterogeneous_queue.h>
 
 namespace density_tests
 {
 	void heterogeneous_queue_samples(std::ostream & i_ostream);
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
+
+	void load_unload_tests(std::ostream & i_ostream);
+}
+
+DENSITY_NO_INLINE void sandbox()
+{
+	using namespace density;
+
+	heterogeneous_queue<> queue;
+
+	for (int i = 0; i < 1000; i++)
+		queue.push(i);
+
+	queue.clear();
 }
 
 void do_tests(std::ostream & i_ostream)
 {
 	using namespace density_tests;
 
-	PrintScopeDuration dur(i_ostream, "all tests");
+	load_unload_tests(std::cout);
 
+	PrintScopeDuration dur(i_ostream, "all tests");
 
 	heterogeneous_queue_samples(i_ostream);
 
@@ -31,6 +47,8 @@ void do_tests(std::ostream & i_ostream)
 
 int main()
 {
+	sandbox();
+
 	do_tests(std::cout);
 	system("PAUSE");
 	return 0;

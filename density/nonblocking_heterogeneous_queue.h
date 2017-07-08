@@ -7,6 +7,8 @@
 #pragma once
 #include <density/density_common.h>
 #include <density/raw_atomic.h>
+#include <density/runtime_type.h>
+#include <density/void_allocator.h>
 #include <type_traits>
 #include <limits>
 
@@ -318,14 +320,14 @@ namespace density
 				{
 					// the allocation fits in a page
 					auto const put = inplace_allocate_impl(get_raw_allocation_required_size(
-						i_size, i_alignment, detail::NbQueue_Dead));
+						get_raw_allocation_required_size(i_size, i_alignment), detail::NbQueue_Dead));
 					return address_upper_align(address_add(put.m_control, s_type_eraser_offset), i_alignment);
 				}
 				else
 				{
 					// the allocation does not fit in a page, allocate inplace space for an ExternalBlock
 					auto const put = inplace_allocate_impl(get_raw_allocation_required_size(
-						sizeof(ExternalBlock), alignof(ExternalBlock), detail::NbQueue_Dead | detail::NbQueue_External));
+						sizeof(ExternalBlock), alignof(ExternalBlock)), detail::NbQueue_Dead | detail::NbQueue_External);
 					void * block_alloc = address_add(put.m_control, s_type_eraser_offset);
 					if (alignof(ExternalBlock) > alignof(RUNTIME_TYPE))
 					{
@@ -364,12 +366,14 @@ namespace density
 		private:
 
 			using Base = NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>;
-
+			
 		protected:
+
+			using ControlBlock = typename Base::ControlBlock;
 
 			NonblockingQueueHead()
 			{
-				std::atomic_init(&m_head, get_tail_for_consumers());
+				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
 			struct Consume
@@ -809,7 +813,8 @@ namespace density
 		{
 		private:
 			using Base = detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-		
+			using ControlBlock = typename Base::ControlBlock;
+
 		public:
 
 			using common_type = COMMON_TYPE;

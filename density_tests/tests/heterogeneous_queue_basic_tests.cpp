@@ -1,4 +1,4 @@
-#pragma once
+
 #include "../test_framework/density_test_common.h"
 #include "../test_framework/test_objects.h"
 #include "../test_framework/test_allocators.h"
@@ -43,7 +43,7 @@ namespace density_tests
 	template<typename ELEMENT, typename QUEUE>
 		void dynamic_pushes(QUEUE & i_queue)
 	{
-		auto const type = QUEUE::runtime_type::make<ELEMENT>();
+		auto const type = QUEUE::runtime_type::template make<ELEMENT>();
 		
 		i_queue.dyn_push(type);
 		

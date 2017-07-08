@@ -24,7 +24,7 @@ namespace density_tests
 		template <typename CONSUME>
 			static void consume(CONSUME & i_consume)
 		{
-			DENSITY_TEST_ASSERT(i_consume.element<ElementType>() == 1);			
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 1);			
 		}
 	};
 
@@ -44,7 +44,7 @@ namespace density_tests
 		template <typename CONSUME>
 			static void consume(CONSUME & i_consume)
 		{
-			DENSITY_TEST_ASSERT(i_consume.element<ElementType>() == "hello world!");			
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == "hello world!");			
 		}
 	};
 
@@ -58,13 +58,13 @@ namespace density_tests
 			if (i_rand.get_bool(.9))
 			{
 	//! [queue push emplace 2]
-	queue.emplace<uint8_t>(static_cast<uint8_t>(8));
+	queue.template emplace<uint8_t>(static_cast<uint8_t>(8));
 	//! [queue push emplace 2]
 			}
 			else
 			{
 				ElementType val = 8;
-				auto type = QUEUE::runtime_type::make<ElementType>();
+				auto type = QUEUE::runtime_type::template make<ElementType>();
 				if(i_rand.get_bool())
 					queue.dyn_push_copy(type, &val);
 				else
@@ -75,7 +75,7 @@ namespace density_tests
 		template <typename CONSUME>
 			static void consume(CONSUME & i_consume)
 		{
-			DENSITY_TEST_ASSERT(i_consume.element<ElementType>() == 8);			
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 8);			
 		}
 	};
 	
@@ -87,8 +87,9 @@ namespace density_tests
 			static void put(QUEUE & queue, EasyRandom &)
 		{
 		//! [queue push emplace 2]
-	auto put = queue.start_emplace<uint16_t>(static_cast<uint16_t>(15));
+	auto put = queue.template start_emplace<uint16_t>(static_cast<uint16_t>(15));
 	put.element() += 1;
+	exception_checkpoint();
 	put.commit(); // commit a 16. From now on, the element can be consumed
 		//! [queue push emplace 2]
 		}
@@ -96,7 +97,7 @@ namespace density_tests
 		template <typename CONSUME>
 			static void consume(CONSUME & i_consume)
 		{
-			DENSITY_TEST_ASSERT(i_consume.element<ElementType>() == 16);			
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 16);			
 		}
 	};
 
@@ -114,15 +115,16 @@ namespace density_tests
 			}
 			else
 			{
-				auto type = QUEUE::runtime_type::make<ElementType>();
+				auto type = QUEUE::runtime_type::template make<ElementType>();
 				ElementType source;
 				queue.dyn_push_copy(type, &source);
 			}
 		}
 
 		template <typename CONSUME>
-			static void consume(CONSUME & /*i_consume*/)
+			static void consume(CONSUME & i_consume)
 		{
+			i_consume.template element<ElementType>().check();
 		}
 	};
 
@@ -138,7 +140,7 @@ namespace density_tests
 		template <typename QUEUE>
 			static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
-			auto put = queue.start_emplace<ElementType>();
+			auto put = queue.template start_emplace<ElementType>();
 			size_t count = i_rand.get_int<size_t>(0, 200);
 			for (size_t index = 0; index < count; index++)
 			{
@@ -148,6 +150,11 @@ namespace density_tests
 				memset(chars, fill_char, size);
 				chars[size] = 0;
 				put.element().m_blocks.push_back(chars);
+
+				if (i_rand.get_bool(.05))
+				{
+					exception_checkpoint();
+				}
 			}
 			exception_checkpoint();
 			put.commit();
@@ -156,8 +163,10 @@ namespace density_tests
 		template <typename CONSUME>
 			static void consume(CONSUME & i_consume)
 		{
-			auto & data = i_consume.element<ElementType>();
+			auto & data = i_consume.template element<ElementType>();
 			auto const count = data.m_blocks.size();
+
+			exception_checkpoint();
 			
 			for (size_t index = 0; index < count; index++)
 			{

@@ -213,12 +213,12 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            return page_manager::allocate_page<detail::page_allocation_type::uninitialized>();
+			return page_manager::template allocate_page<detail::page_allocation_type::uninitialized>();
         }
 
 		void * allocate_page_zeroed()
 		{
-			return page_manager::allocate_page<detail::page_allocation_type::zeroed>();
+			return page_manager::template allocate_page<detail::page_allocation_type::zeroed>();
 		}
 
         /** Deallocates a memory page. After the call accessing the page results in undefined behavior.
@@ -229,13 +229,13 @@ namespace density
             \exception never throws */
         void deallocate_page(void * i_page) noexcept
         {
-			page_manager::deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
+			page_manager::template deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
         }
 
 		// the page may be not still zeroed, if it is pinned
 		void deallocate_page_zeroed(void * i_page) noexcept
 		{
-			page_manager::deallocate_page<detail::page_allocation_type::zeroed>(i_page);
+			page_manager::template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
 		}
 
 		/** Pins the page containing the specified address.

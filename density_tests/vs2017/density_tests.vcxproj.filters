@@ -32,6 +32,12 @@
     <ClCompile Include="..\test_framework\density_test_common.cpp">
       <Filter>test_framework</Filter>
     </ClCompile>
+    <ClCompile Include="..\tests\load_unload_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_framework\histogram.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\any.h">
@@ -122,6 +128,12 @@
       <Filter>tests</Filter>
     </ClInclude>
     <ClInclude Include="..\test_framework\dynamic_type.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\queue_load_unload_test.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\histogram.h">
       <Filter>test_framework</Filter>
     </ClInclude>
   </ItemGroup>

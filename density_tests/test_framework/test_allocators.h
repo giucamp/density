@@ -72,7 +72,7 @@ namespace density_tests
         void deallocate_page_zeroed(void * i_page) noexcept
         {
             m_registry.unregister_block(s_page_category, 
-				address_lower_align(i_page, page_alignment), page_size, page_alignment, 0);
+				density::address_lower_align(i_page, page_alignment), page_size, page_alignment, 0);
             Base::deallocate_page_zeroed(i_page);
         }
 
@@ -132,6 +132,7 @@ namespace density_tests
 
 			DENSITY_TEST_ASSERT(living_pages == 0);
 			DENSITY_TEST_ASSERT(living_pins == 0);
+			DENSITY_TEST_ASSERT(living_allocations == 0);
 			DENSITY_TEST_ASSERT(living_bytes == 0);
 
 			std::cout << "Destroying UnmovableFastTestAllocator."

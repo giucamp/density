@@ -130,6 +130,15 @@ namespace density_tests
 			return *this;
 		}
 
+		void check() const
+		{
+			auto storage = reinterpret_cast<const unsigned char *>(&m_storage);
+			for (size_t i = 0; i < SIZE; i++)
+			{
+				DENSITY_TEST_ASSERT(storage[i] == s_fill_byte);
+			}
+		}
+
 		~TestObject()
 		{
 			auto storage = reinterpret_cast<unsigned char *>(&m_storage);
@@ -156,7 +165,7 @@ namespace density_tests
 		template <typename TYPE>
 			static TestRuntimeTime make() noexcept
 		{
-			return TestRuntimeTime(UnderlyingType::make<TYPE>());
+			return TestRuntimeTime(UnderlyingType::template make<TYPE>());
 		}
 
         TestRuntimeTime()
@@ -243,7 +252,7 @@ namespace density_tests
 		template <typename TYPE>
 			bool is() const noexcept
 		{
-			return m_underlying_type.is<TYPE>();
+			return m_underlying_type.template is<TYPE>();
 		}
 
 		size_t hash() const noexcept

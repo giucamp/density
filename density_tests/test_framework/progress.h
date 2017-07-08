@@ -40,6 +40,12 @@ namespace density_tests
 			return m_target_count;
 		}
 
+		/** Sets the progress. */
+		void set_progress(size_t i_count) noexcept
+		{
+			m_curr_count.store(i_count, std::memory_order_relaxed);
+		}
+
 		/** Advance the progress. The provided parameter is added to the current count. */
 		void add_progress(size_t i_count_to_add) noexcept
 		{

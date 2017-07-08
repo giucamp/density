@@ -1128,6 +1128,17 @@ namespace density
                 {
                 }
 
+				bool start_consume(heterogeneous_queue * i_queue)
+				{
+					if (m_control != nullptr)
+					{
+						m_queue->cancel_consume_impl(m_control);
+					}
+					m_queue = i_queue;
+					m_control = i_queue->start_consume_impl();
+					return m_control != nullptr;
+				}
+
             #endif // #ifndef DOXYGEN_DOC_GENERATION
 
         private:
@@ -1207,6 +1218,11 @@ namespace density
             return consume_if_any_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
         }
 
+
+		bool try_start_consume(consume_operation i_consume) noexcept
+        {
+            return i_consume.start_consume(this);
+        }
 
         consume_operation try_start_consume() noexcept
         {
