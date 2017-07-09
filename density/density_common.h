@@ -6,7 +6,6 @@
 
 #pragma once
 #include <type_traits>
-#include <ostream>
 #include <limits>
 #include <cstddef>
 #include <utility>

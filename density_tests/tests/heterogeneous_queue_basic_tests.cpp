@@ -6,13 +6,63 @@
 #include "complex_polymorphism.h"
 #include <density/heterogeneous_queue.h>
 #include <type_traits>
-#include <ostream>
+#include <iterator>
 
 namespace density_tests
 {
+	void heterogeneous_queue_lifetime_tests()
+	{
+		using namespace density;
+
+		{
+			const void_allocator allocator;
+			heterogeneous_queue<> queue(allocator); // copy construct allocator
+			queue.push(1);
+			queue.push(2);
+
+			auto queue_copy(queue); // copy construct queue
+			DENSITY_TEST_ASSERT(!queue.empty() && !queue_copy.empty());
+			DENSITY_TEST_ASSERT(std::distance(queue_copy.begin(), queue_copy.end()) == 2);
+
+			auto other_queue(std::move(queue)); // move construct queue - the source becomes empty
+			DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
+			DENSITY_TEST_ASSERT(std::distance(other_queue.begin(), other_queue.end()) == 2);
+			DENSITY_TEST_ASSERT(std::distance(queue.begin(), queue.end()) == 0);
+
+			// test swaps
+			other_queue.swap(queue);
+			DENSITY_TEST_ASSERT(!queue.empty() && other_queue.empty());
+			swap(queue, other_queue);
+			DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
+			auto cons = other_queue.try_start_consume();
+			DENSITY_TEST_ASSERT(cons && cons.complete_type().is<int>() && cons.element<int>() == 1);
+			cons.commit();
+			cons = other_queue.try_start_consume();
+			DENSITY_TEST_ASSERT(cons && cons.complete_type().is<int>() && cons.element<int>() == 2);
+			cons.commit();
+			DENSITY_TEST_ASSERT(other_queue.empty());
+
+			// test allocator getters
+			move_only_void_allocator movable_alloc(5);
+			heterogeneous_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+
+			auto allocator_copy = other_queue.get_allocator();
+
+			move_only_queue.push(1);
+			move_only_queue.push(2);
+
+			move_only_queue.get_allocator_ref().dummy_func();
+
+			auto const & const_move_only_queue(move_only_queue);
+			const_move_only_queue.get_allocator_ref().const_dummy_func();
+		}
+
+		//move_only_void_allocator
+	}
+
 	/** Basic tests heterogeneous_queue<void, ...> with a non-polymorphic base */
 	template <typename QUEUE>
-	void heterogeneous_queue_basic_void_tests()
+		void heterogeneous_queue_basic_void_tests()
 	{
 		static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -164,6 +214,8 @@ namespace density_tests
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
+
+		heterogeneous_queue_lifetime_tests();
 
 		heterogeneous_queue_basic_nonpolymorphic_base_tests();
 

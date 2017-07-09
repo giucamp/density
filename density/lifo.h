@@ -172,9 +172,9 @@ namespace density
 
     private:
 
-        static const size_t granularity = alignof(std::max_align_t);
-        static const size_t s_alignment_mask = s_alignment - 1;
-        static const size_t s_min_page_size = 2048;
+        static constexpr size_t granularity = alignof(std::max_align_t);
+        static constexpr size_t s_alignment_mask = s_alignment - 1;
+        static constexpr size_t s_min_page_size = 2048;
 
         DENSITY_NO_INLINE void * alloc_new_page(size_t i_needed_size)
         {
@@ -320,7 +320,7 @@ namespace density
         Memory is allocated\freed with the member function allocate and deallocate. A living block is a block allocated,
         eventually reallocated, but not yet deallocated. Every thread has its own stack of living blocks.
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED BY A THREAD. If a block which is not
-        the most recently allocated living block of the caling thread is deallocated or reallocated, the behavior is undefined.
+        the most recently allocated living block of the calling thread is deallocated or reallocated, the behavior is undefined.
         For simplicity, thread_lifo_allocator does not support custom alignments : every block is guaranteed to be like
         std::max_align_t.
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
@@ -616,7 +616,7 @@ namespace density
             }
         }
 
-        /** Constructs a lifo_array and all its elements, given an iterator range to use as source for copy-cosntruction. Elements are constructed in positional order.
+        /** Constructs a lifo_array and all its elements, given an iterator range to use as source for copy-construction. Elements are constructed in positional order.
             The size of the array is computed with std::distance(i_begin, i_end)
             @param i_begin points to the first source value
             @param i_end points to the first value that is not copied in the array. */

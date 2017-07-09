@@ -1,6 +1,7 @@
 #pragma once
 #include <typeinfo>
 #include <string>
+#include <density/void_allocator.h>
 
 #define DENSITY_TEST_ASSERT(expr)		if(!(expr)) detail::assert_failed(__FILE__, __func__, __LINE__, #expr); else (void)0
 
@@ -35,4 +36,28 @@ namespace density_tests
 	{
 		void assert_failed(const char * i_source_file, const char * i_function, int i_line, const char * i_expr);
 	}
+
+	/** Move-only wrapper of void_allocator */
+	struct move_only_void_allocator : density::void_allocator
+	{
+		move_only_void_allocator(int) {}
+
+		move_only_void_allocator(move_only_void_allocator &&) = default;
+
+		move_only_void_allocator & operator = (move_only_void_allocator &&) = default;
+
+		move_only_void_allocator(const move_only_void_allocator&) = delete;
+
+		move_only_void_allocator & operator = (const move_only_void_allocator&) = delete;
+
+		void dummy_func()
+		{
+
+		}
+
+		void const_dummy_func() const
+		{
+
+		}
+	};
 }

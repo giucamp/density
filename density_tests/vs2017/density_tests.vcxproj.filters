@@ -136,6 +136,9 @@
     <ClInclude Include="..\test_framework\histogram.h">
       <Filter>test_framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\io_runtimetype_features.h">
+      <Filter>density</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

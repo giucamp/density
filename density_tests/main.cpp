@@ -30,8 +30,6 @@ void do_tests(std::ostream & i_ostream)
 {
 	using namespace density_tests;
 
-	load_unload_tests(std::cout);
-
 	PrintScopeDuration dur(i_ostream, "all tests");
 
 	heterogeneous_queue_samples(i_ostream);
@@ -43,6 +41,8 @@ void do_tests(std::ostream & i_ostream)
 
 	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
 	all_queues_generic_tests(QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
+
+	load_unload_tests(std::cout);
 }
 
 int main()
