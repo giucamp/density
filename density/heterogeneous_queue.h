@@ -46,7 +46,7 @@ namespace density
 		};
     }
 
-    /** \brief Heterogeneous FIFO pseudo-container class template. 	
+    /** Class template implementing an heterogeneous FIFO pseudo-container. 	
 
 		A value of heterogeneous_queue is a pair of a runtime type object bound to a type E, and an object of type E (called element).
 		heterogeneous_queue is an heterogeneous pseudo-container: elements of the same queue can have different types.
@@ -113,6 +113,8 @@ namespace density
 		multithreading). \n
 		In contrast, while a non-reentrant operation is in progress, the queue is not in a consistent state: if during a put the 
 		construction of the new element directly or indirectly calls other member functions on the same queue, the behavior is undefined.
+
+		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant example 1
 
 		A value in the queue has the type <code>std::pair<const RUNTIME_TYPE &, COMMON_TYPE* const></code>. Iterators are 
 		conceptually pointers to such pairs.
@@ -443,8 +445,8 @@ namespace density
             for (auto curr = m_head; curr != m_tail; )
             {
                 auto const control_bits = curr->m_next & (detail::Queue_Busy | detail::Queue_Dead);
-                if (control_bits != detail::Queue_Dead)
-                {
+                if(control_bits == 0) // if not busdy and not dead
+				{
                     return false;
                 }
                 curr = reinterpret_cast<ControlBlock*>(curr->m_next & ~detail::Queue_AllFlags);
@@ -470,7 +472,7 @@ namespace density
             DENSITY_ASSERT_INTERNAL(empty());
         }
 
-        /** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), copy-constructing or move-constructing
+        /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
                 it from the source.
 
             @param i_source object to be used as source to construct of new element.
@@ -478,10 +480,10 @@ namespace density
                 - If this argument is an r-value, the new element move-constructed
 
             \n <b>Requires</b>:
-                - ELEMENT_TYPE must be copy constructible (in case of l-value) or move constructible (in case of r-value)
-                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
-                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+                - <code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
+                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
+                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -489,24 +491,24 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue push example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue push example 1 */
         template <typename ELEMENT_TYPE>
             void push(ELEMENT_TYPE && i_source)
         {
             return emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Adds at the end of queue an element of a type known at compile time (ELEMENT_TYPE), inplace-constructing it from
+        /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
 
             @param i_construction_params construction parameters for the new element.
 
             \n <b>Requires</b>:
-                - ELEMENT_TYPE must be constructible from the specified parameters
-                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
-                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+                - <code>ELEMENT_TYPE</code> must be constructible with <code>std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...</code>
+                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
+                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
+                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -514,7 +516,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue emplace example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -525,24 +527,33 @@ namespace density
 
             @param i_type type of the new element.
 
+			\n <b>Requires</b>:
+				- The function <code>RUNTIME_TYPE::default_construct</code> must be invokable. If 
+				  <code>RUNTIMETYPE</code> is runtime_type this means that <code>default_construct</code> must be
+				  included in the feature list.
+
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
             \n <b>Throws</b>: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue dyn_push example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue dyn_push example 1 */
         void dyn_push(const runtime_type & i_type)
         {
             start_dyn_push(i_type).commit();
         }
 
-        /** Adds at the end of queue an element of a type known at runtime, copy-constructing it from the source.
+        /** Appends at the end of queue an element of a type known at runtime, copy-constructing it from the source.
 
             @param i_type type of the new element.
-            @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
-                by the type system of the language.
+            @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>.
+                <i>Note</i>: be careful using void pointers: only the compiler knows how to casts from/to a base to/from a derived class.
+
+			\n <b>Requires</b>:
+				- The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If 
+				  <code>RUNTIMETYPE</code> is runtime_type this means that <code>copy_construct</code> must be
+				  included in the feature list.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -550,7 +561,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue dyn_push_copy example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue dyn_push_copy example 1 */
         void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
@@ -559,9 +570,14 @@ namespace density
         /** Adds at the end of queue an element of a type known at runtime, move-constructing it from the source.
 
             @param i_type type of the new element
-            @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE
+            @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
                 <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
                 by the type system of the language.
+
+			\n <b>Requires</b>:
+				- The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If 
+				  <code>RUNTIMETYPE</code> is runtime_type this means that <code>move_construct</code> must be
+				  included in the feature list.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -569,29 +585,31 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue dyn_push_move example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue dyn_push_move example 1 */
         void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
 
-        /** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE), copy-constructing
+        /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
                 or move-constructing it from the source.
-            \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
+            \n This function allocates the required space, constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
 			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
+			Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
+			function is called in this timespan, the behavior is undefined.
 
             @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed.
                 - If this argument is an r-value, the new element move-constructed.
-            @return A transaction object which can be used to allocate raw space and commit the transaction.
+            @return The associated transaction object.
 
             \n <b>Requires</b>:
-                - ELEMENT_TYPE must be copy constructible (in case of l-value) or move constructible (in case of r-value)
-                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
-                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+                - <code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)
+                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
+                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
+                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -599,28 +617,30 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue start_push example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
             typed_put_transaction<ELEMENT_TYPE> start_push(ELEMENT_TYPE && i_source)
         {
             return start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Begins a transaction to add at the end of queue an element of a type known at compile time (ELEMENT_TYPE),
+        /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
-            \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
+            \n This function allocates the required space, constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n Call the member function commit on the returned transaction in order to make the effects observable.
 			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
+			Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
+			function is called in this timespan, the behavior is undefined.
 
             @param i_construction_params construction parameters for the new element.
-            @return A transaction object which can be used to allocate raw space and commit the transaction.
+            @return The associated transaction object.
 
             \n <b>Requires</b>:
-                - ELEMENT_TYPE must be constructible from the specified parameters
-                - ELEMENT_TYPE * must be implicitly convertible COMMON_TYPE *
-                - COMMON_TYPE * must be convertible to ELEMENT_TYPE * with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if COMMON_TYPE is a non-polymorphic direct or indirect virtual base of ELEMENT_TYPE.
+                - <code>ELEMENT_TYPE</code> must be constructible with <code>std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...</code>
+                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
+                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
+                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -628,7 +648,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue start_push example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -660,14 +680,16 @@ namespace density
             return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
-        /** Begins a transaction to add at the end of queue an element of a type known at runtime, default-constructing it.
+        /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n Call the member function commit on the returned transaction in order to make the effects observable.
 			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
+			Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
+			function is called in this timespan, the behavior is undefined.
 
             @param i_type type of the new element.
-            @return A transaction object which can be used to allocate raw space and commit the transaction.
+            @return The associated transaction object.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -675,7 +697,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue start_dyn_push example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push example 1 */
         put_transaction start_dyn_push(const runtime_type & i_type)
         {
 			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
@@ -704,17 +726,19 @@ namespace density
         }
 
 
-        /** Begins a transaction to add at the end of queue an element of a type known at runtime, copy-constructing it from the source..
+        /** Begins a transaction that appends an element of a type known at runtime, copy-constructing it from the source..
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n Call the member function commit on the returned transaction in order to make the effects observable.
 			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
+			Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
+			function is called in this timespan, the behavior is undefined.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
                 <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
                 by the type system of the language.
-            @return A transaction object which can be used to allocate raw space and commit the transaction.
+            @return The associated transaction object.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -722,7 +746,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push_copy example 1 */
         put_transaction start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
 			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
@@ -750,17 +774,19 @@ namespace density
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Begins a transaction to add at the end of queue an element of a type known at runtime, move-constructing it from the source..
+        /** Begins a transaction that appends an element of a type known at runtime, move-constructing it from the source..
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
 			\n Call the member function commit on the returned transaction in order to make the effects observable.
 			If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
+			Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
+			function is called in this timespan, the behavior is undefined.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
                 <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
                 by the type system of the language.
-            @return A transaction object which can be used to allocate raw space and commit the transaction.
+            @return The associated transaction object.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -768,7 +794,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue start_dyn_push_copy example 1 */
+            \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push_move example 1 */
         put_transaction start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
 			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
@@ -806,6 +832,10 @@ namespace density
         class put_transaction
         {
         public:
+
+			/** Constructs an empty put transaction */
+			put_transaction() noexcept
+				: m_queue(nullptr) {}
 
             /** Copy construction is not allowed */
             put_transaction(const put_transaction &) = delete;
@@ -1033,7 +1063,7 @@ namespace density
 					put_transaction. The element is constructed at the begin of the transaction, so the
 					returned object is always valid.
 
-				\pre The behavior is undefined if either:
+				\pre The behavior is undefined if:
 					- this transaction is empty */
             TYPE & element() const noexcept
                 { return *static_cast<TYPE *>(put_transaction::element_ptr()); }
@@ -1043,6 +1073,12 @@ namespace density
         class consume_operation
         {
         public:
+
+			/** Constructs an empty consume_operation */
+			consume_operation() noexcept
+				: m_control(nullptr) 
+					{ }
+
 
             /** Copy construction is not allowed */
             consume_operation(const consume_operation &) = delete;
@@ -1232,10 +1268,9 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing */
-        bool pop_if_any() noexcept
+        bool try_pop() noexcept
         {
-            auto operation = try_start_consume();
-            if (operation)
+            if (auto operation = try_start_consume())
             {
                 operation.commit();
                 return true;
@@ -1243,57 +1278,29 @@ namespace density
             return false;
         }
 
-        /** Calls a user provided function object passing as parameters the first element of the queue and its type, then removes and
-            destroys the element.
+		/** Tries to start a consume operation.
+			@return a consume_operation which is empty if there are no elements to consume
 
-            @param i_func funcion object to be invoked with  const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
-            @return return value of i_func(std::declval<RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>())
-
-            \pre The behavior is undefined if the queue is empty.
-
-            <b>Complexity</b>: Constant
-            \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
-            \n <b>Throws</b>: anything thrown by i_func.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-
-            <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue consume example 1
-        */
-        template <typename FUNC>
-            auto consume(FUNC && i_func)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
+			A non-empty consume must be committed for the consume to have effect.
+		*/
+        consume_operation try_start_consume() noexcept
         {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
-            return consume_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
+            return consume_operation(this, start_consume_impl());
         }
 
-        /**
-            const RUNTIME_TYPE & i_type, COMMON_TYPE * i_element
+		/** Tries to start a consume operation using the consume_operation spedcified.
+			@param i_consume reference to a consume_operation to be used. If it is non.empty
+				it gets canceled.
+			@return whether i_consume is non-empty after the call
 
-            <b>Examples</b>
-            \snippet old_heterogeneous_queue_samples.cpp heter_queue consume_if_any example 1
-
-        */
-        template <typename FUNC>
-            auto consume_if_any(FUNC && i_func)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<unvoid_t<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>>
-        {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
-            return consume_if_any_impl(std::forward<FUNC>(i_func), std::is_void<ReturnType>());
-        }
-
-
+			A non-empty consume must be committed for the consume to have effect.
+		*/
 		bool try_start_consume(consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume(this);
         }
 
-        consume_operation try_start_consume() noexcept
-        {
-            return consume_operation(this, start_consume_impl());
-        }
+
 
 
                     // reentrant
@@ -1421,7 +1428,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
 				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
 				throw;
 			}
@@ -1454,7 +1461,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
 				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
 				throw;
 			}
@@ -1486,7 +1493,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
+				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
 				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
 				throw;
 			}
@@ -1858,73 +1865,6 @@ namespace density
         }
 
     private:
-
-        template <typename FUNC>
-            auto consume_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
-                    -> decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))
-        {
-            auto transaction = try_start_consume();
-            DENSITY_ASSERT(static_cast<bool>(transaction));
-            auto const & type = transaction.complete_type();
-            auto const element = transaction.element_ptr();
-
-            auto res = i_func(type, element);
-
-            transaction.commit();
-            return res;
-        }
-
-        template <typename FUNC>
-            unvoid_t<void> consume_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>())))
-        {
-            auto transaction = try_start_consume();
-            DENSITY_ASSERT(static_cast<bool>(transaction));
-            auto const & type = transaction.complete_type();
-            auto const element = transaction.element_ptr();
-
-            i_func(type, element);
-
-            transaction.commit();
-
-            return unvoid_t<void>();
-        }
-
-        template <typename FUNC>
-            auto consume_if_any_impl(FUNC && i_func, std::false_type)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
-                    -> optional<decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()))>
-        {
-            using ReturnType = decltype(i_func(std::declval<const RUNTIME_TYPE &>(), std::declval<COMMON_TYPE *>()));
-            auto transaction = try_start_consume();
-            if (transaction)
-            {
-                auto const & type = transaction.complete_type();
-                auto const element = transaction.element_ptr();
-                auto result = make_optional<ReturnType>(i_func(type, element));
-                transaction.commit();
-                return result;
-            }
-            return optional<ReturnType>();
-        }
-
-        template <typename FUNC>
-            optional<unvoid_t<void>> consume_if_any_impl(FUNC && i_func, std::true_type)
-                noexcept(noexcept((i_func(std::declval<const RUNTIME_TYPE>(), std::declval<COMMON_TYPE *>()))))
-        {
-            auto transaction = try_start_consume();
-            if (transaction)
-            {
-                auto const & type = transaction.complete_type();
-                auto const element = transaction.element_ptr();
-                i_func(type, element);
-                transaction.commit();
-                return make_optional<unvoid_t<void>>(unvoid_t<void>());
-            }
-            return optional<unvoid_t<void>>();
-        }
-
 
         ControlBlock * first_valid(ControlBlock * i_from) const
         {

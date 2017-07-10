@@ -21,7 +21,8 @@ namespace density_tests
 			queue.push(2);
 
 			auto queue_copy(queue); // copy construct queue
-			DENSITY_TEST_ASSERT(!queue.empty() && !queue_copy.empty());
+			DENSITY_TEST_ASSERT(!queue.empty());
+			DENSITY_TEST_ASSERT(!queue_copy.empty());
 			DENSITY_TEST_ASSERT(std::distance(queue_copy.begin(), queue_copy.end()) == 2);
 
 			auto other_queue(std::move(queue)); // move construct queue - the source becomes empty

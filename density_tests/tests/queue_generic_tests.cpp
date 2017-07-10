@@ -14,11 +14,12 @@ namespace density_tests
 		using ElementType = int;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom &)
+			static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
-			//! [queue push example 1]
-	queue.push(1);
-			//! [queue push example 1]
+			if(i_rand.get_bool())
+				queue.push(1);
+			else
+				queue.reentrant_push(1);
 		}
 
 		template <typename CONSUME>
@@ -33,12 +34,13 @@ namespace density_tests
 		using ElementType = std::string;
 
 		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom &)
+			static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
-			//! [queue push example 1]
-				std::string str("hello world!");
-	queue.push(str);
-			//! [queue push example 1]
+			std::string str("hello world!");
+			if(i_rand.get_bool())
+				queue.push(str);
+			else
+				queue.reentrant_push(str);
 		}
 
 		template <typename CONSUME>
@@ -57,18 +59,22 @@ namespace density_tests
 		{
 			if (i_rand.get_bool(.9))
 			{
-	//! [queue push emplace 2]
-	queue.template emplace<uint8_t>(static_cast<uint8_t>(8));
-	//! [queue push emplace 2]
+				if(i_rand.get_bool())
+					queue.template emplace<uint8_t>(static_cast<uint8_t>(8));
+				else
+					queue.template reentrant_emplace<uint8_t>(static_cast<uint8_t>(8));
 			}
 			else
 			{
 				ElementType val = 8;
 				auto type = QUEUE::runtime_type::template make<ElementType>();
-				if(i_rand.get_bool())
-					queue.dyn_push_copy(type, &val);
-				else
-					queue.dyn_push_move(type, &val);
+				switch(i_rand.get_int<unsigned>(0, 3))
+				{
+					case 0: queue.dyn_push_copy(type, &val); break;
+					case 1: queue.dyn_push_move(type, &val); break;
+					case 2: queue.reentrant_dyn_push_copy(type, &val); break;
+					case 3: queue.reentrant_dyn_push_move(type, &val); break;
+				}
 			}
 		}
 
@@ -86,12 +92,10 @@ namespace density_tests
 		template <typename QUEUE>
 			static void put(QUEUE & queue, EasyRandom &)
 		{
-		//! [queue push emplace 2]
-	auto put = queue.template start_emplace<uint16_t>(static_cast<uint16_t>(15));
-	put.element() += 1;
-	exception_checkpoint();
-	put.commit(); // commit a 16. From now on, the element can be consumed
-		//! [queue push emplace 2]
+			auto put = queue.template start_emplace<uint16_t>(static_cast<uint16_t>(15));
+			put.element() += 1;
+			exception_checkpoint();
+			put.commit(); // commit a 16. From now on, the element can be consumed
 		}
 
 		template <typename CONSUME>

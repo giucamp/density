@@ -14,9 +14,6 @@ namespace density_tests
 			std::cerr << "function: " << i_function << "\n";
 			std::cerr << "expression: " << i_expr << std::endl;
 			
-			int i;
-			std::cin >> i;
-
 			assert(false);
 		}
 	}

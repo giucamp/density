@@ -28,6 +28,8 @@ DENSITY_NO_INLINE void sandbox()
 
 void do_tests(std::ostream & i_ostream)
 {
+	auto const prev_stream_flags = i_ostream.setf(std::ios_base::boolalpha);
+    
 	using namespace density_tests;
 
 	PrintScopeDuration dur(i_ostream, "all tests");
@@ -42,7 +44,10 @@ void do_tests(std::ostream & i_ostream)
 	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
 	all_queues_generic_tests(QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
 
+	i_ostream << "\n*** executing load unload tests..." << std::endl;
 	load_unload_tests(std::cout);
+
+	i_ostream.flags(prev_stream_flags);
 }
 
 int main()

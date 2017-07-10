@@ -49,7 +49,7 @@ Throwing two dices 2000 times:         2|*         |97.6
 		
 		/** Constructor that may assign the title. 
 			Content may be appended to the title later using the function title. */
-		histogram(const char * i_title = "", size_t i_row_count = 8, size_t i_row_length = 10)
+		histogram(const char * i_title = "", size_t i_row_count = 8, size_t i_row_length = 25)
 			: m_row_count(i_row_count), m_row_length(i_row_length)
 		{
 			m_title << i_title;

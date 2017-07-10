@@ -445,11 +445,11 @@ namespace density
 			heter_queue::pop();
         }
 
-		/** Same to heterogeneous_queue::pop_if_any. */
-        bool pop_if_any() noexcept
+		/** Same to heterogeneous_queue::try_pop. */
+        bool try_pop() noexcept
         {
 			std::lock_guard<sync::mutex> lock(m_mutex);
-			return heter_queue::pop_if_any();
+			return heter_queue::try_pop();
         }
 
 		/** Same to heterogeneous_queue::consume. */

@@ -47,6 +47,8 @@ namespace density_tests
 			EasyRandom & i_random,
 			size_t i_target_put_count) const
 		{
+			bool const with_exceptions = (i_flags & QueueTesterFlags::eTestExceptions) != QueueTesterFlags::eNone;
+
 			m_output << "starting queue generic test with " << m_thread_count << " threads and ";
 			m_output << i_target_put_count << " total puts";
 			m_output << "\nheterogeneous_queue: " << truncated_type_name<QUEUE>();
@@ -55,6 +57,7 @@ namespace density_tests
 			m_output << "\nallocator_type: " << truncated_type_name<typename QUEUE::allocator_type>();
 			m_output << "\npage_alignment: " << QUEUE::allocator_type::page_alignment;
 			m_output << "\npage_size: " << QUEUE::allocator_type::page_size;
+			m_output << "\nwith_exceptions: " << with_exceptions;
 			m_output << std::endl;
 
 			InstanceCounted::ScopedLeakCheck objecty_leak_check;
