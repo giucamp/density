@@ -103,9 +103,6 @@
     <ClInclude Include="..\test_framework\progress.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\test_framework\queue_tester.h">
-      <Filter>test_framework</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\shared_block_registry.h">
       <Filter>test_framework</Filter>
     </ClInclude>
@@ -138,6 +135,9 @@
     </ClInclude>
     <ClInclude Include="..\..\density\io_runtimetype_features.h">
       <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\queue_generic_tester.h">
+      <Filter>test_framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 
 #include "queue_generic_tests.h"
-#include "../test_framework/queue_tester.h"
+#include "../test_framework/queue_generic_tester.h"
 #include "../test_framework/test_allocators.h"
 #include "../test_framework/test_objects.h"
 #include "../test_framework/exception_tests.h"
@@ -9,12 +9,12 @@
 
 namespace density_tests
 {
-	struct PutInt
+	template <typename QUEUE>
+		struct PutInt
 	{
 		using ElementType = int;
-
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+		
+		static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
 			if(i_rand.get_bool())
 				queue.push(1);
@@ -22,19 +22,32 @@ namespace density_tests
 				queue.reentrant_push(1);
 		}
 
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
+			auto transaction = i_queue.start_reentrant_push(1);
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
 			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 1);			
+		}
+
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 1);
 		}
 	};
 
-	struct PutString
+	template <typename QUEUE>
+		struct PutString
 	{
 		using ElementType = std::string;
 
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+		static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
 			std::string str("hello world!");
 			if(i_rand.get_bool())
@@ -43,19 +56,33 @@ namespace density_tests
 				queue.reentrant_push(str);
 		}
 
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
+			std::string str("hello world!");
+			auto transaction = i_queue.start_reentrant_push(str);
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == "hello world!");			
+		}
+
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
 			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == "hello world!");			
 		}
 	};
 
-	struct PutUInt8
+	template <typename QUEUE>
+		struct PutUInt8
 	{
 		using ElementType = uint8_t;
 
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+		static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
 			if (i_rand.get_bool(.9))
 			{
@@ -78,40 +105,68 @@ namespace density_tests
 			}
 		}
 
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
+			ElementType val = 8;
+			auto transaction = i_queue.start_reentrant_push(val);
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 8);			
+		}
+		
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
 			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 8);			
 		}
 	};
 	
-	struct PutUInt16
+	template <typename QUEUE>
+		struct PutUInt16
 	{
 		using ElementType = uint16_t;
 
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom &)
+		static void put(QUEUE & queue, EasyRandom &)
 		{
 			auto put = queue.template start_emplace<uint16_t>(static_cast<uint16_t>(15));
 			put.element() += 1;
 			exception_checkpoint();
 			put.commit(); // commit a 16. From now on, the element can be consumed
 		}
-
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+				
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
+			ElementType val = 16;
+			auto transaction = i_queue.start_reentrant_push(val);
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 16);			
+		}
+		
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
 			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 16);			
 		}
 	};
 
-	template <size_t SIZE, size_t ALIGNMENT>
+	template <typename QUEUE, size_t SIZE, size_t ALIGNMENT>
 		struct PutTestObject
 	{
 		using ElementType = TestObject<SIZE, ALIGNMENT>;
 
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+
+		static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
 			if (i_rand.get_bool(.9))
 			{
@@ -125,14 +180,28 @@ namespace density_tests
 			}
 		}
 
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
+			auto transaction = i_queue.start_reentrant_push(ElementType());
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
 			i_consume.template element<ElementType>().check();
+		}
+
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			i_consume.template element<ElementType>().check();	
 		}
 	};
 
-	struct PutRawBlocks
+	template <typename QUEUE>
+		struct PutRawBlocks
 	{
 		struct Data : InstanceCounted
 		{
@@ -141,19 +210,44 @@ namespace density_tests
 
 		using ElementType = Data;
 
-		template <typename QUEUE>
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+		static void put(QUEUE & queue, EasyRandom & i_rand)
 		{
 			auto put = queue.template start_emplace<ElementType>();
+			put_impl(put, i_rand);
+			put.commit();
+		}
+
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom & i_rand)
+		{
+			auto put = i_queue.template start_reentrant_emplace<ElementType>();
+			put_impl(put, i_rand);
+			return std::move(put);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			consume_impl(i_consume);
+		}
+
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			consume_impl(i_consume);
+		}
+
+	private:
+
+		template <typename PUT_TRANSACTION>
+			static void put_impl(PUT_TRANSACTION & i_transaction, EasyRandom & i_rand)
+		{
 			size_t count = i_rand.get_int<size_t>(0, 200);
 			for (size_t index = 0; index < count; index++)
 			{
 				auto const size = count - index;
 				auto const fill_char = static_cast<char>('0' + size % 10);
-				auto const chars = static_cast<char*>(put.raw_allocate(size + 1, 1));
+				auto const chars = static_cast<char*>(i_transaction.raw_allocate(size + 1, 1));
 				memset(chars, fill_char, size);
 				chars[size] = 0;
-				put.element().m_blocks.push_back(chars);
+				i_transaction.element().m_blocks.push_back(chars);
 
 				if (i_rand.get_bool(.05))
 				{
@@ -161,12 +255,13 @@ namespace density_tests
 				}
 			}
 			exception_checkpoint();
-			put.commit();
 		}
 
-		template <typename CONSUME>
-			static void consume(CONSUME & i_consume)
+		template <typename CONSUME_OPERATION>
+			static void consume_impl(const CONSUME_OPERATION & i_consume)
 		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+
 			auto & data = i_consume.template element<ElementType>();
 			auto const count = data.m_blocks.size();
 
@@ -187,17 +282,53 @@ namespace density_tests
 	};
 
 	template <typename QUEUE>
+		struct ReentrantPush
+	{
+		using ElementType = uint32_t;
+
+		static void put(QUEUE & queue, EasyRandom & i_rand)
+		{
+			uint32_t val = 32;
+			if(i_rand.get_bool())
+				queue.push(val);
+			else
+				queue.reentrant_push(val);
+		}
+
+		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		{
+			uint32_t val = 32;
+			auto transaction = i_queue.start_reentrant_push(val);
+			exception_checkpoint();
+			return std::move(transaction);
+		}
+
+		static void consume(const typename QUEUE::consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 32);			
+		}
+
+		static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+		{
+			DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+			DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == 32);
+		}
+	};
+
+	template <typename QUEUE>
 		void single_queue_generic_test(QueueTesterFlags i_flags, std::ostream & i_output, EasyRandom & i_random, size_t i_element_count, size_t i_thread_count)
 	{
-		QueueTester<QUEUE> tester(i_output, i_thread_count);
-		tester.add_put_case(PutInt());
-		tester.add_put_case(PutUInt8());
-		tester.add_put_case(PutUInt16());
-		tester.add_put_case(PutString());
-		tester.add_put_case(PutTestObject<128, 8>());
-		tester.add_put_case(PutTestObject<256, 128>());
-		tester.add_put_case(PutRawBlocks());
-		
+		QueueGenericTester<QUEUE> tester(i_output, i_thread_count);
+		tester.template add_test_case<PutInt<QUEUE>>();
+		tester.template add_test_case<PutUInt8<QUEUE>>();
+		tester.template add_test_case<PutUInt16<QUEUE>>();
+		tester.template add_test_case<PutString<QUEUE>>();
+		tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
+		tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
+		tester.template add_test_case<PutRawBlocks<QUEUE>>();
+		tester.template add_test_case<ReentrantPush<QUEUE>>();
+
 		tester.run(i_flags, i_random, i_element_count);
 	}
 

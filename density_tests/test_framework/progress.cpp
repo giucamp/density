@@ -11,6 +11,12 @@ namespace density_tests
 
 	}
 
+	Progress::Progress(size_t i_target_count, size_t i_current_count) noexcept
+		: Progress(i_target_count)
+	{
+		set_progress(i_current_count);
+	}
+
 	void Progress::write_to_stream(std::ostream & i_ostream) const
 	{
 		// compute the completion percentage

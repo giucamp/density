@@ -470,6 +470,8 @@ namespace density
             }
 
             DENSITY_ASSERT_INTERNAL(empty());
+
+			clean_dead_elements();
         }
 
         /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
@@ -619,7 +621,7 @@ namespace density
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
-            typed_put_transaction<ELEMENT_TYPE> start_push(ELEMENT_TYPE && i_source)
+            typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_push(ELEMENT_TYPE && i_source)
         {
             return start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -650,7 +652,7 @@ namespace density
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            typed_put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -677,7 +679,7 @@ namespace density
 				throw;
 			}
 
-            return typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1247,8 +1249,10 @@ namespace density
             heterogeneous_queue * m_queue;
             ControlBlock * m_control;
         };
+		
 
-        /** Removes and destroy the first element of the queue.
+        /** Removes and destroy the first element of the queue. This function discards the element. Use a consume function
+			if you want to access the element before it gets destroyed.
 
             \pre The behavior is undefined if the queue is empty.
 
@@ -1261,10 +1265,11 @@ namespace density
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
+			This function discards the element. Use a consume function if you want to access the element before it 
+			gets destroyed.
 
             @return whether an element was actually removed.
 
-            \pre The behavior is undefined if the queue is empty.
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing */
@@ -1288,7 +1293,7 @@ namespace density
             return consume_operation(this, start_consume_impl());
         }
 
-		/** Tries to start a consume operation using the consume_operation spedcified.
+		/** Tries to start a consume operation using the consume_operation specified.
 			@param i_consume reference to a consume_operation to be used. If it is non.empty
 				it gets canceled.
 			@return whether i_consume is non-empty after the call
@@ -1363,7 +1368,7 @@ namespace density
             <b>Examples</b>
             \snippet old_heterogeneous_queue_samples.cpp heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_push(ELEMENT_TYPE && i_source)
+            reentrant_typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_push(ELEMENT_TYPE && i_source)
         {
             return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -1374,7 +1379,7 @@ namespace density
             <b>Examples</b>
             \snippet old_heterogeneous_queue_samples.cpp heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_typed_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            reentrant_typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -1401,7 +1406,7 @@ namespace density
 				throw;
 			}
 
-            return reentrant_typed_put_transaction<ELEMENT_TYPE>(this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_typed_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to heterogeneous_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
@@ -1667,9 +1672,39 @@ namespace density
 
             using reentrant_put_transaction::reentrant_put_transaction;
 
-            TYPE * element_ptr() const noexcept
-                { return static_cast<TYPE *>(reentrant_put_transaction::element_ptr()); }
+            /** Returns a reference to the element being added. This function can be used to modify the element 
+					before calling the commit.
+                \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
+					put_transaction. The element is constructed at the begin of the transaction, so the
+					returned object is always valid.
+
+				\pre The behavior is undefined if:
+					- this transaction is empty */
+            TYPE & element() const noexcept
+                { return *static_cast<TYPE *>(reentrant_put_transaction::element_ptr()); }
         };
+
+		using reentrant_consume_operation = consume_operation;
+
+		void reentrant_pop() noexcept
+        {
+			pop();
+        }
+
+        bool try_reentrant_pop() noexcept
+        {
+            return try_pop();
+        }
+
+        reentrant_consume_operation try_start_reentrant_consume() noexcept
+        {
+			return try_start_consume();
+        }
+
+		bool try_start_reentrant_consume(reentrant_consume_operation & i_consume) noexcept
+        {
+            return try_start_consume(i_consume);
+        }
 
 
                     // iterator
@@ -2130,6 +2165,8 @@ namespace density
             const auto type_ptr = type_after_control(i_control_block);
             type_ptr->destroy(get_element(i_control_block));
 
+			type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+
             DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
             i_control_block->m_next += (detail::Queue_Dead - detail::Queue_Busy);
         }
@@ -2151,11 +2188,16 @@ namespace density
             return nullptr;
         }
 
-        void commit_consume_impl(ControlBlock * i_control_block) noexcept
-        {
+		void commit_consume_impl(ControlBlock * i_control_block) noexcept
+		{
 			DENSITY_ASSERT_INTERNAL((i_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
-            i_control_block->m_next += (detail::Queue_Dead - detail::Queue_Busy);
+			i_control_block->m_next += (detail::Queue_Dead - detail::Queue_Busy);
 
+			clean_dead_elements();
+		}
+
+		void clean_dead_elements()
+		{
             auto curr = m_head;
 			while (curr != m_tail)
 			{

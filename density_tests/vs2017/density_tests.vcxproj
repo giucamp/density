@@ -319,7 +319,7 @@
     <ClInclude Include="..\test_framework\line_updater_stream_adapter.h" />
     <ClInclude Include="..\test_framework\progress.h" />
     <ClInclude Include="..\test_framework\queue_load_unload_test.h" />
-    <ClInclude Include="..\test_framework\queue_tester.h" />
+    <ClInclude Include="..\test_framework\queue_generic_tester.h" />
     <ClInclude Include="..\test_framework\shared_block_registry.h" />
     <ClInclude Include="..\test_framework\test_allocators.h" />
     <ClInclude Include="..\test_framework\test_objects.h" />

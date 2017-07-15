@@ -7,6 +7,8 @@
 #include <sstream>
 #include <iomanip>
 #include <cmath>
+#include <type_traits>
+#include <unordered_map>
 
 namespace density_tests
 {
@@ -15,6 +17,9 @@ namespace density_tests
 	{
 		return std::min(std::max(i_value, i_min), i_max);
 	}
+
+	template <typename TYPE, bool ARITHMETIC = std::is_arithmetic<TYPE>::value>
+		class histogram;
 
 	/** This class template allows to construct an histogram and write it in textual format to an std::ostream.
 
@@ -32,24 +37,24 @@ std::cout << hist;
 
 		Output:
 		\code
-Throwing two dices 2000 times:         2|*         |97.6
-  [histogram]                          3|***       |174.6
-                                       4|******    |300.1
-                                       6|********* |418.7
-                                       7|**********|439.5
-                                       9|******    |313.1
-                                      10|***       |177.2
-                                      12|          |79.2
+Throwing two dices 2000 times:         2|*                        |97.6
+  [histogram]                          3|*******                  |174.6
+                                       4|***************          |300.1
+                                       6|************************ |418.7
+                                       7|*************************|439.5
+                                       9|****************         |313.1
+                                      10|*******                  |177.2
+                                      12|                         |79.2
 		\endcode
 	*/
 	template <typename TYPE>
-		class histogram
+		class histogram<TYPE, true>
 	{
 	public:
 		
 		/** Constructor that may assign the title. 
 			Content may be appended to the title later using the function title. */
-		histogram(const char * i_title = "", size_t i_row_count = 8, size_t i_row_length = 25)
+		histogram(const char * i_title = "", size_t i_row_length = 25, size_t i_row_count = 8)
 			: m_row_count(i_row_count), m_row_length(i_row_length)
 		{
 			m_title << i_title;
@@ -99,12 +104,16 @@ Throwing two dices 2000 times:         2|*         |97.6
 			std::vector<double> rows(m_row_count);
 
 			std::string histogram_str("  [histogram]");
-			auto title = m_title.str() + ':';
+			auto title = m_title.str();
+			if (title.length() > 0)
+				title += ':';
 
-			auto const strings_len = std::max(title.size(), histogram_str.size());
+			auto const strings_len = title.size();
 			title.resize(strings_len, ' ');
+			if (strings_len < histogram_str.length())
+				histogram_str.clear();
 			histogram_str.resize(strings_len, ' ');
-			std::string const spaces(title.size(), ' ');
+			std::string const spaces(strings_len, ' ');
 
 			if (m_values.size() == 0)
 			{
@@ -203,6 +212,128 @@ Throwing two dices 2000 times:         2|*         |97.6
 	private:
 		std::ostringstream m_title;
 		std::vector<TYPE> m_values;
+		size_t m_row_count = 8;
+		size_t m_row_length = 10;
+	};
+
+	template <typename TYPE>
+		class histogram<TYPE, false>
+	{
+	public:
+
+		/** Constructor that may assign the title. 
+			Content may be appended to the title later using the function title. */
+		histogram(const char * i_title = "", size_t i_row_length = 25)
+			: m_row_length(i_row_length)
+		{
+			m_title << i_title;
+		}
+
+
+		/** Returns a reference to the label output stream, that can be used to append strings or anything */
+		std::ostream & title() { return m_title; }
+
+		/** Puts a single value on the histogram */
+		histogram & operator << (const TYPE & i_value)
+		{
+			m_values[i_value]++;
+			return *this;
+		}
+
+		/** Puts a vector of values on the histogram */
+		histogram & operator << (const std::vector<TYPE> & i_values)
+		{
+			for (const auto & value : i_values)
+			{
+				m_values[value]++;
+			}
+			return *this;
+		}
+
+		size_t row_length() const { return m_row_length; }
+
+		void set_row_count(size_t i_row_count)
+		{
+			DENSITY_TEST_ASSERT(i_row_count >= 1);
+			m_row_count = i_row_count; 
+		}
+
+		void set_row_length(size_t i_row_length)
+		{ 
+			DENSITY_TEST_ASSERT(i_row_length >= 1);
+			m_row_length = i_row_length;
+		}
+
+		friend std::ostream & operator << (std::ostream & i_ostream, const histogram & i_histogram)
+		{
+			i_histogram.write(i_ostream);
+			return i_ostream;
+		}
+
+		void write(std::ostream & i_ostream) const
+		{
+			std::string histogram_str("  [histogram]");
+			auto title = m_title.str();
+			if (title.length() > 0)
+				title += ':';
+			auto const strings_len = title.size();
+			title.resize(strings_len, ' ');
+			if (strings_len < histogram_str.length())
+				histogram_str.clear();
+			histogram_str.resize(strings_len, ' ');
+			std::string const spaces(strings_len, ' ');
+
+			using Row = std::pair<TYPE, size_t>;
+			std::vector<Row> rows(m_values.begin(), m_values.end());
+			std::sort(rows.begin(), rows.end(), [](const Row & i_first, const Row & i_second) {
+				return i_first.first < i_second.first;
+			});
+
+			if (rows.size() == 0)
+			{
+				i_ostream << title << " no values\n";
+			}
+			else
+			{
+				auto const minmax_rowlen_its = std::minmax_element(rows.begin(), rows.end(), 
+					[](const Row & i_first, const Row & i_second) {
+					return i_first.second < i_second.second;
+				});
+				auto const min_count = minmax_rowlen_its.first->second;
+				auto const max_count = minmax_rowlen_its.second->second;
+
+				std::string stars, padding;
+
+				double factor = 1.f;
+				if (min_count != max_count)
+					factor = static_cast<double>(m_row_length - 1) / (max_count - min_count);
+				for (size_t i = 0; i < rows.size(); i++)
+				{
+					if (i == 0)
+						i_ostream << title;
+					else if (i == 1)
+						i_ostream << histogram_str;
+					else
+						i_ostream << spaces;
+
+					i_ostream << std::setw(10) << rows[i].first << "|";
+
+					double row_length_float = (rows[i].second - min_count) * factor;
+					auto row_length = clamp<int64_t>(static_cast<int64_t>(row_length_float + 0.5), 0,
+						static_cast<int64_t>(m_row_length));
+
+					stars.resize(static_cast<size_t>(row_length), '*');
+					i_ostream << stars;
+
+					padding.resize(m_row_length - static_cast<size_t>(row_length), ' ');
+					i_ostream << padding << "|" << rows[i].second << '\n';
+				}
+			}
+		}
+
+	private:
+		std::ostringstream m_title;
+		std::unordered_map<TYPE, size_t> m_values;
 		size_t m_row_count = 8;
 		size_t m_row_length = 10;
 	};

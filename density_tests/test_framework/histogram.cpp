@@ -56,5 +56,17 @@ void histogram_test()
 
 		std::cout << hist;
 	}
+	{
+		std::mt19937 rand(55);
+		auto dice = [&] { return std::uniform_int_distribution<int>(1, 6)(rand); };
+
+		histogram<std::string> hist("This is an histogram");
+		for (int i = 0; i < 1000; i++)
+		{
+			auto ch = static_cast<char>('A' + dice() + dice());
+			hist << std::string(1, ch);
+		}
+		std::cout << hist;
+	}
 }
 #endif

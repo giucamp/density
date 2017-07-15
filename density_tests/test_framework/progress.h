@@ -24,6 +24,9 @@ namespace density_tests
 		/** Constructs a Progress, assigning the target count. The target count can't be changed. */
 		Progress(size_t i_target_count) noexcept;
 
+		/** Constructs a Progress, assigning the target count and the current count. The target count can't be changed. */
+		Progress(size_t i_target_count, size_t i_current_count) noexcept;
+
 		// copy and move not allowed
 		Progress(const Progress &) = delete;
 		Progress & operator = (const Progress &) = delete;
