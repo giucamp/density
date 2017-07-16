@@ -4,6 +4,7 @@
 #include <iterator>
 #include <complex>
 #include <string>
+#include <chrono>
 #include <assert.h>
 #include <density/heterogeneous_queue.h>
 #include <density/io_runtimetype_features.h>
@@ -17,6 +18,364 @@
 
 namespace density_tests
 {
+	uint32_t compute_checksum(const void * i_data, size_t i_lenght)
+	{
+		uint32_t checksum = 0;
+		auto const data = static_cast<const unsigned char*>(i_data);
+		for (size_t i = 0; i < i_lenght; i++)
+		{
+			checksum += data[i];
+		}
+		return checksum;
+	}
+
+void heterogeneous_queue_put_transaction_samples()
+{
+	using namespace density;
+	using namespace type_features;
+{
+	//! [heterogeneous_queue put_transaction default_construct example 1]
+	heterogeneous_queue<>::put_transaction transaction;
+	assert(transaction.empty());
+	//! [heterogeneous_queue put_transaction default_construct example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction copy_construct example 1]
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::put_transaction>::value, "");
+	//! [heterogeneous_queue put_transaction copy_construct example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction copy_assign example 1]
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::put_transaction>::value, "");
+	//! [heterogeneous_queue put_transaction copy_assign example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction move_construct example 1]
+	heterogeneous_queue<> queue;
+	auto transaction1 = queue.start_push(1);
+
+	// move from transaction1 to transaction2
+	auto transaction2(std::move(transaction1));
+	assert(transaction1.empty());
+	assert(transaction2.element() == 1);
+	
+	// commit transaction2
+	transaction2.commit();
+	assert(transaction2.empty());
+	//! [heterogeneous_queue put_transaction move_construct example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction move_assign example 1]
+	heterogeneous_queue<> queue;
+	auto transaction1 = queue.start_push(1);
+
+	heterogeneous_queue<>::put_transaction transaction2;
+	transaction2 = std::move(transaction1);
+	assert(transaction1.empty());
+	transaction2.commit();
+	assert(transaction2.empty());
+	//! [heterogeneous_queue put_transaction move_assign example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction raw_allocate example 1]
+	heterogeneous_queue<> queue;
+	struct Msg
+	{
+		std::chrono::high_resolution_clock::time_point m_time = std::chrono::high_resolution_clock::now();
+		size_t m_len = 0;
+		void * m_data = nullptr;
+	};
+
+	auto post_message = [&queue](const void * i_data, size_t i_len) {
+		auto transaction = queue.start_emplace<Msg>();
+		transaction.element().m_len = i_len;
+		transaction.element().m_data = transaction.raw_allocate(i_len, 1);
+		memcpy(transaction.element().m_data, i_data, i_len);
+		
+		assert(!transaction.empty()); // a put transaction is not empty if it's bound to an element being put
+		transaction.commit();
+		assert(transaction.empty()); // the commit makes the transaction empty
+	};
+
+	auto const start_time = std::chrono::high_resolution_clock::now();
+
+	auto consume_all_msgs = [&queue, &start_time] {
+		while (auto consume = queue.try_start_consume())
+		{
+			auto const checksum = compute_checksum(consume.element<Msg>().m_data, consume.element<Msg>().m_len);
+			std::cout << "Message with checksum " << checksum << " at ";
+			std::cout << (consume.element<Msg>().m_time - start_time).count() << std::endl;
+			consume.commit();
+		}
+	};
+
+	int msg_1 = 42, msg_2 = 567;
+	post_message(&msg_1, sizeof(msg_1));
+	post_message(&msg_2, sizeof(msg_2));
+
+	consume_all_msgs();
+	//! [heterogeneous_queue put_transaction raw_allocate example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction raw_allocate_copy example 1]
+	struct Msg
+	{
+		size_t m_len = 0;
+		char * m_chars = nullptr;
+	};
+	auto post_message = [&queue](const char * i_data, size_t i_len) {
+		auto transaction = queue.start_emplace<Msg>();
+		transaction.element().m_len = i_len;
+		transaction.element().m_chars = transaction.raw_allocate_copy(i_data, i_data + i_len);
+		memcpy(transaction.element().m_chars, i_data, i_len);
+		transaction.commit();
+	};
+	//! [heterogeneous_queue put_transaction raw_allocate_copy example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction empty example 1]
+	heterogeneous_queue<>::put_transaction transaction;
+	assert(transaction.empty());
+
+	transaction = queue.start_push(1);
+	assert(!transaction.empty());
+	//! [heterogeneous_queue put_transaction empty example 1]
+}
+{
+	//! [heterogeneous_queue put_transaction cancel example 1]
+	heterogeneous_queue<> queue;
+
+	// start and cancel a put
+	assert(queue.empty());
+	auto put = queue.start_push(42);
+	/* assert(queue.empty()); <- this assert would trigger an undefined behavior, because it would access
+		the queue during a non-reentrant put transaction. */
+	assert(!put.empty());
+	put.cancel();
+	assert(queue.empty() && put.empty());
+	
+	// start and commit a put
+	put = queue.start_push(42);
+	put.commit();
+	assert(std::distance(queue.cbegin(), queue.cend()) == 1);
+	//! [heterogeneous_queue put_transaction cancel example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction element_ptr example 1]
+	int value = 42;
+	auto put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
+	assert(*static_cast<int*>(put.element_ptr()) == 42);
+	std::cout << "Putting an " << put.complete_type().type_info().name() << "..." << std::endl;
+
+	//! [heterogeneous_queue put_transaction element_ptr example 1]
+
+	//! [heterogeneous_queue put_transaction element_ptr example 2]
+	auto put_1 = queue.start_push(1);
+	assert(*static_cast<int*>(put_1.element_ptr()) == 1); // this is fine
+	assert(put_1.element() == 1); // this is better
+	//! [heterogeneous_queue put_transaction element_ptr example 2]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction complete_type example 1]
+	int value = 42;
+	auto put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
+	assert(put.complete_type().is<int>());
+	std::cout << "Putting an " << put.complete_type().type_info().name() << "..." << std::endl;
+	//! [heterogeneous_queue put_transaction complete_type example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction destroy example 1]
+	queue.start_push(42); /* this transaction is destroyed without being committed,
+							so it gets canceled automatically. */
+	//! [heterogeneous_queue put_transaction destroy example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue typed_put_transaction element example 1]
+	
+	int value = 42;
+	auto untyped_put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
+
+	auto typed_put = queue.start_push(42.);
+
+	/* typed_put = std::move(untyped_put); <- this would not compile: can't assign an untyped 
+		transaction to a typed transaction */
+	
+	assert(typed_put.element() == 42.);
+
+	//! [heterogeneous_queue typed_put_transaction element example 1]
+}
+}
+
+void heterogeneous_queue_consume_operation_samples()
+{
+	using namespace density;
+	using namespace type_features;
+
+	{
+		heterogeneous_queue<> queue;
+//! [heterogeneous_queue consume_operation default_construct example 1]
+		heterogeneous_queue<>::consume_operation consume;
+		assert(consume.empty());
+//! [heterogeneous_queue consume_operation default_construct example 1]
+	}
+
+	//! [heterogeneous_queue consume_operation copy_construct example 1]
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::consume_operation>::value, "");
+	//! [heterogeneous_queue consume_operation copy_construct example 1]
+
+	//! [heterogeneous_queue consume_operation copy_assign example 1]
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::consume_operation>::value, "");
+	//! [heterogeneous_queue consume_operation copy_assign example 1]
+
+{
+	//! [heterogeneous_queue consume_operation move_construct example 1]
+	heterogeneous_queue<> queue;
+	
+	queue.push(42);
+	auto consume = queue.try_start_consume();
+	
+	auto consume_1 = std::move(consume);
+	assert(consume.empty() && !consume_1.empty());
+	consume_1.commit();
+	//! [heterogeneous_queue consume_operation move_construct example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation move_assign example 1]
+	heterogeneous_queue<> queue;
+	
+	queue.push(42);
+	auto consume = queue.try_start_consume();
+	
+	heterogeneous_queue<>::consume_operation consume_1;
+	consume_1 = std::move(consume);
+	assert(consume.empty() && !consume_1.empty());
+	consume_1.commit();
+	//! [heterogeneous_queue consume_operation move_assign example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation destroy example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	// this consumed is started and destroyed before being committed, so it has no observable effects
+	queue.try_start_consume();
+	//! [heterogeneous_queue consume_operation destroy example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation empty example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume;
+	assert(consume.empty());
+	consume = queue.try_start_consume();
+	assert(!consume.empty());
+	//! [heterogeneous_queue consume_operation empty example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation operator_bool example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume;
+	assert(consume.empty() == !consume);
+	consume = queue.try_start_consume();
+	assert(consume.empty() == !consume);
+	//! [heterogeneous_queue consume_operation operator_bool example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation commit_nodestroy example 1]
+	heterogeneous_queue<> queue;
+	queue.emplace<std::string>("abc");
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	assert(consume.complete_type().is<std::string>());
+	consume.element<std::string>().~basic_string();
+
+	// the string has already been destroyed. Calling commit would trigger an undefined behavior
+	consume.commit_nodestroy();
+	//! [heterogeneous_queue consume_operation commit_nodestroy example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation cancel example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	consume.cancel();
+
+	// there is still a 42 in the queue
+	assert(std::distance(queue.cbegin(), queue.cend()) == 1);
+	//! [heterogeneous_queue consume_operation cancel example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation complete_type example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	assert(consume.complete_type().is<int>());
+	assert(consume.complete_type() == runtime_type<>::make<int>()); // same to the previous assert
+	consume.commit();
+	
+	assert(std::distance(queue.cbegin(), queue.cend()) == 0);
+	//! [heterogeneous_queue consume_operation complete_type example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation element_ptr example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	++*static_cast<int*>(consume.element_ptr());
+	assert(consume.element<int>() == 43);
+	consume.commit();
+	//! [heterogeneous_queue consume_operation element_ptr example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation unaligned_element_ptr example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	bool const is_overaligned = alignof(int) > heterogeneous_queue<>::min_alignment;
+	void * const unaligned_ptr = consume.unaligned_element_ptr();
+	int * element_ptr;
+	if (is_overaligned)
+	{
+		element_ptr = static_cast<int*>(address_upper_align(unaligned_ptr, alignof(int)));
+	}
+	else
+	{
+		assert(unaligned_ptr == consume.element_ptr());
+		element_ptr = static_cast<int*>(unaligned_ptr);
+	}
+	assert(address_is_aligned(element_ptr, alignof(int)));
+	std::cout << "An int: " << *element_ptr << std::endl;
+	consume.commit();
+	//! [heterogeneous_queue consume_operation unaligned_element_ptr example 1]
+}
+{
+	//! [heterogeneous_queue consume_operation element example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
+	assert(consume.complete_type().is<int>());
+	std::cout << "An int: " << consume.element<int>() << std::endl;
+	/* std::cout << "An float: " << consume.element<float>() << std::endl; this would
+		trigger an undefined behaviour */
+	consume.commit();
+	//! [heterogeneous_queue consume_operation element example 1]
+}
+}
+
 
 void heterogeneous_queue_samples_1()
 {
@@ -171,25 +530,86 @@ void heterogeneous_queue_samples_2()
 	//! [heterogeneous_queue start_dyn_push_move example 1]
 }
 {
+	//! [heterogeneous_queue pop example 1]
+	heterogeneous_queue<> queue;
+	queue.push(1);
+	queue.push(2);
+
+	queue.pop();
+	auto consume = queue.try_start_consume();
+	assert(consume.element<int>() == 2);
+	consume.commit();
+	//! [heterogeneous_queue pop example 1]
+}
+{
+	//! [heterogeneous_queue try_pop example 1]
+	heterogeneous_queue<> queue;
+	
+	assert(queue.try_pop() == false);
+	
+	queue.push(1);
+	queue.push(2);
+
+	assert(queue.try_pop() == true);
+	auto consume = queue.try_start_consume();
+	assert(consume.element<int>() == 2);
+	consume.commit();
+	//! [heterogeneous_queue try_pop example 1]
+}
+{
+	//! [heterogeneous_queue try_start_consume example 1]
+	heterogeneous_queue<> queue;
+	
+	auto consume_1 = queue.try_start_consume();
+	assert(!consume_1);
+	
+	queue.push(42);
+
+	auto consume_2 = queue.try_start_consume();
+	assert(consume_2);
+	assert(consume_2.element<int>() == 42);
+	consume_2.commit();
+	//! [heterogeneous_queue try_start_consume example 1]
+}
+{
+	//! [heterogeneous_queue try_start_consume_ example 1]
+	heterogeneous_queue<> queue;
+	
+	heterogeneous_queue<>::consume_operation consume_1;
+	bool const bool_1 = queue.try_start_consume(consume_1);
+	assert(!bool_1 && !consume_1);
+	
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume_2;
+	auto bool_2 = queue.try_start_consume(consume_2);
+	assert(consume_2 && bool_2);
+	assert(consume_2.element<int>() == 42);
+	consume_2.commit();
+	//! [heterogeneous_queue try_start_consume_ example 1]
+}
+{
 	heterogeneous_queue<> queue;
 
 	//! [heterogeneous_queue reentrant example 1]
+	// start 3 reentrant put transactions
 	auto put_1 = queue.start_reentrant_push(1);
 	auto put_2 = queue.start_reentrant_emplace<std::string>("Hello world!");
 	double pi = 3.14;
 	auto put_3 = queue.start_reentrant_dyn_push_copy(runtime_type<>::make<double>(), &pi);
-	assert(queue.empty());
+	assert(queue.empty()); // the queue is still empty, because no transaction has been committed
 
-	put_2.commit();
-
-	auto consume2 = queue.try_start_consume();
+	// commit and start consuming "Hello world!"
+	put_2.commit(); 
+	auto consume2 = queue.try_start_reentrant_consume();
 	assert(!consume2.empty() && consume2.complete_type().is<std::string>());
 
+	// commit and start consuming 1
 	put_1.commit();
-
 	auto consume1 = queue.try_start_consume();
 	assert(!consume1.empty() && consume1.complete_type().is<int>());
 
+	// cancel 3.14, and commit the consumes
 	put_3.cancel();
 	consume1.commit();
 	consume2.commit();
@@ -268,6 +688,10 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	// heterogeneous_queue_samples_1();
 
 	heterogeneous_queue_samples_2();
+
+	heterogeneous_queue_put_transaction_samples();
+
+	heterogeneous_queue_consume_operation_samples();
 }
 
 

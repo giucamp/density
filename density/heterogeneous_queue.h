@@ -60,21 +60,21 @@ namespace density
 		@tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is 
 			implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue. 
 			Otherwise it should be an user-defined-type, and only types deriving from it can be added.
-        @tparam RUNTIME_TYPE Type to be used to handle at runtime the actual complete type of each element.
+        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
 		
-		\n <b>Thread safeness</b>: None. The user is responsible to avoid data races.
+		\n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
 		\n <b>Exception safeness</b>: Any function of heterogeneous_queue is noexcept or provides the strong exception guarantee.
-
+		
 		Basic usage
 		--------------------------
 		Elements can be added with \ref heterogeneous_queue::push "push" or \ref heterogeneous_queue::emplace "emplace":
 		
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put example 1
 
-		In this case the type of the element is fixed at compile time. In the case of emplace, it is not 
+		In the above code the type of the element is fixed at compile time. In the case of emplace, it is not 
 		dependent on the type of the arguments, so it must be explicitly specified.
 
 		Put operations can be transactional, in which case the name of the function contains <code>start_</code>:
@@ -88,7 +88,7 @@ namespace density
 		The functions \ref put_transaction::raw_allocate "raw_allocate" and 
 		\ref put_transaction::raw_allocate_copy "raw_allocate_copy" allows to associate one or
 		more raw memory blocks to the element. In this case the element should keep the pointer to the blocks 
-		(otherwise consumers are not able to access the blocks).
+		(otherwise consumers are not able to access the blocks). Only transactional puts can allocate raw blocks.
 
 		The function \ref heterogeneous_queue::try_start_consume "try_start_consume" can be used to consume an
 		element. The returned object has type consume_operation, which is similar to put_transaction (it can be 
@@ -104,15 +104,15 @@ namespace density
 		
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue example 3
 		
-		The type of the element may be known only at runtime time, in which case \ref dyn_push can be used:
+		An element of a type unknown at compile time may be pushed, in which case \ref dyn_push can be used:
 
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue example 4
 						
-		Member function containing <code>reentrant_</code> in their names support reentrancy: while they are in progress, other puts, consumes, 
-		iterations and any non-modifying operation are allowed, but only in the same thread (reentrancy has nothing to do with 
+		Member functions containing <code>reentrant_</code> in their names support reentrancy: while they are in progress, other puts, consumes, 
+		iterations and any non-life-time operation are allowed, but only in the same thread (reentrancy has nothing to do with 
 		multithreading). \n
 		In contrast, while a non-reentrant operation is in progress, the queue is not in a consistent state: if during a put the 
-		construction of the new element directly or indirectly calls other member functions on the same queue, the behavior is undefined.
+		the operation member functions on the same queue are directly or indirectly called, the behavior is undefined.
 
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant example 1
 
@@ -128,10 +128,8 @@ namespace density
 
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue iterators example 1
 
-		Put functions summary
-		--------------------------
-		Here is a summary of the put functions. Functions containing <code>dyn_</code> in their name allow to put an element whose type
-		is not known at compile type (they take as argument an object of type <code>RUNTIME_TYPE</code>).
+		The following table is a summary of the put functions. Functions containing <code>dyn_</code> in their name allow to put 
+		an element whose type is not known at compile type (they take as first argument an object of type <code>RUNTIME_TYPE</code>).
         <table>
         <caption id="multi_row">Put functions</caption>
         <tr>
@@ -176,28 +174,36 @@ namespace density
 		--------------------------
 		An heterogeneous_queue is basically composed by an ordered set of pages (whose size is determined
 		by the allocator), an <em>head pointer</em> and <em>tail pointer</em>. The first page is the 
-		<em>head page</em>, that is the one that contains the head pointer. The last page is the 
-		<em>tail page</em>, that is the one that contains the head pointer.
+		<em>head page</em>, that is the one that contains the address the head pointer points to. The last 
+		page is the <em>tail page</em>, that is the one that contains the address the tail pointer points to.
 		
-		A new value is allocated in the queue by adding its size to the tail pointer. When a page overflow
-		occurs, a new page is requested to the allocator. Whenever a value is too large to fit in a page,
-		it is allocated outside the pages, with a legacy allocation. Raw memory blocks are allocated in the
-		same way of values, with the difference that they don't have a runtime type associated.
+		Values are allocated linearly in the memory pages as tightly as the alignment requirements allow. 
+		A value is allocated in the queue by adding its size to the tail pointer. The memory layout of a 
+		value is composed by:
+		- a <em>ControlBlock</em>, an internal structure composed by an uintptr_t that contains keeps the end
+			address of next value and some internal bit flags. If <code>COMMON_TYPE</code> is not void, the 
+			ControlBlock contains also a pointer to the subobject of type COMMON_TYPE of the element.
+		- the <code>RUNTIME_TYPE</code> object. If <code>RUNTIME_TYPE</code>is runtime_type, this is just a 
+			pointer to a pseudo v-table.
+		- the element
 
-		When a value is consumed, its size is added to the head pointer. When the last value of a page is
-		consumed, the page is deallocated.
+		When a page overflow occurs, a new page is requested to the allocator. Whenever a value is too large
+		to fit in a page, it is allocated outside the pages, with a legacy allocation. Raw memory blocks are
+		allocated in the same way of values, with the difference that they don't have a runtime type associated.
 
-		Puts and consumes never needs copy or move elements.
+		When a value is consumed, its size is added to the head pointer. Pages are not recycled: when the last 
+		value of a page is consumed (that is the head moves to another page), the empty page is deallocated.
+		The default allocator, that is void_allocator, is designed to handle efficiently page allocations and
+		deallocations.
 
-		Elements and runtime-types are allocated linearly and tightly in memory pages allocated by the provided allocator.
-		Elements are never reallocated or moved, so insertions and removals have always strict constant complexity.
-		Pages are not recycled: when the last element in a page is consumed, the page is freed.		
+		Values are never moved by the queue. Values are copied only in case of copy-construction or copy assignment. 
 
-		- If <code>COMMON_TYPE</code> is not void for every element the queue stores an additional pointer.
+		Notes:
+
 		- non-reentrant operations may be faster than reentrant
 		- Transactional operations are not slower than non-transactional ones
 		- Typed put operations (like \ref heterogeneous_queue::push "push") are faster than dynamic puts (like 
-			\ref heterogeneous_queue::dyn_push "dyn_push"),  because they can do some computations at compile time,
+			\ref heterogeneous_queue::dyn_push "dyn_push"), because they can do some computations at compile time,
 			and because they don't use the <code>RUNTIME_TYPE</code> to construct the element.
     */
     template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
@@ -418,7 +424,7 @@ namespace density
             swap(m_tail, i_other.m_tail);
         }
 
-		/** Global function that swaps two queue. Equivalent to this->swap(i_second). */
+		/** Global function that swaps two queues. Equivalent to this->swap(i_second). */
 		friend inline void swap(heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
 			heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
 		{
@@ -445,7 +451,7 @@ namespace density
             for (auto curr = m_head; curr != m_tail; )
             {
                 auto const control_bits = curr->m_next & (detail::Queue_Busy | detail::Queue_Dead);
-                if(control_bits == 0) // if not busdy and not dead
+                if(control_bits == 0) // if not busy and not dead
 				{
                     return false;
                 }
@@ -824,13 +830,15 @@ namespace density
             return put_transaction(this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Move-only class that holds the state of a put transaction, or is empty.
+        /** Move-only class that can be bound to a put transaction, otherwise it's empty.
 
             Transactional put functions on heterogeneous_queue return a put_transaction that can be used to 
-			allocate raw memory in the queue, inspect or alter the element, and commit the push. Move operations transfer 
-			the transaction state to the destination, leaving the source in the empty state. A committed transaction is in 
+			allocate raw memory in the queue, inspect or alter the element before it is not still observable
+			in the queue, and commit the push. Move operations transfer the transaction state to the destination,
+			leaving the source in the empty state. A committed transaction is in 
 			the empty state.
-			If an operative function (like raw_allocate or commit) is called on an empty transaction, the behavior is undefined. */
+			If an operative function (like raw_allocate or commit) is called on an empty transaction, the behavior
+			is undefined. */
         class put_transaction
         {
         public:
@@ -839,14 +847,20 @@ namespace density
 			put_transaction() noexcept
 				: m_queue(nullptr) {}
 
-            /** Copy construction is not allowed */
+            /** Copy construction is not allowed.
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction copy_construct example 1 */
             put_transaction(const put_transaction &) = delete;
 
-            /** Copy assignment is not allowed */
+            /** Copy assignment is not allowed.
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction copy_assign example 1 */
             put_transaction & operator = (const put_transaction &) = delete;
 
             /** Move constructs a put_transaction, transferring the state from the source.
-                    @i_source source to move from. It becomes empty after the call. */
+                    @param i_source source to move from. It becomes empty after the call. 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction move_construct example 1 */
             put_transaction(put_transaction && i_source) noexcept
                 : m_queue(i_source.m_queue), m_put_data(i_source.m_put_data)
             {
@@ -854,7 +868,9 @@ namespace density
             }
 
             /** Move assigns a put_transaction, transferring the state from the source.
-                @i_source source to move from. It becomes empty after the call. */
+                @param i_source source to move from. It becomes empty after the call. 
+				
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction move_assign example 1 */
             put_transaction & operator = (put_transaction && i_source) noexcept
             {
                 if (this != &i_source)
@@ -885,7 +901,9 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
+				
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction raw_allocate example 1*/
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
@@ -915,7 +933,9 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
+				
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
@@ -954,7 +974,9 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: unspecified.
-                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+				
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
@@ -983,7 +1005,9 @@ namespace density
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
-                \n <b>Throws</b>: Nothing. */
+                \n <b>Throws</b>: Nothing. 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -991,15 +1015,25 @@ namespace density
 				m_queue = nullptr;
             }
 
-            /** Returns true whether this object does not hold the state of a transaction. */
+            /** Returns true whether this object is not currently bound to a transaction. 
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction empty example 1 */
             bool empty() const noexcept { return m_queue == nullptr; }
 
             /** Returns a pointer to the object being added.
-                \n <i>Note</i>: the object is constructed at the begin of the transaction, so this
-                    function always returns a pointer to a valid object.
+                \n <i>Notes</i>: 
+				- The object is constructed when the transaction is started, so this function always returns a 
+					pointer to a valid object.
+				- This function returns a pointer to the common_type subobject of the element. Non-dynamic 
+					transactional put function (start_push, start_emplace, start_reentrant_push, start_reentrant_emplace)
+					return a typed_put_transaction or a reentrant_typed_put_transaction, that provide the function element(),
+					which is a better alternative to this function
 
 				\pre The behavior is undefined if either:
-					- this transaction is empty */
+					- this transaction is empty 
+					
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction element_ptr example 1
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction element_ptr example 2 */
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1009,14 +1043,18 @@ namespace density
             /** Returns the type of the object being added.
 
 				\pre The behavior is undefined if either:
-					- this transaction is empty */
-            const RUNTIME_TYPE & type() const noexcept
+					- this transaction is empty 
+		
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction complete_type example 1 */
+            const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return *type_after_control(m_put_data.m_control);
+                return *type_after_control(m_put_data.m_control_block);
             }
 
-            /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. */
+            /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. 
+			
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction destroy example 1 */
             ~put_transaction()
             {
                 if (m_queue != nullptr)
@@ -1043,15 +1081,16 @@ namespace density
             #endif // #ifndef DOXYGEN_DOC_GENERATION
 
         private:
-            heterogeneous_queue * m_queue;
+            heterogeneous_queue * m_queue; /**< queue the transaction is bound to. The transaction is empty 
+											if and only if this pointer is nullptr. */
             Block m_put_data;
         };
 
 
-		/** This class is used as return type from put functions with the element type known at compile time.
-			
-			typed_put_transaction derives from put_transaction adding just an element_ptr() that returns a
-			pointer of correct the type. */
+		/** Put transaction bindable to an element of a type known at compile time. This class the 
+			return type of non-dynamic transactional put functions.
+
+			typed_put_transaction derives from put_transaction and adds a type-safe element() function.  */
         template <typename TYPE>
             class typed_put_transaction : public put_transaction
         {
@@ -1066,36 +1105,47 @@ namespace density
 					returned object is always valid.
 
 				\pre The behavior is undefined if:
-					- this transaction is empty */
+					- this transaction is empty 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue typed_put_transaction element example 1 */
             TYPE & element() const noexcept
                 { return *static_cast<TYPE *>(put_transaction::element_ptr()); }
         };
 
-        /** Move-only class that holds the state of a consume operation, or is empty. */
+        /** Move-only class that can be bound to a consume operation, otherwise it's empty. */
         class consume_operation
         {
         public:
 
-			/** Constructs an empty consume_operation */
+			/** Constructs an empty consume_operation 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation default_construct example 1 */
 			consume_operation() noexcept
 				: m_control(nullptr) 
 					{ }
 
-
-            /** Copy construction is not allowed */
+            /** Copy construction is not allowed 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation copy_construct example 1 */
             consume_operation(const consume_operation &) = delete;
 
-            /** Copy assignment is not allowed */
+            /** Copy assignment is not allowed
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation copy_assign example 1 */
             consume_operation & operator = (const consume_operation &) = delete;
 
-            /** Move constructor. The source is left empty. */
+            /** Move constructor. The source is left empty. 			
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation move_construct example 1 */
             consume_operation(consume_operation && i_source) noexcept
                 : m_queue(i_source.m_queue), m_control(i_source.m_control)
             {
                 i_source.m_control = nullptr;
             }
 
-            /** Move assignment. The source is left empty. */
+            /** Move assignment. The source is left empty. 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation move_assign example 1 */
             consume_operation & operator = (consume_operation && i_source) noexcept
             {
                 if (this != &i_source)
@@ -1107,7 +1157,9 @@ namespace density
                 return *this;
             }
 
-            /** Destructor: cancel the operation (if any) */
+            /** Destructor: cancel the operation (if any)..
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation destroy example 1 */
             ~consume_operation()
             {
                 if(m_control != nullptr)
@@ -1116,16 +1168,20 @@ namespace density
                 }
             }
 
-            /** Returns true whether this object does not hold the state of an operation. */
+            /** Returns true whether this object does not hold the state of an operation.
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation empty example 1 */
             bool empty() const noexcept { return m_control == nullptr; }
 
-            /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty. */
+            /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty. 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept
             {
                 return m_control != nullptr;
             }
 
-            /** Destroys the element, and makes the effects of the operation observable. This object becomes empty.
+            /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
 				\pre The behavior is undefined if either:
 					- this object is empty
@@ -1147,7 +1203,7 @@ namespace density
 				m_control = nullptr;
             }
 
-            /** Makes the effects of the operation observable without destroying the element. 
+            /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 				The caller should destroy the element before calling this function.
 				This object becomes empty.
 
@@ -1156,7 +1212,14 @@ namespace density
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
-                \n <b>Throws</b>: Nothing. */
+                \n <b>Throws</b>: Nothing. 
+
+			Note: this function may be used to combine a feature of the runtime type on the element with the 
+				destruction of the element. For example a function queue may improve the performances using a feature 
+				like invoke_destroy to do both the function call and the destruction of the capture in a single call,
+				making a single pseudo v-call instead of two. 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation commit_nodestroy example 1 */
             void commit_nodestroy() noexcept
             {
 				DENSITY_ASSERT(!empty());
@@ -1168,14 +1231,16 @@ namespace density
 				m_control = nullptr;
             }
 
-			 /** Cancel the operation. This object becomes empty.
+			 /** Cancel the operation. This consume_operation becomes empty.
 
 				\pre The behavior is undefined if either:
 					- this object is empty
 
                 <b>Complexity</b>: Constant.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
-                \n <b>Throws</b>: Nothing. */
+                \n <b>Throws</b>: Nothing. 
+				
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1186,7 +1251,9 @@ namespace density
 
             /** Returns the type of the element being consumed.
 
-                \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation. */
+                \pre The behavior is undefined if this consume_operation is empty. 
+				
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1194,10 +1261,12 @@ namespace density
             }
 
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
-                \n This call is equivalent to: address_upper_align(unaligned_element_ptr(), complete_type().alignment());
+				The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on heterogeneous_queue::min_alignment. */
+                \pos The returned address is aligned at least on heterogeneous_queue::min_alignment. 
+				
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1205,8 +1274,12 @@ namespace density
             }
 
             /** Returns a pointer to the element being consumed.
+				
+				This call is equivalent to: <code>address_upper_align(unaligned_element_ptr(), complete_type().alignment());</code>
 
-                \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation. */
+                \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation. 
+				
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation element_ptr example 1 */
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1216,11 +1289,13 @@ namespace density
 			/** Returns a reference to the element being consumed.
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
-				\pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element. */
+				\pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element.
+				
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
 				COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
-                DENSITY_ASSERT(!empty() && complete_type() == runtime_type::template make<COMPLETE_ELEMENT_TYPE>());
+                DENSITY_ASSERT(!empty() && complete_type().is<COMPLETE_ELEMENT_TYPE>());
                 return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
             }
 
@@ -1258,7 +1333,9 @@ namespace density
 
             <b>Complexity</b>: constant
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
-            \n <b>Throws</b>: nothing */
+            \n <b>Throws</b>: nothing 
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue pop example 1 */
         void pop() noexcept
         {
 			try_start_consume().commit();
@@ -1272,7 +1349,8 @@ namespace density
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
-            \n <b>Throws</b>: nothing */
+            \n <b>Throws</b>: nothing
+		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue try_pop example 1 */
         bool try_pop() noexcept
         {
             if (auto operation = try_start_consume())
@@ -1287,19 +1365,26 @@ namespace density
 			@return a consume_operation which is empty if there are no elements to consume
 
 			A non-empty consume must be committed for the consume to have effect.
-		*/
+
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue try_start_consume example 1 */
         consume_operation try_start_consume() noexcept
         {
             return consume_operation(this, start_consume_impl());
         }
 
-		/** Tries to start a consume operation using the consume_operation specified.
-			@param i_consume reference to a consume_operation to be used. If it is non.empty
-				it gets canceled.
-			@return whether i_consume is non-empty after the call
+		/** Tries to start a consume operation using an existing consume_operation.
+			@param i_consume reference to a consume_operation to be used. If it is non-empty
+				it gets canceled before trying to start the new consume.
+			@return whether i_consume is non-empty after the call, that is whether the queue was
+				not empty.
 
 			A non-empty consume must be committed for the consume to have effect.
-		*/
+
+			This overload is similar to the one taking no arguments and returning a consume_operation.
+			For an heterogeneous_queue there is no performance difference between the two overloads. Anyway
+			for lock-free concurrent queue this overload may be faster.
+
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue try_start_consume_ example 1 */
 		bool try_start_consume(consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume(this);
