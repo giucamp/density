@@ -171,6 +171,7 @@ void heterogeneous_queue_put_transaction_samples()
 	auto transaction1 = queue.start_push(1);
 
 	heterogeneous_queue<>::put_transaction transaction2;
+	transaction2 = queue.start_push(2);
 	transaction2 = std::move(transaction1);
 	assert(transaction1.empty());
 	transaction2.commit();
@@ -371,9 +372,11 @@ void heterogeneous_queue_consume_operation_samples()
 	heterogeneous_queue<> queue;
 	
 	queue.push(42);
+	queue.push(43);
 	auto consume = queue.try_start_consume();
 	
 	heterogeneous_queue<>::consume_operation consume_1;
+	consume_1 = queue.try_start_consume();
 	consume_1 = std::move(consume);
 	assert(consume.empty() && !consume_1.empty());
 	consume_1.commit();
@@ -649,6 +652,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	auto transaction1 = queue.start_reentrant_push(1);
 
 	heterogeneous_queue<>::reentrant_put_transaction transaction2;
+	transaction2 = queue.start_reentrant_push(1);
 	transaction2 = std::move(transaction1);
 	assert(transaction1.empty());
 	transaction2.commit();
@@ -863,9 +867,11 @@ void heterogeneous_queue_reentrant_consume_operation_samples()
 	heterogeneous_queue<> queue;
 	
 	queue.push(42);
+	queue.push(43);
 	auto consume = queue.try_start_reentrant_consume();
 	
 	heterogeneous_queue<>::reentrant_consume_operation consume_1;
+	consume_1 = queue.try_start_reentrant_consume();
 	consume_1 = std::move(consume);
 	assert(consume.empty() && !consume_1.empty());
 	consume_1.commit();

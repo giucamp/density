@@ -912,6 +912,10 @@ namespace density
             {
                 if (this != &i_source)
                 {
+					if (!empty())
+					{
+						commit();
+					}
                     m_queue = i_source.m_queue;
                     m_put_data = i_source.m_put_data;
                     i_source.m_queue = nullptr;
@@ -1197,6 +1201,10 @@ namespace density
             {
                 if (this != &i_source)
                 {
+					if (!empty())
+					{
+						commit();
+					}
                     m_queue = i_source.m_queue;
                     m_control = i_source.m_control;
                     i_source.m_control = nullptr;
@@ -1691,6 +1699,10 @@ namespace density
             {
                 if (this != &i_source)
                 {
+					if (!empty())
+					{
+						commit();
+					}
                     m_queue = i_source.m_queue;
                     m_put_data = i_source.m_put_data;
                     i_source.m_queue = nullptr;
