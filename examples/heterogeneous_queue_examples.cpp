@@ -245,6 +245,26 @@ void heterogeneous_queue_put_transaction_samples()
 	//! [heterogeneous_queue put_transaction empty example 1]
 }
 {
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction operator_bool example 1]
+	heterogeneous_queue<>::put_transaction transaction;
+	assert(!transaction);
+
+	transaction = queue.start_push(1);
+	assert(transaction);
+	//! [heterogeneous_queue put_transaction operator_bool example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction queue example 1]
+	heterogeneous_queue<>::put_transaction transaction;
+	assert(transaction.queue() == nullptr);
+
+	transaction = queue.start_push(1);
+	assert(transaction.queue() == &queue);
+	//! [heterogeneous_queue put_transaction queue example 1]
+}
+{
 	//! [heterogeneous_queue put_transaction cancel example 1]
 	heterogeneous_queue<> queue;
 
@@ -391,13 +411,23 @@ void heterogeneous_queue_consume_operation_samples()
 	//! [heterogeneous_queue consume_operation operator_bool example 1]
 }
 {
+	//! [heterogeneous_queue consume_operation queue example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume;
+	assert(consume.empty() && !consume && consume.queue() == nullptr);
+	consume = queue.try_start_consume();
+	assert(!consume.empty() && !!consume && consume.queue() == &queue);
+	//! [heterogeneous_queue consume_operation queue example 1]
+}
+{
 	//! [heterogeneous_queue consume_operation commit_nodestroy example 1]
 	heterogeneous_queue<> queue;
 	queue.emplace<std::string>("abc");
 
 	heterogeneous_queue<>::consume_operation consume = queue.try_start_consume();
-	assert(consume.complete_type().is<std::string>());
-	consume.element<std::string>().~basic_string();
+	consume.complete_type().destroy(consume.element_ptr());
 
 	// the string has already been destroyed. Calling commit would trigger an undefined behavior
 	consume.commit_nodestroy();
@@ -707,6 +737,26 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	//! [heterogeneous_queue reentrant_put_transaction empty example 1]
 }
 {
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue reentrant_put_transaction operator_bool example 1]
+	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	assert(!transaction);
+
+	transaction = queue.start_reentrant_push(1);
+	assert(transaction);
+	//! [heterogeneous_queue reentrant_put_transaction operator_bool example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue reentrant_put_transaction queue example 1]
+	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	assert(transaction.queue() == nullptr);
+
+	transaction = queue.start_reentrant_push(1);
+	assert(transaction.queue() == &queue);
+	//! [heterogeneous_queue reentrant_put_transaction queue example 1]
+}
+{
 	//! [heterogeneous_queue reentrant_put_transaction cancel example 1]
 	heterogeneous_queue<> queue;
 
@@ -853,13 +903,23 @@ void heterogeneous_queue_reentrant_consume_operation_samples()
 	//! [heterogeneous_queue reentrant_consume_operation operator_bool example 1]
 }
 {
+	//! [heterogeneous_queue reentrant_consume_operation queue example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::reentrant_consume_operation consume;
+	assert(consume.empty() && !consume && consume.queue() == nullptr);
+	consume = queue.try_start_reentrant_consume();
+	assert(!consume.empty() && !!consume && consume.queue() == &queue);
+	//! [heterogeneous_queue reentrant_consume_operation queue example 1]
+}
+{
 	//! [heterogeneous_queue reentrant_consume_operation commit_nodestroy example 1]
 	heterogeneous_queue<> queue;
 	queue.emplace<std::string>("abc");
 
 	heterogeneous_queue<>::reentrant_consume_operation consume = queue.try_start_reentrant_consume();
-	assert(consume.complete_type().is<std::string>());
-	consume.element<std::string>().~basic_string();
+	consume.complete_type().destroy(consume.element_ptr());
 
 	// the string has already been destroyed. Calling commit would trigger an undefined behavior
 	consume.commit_nodestroy();

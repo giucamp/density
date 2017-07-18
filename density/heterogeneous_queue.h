@@ -241,9 +241,13 @@ namespace density
 
         class put_transaction;
         template <typename TYPE> class typed_put_transaction;
+		class consume_operation;
+
         class reentrant_put_transaction;
         template <typename TYPE> class reentrant_typed_put_transaction;
-        class iterator;
+        class reentrant_consume_operation;
+		
+		class iterator;
         class const_iterator;
 
     private:
@@ -1053,6 +1057,19 @@ namespace density
 			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction empty example 1 */
             bool empty() const noexcept { return m_queue == nullptr; }
 
+			/** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction operator_bool example 1 */
+            explicit operator bool() const noexcept
+            {
+                return m_queue != nullptr;
+            }
+
+			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
+
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction queue example 1 */
+			heterogeneous_queue * queue() const noexcept { return m_queue; }
+
             /** Returns a pointer to the object being added.
                 \n <i>Notes</i>: 
 				- The object is constructed when the transaction is started, so this function always returns a 
@@ -1210,6 +1227,11 @@ namespace density
             {
                 return m_control != nullptr;
             }
+
+			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
+
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation queue example 1 */
+			heterogeneous_queue * queue() const noexcept { return m_control != nullptr ? m_queue : nullptr; }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -1814,6 +1836,19 @@ namespace density
 			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_put_transaction empty example 1 */
             bool empty() const noexcept { return m_queue == nullptr; }
 
+			/** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
+			
+			\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_put_transaction operator_bool example 1 */
+            explicit operator bool() const noexcept
+            {
+                return m_queue != nullptr;
+            }
+
+			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
+
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_put_transaction queue example 1 */
+			heterogeneous_queue * queue() const noexcept { return m_queue; }
+
 
             /** Returns a pointer to the object being added.
                 \n <i>Note</i>: the object is constructed at the begin of the transaction, so this
@@ -1940,6 +1975,11 @@ namespace density
             {
                 return consume_operation::operator bool ();
             }
+
+			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
+
+				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_consume_operation queue example 1 */
+			heterogeneous_queue * queue() const noexcept { return consume_operation::queue(); }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -2151,7 +2191,6 @@ namespace density
                 : m_control(i_control), m_queue(i_queue)
                     { }
 
-            /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
             value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
 			const value_type * operator -> () const noexcept
@@ -2159,11 +2198,8 @@ namespace density
 				return std::pointer_traits<const value_type *>::pointer_to(**this);
 			}
 
-            /** Returns a pointer to the subobject of type COMMON_TYPE of current element */
             common_type * element_ptr() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
 
-            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
-                (whenever supported) to obtain a const-reference to a std::type_info. */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
@@ -2235,7 +2271,6 @@ namespace density
                 : m_control(i_control), m_queue(i_queue)
                     { }
 
-            /** Returns a reference to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void this function is useless, because the return type is void. */
             value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
 
 			const value_type * operator->() const
@@ -2243,11 +2278,8 @@ namespace density
 				return std::pointer_traits<pointer>::pointer_to(**this);
 			}
 
-            /** Returns a pointer to the subobject of type COMMON_TYPE of current element. If COMMON_TYPE is void, then the return type is void *. */
             const common_type * element_ptr() const noexcept { return get_element(m_control); }
 
-            /** Returns the RUNTIME_TYPE associated to this element. The user may use the function type_info of RUNTIME_TYPE
-                (whenever supported) to obtain a const-reference to a std::type_info. */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 return *type_after_control(m_control);
