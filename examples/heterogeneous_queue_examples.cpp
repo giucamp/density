@@ -263,6 +263,21 @@ void heterogeneous_queue_put_transaction_samples()
 }
 {
 	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction raw_allocate_copy example 2]
+	struct Msg
+	{
+		char * m_chars = nullptr;
+	};
+	auto post_message = [&queue](const std::string & i_string) {
+		auto transaction = queue.start_emplace<Msg>();
+		transaction.element().m_chars = transaction.raw_allocate_copy(i_string);
+		transaction.commit();
+	};
+	//! [heterogeneous_queue put_transaction raw_allocate_copy example 2]
+	(void)post_message;
+}
+{
+	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue put_transaction empty example 1]
 	heterogeneous_queue<>::put_transaction<> transaction;
 	assert(transaction.empty());
@@ -347,9 +362,9 @@ void heterogeneous_queue_put_transaction_samples()
 	//! [heterogeneous_queue typed_put_transaction element example 1]
 	
 	int value = 42;
-	auto untyped_put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
+	auto untyped_put = queue.start_reentrant_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
 
-	auto typed_put = queue.start_push(42.);
+	auto typed_put = queue.start_reentrant_push(42.);
 
 	/* typed_put = std::move(untyped_put); <- this would not compile: can't assign an untyped 
 		transaction to a typed transaction */
@@ -670,11 +685,13 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 {
 	//! [heterogeneous_queue reentrant_put_transaction copy_construct example 1]
 	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::reentrant_put_transaction<>>::value, "");
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<int>::reentrant_put_transaction<>>::value, "");
 	//! [heterogeneous_queue reentrant_put_transaction copy_construct example 1]
 }
 {
 	//! [heterogeneous_queue reentrant_put_transaction copy_assign example 1]
 	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::reentrant_put_transaction<>>::value, "");
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<int>::reentrant_put_transaction<>>::value, "");
 	//! [heterogeneous_queue reentrant_put_transaction copy_assign example 1]
 }
 {
@@ -690,7 +707,19 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	// commit transaction2
 	transaction2.commit();
 	assert(transaction2.empty());
+
 	//! [heterogeneous_queue reentrant_put_transaction move_construct example 1]
+
+	//! [heterogeneous_queue reentrant_put_transaction move_construct example 2]
+	// reentrant_put_transaction<void> can be move constructed from any reentrant_put_transaction<T>
+	static_assert(std::is_constructible<heterogeneous_queue<>::reentrant_put_transaction<void>, heterogeneous_queue<>::reentrant_put_transaction<void> &&>::value, "");
+	static_assert(std::is_constructible<heterogeneous_queue<>::reentrant_put_transaction<void>, heterogeneous_queue<>::reentrant_put_transaction<int> &&>::value, "");
+
+	// reentrant_put_transaction<T> can be move constructed only from reentrant_put_transaction<T>
+	static_assert(!std::is_constructible<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<void> &&>::value, "");
+	static_assert(!std::is_constructible<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<float> &&>::value, "");
+	static_assert(std::is_constructible<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<int> &&>::value, "");
+	//! [heterogeneous_queue reentrant_put_transaction move_construct example 2]
 }
 {
 	//! [heterogeneous_queue reentrant_put_transaction move_assign example 1]
@@ -704,6 +733,18 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	transaction2.commit();
 	assert(transaction2.empty());
 	//! [heterogeneous_queue reentrant_put_transaction move_assign example 1]
+
+	//! [heterogeneous_queue reentrant_put_transaction move_assign example 2]
+	// reentrant_put_transaction<void> can be move assigned from any reentrant_put_transaction<T>
+	static_assert(std::is_assignable<heterogeneous_queue<>::reentrant_put_transaction<void>, heterogeneous_queue<>::reentrant_put_transaction<void> &&>::value, "");
+	static_assert(std::is_assignable<heterogeneous_queue<>::reentrant_put_transaction<void>, heterogeneous_queue<>::reentrant_put_transaction<int> &&>::value, "");
+
+	// reentrant_put_transaction<T> can be move assigned only from reentrant_put_transaction<T>
+	static_assert(!std::is_assignable<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<void> &&>::value, "");
+	static_assert(!std::is_assignable<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<float> &&>::value, "");
+	static_assert(std::is_assignable<heterogeneous_queue<>::reentrant_put_transaction<int>, heterogeneous_queue<>::reentrant_put_transaction<int> &&>::value, "");
+	//! [heterogeneous_queue reentrant_put_transaction move_assign example 2]
+
 }
 {
 	//! [heterogeneous_queue reentrant_put_transaction raw_allocate example 1]
@@ -855,7 +896,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue reentrant_put_transaction destroy example 1]
-	queue.start_reentrant_push(42); /* this transaction is destroyed without being committed,
+	queue.start_reentrant_push(42);/* this transaction is destroyed without being committed,
 							so it gets canceled automatically. */
 	//! [heterogeneous_queue reentrant_put_transaction destroy example 1]
 }
@@ -980,6 +1021,25 @@ void heterogeneous_queue_reentrant_consume_operation_samples()
 	//! [heterogeneous_queue reentrant_consume_operation commit_nodestroy example 1]
 }
 {
+	//! [heterogeneous_queue reentrant_consume_operation swap example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::reentrant_consume_operation consume_1 = queue.try_start_reentrant_consume();
+	heterogeneous_queue<>::reentrant_consume_operation consume_2;
+	{
+		using namespace std;
+		swap(consume_1, consume_2);
+	}
+	assert(consume_2.complete_type().is<int>());
+	assert(consume_2.complete_type() == runtime_type<>::make<int>()); // same to the previous assert
+	assert(consume_2.element<int>() == 42);
+	consume_2.commit();
+	
+	assert(std::distance(queue.cbegin(), queue.cend()) == 0);
+	//! [heterogeneous_queue reentrant_consume_operation swap example 1]
+}
+{
 	//! [heterogeneous_queue reentrant_consume_operation cancel example 1]
 	heterogeneous_queue<> queue;
 	queue.push(42);
@@ -1047,7 +1107,7 @@ void heterogeneous_queue_reentrant_consume_operation_samples()
 	assert(consume.complete_type().is<int>());
 	std::cout << "An int: " << consume.element<int>() << std::endl;
 	/* std::cout << "An float: " << consume.element<float>() << std::endl; this would
-		trigger an undefined behaviour */
+		trigger an undefined behavior, because the element is not a float */
 	consume.commit();
 	//! [heterogeneous_queue reentrant_consume_operation element example 1]
 }
