@@ -5,6 +5,7 @@
 #include "../test_framework/test_objects.h"
 #include "../test_framework/exception_tests.h"
 #include <density/heterogeneous_queue.h>
+#include <density/concurrent_heterogeneous_queue.h>
 #include <string>
 
 namespace density_tests
@@ -317,19 +318,23 @@ namespace density_tests
 	};
 
 	template <typename QUEUE>
-		void single_queue_generic_test(QueueTesterFlags i_flags, std::ostream & i_output, EasyRandom & i_random, size_t i_element_count, size_t i_thread_count)
+		void single_queue_generic_test(QueueTesterFlags i_flags, std::ostream & i_output, EasyRandom & i_random, size_t i_element_count, 
+			std::vector<size_t> i_thread_count_vector)
 	{
-		QueueGenericTester<QUEUE> tester(i_output, i_thread_count);
-		tester.template add_test_case<PutInt<QUEUE>>();
-		tester.template add_test_case<PutUInt8<QUEUE>>();
-		tester.template add_test_case<PutUInt16<QUEUE>>();
-		tester.template add_test_case<PutString<QUEUE>>();
-		tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
-		tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
-		tester.template add_test_case<PutRawBlocks<QUEUE>>();
-		tester.template add_test_case<ReentrantPush<QUEUE>>();
+			for (auto thread_count : i_thread_count_vector)
+			{
+				QueueGenericTester<QUEUE> tester(i_output, thread_count);
+				tester.template add_test_case<PutInt<QUEUE>>();
+				tester.template add_test_case<PutUInt8<QUEUE>>();
+				tester.template add_test_case<PutUInt16<QUEUE>>();
+				tester.template add_test_case<PutString<QUEUE>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
+				tester.template add_test_case<PutRawBlocks<QUEUE>>();
+				tester.template add_test_case<ReentrantPush<QUEUE>>();
 
-		tester.run(i_flags, i_random, i_element_count);
+				tester.run(i_flags, i_random, i_element_count);
+			}
 	}
 
 
@@ -348,18 +353,34 @@ namespace density_tests
 		EasyRandom rand = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 		
 		single_queue_generic_test<heterogeneous_queue<>>(
-			i_flags, i_output, rand, i_element_count, 1);
+			i_flags, i_output, rand, i_element_count, {1});
 
 		single_queue_generic_test<heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, 1);
+			i_flags, i_output, rand, i_element_count, {1});
 
 		single_queue_generic_test<heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, 1);
+			i_flags, i_output, rand, i_element_count, {1});
 
 		single_queue_generic_test<heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, 1);
+			i_flags, i_output, rand, i_element_count, {1});
 
 		single_queue_generic_test<heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, 1);
+			i_flags, i_output, rand, i_element_count, {1});
+
+
+		single_queue_generic_test<concurrent_heterogeneous_queue<>>(
+			i_flags, i_output, rand, i_element_count, {1, 2});
+
+		single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
+			i_flags, i_output, rand, i_element_count, {1, 2});
+
+		single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
+			i_flags, i_output, rand, i_element_count, {1, 2});
+
+		single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
+			i_flags, i_output, rand, i_element_count, {1, 2});
+
+		single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
+			i_flags, i_output, rand, i_element_count, {1, 2});
 	}
 }

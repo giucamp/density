@@ -1,6 +1,7 @@
 
 #include "../test_framework/queue_load_unload_test.h"
 #include <density/nonblocking_heterogeneous_queue.h>
+#include <density/concurrent_heterogeneous_queue.h>
 #include <ostream>
 
 namespace density_tests
@@ -15,6 +16,12 @@ namespace density_tests
 
 		density_tests::queue_load_unload_test<nonblocking_heterogeneous_queue<>>(
 			7, 10000000, i_ostream);
+
+		/*density_tests::queue_load_unload_test<concurrent_heterogeneous_queue<>>(
+			3000, 1000, i_ostream);
+
+		density_tests::queue_load_unload_test<concurrent_heterogeneous_queue<>>(
+			7, 10000000, i_ostream);*/
 
 		/*EasyRandom rand;
 		density_tests::run_queue_integrity_test<nonblocking_heterogeneous_queue<>>(3000, 300,

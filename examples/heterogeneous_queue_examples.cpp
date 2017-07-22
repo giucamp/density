@@ -185,7 +185,6 @@ void heterogeneous_queue_put_transaction_samples()
 	auto transaction1 = queue.start_push(1);
 
 	heterogeneous_queue<>::put_transaction<> transaction2;
-	transaction2 = queue.start_push(2);
 	transaction2 = std::move(transaction1);
 	assert(transaction1.empty());
 	transaction2.commit();
@@ -285,6 +284,16 @@ void heterogeneous_queue_put_transaction_samples()
 	transaction = queue.start_push(1);
 	assert(!transaction.empty());
 	//! [heterogeneous_queue put_transaction empty example 1]
+}
+{
+	heterogeneous_queue<> queue;
+	//! [heterogeneous_queue put_transaction swap example 1]
+	auto transaction_1 = queue.start_push(1);
+	assert(!transaction_1.empty());
+	heterogeneous_queue<>::put_transaction<int> transaction_2;
+	swap(transaction_1, transaction_2);
+	assert(transaction_1.empty());
+	//! [heterogeneous_queue put_transaction swap example 1]
 }
 {
 	heterogeneous_queue<> queue;
@@ -418,7 +427,6 @@ void heterogeneous_queue_consume_operation_samples()
 	auto consume = queue.try_start_consume();
 	
 	heterogeneous_queue<>::consume_operation consume_1;
-	consume_1 = queue.try_start_consume();
 	consume_1 = std::move(consume);
 	assert(consume.empty() && !consume_1.empty());
 	consume_1.commit();
@@ -960,7 +968,7 @@ void heterogeneous_queue_reentrant_consume_operation_samples()
 	auto consume = queue.try_start_reentrant_consume();
 	
 	heterogeneous_queue<>::reentrant_consume_operation consume_1;
-	consume_1 = queue.try_start_reentrant_consume();
+	consume = queue.try_start_reentrant_consume();
 	consume_1 = std::move(consume);
 	assert(consume.empty() && !consume_1.empty());
 	consume_1.commit();
@@ -1461,7 +1469,7 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 
 	// commit and start consuming 1
 	put_1.commit();
-	auto consume1 = queue.try_start_consume();
+	auto consume1 = queue.try_start_reentrant_consume();
 	assert(!consume1.empty() && consume1.complete_type().is<int>());
 
 	// cancel 3.14, and commit the consumes

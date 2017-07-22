@@ -575,10 +575,11 @@ namespace density
 			/** Swaps two instances of put_transaction.
 
 				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue put_transaction swap example 1 */
-			friend void swap(put_transaction & i_first, put_transaction & i_second)
+			friend void swap(put_transaction & i_first, put_transaction & i_second) noexcept
 			{
-				std::swap(i_first.m_queue, i_second.m_queue);
-				std::swap(i_first.m_put_data, i_second.m_put_data);
+				using std::swap;
+				swap(i_first.m_queue, i_second.m_queue);
+				swap(i_first.m_put_data, i_second.m_put_data);
 			}
 
             /** Allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
@@ -898,10 +899,11 @@ namespace density
 			/** Swaps two instances of consume_operation.
 
 				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue consume_operation swap example 1 */
-			friend void swap(consume_operation & i_first, consume_operation & i_second)
+			friend void swap(consume_operation & i_first, consume_operation & i_second) noexcept
 			{
-				std::swap(i_first.m_queue, i_second.m_queue);
-				std::swap(i_first.m_control, i_second.m_control);
+				using std::swap;
+				swap(i_first.m_queue, i_second.m_queue);
+				swap(i_first.m_control, i_second.m_control);
 			}
 
             /** Returns true whether this object does not hold the state of an operation.
@@ -1564,7 +1566,7 @@ namespace density
 			/** Swaps two instances of reentrant_put_transaction.
 
 				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_put_transaction swap example 1 */
-			friend void swap(reentrant_put_transaction & i_first, reentrant_put_transaction & i_second)
+			friend void swap(reentrant_put_transaction & i_first, reentrant_put_transaction & i_second) noexcept
 			{
 				std::swap(i_first.m_queue, i_second.m_queue);
 				std::swap(i_first.m_put_data, i_second.m_put_data);
@@ -1888,7 +1890,7 @@ namespace density
 			/** Swaps two instances of reentrant_consume_operation.
 
 				\snippet heterogeneous_queue_examples.cpp heterogeneous_queue reentrant_consume_operation swap example 1 */
-			friend void swap(reentrant_consume_operation & i_first, reentrant_consume_operation & i_second)
+			friend void swap(reentrant_consume_operation & i_first, reentrant_consume_operation & i_second) noexcept
 			{
 				std::swap(i_first.m_queue, i_second.m_queue);
 				std::swap(i_first.m_control, i_second.m_control);
@@ -2037,7 +2039,7 @@ namespace density
             }
 
 			// internal only - can't be called from outside density
-			bool start_consume_impl(PrivateType, heterogeneous_queue * i_queue)
+			bool start_consume_impl(PrivateType, heterogeneous_queue * i_queue) noexcept
 			{
 				if (m_control != nullptr)
 				{

@@ -38,6 +38,12 @@
     <ClCompile Include="..\test_framework\histogram.cpp">
       <Filter>test_framework</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\any.h">

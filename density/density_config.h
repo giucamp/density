@@ -146,7 +146,7 @@ namespace density
         template <typename TYPE, typename... PARAMS>
             friend optional<TYPE> make_optional(PARAMS && ... i_construction_params);
 
-        friend void swap(optional & i_first, optional & i_second)
+        friend void swap(optional & i_first, optional & i_second) noexcept
         {
             using std::swap;
             swap(i_first.m_has_value, i_second.m_has_value);

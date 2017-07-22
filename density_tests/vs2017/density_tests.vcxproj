@@ -157,6 +157,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -185,6 +186,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -275,8 +277,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\load_unload_tests.cpp" />
     <ClCompile Include="..\tests\queue_generic_tests.cpp" />

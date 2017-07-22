@@ -110,8 +110,8 @@ namespace density_tests
 
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
-				auto const thread_put_count = i_target_put_count / m_thread_count + 
-					( (thread_index > i_target_put_count % m_thread_count) ? 1 : 0);
+				auto const thread_put_count = (i_target_put_count / m_thread_count) +
+					( (thread_index == 0) ? (i_target_put_count % m_thread_count) : 0 );
 
 				threads[thread_index].start(thread_put_count);
 			}
@@ -126,10 +126,10 @@ namespace density_tests
 					size_t produced = 0, consumed = 0;
 					for (auto & thread : threads)
 					{
-						produced += thread.incremental_stats().m_produced.load(std::memory_order_relaxed);
-						consumed += thread.incremental_stats().m_consumed.load(std::memory_order_relaxed);
+						produced += thread.incremental_stats().m_produced.load();
+						consumed += thread.incremental_stats().m_consumed.load();
 					}
-					DENSITY_TEST_ASSERT(produced >= consumed && consumed <= i_target_put_count && produced <= i_target_put_count);
+					DENSITY_TEST_ASSERT(consumed <= i_target_put_count && produced <= i_target_put_count);
 					complete = consumed >= i_target_put_count && produced >= i_target_put_count;
 
 					progress.set_progress(consumed);
