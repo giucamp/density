@@ -15,7 +15,7 @@ namespace density_tests
 		using namespace density;
 
 		{
-			const void_allocator allocator;
+			void_allocator allocator;
 			heterogeneous_queue<> queue(allocator); // copy construct allocator
 			queue.push(1);
 			queue.push(2);
@@ -31,7 +31,7 @@ namespace density_tests
 			DENSITY_TEST_ASSERT(std::distance(queue.begin(), queue.end()) == 0);
 
 			// test swaps
-			other_queue.swap(queue);
+			swap(queue, other_queue);
 			DENSITY_TEST_ASSERT(!queue.empty() && other_queue.empty());
 			swap(queue, other_queue);
 			DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
@@ -48,6 +48,7 @@ namespace density_tests
 			heterogeneous_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
 
 			auto allocator_copy = other_queue.get_allocator();
+			(void)allocator_copy;
 
 			move_only_queue.push(1);
 			move_only_queue.push(2);

@@ -22,7 +22,7 @@ namespace density_tests
 				queue.reentrant_push(1);
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			auto transaction = i_queue.start_reentrant_push(1);
 			exception_checkpoint();
@@ -56,7 +56,7 @@ namespace density_tests
 				queue.reentrant_push(str);
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			std::string str("hello world!");
 			auto transaction = i_queue.start_reentrant_push(str);
@@ -105,7 +105,7 @@ namespace density_tests
 			}
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			ElementType val = 8;
 			auto transaction = i_queue.start_reentrant_push(val);
@@ -139,7 +139,7 @@ namespace density_tests
 			put.commit(); // commit a 16. From now on, the element can be consumed
 		}
 				
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			ElementType val = 16;
 			auto transaction = i_queue.start_reentrant_push(val);
@@ -180,7 +180,7 @@ namespace density_tests
 			}
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			auto transaction = i_queue.start_reentrant_push(ElementType());
 			exception_checkpoint();
@@ -217,7 +217,7 @@ namespace density_tests
 			put.commit();
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom & i_rand)
+		static typename QUEUE::template reentrant_put_transaction<> reentrant_put(QUEUE & i_queue, EasyRandom & i_rand)
 		{
 			auto put = i_queue.template start_reentrant_emplace<ElementType>();
 			put_impl(put, i_rand);
@@ -295,7 +295,7 @@ namespace density_tests
 				queue.reentrant_push(val);
 		}
 
-		static typename QUEUE::reentrant_put_transaction reentrant_put(QUEUE & i_queue, EasyRandom &)
+		static typename QUEUE::template reentrant_put_transaction<> reentrant_put(QUEUE & i_queue, EasyRandom &)
 		{
 			uint32_t val = 32;
 			auto transaction = i_queue.start_reentrant_push(val);

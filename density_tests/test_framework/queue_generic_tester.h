@@ -28,7 +28,7 @@ namespace density_tests
 		using PutTestCase = void (*)(QUEUE & i_queue, EasyRandom &);
 		using ConsumeTestCase = void (*)(const typename QUEUE::consume_operation & i_queue);
 
-		using ReentrantPutTestCase = typename QUEUE::reentrant_put_transaction (*)(QUEUE & i_queue, EasyRandom &);
+		using ReentrantPutTestCase = typename QUEUE::template reentrant_put_transaction<void> (*)(QUEUE & i_queue, EasyRandom &);
 		using ReentrantConsumeTestCase = void (*)(const typename QUEUE::reentrant_consume_operation & i_queue);
 
 		QueueGenericTester(std::ostream & i_output, size_t m_thread_count)
@@ -274,10 +274,10 @@ namespace density_tests
 
 			struct ReentrantPut
 			{
-				typename QUEUE::reentrant_put_transaction m_transaction;
+				typename QUEUE::template reentrant_put_transaction<void> m_transaction;
 				size_t m_type_index;
 
-				ReentrantPut(size_t i_type_index, typename QUEUE::reentrant_put_transaction && i_transaction)
+				ReentrantPut(size_t i_type_index, typename QUEUE::template reentrant_put_transaction<void> && i_transaction)
 					: m_transaction(std::move(i_transaction)), m_type_index(i_type_index)
 				{
 

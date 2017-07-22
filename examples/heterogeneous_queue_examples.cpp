@@ -136,18 +136,20 @@ void heterogeneous_queue_put_transaction_samples()
 	using namespace type_features;
 {
 	//! [heterogeneous_queue put_transaction default_construct example 1]
-	heterogeneous_queue<>::put_transaction transaction;
+	heterogeneous_queue<>::put_transaction<> transaction;
 	assert(transaction.empty());
 	//! [heterogeneous_queue put_transaction default_construct example 1]
 }
 {
 	//! [heterogeneous_queue put_transaction copy_construct example 1]
-	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::put_transaction>::value, "");
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::put_transaction<>>::value, "");
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<int>::put_transaction<>>::value, "");
 	//! [heterogeneous_queue put_transaction copy_construct example 1]
 }
 {
 	//! [heterogeneous_queue put_transaction copy_assign example 1]
-	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::put_transaction>::value, "");
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::put_transaction<>>::value, "");
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<int>::put_transaction<>>::value, "");
 	//! [heterogeneous_queue put_transaction copy_assign example 1]
 }
 {
@@ -163,20 +165,43 @@ void heterogeneous_queue_put_transaction_samples()
 	// commit transaction2
 	transaction2.commit();
 	assert(transaction2.empty());
+
 	//! [heterogeneous_queue put_transaction move_construct example 1]
+
+	//! [heterogeneous_queue put_transaction move_construct example 2]
+	// put_transaction<void> can be move constructed from any put_transaction<T>
+	static_assert(std::is_constructible<heterogeneous_queue<>::put_transaction<void>, heterogeneous_queue<>::put_transaction<void> &&>::value, "");
+	static_assert(std::is_constructible<heterogeneous_queue<>::put_transaction<void>, heterogeneous_queue<>::put_transaction<int> &&>::value, "");
+
+	// put_transaction<T> can be move constructed only from put_transaction<T>
+	static_assert(!std::is_constructible<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<void> &&>::value, "");
+	static_assert(!std::is_constructible<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<float> &&>::value, "");
+	static_assert(std::is_constructible<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<int> &&>::value, "");
+	//! [heterogeneous_queue put_transaction move_construct example 2]
 }
 {
 	//! [heterogeneous_queue put_transaction move_assign example 1]
 	heterogeneous_queue<> queue;
 	auto transaction1 = queue.start_push(1);
 
-	heterogeneous_queue<>::put_transaction transaction2;
+	heterogeneous_queue<>::put_transaction<> transaction2;
 	transaction2 = queue.start_push(2);
 	transaction2 = std::move(transaction1);
 	assert(transaction1.empty());
 	transaction2.commit();
 	assert(transaction2.empty());
 	//! [heterogeneous_queue put_transaction move_assign example 1]
+
+	//! [heterogeneous_queue put_transaction move_assign example 2]
+	// put_transaction<void> can be move assigned from any put_transaction<T>
+	static_assert(std::is_assignable<heterogeneous_queue<>::put_transaction<void>, heterogeneous_queue<>::put_transaction<void> &&>::value, "");
+	static_assert(std::is_assignable<heterogeneous_queue<>::put_transaction<void>, heterogeneous_queue<>::put_transaction<int> &&>::value, "");
+
+	// put_transaction<T> can be move assigned only from put_transaction<T>
+	static_assert(!std::is_assignable<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<void> &&>::value, "");
+	static_assert(!std::is_assignable<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<float> &&>::value, "");
+	static_assert(std::is_assignable<heterogeneous_queue<>::put_transaction<int>, heterogeneous_queue<>::put_transaction<int> &&>::value, "");
+	//! [heterogeneous_queue put_transaction move_assign example 2]
 }
 {
 	//! [heterogeneous_queue put_transaction raw_allocate example 1]
@@ -234,11 +259,12 @@ void heterogeneous_queue_put_transaction_samples()
 		transaction.commit();
 	};
 	//! [heterogeneous_queue put_transaction raw_allocate_copy example 1]
+	(void)post_message;
 }
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue put_transaction empty example 1]
-	heterogeneous_queue<>::put_transaction transaction;
+	heterogeneous_queue<>::put_transaction<> transaction;
 	assert(transaction.empty());
 
 	transaction = queue.start_push(1);
@@ -248,7 +274,7 @@ void heterogeneous_queue_put_transaction_samples()
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue put_transaction operator_bool example 1]
-	heterogeneous_queue<>::put_transaction transaction;
+	heterogeneous_queue<>::put_transaction<> transaction;
 	assert(!transaction);
 
 	transaction = queue.start_push(1);
@@ -258,7 +284,7 @@ void heterogeneous_queue_put_transaction_samples()
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue put_transaction queue example 1]
-	heterogeneous_queue<>::put_transaction transaction;
+	heterogeneous_queue<>::put_transaction<> transaction;
 	assert(transaction.queue() == nullptr);
 
 	transaction = queue.start_push(1);
@@ -332,6 +358,7 @@ void heterogeneous_queue_put_transaction_samples()
 
 	//! [heterogeneous_queue typed_put_transaction element example 1]
 }
+
 }
 
 void heterogeneous_queue_consume_operation_samples()
@@ -473,6 +500,25 @@ void heterogeneous_queue_consume_operation_samples()
 	//! [heterogeneous_queue consume_operation element_ptr example 1]
 }
 {
+	//! [heterogeneous_queue consume_operation swap example 1]
+	heterogeneous_queue<> queue;
+	queue.push(42);
+
+	heterogeneous_queue<>::consume_operation consume_1 = queue.try_start_consume();
+	heterogeneous_queue<>::consume_operation consume_2;
+	{
+		using namespace std;
+		swap(consume_1, consume_2);
+	}
+	assert(consume_2.complete_type().is<int>());
+	assert(consume_2.complete_type() == runtime_type<>::make<int>()); // same to the previous assert
+	assert(consume_2.element<int>() == 42);
+	consume_2.commit();
+	
+	assert(std::distance(queue.cbegin(), queue.cend()) == 0);
+	//! [heterogeneous_queue consume_operation swap example 1]
+}
+{
 	//! [heterogeneous_queue consume_operation unaligned_element_ptr example 1]
 	heterogeneous_queue<> queue;
 	queue.push(42);
@@ -504,7 +550,7 @@ void heterogeneous_queue_consume_operation_samples()
 	assert(consume.complete_type().is<int>());
 	std::cout << "An int: " << consume.element<int>() << std::endl;
 	/* std::cout << "An float: " << consume.element<float>() << std::endl; this would
-		trigger an undefined behaviour */
+		trigger an undefined behavior, because the element is not a float */
 	consume.commit();
 	//! [heterogeneous_queue consume_operation element example 1]
 }
@@ -617,18 +663,18 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	using namespace type_features;
 {
 	//! [heterogeneous_queue reentrant_put_transaction default_construct example 1]
-	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	heterogeneous_queue<>::reentrant_put_transaction<> transaction;
 	assert(transaction.empty());
 	//! [heterogeneous_queue reentrant_put_transaction default_construct example 1]
 }
 {
 	//! [heterogeneous_queue reentrant_put_transaction copy_construct example 1]
-	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::reentrant_put_transaction>::value, "");
+	static_assert(!std::is_copy_constructible<heterogeneous_queue<>::reentrant_put_transaction<>>::value, "");
 	//! [heterogeneous_queue reentrant_put_transaction copy_construct example 1]
 }
 {
 	//! [heterogeneous_queue reentrant_put_transaction copy_assign example 1]
-	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::reentrant_put_transaction>::value, "");
+	static_assert(!std::is_copy_assignable<heterogeneous_queue<>::reentrant_put_transaction<>>::value, "");
 	//! [heterogeneous_queue reentrant_put_transaction copy_assign example 1]
 }
 {
@@ -651,7 +697,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 	heterogeneous_queue<> queue;
 	auto transaction1 = queue.start_reentrant_push(1);
 
-	heterogeneous_queue<>::reentrant_put_transaction transaction2;
+	heterogeneous_queue<>::reentrant_put_transaction<> transaction2;
 	transaction2 = queue.start_reentrant_push(1);
 	transaction2 = std::move(transaction1);
 	assert(transaction1.empty());
@@ -715,6 +761,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 		transaction.commit();
 	};
 	//! [heterogeneous_queue reentrant_put_transaction raw_allocate_copy example 1]
+	(void)post_message;
 }
 {
 	heterogeneous_queue<> queue;
@@ -729,11 +776,12 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 		transaction.commit();
 	};
 	//! [heterogeneous_queue reentrant_put_transaction raw_allocate_copy example 2]
+	(void)post_message;
 }
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue reentrant_put_transaction empty example 1]
-	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	heterogeneous_queue<>::reentrant_put_transaction<> transaction;
 	assert(transaction.empty());
 
 	transaction = queue.start_reentrant_push(1);
@@ -743,7 +791,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue reentrant_put_transaction operator_bool example 1]
-	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	heterogeneous_queue<>::reentrant_put_transaction<> transaction;
 	assert(!transaction);
 
 	transaction = queue.start_reentrant_push(1);
@@ -753,7 +801,7 @@ void heterogeneous_queue_reentrant_put_transaction_samples()
 {
 	heterogeneous_queue<> queue;
 	//! [heterogeneous_queue reentrant_put_transaction queue example 1]
-	heterogeneous_queue<>::reentrant_put_transaction transaction;
+	heterogeneous_queue<>::reentrant_put_transaction<> transaction;
 	assert(transaction.queue() == nullptr);
 
 	transaction = queue.start_reentrant_push(1);
@@ -1230,7 +1278,7 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	//! [heterogeneous_queue swap example 1]
 	heterogeneous_queue<> queue, queue_1;
 	queue.push(1);
-	queue.swap(queue_1);
+	swap(queue, queue_1);
 
 	assert(queue.empty());
 	assert(std::distance(queue.begin(), queue.end()) == 0);
