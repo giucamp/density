@@ -349,7 +349,7 @@ namespace density
         using unvoid_t = typename unvoid<TYPE>::type;
 
 
-    /** Allocates a memory block with at least the specified size and alignment.
+    /** Uses the global operator new to allocate a memory block with at least the specified size and alignment
 			@param i_size size of the requested memory block, in bytes
 			@param i_alignment alignment of the requested memory block, in bytes
 			@param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
@@ -390,7 +390,8 @@ namespace density
         return user_block;
     }
 
-    /** Deallocates a memory block. After the call accessing the memory block results in undefined behavior.
+    /** Deallocates a memory block allocated by aligned_allocate, using the global operator delete. After the call 
+				accessing the memory block results in undefined behavior.
 			@param i_block block to deallocate, or nullptr.
 			@param i_size size of the block to deallocate, in bytes.
 			@param i_alignment alignment of the memory block.

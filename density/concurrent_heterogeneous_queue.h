@@ -10,7 +10,30 @@
 
 namespace density
 {
+    /** Class template implementing a concurrent heterogeneous FIFO pseudo-container. 	
 
+		concurrent_heterogeneous_queue is a concurrent version of heterogeneous_queue, with a mutex embedded within. 
+		It allows different threads to put and consume elements concurrently without any external synchronization.
+
+		@tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is 
+			implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue. 
+			Otherwise it should be an user-defined-type, and only types deriving from it can be added.
+        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
+                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+		
+		\n <b>Thread safeness</b>: Put and consumes can be execute concurrently. Lifetime function can't.
+		\n <b>Exception safeness</b>: Any function of concurrent_heterogeneous_queue is noexcept or provides the strong exception guarantee.
+		
+
+		Implementation and performance notes
+		--------------------------
+		concurrent_heterogeneous_queue is basically an heterogeneous_queue protected by an std::mutex to avoid data races.
+		
+		Non-reentrant operations keep the mutex locked during the whole operation (until the operation is 
+		canceled or commited). Reentrant operations minimize the durations of the locks: the mutex is locked once when
+		the operation starts, and another time to commit or cancel the operation. */
 	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
         class concurrent_heterogeneous_queue
     {

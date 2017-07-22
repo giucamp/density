@@ -46,9 +46,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\any.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -62,9 +59,6 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\heterogeneous_array.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\heterogeneous_queue.h">
@@ -87,9 +81,6 @@
     </ClInclude>
     <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\array_impl.h">
-      <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\function_queue_impl.h">
       <Filter>density\detail</Filter>
