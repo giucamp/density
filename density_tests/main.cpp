@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <density/heterogeneous_queue.h>
+#include <density/nonblocking_heterogeneous_queue.h>
 
 namespace density_tests
 {
@@ -21,12 +22,33 @@ DENSITY_NO_INLINE void sandbox()
 {
 	using namespace density;
 
-	heterogeneous_queue<> queue;
+	{
+		heterogeneous_queue<> queue;
 
-	for (int i = 0; i < 1000; i++)
-		queue.push(i);
+		for (int i = 0; i < 1000; i++)
+			queue.push(i);
 
-	queue.clear();
+		queue.clear();
+	}
+	{
+		nonblocking_heterogeneous_queue<> q;
+		int i;
+		for (i = 0; i < 1000; i++)
+			q.push(i);
+
+		i = 0;
+		while (auto c = q.try_start_consume())
+		{
+			assert(c.element<int>() == i);
+			c.commit();
+			i++;
+		}
+		assert(i == 1000);
+	}
+
+	{
+		nonblocking_heterogeneous_queue<> q1;
+	}
 }
 
 void do_tests(std::ostream & i_ostream)

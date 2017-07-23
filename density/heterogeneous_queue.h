@@ -607,8 +607,7 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-
-				auto push_data = m_queue->implace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->inplace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -774,7 +773,9 @@ namespace density
 				ELEMENT_COMPLETE_TYPE &
 			#endif
 					element() const noexcept
-                { return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr()); }
+            {
+				return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr());
+			}
 
             /** Returns the type of the object being added.
 
@@ -802,7 +803,8 @@ namespace density
             // internal only - can't be called from outside density
             put_transaction(PrivateType, heterogeneous_queue * i_queue, Block i_push_data, std::true_type, void *) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
-                    { }
+            {
+			}
 
             // internal only - can't be called from outside density
             put_transaction(PrivateType, heterogeneous_queue * i_queue, Block i_push_data, std::false_type, COMMON_TYPE * i_element_storage) noexcept
@@ -967,8 +969,12 @@ namespace density
             {
 				DENSITY_ASSERT(!empty());
 
-				auto const & type = complete_type();
-				type.RUNTIME_TYPE::~RUNTIME_TYPE();
+				bool destroy_type = !std::is_trivially_destructible<RUNTIME_TYPE>::value;
+				if (destroy_type)
+				{
+					auto const & type = complete_type();
+					type.RUNTIME_TYPE::~RUNTIME_TYPE();
+				}
 
 				m_queue->commit_consume_impl(m_control);
 				m_control = nullptr;
@@ -1248,7 +1254,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 			
-			auto push_data = implace_allocate<0, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+			auto push_data = inplace_allocate<0, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr; 
@@ -1294,7 +1300,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -1343,7 +1349,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push_copy example 1 */
         put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 			
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
@@ -1391,7 +1397,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = implace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
@@ -1598,7 +1604,7 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
 
-				auto push_data = m_queue->implace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->inplace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -1957,8 +1963,12 @@ namespace density
             {
 				DENSITY_ASSERT(!empty());
 
-				auto const & type = complete_type();
-				type.RUNTIME_TYPE::~RUNTIME_TYPE();
+				bool destroy_type = !std::is_trivially_destructible<RUNTIME_TYPE>::value;
+				if (destroy_type)
+				{
+					auto const & type = complete_type();
+					type.RUNTIME_TYPE::~RUNTIME_TYPE();
+				}
 
 				m_queue->commit_consume_impl(m_control);
 				m_control = nullptr;
@@ -2129,7 +2139,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 			
-			auto push_data = implace_allocate<detail::Queue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+			auto push_data = inplace_allocate<detail::Queue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr; 
@@ -2162,7 +2172,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = implace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -2196,7 +2206,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = implace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -2229,7 +2239,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heterogeneous_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = implace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -2641,11 +2651,9 @@ namespace density
 		/** Allocates an element and its control block. 
 			This function may throw anything the allocator may throw. */
         template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE>
-            Block implace_allocate(size_t i_size, size_t i_alignment)
+            Block inplace_allocate(size_t i_size, size_t i_alignment)
         {
 			DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
-			DENSITY_ASSERT_INTERNAL(address_is_aligned(m_tail, min_alignment) || 
-				m_tail == reinterpret_cast<ControlBlock*>(s_invalid_control_block));
 
             if (i_alignment < min_alignment)
             {
@@ -2655,6 +2663,9 @@ namespace density
 
             for(;;)
             {
+				DENSITY_ASSERT_INTERNAL(address_is_aligned(m_tail, min_alignment)
+					|| m_tail == reinterpret_cast<ControlBlock*>(s_invalid_control_block));
+
 				// allocate space for the control block and the runtime type
                 auto const control_block = m_tail;
                 void * new_tail = address_add(control_block, 
@@ -2662,7 +2673,7 @@ namespace density
 
 				// allocate space for the element
                 new_tail = address_upper_align(new_tail, i_alignment);
-                void * new_element = new_tail;
+                void * const user_storage = new_tail;
                 new_tail = address_add(new_tail, i_size);
 
 				// check if a page overflow would occur
@@ -2674,9 +2685,9 @@ namespace density
 
                     control_block->m_next = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
                     m_tail = static_cast<ControlBlock *>(new_tail);
-                    return Block{ control_block, new_element };
+                    return Block{ control_block, user_storage };
                 }
-				else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage)
+				else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
 				{
 					// allocate a new page and redo
 					allocate_new_page();
@@ -2689,9 +2700,9 @@ namespace density
             }
         }
 
-		/** Overload of implace_allocate with fixed size and alignment */
+		/** Overload of inplace_allocate with fixed size and alignment */
         template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-            Block implace_allocate()
+            Block inplace_allocate()
         {
 			static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
@@ -2748,12 +2759,11 @@ namespace density
             Block external_allocate(size_t i_size, size_t i_alignment)
         {
             auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
-
 			try
 			{
 				/* external blocks always allocate space for the type, because it would be complicated 
 					for the consumers to handle both cases*/
-				auto const inplace_put = implace_allocate<CONTROL_BITS, true>(sizeof(ExternalBlock), alignof(ExternalBlock));
+				auto const inplace_put = inplace_allocate<CONTROL_BITS, true>(sizeof(ExternalBlock), alignof(ExternalBlock));
 
 				new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
 
@@ -2763,7 +2773,7 @@ namespace density
 			}
 			catch (...)
 			{
-				/* if implace_allocate fails, that means that we were able to allocate the external block,
+				/* if inplace_allocate fails, that means that we were able to allocate the external block,
 					but we were not able to put the struct ExternalBlock in the page (because a new page was
 					necessary, but we could not allocate it). */
 				ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
@@ -2845,7 +2855,7 @@ namespace density
 			clean_dead_elements();
 		}
 
-		void clean_dead_elements()
+		void clean_dead_elements() noexcept
 		{
             auto curr = m_head;
 			while (curr != m_tail)

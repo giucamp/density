@@ -264,8 +264,14 @@ namespace density
         constexpr UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
     {
         static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT must be an unsigned integer");
-        // DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         return (i_uint + (i_alignment - 1)) & ~(i_alignment - 1);
+    }
+
+    template <typename UINT>
+        constexpr UINT uint_lower_align(UINT i_uint, size_t i_alignment) noexcept
+    {
+        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT must be an unsigned integer");
+        return i_uint & ~(i_alignment - 1);
     }
 
     /** Returns the smallest address greater than the first parameter, such that i_address + i_alignment_offset is aligned

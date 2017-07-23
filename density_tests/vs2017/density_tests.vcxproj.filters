@@ -44,6 +44,9 @@
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\nonblocking_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
@@ -135,6 +138,12 @@
     </ClInclude>
     <ClInclude Include="..\test_framework\queue_generic_tester.h">
       <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple.h">
+      <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

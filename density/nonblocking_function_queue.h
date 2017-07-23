@@ -10,5 +10,5 @@
 namespace density
 {
 	template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
-		using nonblocking_function_queue = detail::FunctionQueueImpl< experimental::nonblocking_heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+		using nonblocking_function_queue = detail::FunctionQueueImpl< nonblocking_heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
 }

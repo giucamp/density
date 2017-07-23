@@ -9,7 +9,6 @@ namespace density_tests
 	void load_unload_tests(std::ostream & i_ostream)
 	{
 		using namespace density;
-		using namespace density::experimental;
 
 		density_tests::queue_load_unload_test<nonblocking_heterogeneous_queue<>>(
 			3000, 1000, i_ostream);

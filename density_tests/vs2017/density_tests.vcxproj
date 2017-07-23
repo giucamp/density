@@ -279,6 +279,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\..\examples\nonblocking_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp" />
@@ -299,6 +300,8 @@
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
+    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h" />
+    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple.h" />
     <ClInclude Include="..\..\density\detail\page_manager.h" />
     <ClInclude Include="..\..\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
