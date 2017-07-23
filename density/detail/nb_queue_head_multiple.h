@@ -403,7 +403,7 @@ namespace density
 						{
 							raw_atomic_store(m_control->m_next, 0);
 
-							std::memset(address_of_next, 0, address_diff(next, address_of_next + 1));
+							std::memset(address_of_next + 1, 0, address_diff(next, address_of_next + 1));
 							m_control = next;
 						}
 						else
