@@ -1338,8 +1338,9 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 }
 {
 	//! [heterogeneous_queue get_allocator_ref example 2]
-	heterogeneous_queue<> const queue;
-	assert(queue.get_allocator_ref() == void_allocator());
+	heterogeneous_queue<> queue;
+	auto const & queue_ref = queue;
+	assert(queue_ref.get_allocator_ref() == void_allocator());
 	//! [heterogeneous_queue get_allocator_ref example 2]
 }
 {

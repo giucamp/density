@@ -33,11 +33,13 @@ namespace density
 			NonblockingQueueHead(ALLOCATOR_TYPE && i_allocator)
 				: Base(std::move(i_allocator))
 			{
+				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
 			NonblockingQueueHead(const ALLOCATOR_TYPE & i_allocator)
 				: Base(i_allocator)
 			{
+				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
 			NonblockingQueueHead(NonblockingQueueHead && i_source)
@@ -57,7 +59,7 @@ namespace density
 				Base::swap(i_other);
 
 				// swap the head
-				auto auto tmp = i_other.m_head.load();
+				auto const tmp = i_other.m_head.load();
 				i_other.m_head.store(m_head.load());
 				m_head.store(tmp);
 			}
@@ -86,9 +88,9 @@ namespace density
 					{
 						m_queue = i_source.m_queue;
 						m_control = i_source.m_control;
-						m_being_consumed = i_source.m_being_consumed;
+						m_next_ptr = i_source.m_next_ptr;
 						i_source.m_control = nullptr;
-						i_source.m_being_consumed = nullptr;
+						i_source.m_next_ptr = 0;
 					}
 					return *this;
 				}
@@ -114,7 +116,7 @@ namespace density
 				{
 					ControlBlock * head = i_queue->m_head.load();
 
-					while (!same_page(m_control, head))
+					while (!Base::same_page(m_control, head))
 					{
 						DENSITY_ASSERT_INTERNAL(m_control != head);
 
@@ -160,16 +162,16 @@ namespace density
 							// advance m_control to the next element
 							auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 							DENSITY_ASSERT_INTERNAL(next != 0);
-							if (DENSITY_LIKELY(same_page(m_control, next)))
+							if (DENSITY_LIKELY(Base::same_page(m_control, next)))
 							{
 								// no page switch
-								DENSITY_ASSERT_INTERNAL(m_control != get_end_control_block(m_control));
+								DENSITY_ASSERT_INTERNAL(m_control != Base::get_end_control_block(m_control));
 								m_control = next;
 							}
 							else
 							{
 								/* page switch: we have to do a safe pinning of the next page */
-								DENSITY_ASSERT_INTERNAL(m_control == get_end_control_block(m_control));
+								DENSITY_ASSERT_INTERNAL(m_control == Base::get_end_control_block(m_control));
 
 								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
 								m_queue->ALLOCATOR_TYPE::pin_page(next);
@@ -254,16 +256,16 @@ namespace density
 							// advance m_control to the next element
 							auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 							DENSITY_ASSERT_INTERNAL(next != 0);
-							if (DENSITY_LIKELY(same_page(m_control, next)))
+							if (DENSITY_LIKELY(Base::same_page(m_control, next)))
 							{
 								// no page switch
-								DENSITY_ASSERT_INTERNAL(m_control != get_end_control_block(m_control));
+								DENSITY_ASSERT_INTERNAL(m_control != Base::get_end_control_block(m_control));
 								m_control = next;
 							}
 							else
 							{
 								/* page switch: we have to do a safe pinning of the next page */
-								DENSITY_ASSERT_INTERNAL(m_control == get_end_control_block(m_control));
+								DENSITY_ASSERT_INTERNAL(m_control == Base::get_end_control_block(m_control));
 
 								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
 								m_queue->ALLOCATOR_TYPE::pin_page(next);
@@ -323,9 +325,9 @@ namespace density
 					/* the scan starts from the tail if it is in the same page of m_control, otherwise it
 						starts from the end-block of the page. */
 					auto curr = i_tail;
-					if (!same_page(m_control, i_tail))
+					if (!Base::same_page(m_control, i_tail))
 					{
-						curr = get_end_control_block(m_control);
+						curr = Base::get_end_control_block(m_control);
 					}
 
 					ControlBlock * last_nonzero = nullptr;
@@ -334,7 +336,7 @@ namespace density
 					{
 						for (;;)
 						{
-							curr = static_cast<ControlBlock *>(address_sub(curr, min_alignment));
+							curr = static_cast<ControlBlock *>(address_sub(curr, Base::min_alignment));
 							if (curr == m_control)
 								break;
 
@@ -382,9 +384,9 @@ namespace density
 							break;
 						}
 
-						bool const is_same_page = same_page(m_control, next);
+						bool const is_same_page = Base::same_page(m_control, next);
 						DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-						auto const dbg_end_block = get_end_control_block(m_control);
+						auto const dbg_end_block = Base::get_end_control_block(m_control);
 						DENSITY_ASSERT_INTERNAL(is_same_page == (m_control != dbg_end_block));
 
 						auto const address_of_next = const_cast<uintptr_t*>(&m_control->m_next);
@@ -433,7 +435,7 @@ namespace density
 			}; // Consume
 
 		private: // data members
-			alignas(concurrent_alignment)std::atomic<ControlBlock*> m_head;
+			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_head;
 		};
 
 	} // namespace detail

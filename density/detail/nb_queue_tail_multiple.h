@@ -112,7 +112,7 @@ namespace density
 				swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other));
 
 				// swap the tail
-				auto auto tmp = i_other.m_tail.load();
+				auto const tmp = i_other.m_tail.load();
 				i_other.m_tail.store(m_tail.load());
 				m_tail.store(tmp);
 			}
@@ -123,26 +123,6 @@ namespace density
 				auto const end_block = get_end_control_block(tail);
 				end_block->m_next = 0;
 				ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
-			}
-
-			static constexpr uintptr_t get_element_required_size(size_t i_size, size_t i_alignment) noexcept
-			{
-				size_t result = s_element_offset + i_size;
-
-				// add the padding required to align the element after the runtime_type
-				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
-
-				return uint_upper_align(result, min_alignment);
-			}
-
-			static constexpr uintptr_t get_raw_allocation_required_size(size_t i_size, size_t i_alignment) noexcept
-			{
-				size_t result = s_type_eraser_offset + i_size;
-
-				// add the padding required to align the block
-				result += (i_alignment > alignof(RUNTIME_TYPE) ? (i_alignment - alignof(RUNTIME_TYPE)) : 0);
-
-				return uint_upper_align(result, min_alignment);
 			}
 
 			static ControlBlock * get_end_control_block(void * i_address)
@@ -282,7 +262,7 @@ namespace density
 				{
 					/* external blocks always allocate space for the type, because it would be complicated 
 						for the consumers to handle both cases*/
-					auto const inplace_put = inplace_allocate<CONTROL_BITS | detail::Queue_External, true>(sizeof(ExternalBlock), alignof(ExternalBlock));
+					auto const inplace_put = inplace_allocate<CONTROL_BITS | detail::NbQueue_External, true>(sizeof(ExternalBlock), alignof(ExternalBlock));
 					new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
 					return Block{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
 				}
@@ -424,11 +404,26 @@ namespace density
 
 			static void cancel_put_impl(const Block & i_put) noexcept
 			{
+				// destroy the element and the type
+				auto type_ptr = type_after_control(i_put.m_control_block);
+				type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
+				type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+
+				cancel_put_nodestroy_impl(i_put);
+			}
+
+			static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
+			{
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, min_alignment));
 				DENSITY_ASSERT_INTERNAL(
 					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+
+				// destroy the element and the type
+				auto type_ptr = type_after_control(i_put.m_control_block);
+				type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
+				type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
 
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
@@ -440,7 +435,10 @@ namespace density
 				return m_tail.load();
 			}
 
-
+			static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
+			{
+				return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
+			}
 
 		private: // data members
 			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_tail;

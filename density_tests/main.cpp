@@ -15,6 +15,9 @@ namespace density_tests
 	void concurrent_heterogeneous_queue_samples(std::ostream & i_ostream);
 	void concurrent_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
+	void nonblocking_heterogeneous_queue_samples(std::ostream & i_ostream);
+	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
+
 	void load_unload_tests(std::ostream & i_ostream);
 }
 
@@ -60,12 +63,13 @@ void do_tests(std::ostream & i_ostream)
 	PrintScopeDuration dur(i_ostream, "all tests");
 
 	heterogeneous_queue_samples(i_ostream);
-
 	heterogeneous_queue_basic_tests(i_ostream);
 
 	concurrent_heterogeneous_queue_samples(i_ostream);
-
 	concurrent_heterogeneous_queue_basic_tests(i_ostream);
+
+	nonblocking_heterogeneous_queue_samples(i_ostream);
+	nonblocking_heterogeneous_queue_basic_tests(i_ostream);
 
 	i_ostream << "\n*** executing generic tests..." << std::endl;
 	all_queues_generic_tests(QueueTesterFlags::eNone, i_ostream, 3, 100000);

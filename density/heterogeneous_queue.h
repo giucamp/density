@@ -2833,7 +2833,8 @@ namespace density
         ControlBlock * start_consume_impl() noexcept
         {
             auto curr = m_head;
-            while (curr != m_tail)
+			auto const tail = m_tail;
+            while (curr != tail)
             {
                 if ((curr->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0)
                 {

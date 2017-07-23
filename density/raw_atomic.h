@@ -46,7 +46,7 @@ namespace density
 		std::memory_order i_success = std::memory_order_seq_cst,
 		std::memory_order i_failure = std::memory_order_seq_cst) noexcept
 	{
-		return raw_atomic_compare_exchange_weak(io_atomic, io_expected, i_desired, i_success, i_failure);
+		return raw_atomic_compare_exchange_strong(io_atomic, io_expected, i_desired, i_success, i_failure);
 	}
 
 } // namespace density

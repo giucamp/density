@@ -52,13 +52,6 @@ namespace density
 			NbQueue_AllFlags = NbQueue_Busy | NbQueue_Dead | NbQueue_External | NbQueue_InvalidNextPage
 		};
 
-		/** /internal used to workaround for internal compiler error with Vs2017 RC */
-		template <typename TYPE>
-			inline void destroy_obj(TYPE * i_obj)
-		{
-			i_obj->TYPE::~TYPE();
-		}
-
 		/** /internal Class template that implements the low-level interface for put transaction */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, concurrent_cardinality CARDINALITY >
 			class NonblockingQueueTail;
@@ -267,9 +260,6 @@ namespace density
             }
 
             DENSITY_ASSERT_INTERNAL(empty());
-
-			assert(false); // temp
-			// clean_dead_elements();
         }
 
         /** Move-only class template that can be bound to a put transaction, otherwise it's empty.
@@ -323,7 +313,7 @@ namespace density
             template <typename OTHERTYPE, typename = typename std::enable_if<
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				put_transaction(put_transaction<OTHERTYPE> && i_source) noexcept
-					: m_queue(i_source.m_queue), m_put(i_source.m_put)
+					: m_put(i_source.m_put), m_queue(i_source.m_queue)
             {
                 i_source.m_queue = nullptr;
             }
@@ -343,7 +333,8 @@ namespace density
 						cancel();
 
 					using std::swap;
-					swap(*this, i_source);
+					swap(m_put, i_source.m_put);
+					swap(m_queue, i_source.m_queue);
 				}
 				return *this;
             }
@@ -383,7 +374,7 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->inplace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->template inplace_allocate<detail::NbQueue_Dead, false>(i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -470,7 +461,7 @@ namespace density
             void commit() noexcept
             {
 				DENSITY_ASSERT(!empty());					
-				commit_put_impl(m_put);
+				Base::commit_put_impl(m_put);
 				m_queue = nullptr;
             }
 
@@ -487,7 +478,7 @@ namespace density
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
-				cancel_put_impl(m_put);
+				Base::cancel_put_impl(m_put);
 				m_queue = nullptr;
             }
 
@@ -563,7 +554,7 @@ namespace density
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return *static_cast<RUNTIME_TYPE*>(address_add(m_put.m_control, s_type_offset));
+                return *Base::type_after_control(m_put.m_control_block);
             }
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. 
@@ -573,7 +564,7 @@ namespace density
             {
 				if (m_queue != nullptr)
 				{
-					cancel_put_impl(m_put);
+					Base::cancel_put_impl(m_put);
 				}
             }
 
@@ -582,8 +573,8 @@ namespace density
 					std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
 				: m_put(i_put), m_queue(i_queue) 
 			{
-                m_put_data.m_user_storage = i_element;
-                m_put_data.m_control_block->m_element = i_element;
+                m_put.m_user_storage = i_element;
+                m_put.m_control_block->m_element = i_element;
 			}
 
 			// internal only - can't be called from outside density
@@ -680,7 +671,7 @@ namespace density
 			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
 				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return m_consume_data.m_queue; }
+			nonblocking_heterogeneous_queue * queue() const noexcept { return static_cast<nonblocking_heterogeneous_queue*>(m_consume_data.m_queue); }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -758,7 +749,7 @@ namespace density
             const RUNTIME_TYPE & complete_type() const noexcept
             {
 				DENSITY_ASSERT(!empty());
-				return *type_after_control(m_consume_data.m_control);
+				return *Base::type_after_control(m_consume_data.m_control);
             }
 
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
@@ -823,24 +814,24 @@ namespace density
 
 			static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
 			{
-				auto result = address_add(i_control, s_element_offset);
+				auto result = address_add(i_control, Base::s_element_min_offset);
 				if (i_control->m_next & detail::NbQueue_External)
 				{
-					result = static_cast<ExternalBlock*>(result)->m_block;
+					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
 				}
 				return result;
 			}
 
 			static void * get_element(detail::NbQueueControl<void> * i_control)
 			{
-				auto result = address_add(i_control, s_element_min_offset);
+				auto result = address_add(i_control, Base::s_element_min_offset);
 				if (i_control->m_next & detail::NbQueue_External)
 				{
-					result = static_cast<Base::ExternalBlock*>(result)->m_block;
+					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
 				}
 				else
 				{
-					result = address_upper_align(result, type_after_control(i_control)->alignment());
+					result = address_upper_align(result, Base::type_after_control(i_control)->alignment());
 				}
 				return result;
 			}
@@ -1044,13 +1035,13 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 			
-			auto push_data = inplace_allocate<0, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr; 
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
@@ -1061,8 +1052,8 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
-				push_data.m_control_block->m_next += detail::Queue_Dead;
+
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -1090,13 +1081,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -1107,8 +1098,8 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
-				push_data.m_control_block->m_next += detail::Queue_Dead;
+
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -1139,13 +1130,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_copy example 1 */
         put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 			
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -1156,8 +1147,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
-				push_data.m_control_block->m_next += detail::Queue_Dead;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -1187,13 +1177,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -1204,8 +1194,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == 0);
-				push_data.m_control_block->m_next += detail::Queue_Dead;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -1333,7 +1322,7 @@ namespace density
             template <typename OTHERTYPE, typename = typename std::enable_if<
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				reentrant_put_transaction(reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
-					: m_queue(i_source.m_queue), m_put(i_source.m_put)
+					: m_put(i_source.m_put), m_queue(i_source.m_queue)
             {
                 i_source.m_queue = nullptr;
             }
@@ -1353,7 +1342,8 @@ namespace density
 						cancel();
 
 					using std::swap;
-					swap(*this, i_source);
+					swap(m_put, i_source.m_put);
+					swap(m_queue, i_source.m_queue);
 				}
 				return *this;
             }
@@ -1393,7 +1383,7 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->inplace_allocate<detail::Queue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->template inplace_allocate<detail::NbQueue_Dead, false>(i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -1480,10 +1470,9 @@ namespace density
             void commit() noexcept
             {
 				DENSITY_ASSERT(!empty());					
-				commit_put_impl(m_put);
+				Base::commit_put_impl(m_put);
 				m_queue = nullptr;
             }
-
 
 			/** Cancel the transaction. This object becomes empty.
 
@@ -1498,7 +1487,7 @@ namespace density
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
-				cancel_put_impl(m_put);
+				Base::cancel_put_impl(m_put);
 				m_queue = nullptr;
             }
 
@@ -1538,7 +1527,7 @@ namespace density
             common_type * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return m_put_data.m_user_storage;
+                return m_put.m_user_storage;
             }
 
 			/** Returns a reference to the element being added. This function can be used to modify the element 
@@ -1574,7 +1563,7 @@ namespace density
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return *static_cast<RUNTIME_TYPE*>(address_add(m_put.m_control, s_type_offset));
+                return *Base::type_after_control(m_put.m_control_block);
             }
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. 
@@ -1584,7 +1573,7 @@ namespace density
             {
 				if (m_queue != nullptr)
 				{
-					cancel_put_impl(m_put);
+					Base::cancel_put_impl(m_put);
 				}
             }
 
@@ -1593,8 +1582,8 @@ namespace density
 					std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
 				: m_put(i_put), m_queue(i_queue) 
 			{
-                m_put_data.m_user_storage = i_element;
-                m_put_data.m_control_block->m_element = i_element;
+                m_put.m_user_storage = i_element;
+                m_put.m_control_block->m_element = i_element;
 			}
 
 			// internal only - can't be called from outside density
@@ -1690,7 +1679,7 @@ namespace density
 			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
 				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return m_consume_data.m_queue; }
+			nonblocking_heterogeneous_queue * queue() const noexcept { return static_cast<nonblocking_heterogeneous_queue*>(m_consume_data.m_queue); }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -1768,7 +1757,7 @@ namespace density
             const RUNTIME_TYPE & complete_type() const noexcept
             {
 				DENSITY_ASSERT(!empty());
-				return *type_after_control(m_consume_data.m_control);
+				return *Base::type_after_control(m_consume_data.m_control);
             }
 
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
@@ -1833,24 +1822,24 @@ namespace density
 
 			static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
 			{
-				auto result = address_add(i_control, s_element_offset);
+				auto result = address_add(i_control, Base::s_element_min_offset);
 				if (i_control->m_next & detail::NbQueue_External)
 				{
-					result = static_cast<ExternalBlock*>(result)->m_block;
+					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
 				}
 				return result;
 			}
 
 			static void * get_element(detail::NbQueueControl<void> * i_control)
 			{
-				auto result = address_add(i_control, s_element_min_offset);
+				auto result = address_add(i_control, Base::s_element_min_offset);
 				if (i_control->m_next & detail::NbQueue_External)
 				{
-					result = static_cast<Base::ExternalBlock*>(result)->m_block;
+					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
 				}
 				else
 				{
-					result = address_upper_align(result, type_after_control(i_control)->alignment());
+					result = address_upper_align(result, Base::type_after_control(i_control)->alignment());
 				}
 				return result;
 			}
@@ -1945,13 +1934,13 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 			
-			auto push_data = inplace_allocate<detail::Queue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr; 
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
@@ -1962,8 +1951,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
-				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -1978,13 +1966,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -1995,8 +1983,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
-				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -2012,13 +1999,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -2029,8 +2016,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
-				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -2045,13 +2031,13 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
 			try
 			{
-				auto const type_storage = type_after_control(push_data.m_control_block);
+				auto const type_storage = Base::type_after_control(push_data.m_control_block);
 				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
 				type = new (type_storage) runtime_type(i_type);
 				
@@ -2062,8 +2048,7 @@ namespace density
 			{
 				if (type != nullptr)
 					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				DENSITY_ASSERT_INTERNAL((push_data.m_control_block->m_next & (detail::Queue_Busy | detail::Queue_Dead)) == detail::Queue_Busy);
-				push_data.m_control_block->m_next += detail::Queue_Dead - detail::Queue_Busy;
+				Base::cancel_put_nodestroy_impl(push_data);
 				throw;
 			}
 
@@ -2123,7 +2108,7 @@ namespace density
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_start_reentrant_consume example 1 */
         reentrant_consume_operation try_start_reentrant_consume() noexcept
         {
-			 return reentrant_consume_operation(PrivateType(), this, start_consume_impl());
+			 return reentrant_consume_operation(PrivateType(), this);
         }
 		
 		/** Tries to start a consume operation using an existing consume_operation.
@@ -2145,12 +2130,6 @@ namespace density
         {
             return i_consume.start_consume_impl(PrivateType(), this);
         }
-
-	private:
-		static runtime_type * type_after_control(ControlBlock * i_control) noexcept
-		{
-			return static_cast<runtime_type*>(address_add(i_control, s_type_offset));
-		}
 	};
 
 } // namespace density

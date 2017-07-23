@@ -9,6 +9,7 @@
 #include <cmath>
 #include <type_traits>
 #include <unordered_map>
+#include "density_test_common.h"
 
 namespace density_tests
 {

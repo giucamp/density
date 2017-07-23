@@ -146,9 +146,9 @@ namespace density_tests
 
 		bool consume_one()
 		{
-			if (auto consume = m_queue.start_consume())
+			if (auto consume = m_queue.try_start_consume())
 			{
-				auto const id = consume.element<uint32_t>();
+				auto const id = consume.template element<uint32_t>();
 				consume.commit();
 				m_id_map[id].fetch_sub(1, std::memory_order_relaxed);
 				return true;

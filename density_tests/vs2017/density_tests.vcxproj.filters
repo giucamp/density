@@ -47,6 +47,9 @@
     <ClCompile Include="..\..\examples\nonblocking_heterogeneous_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="..\tests\nonblocking_heterogeneous_queue_basic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
