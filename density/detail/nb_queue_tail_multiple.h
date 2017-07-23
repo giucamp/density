@@ -420,11 +420,6 @@ namespace density
 					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
-				// destroy the element and the type
-				auto type_ptr = type_after_control(i_put.m_control_block);
-				type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
-				type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
 				raw_atomic_store(i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);

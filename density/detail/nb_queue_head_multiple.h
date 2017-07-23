@@ -142,7 +142,8 @@ namespace density
 
 					// we are not modifying the queue, but we have to pin/unpin anyway
 					auto const queue = const_cast<NonblockingQueueHead *>(i_queue);
-					start_consume_impl(queue);
+
+					move_to_head(queue);
 
 					for (;;)
 					{
@@ -361,9 +362,15 @@ namespace density
 						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 					// remove NbQueue_Busy and add NbQueue_Dead
+					DENSITY_ASSERT_INTERNAL((m_next_ptr & (detail::NbQueue_Dead | detail::NbQueue_Busy | detail::NbQueue_InvalidNextPage)) == detail::NbQueue_Dead);
 					raw_atomic_store(m_control->m_next, m_next_ptr, detail::mem_seq_cst);
 					m_next_ptr = 0;
 
+					clean_dead_elements();
+				}
+
+				void clean_dead_elements() noexcept
+				{
 					move_to_head(m_queue);
 
 					for (;;)
@@ -403,10 +410,10 @@ namespace density
 						{
 							m_queue->ALLOCATOR_TYPE::pin_page(next);
 
-#if DENSITY_DEBUG_INTERNAL
-							auto const updated_next_uint = raw_atomic_load(m_control->m_next);
-							auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
-#endif
+							#if DENSITY_DEBUG_INTERNAL
+								auto const updated_next_uint = raw_atomic_load(m_control->m_next);
+								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
+							#endif
 
 							raw_atomic_store(m_control->m_next, 0);
 							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
@@ -428,7 +435,8 @@ namespace density
 					DENSITY_ASSERT_INTERNAL((raw_atomic_load(m_control->m_next, detail::mem_relaxed) &
 						(detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
-					raw_atomic_store(m_control->m_next, m_next_ptr | detail::NbQueue_Busy, detail::mem_seq_cst);
+					DENSITY_ASSERT_INTERNAL((m_next_ptr & (detail::NbQueue_Dead | detail::NbQueue_Busy | detail::NbQueue_InvalidNextPage)) == detail::NbQueue_Dead);
+					raw_atomic_store(m_control->m_next, m_next_ptr - detail::NbQueue_Dead, detail::mem_seq_cst);
 					m_next_ptr = 0;
 				}
 

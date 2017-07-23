@@ -52,6 +52,17 @@ DENSITY_NO_INLINE void sandbox()
 	{
 		nonblocking_heterogeneous_queue<> q1;
 	}
+	{
+		nonblocking_heterogeneous_queue<void> queue;
+		queue.push(std::string());
+		queue.push(std::make_pair(4., 1));
+		assert(!queue.empty());
+	}
+	{
+	nonblocking_heterogeneous_queue<> queue;
+	queue.push(42);
+	assert(queue.try_start_consume().element<int>() == 42);
+	}
 }
 
 void do_tests(std::ostream & i_ostream)

@@ -229,6 +229,10 @@ namespace density
         ~nonblocking_heterogeneous_queue()
         {
             clear();
+
+			Consume consume;
+			consume.m_queue = this;
+			consume.clean_dead_elements();
         }
 
         /** Returns whether the queue contains no elements.
@@ -258,8 +262,6 @@ namespace density
                     break;
                 transaction.commit();
             }
-
-            DENSITY_ASSERT_INTERNAL(empty());
         }
 
         /** Move-only class template that can be bound to a put transaction, otherwise it's empty.

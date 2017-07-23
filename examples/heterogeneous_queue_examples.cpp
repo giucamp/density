@@ -1236,6 +1236,7 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	{
 		assert(value.first.is<int>());
 		assert(*static_cast<int*>(value.second) == 42);
+		*static_cast<int*>(value.second) = 0;
 	}
 	//! [heterogeneous_queue iterators example 1]
 }
@@ -1342,6 +1343,7 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	auto const & queue_ref = queue;
 	assert(queue_ref.get_allocator_ref() == void_allocator());
 	//! [heterogeneous_queue get_allocator_ref example 2]
+	(void)queue_ref;
 }
 {
 	//! [heterogeneous_queue swap example 1]
@@ -1451,6 +1453,8 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	assert(consume_2.element<int>() == 42);
 	consume_2.commit();
 	//! [heterogeneous_queue try_start_consume_ example 1]
+	(void)bool_1;
+	(void)bool_2;
 }
 {
 	heterogeneous_queue<> queue;
@@ -1541,6 +1545,8 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 	assert(consume_2.element<int>() == 42);
 	consume_2.commit();
 	//! [heterogeneous_queue try_start_reentrant_consume_ example 1]
+	(void)bool_1;
+	(void)bool_2;
 }
 
 	// this samples uses std::cout and std::cin

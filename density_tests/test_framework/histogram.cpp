@@ -1,5 +1,5 @@
 
-#pragma once
+
 #include "histogram.h"
 
 namespace density_tests
