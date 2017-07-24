@@ -86,6 +86,10 @@ namespace density
 				{
 					if (this != &i_source)
 					{
+						if (m_control != nullptr)
+						{
+							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+						}
 						m_queue = i_source.m_queue;
 						m_control = i_source.m_control;
 						m_next_ptr = i_source.m_next_ptr;
@@ -389,6 +393,13 @@ namespace density
 						{
 							// another thread is advancing the head, give up
 							break;
+						}
+
+						if (next_uint & detail::NbQueue_External)
+						{
+							auto const external_block = static_cast<typename Base::ExternalBlock*>(
+								address_add(m_control, Base::s_element_min_offset) );
+							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}
 
 						bool const is_same_page = Base::same_page(m_control, next);

@@ -45,7 +45,7 @@ namespace density
 				maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned). 
 				The ControlBlock is always at offset 0 in the layout of a value or raw block. */
 			constexpr static uintptr_t s_alloc_granularity = size_max( size_max( concurrent_alignment,
-				alignof(ControlBlock), alignof(RUNTIME_TYPE) ), 
+				alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock) ), 
 				min_alignment, detail::size_log2(detail::NbQueue_AllFlags + 1) );
 
 			/** /internal Offset of the runtime_type in the layout of a value */
@@ -56,7 +56,7 @@ namespace density
 			constexpr static uintptr_t s_element_min_offset = uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
 
 			/** /internal Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
-			constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(sizeof(ControlBlock), min_alignment);
+			constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(sizeof(ControlBlock), size_max(min_alignment, alignof(ExternalBlock)));
 			
 			/** /internal Offset from the beginning of the page of the end-control-block. */
 			constexpr static uintptr_t s_end_control_offset = uint_lower_align(ALLOCATOR_TYPE::page_size - sizeof(ControlBlock), s_alloc_granularity);
@@ -433,6 +433,46 @@ namespace density
 			static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
 			{
 				return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
+			}
+
+			static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
+			{
+				auto result = address_add(i_control, s_element_min_offset);
+				if (i_control->m_next & detail::NbQueue_External)
+				{
+					/* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so 
+						we don't need to align further */
+					result = static_cast<ExternalBlock*>(result)->m_block;
+				}
+				return result;
+			}
+
+			static void * get_element(detail::NbQueueControl<void> * i_control)
+			{
+				auto result = address_add(i_control, s_element_min_offset);
+				if (i_control->m_next & detail::NbQueue_External)
+				{
+					/* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so 
+						we don't need to align further */
+					result = static_cast<ExternalBlock*>(result)->m_block;
+				}
+				else
+				{
+					result = address_upper_align(result, type_after_control(i_control)->alignment());
+				}
+				return result;
+			}
+
+			template <typename TYPE>
+				static void * get_unaligned_element(detail::NbQueueControl<TYPE> * i_control)
+			{
+				return i_control->m_element;
+			}
+
+			template <typename TYPE>
+				static TYPE * get_element(detail::NbQueueControl<TYPE> * i_control)
+			{
+				return i_control->m_element;
 			}
 
 		private: // data members

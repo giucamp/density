@@ -764,7 +764,7 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
 				DENSITY_ASSERT(!empty());
-				return get_unaligned_element(m_consume_data.m_control);
+				return Base::get_unaligned_element(m_consume_data.m_control);
             }
 
             /** Returns a pointer to the element being consumed.
@@ -777,7 +777,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return get_element(m_consume_data.m_control);
+                return Base::get_element(m_consume_data.m_control);
             }
 
 			/** Returns a reference to the element being consumed.
@@ -790,7 +790,7 @@ namespace density
 				COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_consume_data.m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
             }
 
             // internal only - can't be called from outside density
@@ -810,44 +810,6 @@ namespace density
 				m_consume_data.start_consume_impl(i_queue);
 
 				return m_consume_data.m_next_ptr != 0;
-			}
-
-        private:
-
-			static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
-			{
-				auto result = address_add(i_control, Base::s_element_min_offset);
-				if (i_control->m_next & detail::NbQueue_External)
-				{
-					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
-				}
-				return result;
-			}
-
-			static void * get_element(detail::NbQueueControl<void> * i_control)
-			{
-				auto result = address_add(i_control, Base::s_element_min_offset);
-				if (i_control->m_next & detail::NbQueue_External)
-				{
-					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
-				}
-				else
-				{
-					result = address_upper_align(result, Base::type_after_control(i_control)->alignment());
-				}
-				return result;
-			}
-
-			template <typename TYPE>
-				static void * get_unaligned_element(detail::NbQueueControl<TYPE> * i_control)
-			{
-				return i_control->m_element;
-			}
-
-			template <typename TYPE>
-				static TYPE * get_element(detail::NbQueueControl<TYPE> * i_control)
-			{
-				return i_control->m_element;
 			}
 
 		private:
@@ -1772,7 +1734,7 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
 				DENSITY_ASSERT(!empty());
-				return get_unaligned_element(m_consume_data.m_control);
+				return Base::get_unaligned_element(m_consume_data.m_control);
             }
 
             /** Returns a pointer to the element being consumed.
@@ -1785,7 +1747,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return get_element(m_consume_data.m_control);
+                return Base::get_element(m_consume_data.m_control);
             }
 
 			/** Returns a reference to the element being consumed.
@@ -1798,7 +1760,7 @@ namespace density
 				COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_consume_data.m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
             }
 
             // internal only - can't be called from outside density
@@ -1818,44 +1780,6 @@ namespace density
 				m_consume_data.start_consume_impl(i_queue);
 
 				return m_consume_data.m_next_ptr != 0;
-			}
-
-        private:
-
-			static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
-			{
-				auto result = address_add(i_control, Base::s_element_min_offset);
-				if (i_control->m_next & detail::NbQueue_External)
-				{
-					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
-				}
-				return result;
-			}
-
-			static void * get_element(detail::NbQueueControl<void> * i_control)
-			{
-				auto result = address_add(i_control, Base::s_element_min_offset);
-				if (i_control->m_next & detail::NbQueue_External)
-				{
-					result = static_cast<typename Base::ExternalBlock*>(result)->m_block;
-				}
-				else
-				{
-					result = address_upper_align(result, Base::type_after_control(i_control)->alignment());
-				}
-				return result;
-			}
-
-			template <typename TYPE>
-				static void * get_unaligned_element(detail::NbQueueControl<TYPE> * i_control)
-			{
-				return i_control->m_element;
-			}
-
-			template <typename TYPE>
-				static TYPE * get_element(detail::NbQueueControl<TYPE> * i_control)
-			{
-				return i_control->m_element;
 			}
 
 		private:
