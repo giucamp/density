@@ -119,6 +119,7 @@ namespace density
 				void move_to_head(NonblockingQueueHead * i_queue) noexcept
 				{
 					ControlBlock * head = i_queue->m_head.load();
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
 
 					while (!Base::same_page(m_control, head))
 					{
@@ -134,6 +135,7 @@ namespace density
 						m_control = head;
 
 						head = i_queue->m_head.load();
+						DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
 					}
 
 					m_control = static_cast<ControlBlock*>(head);
@@ -235,7 +237,11 @@ namespace density
 				{
 					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
+
 					move_to_head(i_queue);
+
+					DENSITY_ASSERT_INTERNAL(m_control != nullptr && address_is_aligned(m_control, Base::s_alloc_granularity));
 
 					for (;;)
 					{
@@ -324,7 +330,9 @@ namespace density
 					No pin/unpin is performed */
 				ControlBlock * reverse_scan_for_nonzeroed(ControlBlock * const i_tail) const noexcept
 				{
-					DENSITY_ASSERT_INTERNAL(m_control != nullptr && i_tail != nullptr);
+					DENSITY_ASSERT_INTERNAL(m_control != nullptr && i_tail != nullptr
+						&& address_is_aligned(m_control, Base::s_alloc_granularity)
+						&& address_is_aligned(i_tail, Base::s_alloc_granularity) );
 					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 
 					/* the scan starts from the tail if it is in the same page of m_control, otherwise it
@@ -341,7 +349,7 @@ namespace density
 					{
 						for (;;)
 						{
-							curr = static_cast<ControlBlock *>(address_sub(curr, Base::min_alignment));
+							curr = static_cast<ControlBlock *>(address_sub(curr, Base::s_alloc_granularity));
 							if (curr == m_control)
 								break;
 

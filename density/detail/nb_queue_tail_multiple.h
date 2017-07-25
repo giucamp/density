@@ -152,7 +152,7 @@ namespace density
 				auto tail = m_tail.load(detail::mem_relaxed);
 				for (;;)
 				{
-					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, min_alignment));
+					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block and the runtime type
 					void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
@@ -208,7 +208,7 @@ namespace density
 				auto tail = m_tail.load(detail::mem_relaxed);
 				for (;;)
 				{
-					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, min_alignment));
+					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block and the runtime type
 					void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
@@ -316,7 +316,7 @@ namespace density
 			ControlBlock * get_or_allocate_next_page(ControlBlock * const i_end_control)
 			{
 				DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
-					address_is_aligned(i_end_control, min_alignment) &&
+					address_is_aligned(i_end_control, s_alloc_granularity) &&
 					i_end_control == get_end_control_block(i_end_control));
 
 
@@ -393,7 +393,7 @@ namespace density
 			static void commit_put_impl(const Block & i_put) noexcept
 			{
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, min_alignment));
+				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
 					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
@@ -415,7 +415,7 @@ namespace density
 			static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
 			{
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
-				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, min_alignment));
+				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
 					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);

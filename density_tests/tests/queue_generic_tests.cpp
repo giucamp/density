@@ -367,27 +367,29 @@ namespace density_tests
 
 
 		// concurrent_heterogeneous_queue<void, ...>
+		std::vector<size_t> const concurrent_thread_counts{1, 2, 7};
 		single_queue_generic_test<concurrent_heterogeneous_queue<>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8});
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8});
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8});
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8});
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8});
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 
 		// nonblocking_heterogeneous_queue<void, ...>
+		std::vector<size_t> const nonblocking_thread_counts{1, 2, 7, 31};
 		single_queue_generic_test<nonblocking_heterogeneous_queue<>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8, 32});
+			i_flags, i_output, rand, i_element_count, nonblocking_thread_counts);
 		single_queue_generic_test<nonblocking_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8, 32});
+			i_flags, i_output, rand, i_element_count, nonblocking_thread_counts);
 		single_queue_generic_test<nonblocking_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8, 32});
+			i_flags, i_output, rand, i_element_count, nonblocking_thread_counts);
 		single_queue_generic_test<nonblocking_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8, 32});
+			i_flags, i_output, rand, i_element_count, nonblocking_thread_counts);
 		single_queue_generic_test<nonblocking_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, {1, 2, 8, 32});
+			i_flags, i_output, rand, i_element_count, nonblocking_thread_counts);
 	}
 }
