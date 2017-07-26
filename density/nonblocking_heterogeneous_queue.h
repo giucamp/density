@@ -127,7 +127,7 @@ namespace density
 				This constructor does not allocate memory and never throws. 
 				
 		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue default_construct example 1 */
-		nonblocking_heterogeneous_queue() = default;
+		nonblocking_heterogeneous_queue() noexcept = default;
 
 		/** Constructor with allocator parameter. The allocator is copy-constructed.
 			@param i_source_allocator source used to copy-construct the allocator.
@@ -154,7 +154,7 @@ namespace density
 				This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 				
 		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue construct_move_alloc example 1 */
-        nonblocking_heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator)
+        nonblocking_heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
             : Base(std::move(i_source_allocator))
         {
         }
@@ -168,7 +168,7 @@ namespace density
                 - After the call the source is left empty. 
 				
 		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue move_construct example 1 */
-		nonblocking_heterogeneous_queue(nonblocking_heterogeneous_queue && i_source) = default;
+		nonblocking_heterogeneous_queue(nonblocking_heterogeneous_queue && i_source) noexcept = default;
 
         /** Move assignment. The allocator is move-assigned from the one of the source.
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.

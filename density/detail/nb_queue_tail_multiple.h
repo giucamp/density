@@ -14,18 +14,7 @@ namespace density
 			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple>
 				: protected ALLOCATOR_TYPE
 		{
-		private:
-
-			// to do: this function can throw
-			void init() noexcept
-			{
-				auto const first_page = ALLOCATOR_TYPE::allocate_page_zeroed();
-				auto const new_page_end_block = get_end_control_block(first_page);
-				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-				std::atomic_init(&m_tail, static_cast<ControlBlock*>(first_page));
-			}
-
-		protected:
+		public:
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
 
@@ -64,10 +53,24 @@ namespace density
 			/** /internal Maximum size for an element or raw block to be allocated in a page. */
 			constexpr static size_t s_max_size_inpage = s_end_control_offset - s_element_min_offset;
 
+			/** Value used to initialize the head and the tail. 
+				This value is designed to be rejected
+				When the first put is done, this value
+				causes a page overflow is the fast-path, and both m_head and m_tail are set to the a newly 
+				allocated page. Furthermore, it is not on the page-zero (the first of the address space), to
+				make allow consumers to reject it in the fast path without 
+				This mechanism allows the default constructor to be small, fast, and noexcept. */
+			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
+
 			// some static checks
 			static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) && 
 				s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
 			static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
+
+			static ControlBlock * invalid_control_block() noexcept
+			{
+				return reinterpret_cast<ControlBlock*>(s_invalid_control_block);
+			}
 
 			/** Returns whether the input addresses belongs to the same page or they are both nullptr */
 			static bool same_page(const void * i_first, const void * i_second) noexcept
@@ -76,32 +79,35 @@ namespace density
 				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
 			}
 
-			NonblockingQueueTail()
+			NonblockingQueueTail() noexcept
+				: m_tail(invalid_control_block()),
+				  m_initial_page(invalid_control_block())
 			{
-				init();
 			}
 
-			NonblockingQueueTail(ALLOCATOR_TYPE && i_allocator)
-				: ALLOCATOR_TYPE(std::move(i_allocator))
+			NonblockingQueueTail(ALLOCATOR_TYPE && i_allocator) noexcept
+				: ALLOCATOR_TYPE(std::move(i_allocator)),
+				  m_tail(invalid_control_block()),
+				  m_initial_page(invalid_control_block())
 			{
-				init();
 			}
 
 			NonblockingQueueTail(const ALLOCATOR_TYPE & i_allocator)
-				: ALLOCATOR_TYPE(i_allocator)
+				: ALLOCATOR_TYPE(i_allocator),
+				  m_tail(invalid_control_block()),
+				  m_initial_page(invalid_control_block())
 			{
-				init();
 			}
 
-			NonblockingQueueTail(NonblockingQueueTail && i_source)
+			NonblockingQueueTail(NonblockingQueueTail && i_source) noexcept
 				: NonblockingQueueTail()
 			{
 				swap(i_source);
 			}
 
-			NonblockingQueueTail & operator = (NonblockingQueueTail && i_source)
+			NonblockingQueueTail & operator = (NonblockingQueueTail && i_source) noexcept
 			{
-				swap(i_source);
+				NonblockingQueueTail::swap(i_source);
 				return *this;
 			}
 
@@ -111,18 +117,26 @@ namespace density
 				using std::swap;
 				swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other));
 
-				// swap the tail
+				// swap m_tail
 				auto const tmp = i_other.m_tail.load();
 				i_other.m_tail.store(m_tail.load());
 				m_tail.store(tmp);
+
+				// swap m_initial_page
+				auto const tmp1 = i_other.m_initial_page.load();
+				i_other.m_initial_page.store(m_initial_page.load());
+				m_initial_page.store(tmp1);
 			}
 
 			~NonblockingQueueTail()
 			{
 				auto const tail = m_tail.load();
-				auto const end_block = get_end_control_block(tail);
-				end_block->m_next = 0;
-				ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
+				if (tail != invalid_control_block())
+				{
+					auto const end_block = get_end_control_block(tail);
+					end_block->m_next = 0;
+					ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
+				}
 			}
 
 			static ControlBlock * get_end_control_block(void * i_address)
@@ -319,60 +333,92 @@ namespace density
 					address_is_aligned(i_end_control, s_alloc_granularity) &&
 					i_end_control == get_end_control_block(i_end_control));
 
-
-				/* We are going to access the content of the end control, so we have to do a safe pin
-					(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-				struct ScopedPin
+				if (i_end_control != invalid_control_block())
 				{
-					ALLOCATOR_TYPE * const m_allocator;
-					ControlBlock * const m_control;
-
-					ScopedPin(ALLOCATOR_TYPE * i_allocator, ControlBlock * i_control)
-						: m_allocator(i_allocator), m_control(i_control)
+					/* We are going to access the content of the end control, so we have to do a safe pin
+						(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
+					struct ScopedPin
 					{
-						m_allocator->ALLOCATOR_TYPE::pin_page(m_control);
-					}
+						ALLOCATOR_TYPE * const m_allocator;
+						ControlBlock * const m_control;
 
-					~ScopedPin()
-					{
-						m_allocator->ALLOCATOR_TYPE::unpin_page(m_control);
-					}
-				};
-				ScopedPin const end_block(this, static_cast<ControlBlock*>(i_end_control));
-				auto const updated_tail = m_tail.load(detail::mem_relaxed);
-				if (updated_tail != end_block.m_control)
-				{
-					return updated_tail;
-				}
-				// now the end control block is pinned, we can safely access it
+						ScopedPin(ALLOCATOR_TYPE * i_allocator, ControlBlock * i_control)
+							: m_allocator(i_allocator), m_control(i_control)
+						{
+							m_allocator->ALLOCATOR_TYPE::pin_page(m_control);
+						}
 
-				// allocate and setup a new page
-				auto new_page = create_page();
-
-				uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
-				if (!raw_atomic_compare_exchange_strong(end_block.m_control->m_next, expected_next,
-					reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
-				{
-					/* Some other thread has already linked a new page. We discard the page we
-						have just allocated. */
-					discard_created_page(new_page);
-
-					/* So end_block.m_control_block->m_next may now be the pointer to the next page
-						or 0 (if the page has been consumed in the meanwhile). */
-					if (expected_next == 0)
+						~ScopedPin()
+						{
+							m_allocator->ALLOCATOR_TYPE::unpin_page(m_control);
+						}
+					};
+					ScopedPin const end_block(this, i_end_control);
+					auto const updated_tail = m_tail.load(detail::mem_relaxed);
+					if (updated_tail != end_block.m_control)
 					{
 						return updated_tail;
 					}
+					// now the end control block is pinned, we can safely access it
 
-					new_page = reinterpret_cast<ControlBlock*>(expected_next & ~detail::NbQueue_AllFlags);
-					DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+					// allocate and setup a new page
+					auto new_page = create_page();
+
+					uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
+					if (!raw_atomic_compare_exchange_strong(end_block.m_control->m_next, expected_next,
+						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
+					{
+						/* Some other thread has already linked a new page. We discard the page we
+							have just allocated. */
+						discard_created_page(new_page);
+
+						/* So end_block.m_control_block->m_next may now be the pointer to the next page
+							or 0 (if the page has been consumed in the meanwhile). */
+						if (expected_next == 0)
+						{
+							return updated_tail;
+						}
+
+						new_page = reinterpret_cast<ControlBlock*>(expected_next & ~detail::NbQueue_AllFlags);
+						DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+					}
+
+					auto expected_tail = i_end_control;
+					if (m_tail.compare_exchange_strong(expected_tail, new_page))
+						return new_page;
+					else
+						return expected_tail;
+				}
+				else
+				{
+					return create_initial_page();
+				}
+			}
+
+			DENSITY_NO_INLINE ControlBlock * create_initial_page()
+			{
+				// m_initial_page = initial_page = create_page()
+				auto const first_page = create_page();
+				auto initial_page = invalid_control_block();
+				if (m_initial_page.compare_exchange_strong(initial_page, first_page))
+				{
+					initial_page = first_page;
+				}
+				else
+				{
+					discard_created_page(first_page);
 				}
 
-				auto expected_tail = i_end_control;
-				if (m_tail.compare_exchange_strong(expected_tail, new_page))
-					return new_page;
+				// m_tail = m_initial_page;
+				auto tail = invalid_control_block();
+				if (m_tail.compare_exchange_strong(tail, initial_page))
+				{
+					return initial_page;
+				}
 				else
-					return expected_tail;
+				{
+					return tail;
+				}
 			}
 
 			ControlBlock * create_page()
@@ -425,9 +471,14 @@ namespace density
 				raw_atomic_store(i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
-			ControlBlock * get_tail_for_consumers() noexcept
+			ControlBlock * get_tail_for_consumers() const noexcept
 			{
 				return m_tail.load();
+			}
+
+			ControlBlock * get_initial_page() const noexcept
+			{
+				return m_initial_page.load();
 			}
 
 			static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
@@ -477,6 +528,7 @@ namespace density
 
 		private: // data members
 			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_tail;
+			std::atomic<ControlBlock*> m_initial_page;
 		};
 
 	} // namespace detail

@@ -246,7 +246,7 @@ namespace density
 
 		/** Value used to initialize m_head and m_tail. When the first put is done, this value
 			causes a page overflow, and both m_head and m_tail are set to the a newly allocated page.
-			This mechanism allow the default constructor to be small, fast, and noexcept. */
+			This mechanism allows the default constructor to be small, fast, and noexcept. */
 		constexpr static auto s_invalid_control_block = ALLOCATOR_TYPE::page_size - 1;
 
 		/** Actual space allocated for a ControlBlock, which is forced to be aligned to min_alignment. This is

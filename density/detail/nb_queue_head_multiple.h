@@ -25,30 +25,30 @@ namespace density
 
 			using Base::Base;
 
-			NonblockingQueueHead()
+			NonblockingQueueHead() noexcept
+				: m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
 			{
-				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
-			NonblockingQueueHead(ALLOCATOR_TYPE && i_allocator)
-				: Base(std::move(i_allocator))
+			NonblockingQueueHead(ALLOCATOR_TYPE && i_allocator) noexcept
+				: Base(std::move(i_allocator)),
+				  m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
 			{
-				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
 			NonblockingQueueHead(const ALLOCATOR_TYPE & i_allocator)
-				: Base(i_allocator)
+				: Base(i_allocator),
+				  m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
 			{
-				std::atomic_init(&m_head, this->get_tail_for_consumers());
 			}
 
-			NonblockingQueueHead(NonblockingQueueHead && i_source)
+			NonblockingQueueHead(NonblockingQueueHead && i_source) noexcept
 				: NonblockingQueueHead()
 			{
 				swap(i_source);
 			}
 
-			NonblockingQueueHead & operator = (NonblockingQueueHead && i_source)
+			NonblockingQueueHead & operator = (NonblockingQueueHead && i_source) noexcept
 			{
 				swap(i_source);
 				return *this;
@@ -116,12 +116,30 @@ namespace density
 				}
 
 				/** Moves the Consume to the head, pinning it. The previously pinned page is unpinned.*/
-				void move_to_head(NonblockingQueueHead * i_queue) noexcept
+				bool move_to_head(NonblockingQueueHead * i_queue) noexcept
 				{
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
+
 					ControlBlock * head = i_queue->m_head.load();
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+					
+					if (head == Base::invalid_control_block())
+					{
+						auto const tail = i_queue->Base::get_initial_page();
 
-					while (!Base::same_page(m_control, head))
+						/* If this CAS succeeds, we have to update our local variable head. Otherwise 
+							after the call we have the value of m_head stored by another concurrent consumer. */
+						if (i_queue->m_head.compare_exchange_strong(head, tail))
+							head = tail;
+
+						// in any case there is no more s_invalid_control_block
+						if (head == Base::invalid_control_block())
+						{
+							return false;
+						}
+					}
+
+					while (!Base::same_page(m_control, head) || m_control == nullptr)
 					{
 						DENSITY_ASSERT_INTERNAL(m_control != head);
 
@@ -140,6 +158,7 @@ namespace density
 
 					m_control = static_cast<ControlBlock*>(head);
 					m_queue = i_queue;
+					return true;
 				}
 
 				bool is_queue_empty(const NonblockingQueueHead * i_queue) noexcept
@@ -149,7 +168,10 @@ namespace density
 					// we are not modifying the queue, but we have to pin/unpin anyway
 					auto const queue = const_cast<NonblockingQueueHead *>(i_queue);
 
-					move_to_head(queue);
+					if (!move_to_head(queue))
+					{
+						return true;
+					}
 
 					for (;;)
 					{
@@ -200,30 +222,7 @@ namespace density
 						}
 						else
 						{
-							DENSITY_ASSERT_INTERNAL(next_uint == 0 || next_uint == detail::NbQueue_InvalidNextPage);
-
-							// to do: handle detail::NbQueue_InvalidNextPage
-
-							/* We can't procrastinate the check on the tail anymore */
-							auto const tail = m_queue->get_tail_for_consumers();
-
-							auto const first_nonzero = m_control == tail ? nullptr : reverse_scan_for_nonzeroed(tail);
-							if (first_nonzero == nullptr)
-							{
-								// no element to consume
-								return true;
-							}
-
-							auto new_next = raw_atomic_load(m_control->m_next) & ~detail::NbQueue_AllFlags;
-							if (new_next == 0)
-							{
-								m_control = first_nonzero;
-							}
-							else
-							{
-								m_control = reinterpret_cast<ControlBlock*>(new_next);
-							}
-							DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+							return true;
 						}
 					}
 				}
@@ -239,7 +238,8 @@ namespace density
 
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
 
-					move_to_head(i_queue);
+					if (!move_to_head(i_queue))
+						return;
 
 					DENSITY_ASSERT_INTERNAL(m_control != nullptr && address_is_aligned(m_control, Base::s_alloc_granularity));
 
@@ -299,69 +299,9 @@ namespace density
 						else
 						{
 							DENSITY_ASSERT_INTERNAL(next_uint == 0 || next_uint == detail::NbQueue_InvalidNextPage);
-
-							// to do: handle detail::NbQueue_InvalidNextPage
-
-							/* We can't procrastinate the check on the tail anymore */
-							auto const tail = m_queue->get_tail_for_consumers();
-
-							auto const first_nonzero = m_control == tail ? nullptr : reverse_scan_for_nonzeroed(tail);
-							if (first_nonzero == nullptr)
-							{
-								// no element to consume
-								return;
-							}
-
-							auto new_next = raw_atomic_load(m_control->m_next) & ~detail::NbQueue_AllFlags;
-							if (new_next == 0)
-							{
-								m_control = first_nonzero;
-							}
-							else
-							{
-								m_control = reinterpret_cast<ControlBlock*>(new_next);
-							}
-							DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+							return;
 						}
 					}
-				}
-
-				/** /internal
-					No pin/unpin is performed */
-				ControlBlock * reverse_scan_for_nonzeroed(ControlBlock * const i_tail) const noexcept
-				{
-					DENSITY_ASSERT_INTERNAL(m_control != nullptr && i_tail != nullptr
-						&& address_is_aligned(m_control, Base::s_alloc_granularity)
-						&& address_is_aligned(i_tail, Base::s_alloc_granularity) );
-					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
-
-					/* the scan starts from the tail if it is in the same page of m_control, otherwise it
-						starts from the end-block of the page. */
-					auto curr = i_tail;
-					if (!Base::same_page(m_control, i_tail))
-					{
-						curr = Base::get_end_control_block(m_control);
-					}
-
-					ControlBlock * last_nonzero = nullptr;
-
-					if (curr > m_control)
-					{
-						for (;;)
-						{
-							curr = static_cast<ControlBlock *>(address_sub(curr, Base::s_alloc_granularity));
-							if (curr == m_control)
-								break;
-
-							auto uint_next = raw_atomic_load(curr->m_next, detail::mem_seq_cst) & ~detail::NbQueue_Busy;
-							if (uint_next != 0)
-							{
-								last_nonzero = curr;
-							}
-						}
-					}
-
-					return last_nonzero;
 				}
 
 				void commit_consume_impl() noexcept
@@ -383,7 +323,8 @@ namespace density
 
 				void clean_dead_elements() noexcept
 				{
-					move_to_head(m_queue);
+					if (!move_to_head(m_queue))
+						return;
 
 					for (;;)
 					{
