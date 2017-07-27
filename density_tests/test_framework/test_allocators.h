@@ -29,6 +29,8 @@ namespace density_tests
 
         static constexpr size_t page_alignment = Base::page_alignment;
 
+		DeepTestAllocator() noexcept {}
+
         void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
         {
 			exception_checkpoint();

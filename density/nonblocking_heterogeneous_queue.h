@@ -117,7 +117,7 @@ namespace density
 			"The alignment of the pages must be a power of 2, greater or equal to the size of the pages, and a multiple of min_alignment");
 
         static_assert(ALLOCATOR_TYPE::page_size > (min_alignment + alignof(ControlBlock)) * 4, "Invalid page size");
-		
+
         /** Default constructor. The allocator is default-constructed.
 
             <b>Complexity</b>: constant.
@@ -133,13 +133,14 @@ namespace density
 			@param i_source_allocator source used to copy-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: unspecified.
+            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws. 
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue construct_copy_alloc example 1 */
         nonblocking_heterogeneous_queue(const ALLOCATOR_TYPE & i_source_allocator)
+				noexcept (std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
             : Base(i_source_allocator)
         {
         }
@@ -148,7 +149,7 @@ namespace density
 			@param i_source_allocator source used to move-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: unspecified.
+            \n <b>Throws</b>: nothing.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
@@ -157,6 +158,7 @@ namespace density
         nonblocking_heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
             : Base(std::move(i_source_allocator))
         {
+			static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
         }
 
         /** Move constructor. The allocator is move-constructed from the one of the source.

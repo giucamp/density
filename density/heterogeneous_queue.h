@@ -295,13 +295,14 @@ namespace density
             : m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)),
               m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
         {
+			static_assert(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value, "");
         }
 
 		/** Constructor with allocator parameter. The allocator is copy-constructed.
 			@param i_source_allocator source used to copy-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: nothing.
+            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws. 
@@ -319,18 +320,18 @@ namespace density
 			@param i_source_allocator source used to move-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: nothing.
+            \n <b>Throws</b>: whatever the move constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 				
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue construct_move_alloc example 1 */
-        heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator)
-				noexcept (std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value)
+        heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
             : ALLOCATOR_TYPE(std::move(i_source_allocator)),
 			  m_head(reinterpret_cast<ControlBlock*>(s_invalid_control_block)),
               m_tail(reinterpret_cast<ControlBlock*>(s_invalid_control_block))
         {
+			static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
         }
 
         /** Move constructor. The allocator is move-constructed from the one of the source.
@@ -346,6 +347,8 @@ namespace density
             : ALLOCATOR_TYPE(std::move(static_cast<ALLOCATOR_TYPE&&>(i_source))),
               m_head(i_source.m_head), m_tail(i_source.m_tail)
         {
+			static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
+
             i_source.m_tail = i_source.m_head = reinterpret_cast<ControlBlock*>(s_invalid_control_block);
         }
 

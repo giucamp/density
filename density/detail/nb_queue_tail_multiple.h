@@ -190,8 +190,8 @@ namespace density
 								allocated memory is modified. */
 							auto const control_block = tail;
 							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-							DENSITY_ASSERT_INTERNAL(raw_atomic_load(control_block->m_next, detail::mem_relaxed) == 0);
-							raw_atomic_store(control_block->m_next, next_ptr, detail::mem_release);
+							DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
+							raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
 							DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
 							return { control_block, next_ptr, user_storage };
@@ -249,8 +249,8 @@ namespace density
 								allocated memory is modified. */
 							auto const control_block = tail;
 							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-							DENSITY_ASSERT_INTERNAL(raw_atomic_load(control_block->m_next, detail::mem_relaxed) == 0);
-							raw_atomic_store(control_block->m_next, next_ptr, detail::mem_release);
+							DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
+							raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
 							DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
 							return { control_block, next_ptr, user_storage };
@@ -306,7 +306,7 @@ namespace density
 					{
 						// m_tail was successfully updated, now we can setup the padding element
 						auto const block = static_cast<ControlBlock*>(i_tail);
-						raw_atomic_store(block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
+						raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
 						return page_end;
 					}
 					else
@@ -365,7 +365,7 @@ namespace density
 					auto new_page = create_page();
 
 					uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
-					if (!raw_atomic_compare_exchange_strong(end_block.m_control->m_next, expected_next,
+					if (!raw_atomic_compare_exchange_strong(&end_block.m_control->m_next, &expected_next,
 						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
 					{
 						/* Some other thread has already linked a new page. We discard the page we
@@ -441,11 +441,11 @@ namespace density
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
-					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove the flag NbQueue_Busy
-				raw_atomic_store(i_put.m_control_block->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
+				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
 			}
 
 			static void cancel_put_impl(const Block & i_put) noexcept
@@ -463,12 +463,12 @@ namespace density
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
-					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
+					(i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
 					(i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
 
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-				raw_atomic_store(i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
+				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
 			ControlBlock * get_tail_for_consumers() const noexcept

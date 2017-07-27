@@ -77,7 +77,7 @@ namespace density
 			@param i_source_allocator source used to copy-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: nothing.
+            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws. 
@@ -93,7 +93,7 @@ namespace density
 			@param i_source_allocator source used to move-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: nothing.
+            \n <b>Throws</b>: whatever the move constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
