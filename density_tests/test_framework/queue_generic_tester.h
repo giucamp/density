@@ -146,9 +146,9 @@ namespace density_tests
 				thread.join();
 			}
 
-			histogram<size_t> histogram_spawned("spawned by i-th thread");
-			histogram<size_t> histogram_except_puts("exceptions_during_puts");
-			histogram<size_t> histogram_except_cons("exceptions_during_consumes");
+			histogram<int64_t> histogram_spawned("spawned by i-th thread");
+			histogram<int64_t> histogram_except_puts("exceptions_during_puts");
+			histogram<int64_t> histogram_except_cons("exceptions_during_consumes");
 
 			FinalStats final_state(m_put_cases.size());
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
@@ -159,8 +159,8 @@ namespace density_tests
 				auto const spawned = std::accumulate(
 					thread_state.m_counters.begin(), 
 					thread_state.m_counters.end(),
-					static_cast<size_t>(0),
-					[](size_t i_sum, const PutTypeCounters & i_counter) {
+					static_cast<int64_t>(0),
+					[](int64_t i_sum, const PutTypeCounters & i_counter) {
 						return i_sum + i_counter.m_spawned; });
 				histogram_spawned << spawned;
 
