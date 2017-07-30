@@ -25,11 +25,12 @@ namespace density
 				size_t m_size = 0, m_alignment = 0;
 			};
 
-			/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
+			/** Minimum alignment used for the storage of the elements.
+				The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on 
-				the choice of this value: it just should be very common. */
+				the choice of this value: it just should be a very common alignment. */
 
-			/** /internal Head and tail pointers are alway multiple of this constant. To avoid the need of 
+			/** Head and tail pointers are alway multiple of this constant. To avoid the need of 
 				upper-aligning the addresses of the control-block and the runtime type, we raise it to the
 				maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned). 
 				The ControlBlock is always at offset 0 in the layout of a value or raw block. */
@@ -37,40 +38,37 @@ namespace density
 				alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock) ), 
 				min_alignment, detail::size_log2(detail::NbQueue_AllFlags + 1) );
 
-			/** /internal Offset of the runtime_type in the layout of a value */
+			/** Offset of the runtime_type in the layout of a value */
 			constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
 
-			/** /internal Minimum offset of the element in the layout of a value (The actual offset is dependent on
+			/** Minimum offset of the element in the layout of a value (The actual offset is dependent on
 				the alignment of the element). */
 			constexpr static uintptr_t s_element_min_offset = uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
 
-			/** /internal Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
+			/** Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
 			constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(sizeof(ControlBlock), size_max(min_alignment, alignof(ExternalBlock)));
 			
-			/** /internal Offset from the beginning of the page of the end-control-block. */
+			/** Offset from the beginning of the page of the end-control-block. */
 			constexpr static uintptr_t s_end_control_offset = uint_lower_align(ALLOCATOR_TYPE::page_size - sizeof(ControlBlock), s_alloc_granularity);
 
-			/** /internal Maximum size for an element or raw block to be allocated in a page. */
+			/** Maximum size for an element or raw block to be allocated in a page. */
 			constexpr static size_t s_max_size_inpage = s_end_control_offset - s_element_min_offset;
 
 			/** Value used to initialize the head and the tail. 
-				This value is designed to be rejected
-				When the first put is done, this value
-				causes a page overflow is the fast-path, and both m_head and m_tail are set to the a newly 
-				allocated page. Furthermore, it is not on the page-zero (the first of the address space), to
-				make allow consumers to reject it in the fast path without 
+				This value is designed to always cause a page overflow in the fast path.
 				This mechanism allows the default constructor to be small, fast, and noexcept. */
 			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
+
+			/** Type-safe (at least for the caller) version of s_invalid_control_block */
+			static ControlBlock * invalid_control_block() noexcept
+			{
+				return reinterpret_cast<ControlBlock*>(s_invalid_control_block);
+			}
 
 			// some static checks
 			static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) && 
 				s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
 			static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
-
-			static ControlBlock * invalid_control_block() noexcept
-			{
-				return reinterpret_cast<ControlBlock*>(s_invalid_control_block);
-			}
 
 			/** Returns whether the input addresses belongs to the same page or they are both nullptr */
 			static bool same_page(const void * i_first, const void * i_second) noexcept
@@ -139,12 +137,14 @@ namespace density
 				}
 			}
 
-			static ControlBlock * get_end_control_block(void * i_address)
+			/** Given an address, returns the end block of the page containing it. */
+			static ControlBlock * get_end_control_block(void * i_address) noexcept
 			{
 				auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
 				return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
 			}
 
+			/** This struct contains the result of an allocation. */
 			struct Block
 			{
 				ControlBlock * m_control_block;
@@ -152,11 +152,17 @@ namespace density
 				void * m_user_storage;
 			};
 
-			template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE>
-				Block inplace_allocate(size_t i_size, size_t i_alignment)
+			/** Allocates block of memory.
+				The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
+				@param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
+				@param i_include_type true if this is an element value, false if it's a raw allocation
+				@param i_size it must be > 0 and a multiple of the alignment
+				@param i_alignment is must be > 0 and a power of two */
+			Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
 			{
+				DENSITY_ASSERT_INTERNAL((i_control_bits & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0);
 				DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
-
+				
 				if (i_alignment < min_alignment)
 				{
 					i_alignment = min_alignment;
@@ -168,8 +174,8 @@ namespace density
 				{
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
-					// allocate space for the control block and the runtime type
-					void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
+					// allocate space for the control block (and possibly the runtime type)
+					void * new_tail = address_add(tail, i_include_type ? s_element_min_offset : s_rawblock_min_offset);
 
 					// allocate space for the element
 					new_tail = address_upper_align(new_tail, i_alignment);
@@ -189,7 +195,7 @@ namespace density
 								because they that need this write happens before any other part of the
 								allocated memory is modified. */
 							auto const control_block = tail;
-							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
+							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
 							DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
 							raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
@@ -204,14 +210,16 @@ namespace density
 					else
 					{
 						// this allocation would never fit in a page, allocate an external block
-						return external_allocate<CONTROL_BITS>(i_size, i_alignment);
+						return external_allocate(i_control_bits, i_size, i_alignment);
 					}
 				}
 			}
 
+			/** Overload of inplace_allocate that can be used when all parameters are compile time constants */
 			template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
 				Block inplace_allocate()
 			{
+				static_assert((CONTROL_BITS & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0, "");
 				static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
 				constexpr auto alignment = detail::size_max(ALIGNMENT, min_alignment);
@@ -224,7 +232,7 @@ namespace density
 				{
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
-					// allocate space for the control block and the runtime type
+					// allocate space for the control block (and possibly the runtime type)
 					void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
 
 					// allocate space for the element
@@ -263,20 +271,20 @@ namespace density
 					else
 					{
 						// this allocation would never fit in a page, allocate an external block
-						return external_allocate<CONTROL_BITS>(SIZE, ALIGNMENT);
+						return external_allocate(CONTROL_BITS, SIZE, ALIGNMENT);
 					}
 				}
 			}
 
-			template <uintptr_t CONTROL_BITS>
-				Block external_allocate(size_t i_size, size_t i_alignment)
+			/** Used by inplace_allocate when the block can't be allocated in a page- */
+			Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
 			{
 				auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
 				try
 				{
 					/* external blocks always allocate space for the type, because it would be complicated 
 						for the consumers to handle both cases*/
-					auto const inplace_put = inplace_allocate<CONTROL_BITS | detail::NbQueue_External, true>(sizeof(ExternalBlock), alignof(ExternalBlock));
+					auto const inplace_put = inplace_allocate(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
 					new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
 					return Block{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
 				}

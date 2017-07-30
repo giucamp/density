@@ -23,22 +23,21 @@ namespace density
 
 			using ControlBlock = typename Base::ControlBlock;
 
-			using Base::Base;
 
 			NonblockingQueueHead() noexcept
-				: m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
+				: m_head(Base::invalid_control_block())
 			{
 			}
 
 			NonblockingQueueHead(ALLOCATOR_TYPE && i_allocator) noexcept
 				: Base(std::move(i_allocator)),
-				  m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
+				  m_head(Base::invalid_control_block())
 			{
 			}
 
 			NonblockingQueueHead(const ALLOCATOR_TYPE & i_allocator)
 				: Base(i_allocator),
-				  m_head(reinterpret_cast<ControlBlock*>(Base::s_invalid_control_block))
+				  m_head(Base::invalid_control_block())
 			{
 			}
 
@@ -139,7 +138,7 @@ namespace density
 						}
 					}
 
-					while (!Base::same_page(m_control, head) || m_control == nullptr)
+					while (DENSITY_UNLIKELY( !Base::same_page(m_control, head) || m_control == nullptr ) )
 					{
 						DENSITY_ASSERT_INTERNAL(m_control != head);
 

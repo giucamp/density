@@ -111,62 +111,6 @@ namespace density
 		bool raw_atomic_compare_exchange_weak(TYPE volatile * i_atomic,
 			TYPE * i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept = delete;
 
-	/** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but acts on primitive types.
-		This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
-        \n Overloads not available are declared as deleted.
-		<table>
-        <caption id="multi_row">Availability</caption>
-        <tr>
-            <th style="width:130px">Compiler</th>
-            <th style="width:130px">Platform</th>
-            <th>Types</th>
-        </tr>
-		<tr>
-            <td>Msc</td>
-            <td>x86</td>
-            <td>uint32_t</td>
-        </tr>
-        <tr>
-            <td>Msc</td>
-            <td>x64</td>
-            <td>uint32_t, uint64_t</td>
-        </tr>
-        </table> */
-	template <typename TYPE>
-		bool raw_atomic_compare_exchange_strong(TYPE volatile * i_atomic,
-			TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return raw_atomic_compare_exchange_strong(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
-	}
-
-	/** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but acts on primitive types.
-		This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
-        \n Overloads not available are declared as deleted.
-		<table>
-        <caption id="multi_row">Availability</caption>
-        <tr>
-            <th style="width:130px">Compiler</th>
-            <th style="width:130px">Platform</th>
-            <th>Types</th>
-        </tr>
-		<tr>
-            <td>Msc</td>
-            <td>x86</td>
-            <td>uint32_t</td>
-        </tr>
-        <tr>
-            <td>Msc</td>
-            <td>x64</td>
-            <td>uint32_t, uint64_t</td>
-        </tr>
-        </table> */
-	template <typename TYPE>
-		bool raw_atomic_compare_exchange_weak(TYPE volatile * i_atomic,
-			TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
-	{
-		return raw_atomic_compare_exchange_weak(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
-	}
-
 	#if defined(_MSC_VER) && (defined(_M_X64) | defined(_M_IX86))
 
 		inline uint32_t raw_atomic_load(uint32_t const volatile * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
@@ -320,5 +264,61 @@ namespace density
 		#endif
 
 	#endif
+
+	/** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but acts on primitive types.
+		This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+        \n Overloads not available are declared as deleted.
+		<table>
+        <caption id="multi_row">Availability</caption>
+        <tr>
+            <th style="width:130px">Compiler</th>
+            <th style="width:130px">Platform</th>
+            <th>Types</th>
+        </tr>
+		<tr>
+            <td>Msc</td>
+            <td>x86</td>
+            <td>uint32_t</td>
+        </tr>
+        <tr>
+            <td>Msc</td>
+            <td>x64</td>
+            <td>uint32_t, uint64_t</td>
+        </tr>
+        </table> */
+	template <typename TYPE>
+		bool raw_atomic_compare_exchange_strong(TYPE volatile * i_atomic,
+			TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+	{
+		return raw_atomic_compare_exchange_strong(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
+	}
+
+	/** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but acts on primitive types.
+		This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+        \n Overloads not available are declared as deleted.
+		<table>
+        <caption id="multi_row">Availability</caption>
+        <tr>
+            <th style="width:130px">Compiler</th>
+            <th style="width:130px">Platform</th>
+            <th>Types</th>
+        </tr>
+		<tr>
+            <td>Msc</td>
+            <td>x86</td>
+            <td>uint32_t</td>
+        </tr>
+        <tr>
+            <td>Msc</td>
+            <td>x64</td>
+            <td>uint32_t, uint64_t</td>
+        </tr>
+        </table> */
+	template <typename TYPE>
+		bool raw_atomic_compare_exchange_weak(TYPE volatile * i_atomic,
+			TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+	{
+		return raw_atomic_compare_exchange_weak(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
+	}
 
 } // namespace density

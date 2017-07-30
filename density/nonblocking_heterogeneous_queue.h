@@ -378,7 +378,7 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->template inplace_allocate<detail::NbQueue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -1047,7 +1047,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -1096,7 +1096,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_copy example 1 */
         put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 			
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
@@ -1143,7 +1143,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;			
@@ -1349,7 +1349,7 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->template inplace_allocate<detail::NbQueue_Dead, false>(i_size, i_alignment);
+				auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -1894,7 +1894,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -1927,7 +1927,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::template inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;
@@ -1959,7 +1959,7 @@ namespace density
             \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true>(i_type.size(), i_type.alignment());
+			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
 			COMMON_TYPE * element = nullptr;
 			runtime_type * type = nullptr;

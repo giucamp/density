@@ -331,6 +331,7 @@ namespace density_tests
 				tester.template add_test_case<PutString<QUEUE>>();
 				tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
 				tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 2048, 2048>>();
 				tester.template add_test_case<PutRawBlocks<QUEUE>>();
 				tester.template add_test_case<ReentrantPush<QUEUE>>();
 
