@@ -73,7 +73,7 @@ namespace density
 				s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
 			static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
 
-			/** Returns whether the input addresses belongs to the same page or they are both nullptr */
+			/** Returns whether the input addresses belong to the same page or they are both nullptr */
 			static bool same_page(const void * i_first, const void * i_second) noexcept
 			{
 				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;

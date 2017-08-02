@@ -2631,7 +2631,7 @@ namespace density
             return i_control->m_element;
         }
 
-		/** Returns whether the input addresses belongs to the same page or they are both nullptr */
+		/** Returns whether the input addresses belong to the same page or they are both nullptr */
 		static bool same_page(const void * i_first, const void * i_second) noexcept
 		{
 			auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;

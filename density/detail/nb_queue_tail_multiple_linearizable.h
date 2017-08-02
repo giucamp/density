@@ -67,7 +67,7 @@ namespace density
 				s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
 			static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
 
-			/** Returns whether the input addresses belongs to the same page or they are both nullptr */
+			/** Returns whether the input addresses belong to the same page or they are both nullptr */
 			static bool same_page(const void * i_first, const void * i_second) noexcept
 			{
 				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
@@ -207,12 +207,23 @@ namespace density
 						else
 						{
 							// an allocation is in progress, we help it
-							auto const incomplete_control = reinterpret_cast<ControlBlock*>(tail - rest);
-							uintptr_t expected_next = 0;
-							auto const next = tail + rest * s_alloc_granularity;
-							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-								next + detail::NbQueue_Busy, mem_relaxed);
-							m_tail.compare_exchange_weak(tail, next, mem_relaxed);
+							auto const clean_tail = tail - rest;
+							auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
+							auto const next = clean_tail + rest * s_alloc_granularity;
+
+							ALLOCATOR_TYPE::pin_page(incomplete_control);
+							auto updated_tail = m_tail.load(mem_relaxed);
+							if (updated_tail == tail)
+							{
+								uintptr_t expected_next = 0;
+								raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
+									next + detail::NbQueue_Busy, mem_relaxed);
+								if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
+									tail = next;
+							}
+							else
+								tail = updated_tail;
+							ALLOCATOR_TYPE::unpin_page(incomplete_control);
 						}
 					}
 				}
@@ -270,12 +281,23 @@ namespace density
 						else
 						{
 							// an allocation is in progress, we help it
-							auto const incomplete_control = reinterpret_cast<ControlBlock*>(tail - rest);
-							uintptr_t expected_next = 0;
-							auto const next = tail + rest * s_alloc_granularity;
-							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-								next + detail::NbQueue_Busy, mem_relaxed);
-							m_tail.compare_exchange_weak(tail, next, mem_relaxed);
+							auto const clean_tail = tail - rest;
+							auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
+							auto const next = clean_tail + rest * s_alloc_granularity;
+
+							ALLOCATOR_TYPE::pin_page(incomplete_control);
+							auto updated_tail = m_tail.load(mem_relaxed);
+							if (updated_tail == tail)
+							{
+								uintptr_t expected_next = 0;
+								raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
+									next + detail::NbQueue_Busy, mem_relaxed);
+								if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
+									tail = next;
+							}
+							else
+								tail = updated_tail;
+							ALLOCATOR_TYPE::unpin_page(incomplete_control);
 						}
 					}
 				}
