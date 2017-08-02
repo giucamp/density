@@ -19,14 +19,6 @@
 
 namespace density
 {
-	/** This enum describes the concurrency supported by a set of functions. */
-	enum concurrent_cardinality
-	{
-		concurrent_cardinality_single, /**< Functions with this concurrent cardinality can be called by only one thread,
-											or by multiple threads if externally synchronized with a mutex. */
-		concurrent_cardinality_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
-											without external synchronization. */
-	};
 
 	namespace detail
 	{
@@ -53,19 +45,21 @@ namespace density
 		};
 
 		/** /internal Class template that implements the low-level interface for put transaction */
-		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, concurrent_cardinality CARDINALITY >
-			class NonblockingQueueTail;
+		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
+			concurrent_cardinality CARDINALITY, consistency_model CONSISTENCY_MODEL >
+				class NonblockingQueueTail;
 
 		/** /internal Class template that implements the low-level interface for consume operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-			concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY >
+			concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 				class NonblockingQueueHead;
 	
 	} // namespace detail
 
 } // namespace density
 
-#include <density/detail/nb_queue_tail_multiple.h>
+#include <density/detail/nb_queue_tail_multiple_relaxed.h>
+#include <density/detail/nb_queue_tail_multiple_linearizable.h>
 #include <density/detail/nb_queue_head_multiple.h>
 
 namespace density
@@ -77,14 +71,15 @@ namespace density
 	*/
 	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
 			concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
-			concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple >
-		class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>
+			concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple,
+			consistency_model CONSISTENCY_MODEL = consistency_model_linearizable>
+		class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
 	{
 	private:
-		using Base = detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+		using Base = detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 		using ControlBlock = typename Base::ControlBlock;
-		using Block = typename detail::NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY>::Block;
-		using Consume = typename detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>::Consume;
+		using Block = typename Base::Block;
+		using Consume = typename Base::Consume;
 
 		/** This type is used to make some functions of the inner classes accessible only by the queue */
 		enum class PrivateType {};
@@ -217,8 +212,7 @@ namespace density
 		/** Swaps two queues. 
 		
 		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue swap example 1 */
-		friend inline void swap(nonblocking_heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
-			nonblocking_heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
+		friend inline void swap(nonblocking_heterogeneous_queue & i_first, nonblocking_heterogeneous_queue & i_second) noexcept
 		{
 			i_first.Base::swap(i_second);
 		}

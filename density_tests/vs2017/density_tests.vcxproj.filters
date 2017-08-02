@@ -142,10 +142,13 @@
     <ClInclude Include="..\test_framework\queue_generic_tester.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
+    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_relaxed.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple.h">
+    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_linearizable.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
       <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>

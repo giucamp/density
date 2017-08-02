@@ -108,6 +108,21 @@ namespace density
         }
     }
 
+	/** This enum describes the concurrency supported by a set of functions. */
+	enum concurrent_cardinality
+	{
+		concurrent_cardinality_single, /**< Functions with this concurrent cardinality can be called by only one thread,
+											or by multiple threads if externally synchronized with a mutex. */
+		concurrent_cardinality_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
+											without external synchronization. */
+	};
+
+	enum consistency_model
+	{
+		consistency_model_linearizable,
+		consistency_model_relaxed,
+	};
+
                 // address functions
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
@@ -209,7 +224,7 @@ namespace density
         return reinterpret_cast< void * >( uint_pointer & ~mask );
     }
 
-    /** Returns    the biggest address lesser than te first parameter, such that i_address + i_alignment_offset is aligned
+    /** Returns    the biggest address lesser than the first parameter, such that i_address + i_alignment_offset is aligned
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
