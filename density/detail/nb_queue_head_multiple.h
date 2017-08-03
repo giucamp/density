@@ -402,8 +402,8 @@ namespace density
 
 
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, concurrent_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
-			NbQueueControl<COMMON_TYPE> NonblockingQueueHead< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
-				PROD_CARDINALITY, concurrent_cardinality_multiple, CONSISTENCY_MODEL>::s_initial_block;
+			typename NonblockingQueueHead< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, concurrent_cardinality_multiple, CONSISTENCY_MODEL>::ControlBlock
+				NonblockingQueueHead< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, concurrent_cardinality_multiple, CONSISTENCY_MODEL>::s_initial_block;
 
 	} // namespace detail
 

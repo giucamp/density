@@ -269,6 +269,19 @@ namespace density
 
     public:
 
+		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_puts = false;
+		
+		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_consumes = false;
+		
+		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
+			constrained by concurrent_puts and concurrent_consumes. */
+		static constexpr bool concurrent_put_consumes = false;
+
+		/** Whether this queue is sequential consistent. */
+		static constexpr bool is_seq_cst = true;
+
         static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
             "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
 

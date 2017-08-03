@@ -348,25 +348,9 @@ namespace density
 				{
 					/* We are going to access the content of the end control, so we have to do a safe pin
 						(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-					struct ScopedPin
-					{
-						ALLOCATOR_TYPE * const m_allocator;
-						ControlBlock * const m_control;
-
-						ScopedPin(ALLOCATOR_TYPE * i_allocator, ControlBlock * i_control)
-							: m_allocator(i_allocator), m_control(i_control)
-						{
-							m_allocator->ALLOCATOR_TYPE::pin_page(m_control);
-						}
-
-						~ScopedPin()
-						{
-							m_allocator->ALLOCATOR_TYPE::unpin_page(m_control);
-						}
-					};
-					ScopedPin const end_block(this, i_end_control);
+					ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
 					auto const updated_tail = m_tail.load(detail::mem_relaxed);
-					if (updated_tail != end_block.m_control)
+					if (updated_tail != i_end_control)
 					{
 						return updated_tail;
 					}
@@ -376,14 +360,14 @@ namespace density
 					auto new_page = create_page();
 
 					uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
-					if (!raw_atomic_compare_exchange_strong(&end_block.m_control->m_next, &expected_next,
+					if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
 						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
 					{
 						/* Some other thread has already linked a new page. We discard the page we
 							have just allocated. */
 						discard_created_page(new_page);
 
-						/* So end_block.m_control_block->m_next may now be the pointer to the next page
+						/* So i_end_control->m_next may now be the pointer to the next page
 							or 0 (if the page has been consumed in the meanwhile). */
 						if (expected_next == 0)
 						{

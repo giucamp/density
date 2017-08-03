@@ -99,6 +99,19 @@ namespace density
         using const_reference = const value_type&;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
+
+		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_puts = PROD_CARDINALITY == concurrent_cardinality_multiple;
+		
+		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_consumes = CONSUMER_CARDINALITY == concurrent_cardinality_multiple;
+		
+		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
+			constrained by concurrent_puts and concurrent_consumes. */
+		static constexpr bool concurrent_put_consumes = true;
+
+		/** Whether this queue is sequential consistent. */
+		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_model_linearizable;
 		
         static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
             "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");

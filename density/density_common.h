@@ -22,92 +22,6 @@
 
 namespace density
 {
-    namespace detail
-    {
-        // size_min: avoid including <algorithm> just to use std::min<size_t>
-        constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
-        {
-            return i_first < i_second ? i_first : i_second;
-        }
-
-        // size_max: avoid including <algorithm> just to use std::max<size_t>
-        constexpr inline size_t size_max(size_t i_first, size_t i_second) noexcept
-        {
-            return i_first > i_second ? i_first : i_second;
-        }
-		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third) noexcept
-		{
-			return size_max(size_max(i_first, i_second), i_third);
-		}
-		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
-		{
-			return size_max(size_max(i_first, i_second, i_third), i_fourth);
-		}
-
-		struct AlignmentHeader
-        {
-            void * m_block;
-        };
-
-		inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
-		{
-			auto const chars = static_cast<const unsigned char *>(i_start);
-			for (size_t char_index = 0; char_index < i_size; char_index++)
-			{
-				if (chars[char_index] != i_value)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		
-		constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
-		constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
-		constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
-		constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
-		constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
-
-        /** Computes the base2 logarithm of a size_t. If the argument is zero or is
-            not a power of 2, the behavior is undefined. */
-        constexpr size_t size_log2(size_t i_size) noexcept
-        {
-            return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
-        }
-
-        template <typename SCOPE_EXIT_ACTION>
-            class ScopeExit
-        {
-        public:
-
-            ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-                : m_scope_exit_action(std::move(i_scope_exit_action))
-            {
-                static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
-            }
-
-            ~ScopeExit()
-            {
-                m_scope_exit_action();
-            }
-
-            ScopeExit(const ScopeExit &) = delete;
-            ScopeExit & operator = (const ScopeExit &) = delete;
-
-            ScopeExit(ScopeExit &&) noexcept = default;
-            ScopeExit & operator = (ScopeExit &&) noexcept = default;
-
-        private:
-            SCOPE_EXIT_ACTION m_scope_exit_action;
-        };
-
-        template <typename SCOPE_EXIT_ACTION>
-            inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-        {
-            return ScopeExit<SCOPE_EXIT_ACTION>(std::forward<SCOPE_EXIT_ACTION>(i_scope_exit_action));
-        }
-    }
-
 	/** This enum describes the concurrency supported by a set of functions. */
 	enum concurrent_cardinality
 	{
@@ -355,19 +269,137 @@ namespace density
         return new_block;
     }
 
-    /** unvoid_t<T> and unvoid<T>::type: alias for T if T is not a (possibly cv) void, unspecified POD type otherwise. **/
-    template <typename TYPE>
-        struct unvoid { using type = TYPE; };
-    template <>
-        struct unvoid<void> { struct type {}; };
-    template <>
-        struct unvoid<const void> { struct type {}; };
-    template <>
-        struct unvoid<volatile void> { struct type {}; };
-    template <>
-        struct unvoid<const volatile void> { struct type {}; };
-    template <typename TYPE>
-        using unvoid_t = typename unvoid<TYPE>::type;
+    namespace detail
+    {
+        // size_min: avoid including <algorithm> just to use std::min<size_t>
+        constexpr inline size_t size_min(size_t i_first, size_t i_second) noexcept
+        {
+            return i_first < i_second ? i_first : i_second;
+        }
+
+        // size_max: avoid including <algorithm> just to use std::max<size_t>
+        constexpr inline size_t size_max(size_t i_first, size_t i_second) noexcept
+        {
+            return i_first > i_second ? i_first : i_second;
+        }
+		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third) noexcept
+		{
+			return size_max(size_max(i_first, i_second), i_third);
+		}
+		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
+		{
+			return size_max(size_max(i_first, i_second, i_third), i_fourth);
+		}
+
+		struct AlignmentHeader
+        {
+            void * m_block;
+        };
+
+		inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
+		{
+			auto const chars = static_cast<const unsigned char *>(i_start);
+			for (size_t char_index = 0; char_index < i_size; char_index++)
+			{
+				if (chars[char_index] != i_value)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
+		constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
+		constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
+		constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
+		constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
+
+        /** Computes the base2 logarithm of a size_t. If the argument is zero or is
+            not a power of 2, the behavior is undefined. */
+        constexpr size_t size_log2(size_t i_size) noexcept
+        {
+            return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
+        }
+
+        template <typename SCOPE_EXIT_ACTION>
+            class ScopeExit
+        {
+        public:
+
+            ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+                : m_scope_exit_action(std::move(i_scope_exit_action))
+            {
+                static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
+            }
+
+            ~ScopeExit()
+            {
+                m_scope_exit_action();
+            }
+
+            ScopeExit(const ScopeExit &) = delete;
+            ScopeExit & operator = (const ScopeExit &) = delete;
+
+            ScopeExit(ScopeExit &&) noexcept = default;
+            ScopeExit & operator = (ScopeExit &&) noexcept = default;
+
+        private:
+            SCOPE_EXIT_ACTION m_scope_exit_action;
+        };
+
+        template <typename SCOPE_EXIT_ACTION>
+            inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
+        {
+            return ScopeExit<SCOPE_EXIT_ACTION>(std::forward<SCOPE_EXIT_ACTION>(i_scope_exit_action));
+        }
+
+		template <typename ALLOCATOR_TYPE>
+			class ScopedPin
+		{
+		private:
+			ALLOCATOR_TYPE * const m_allocator;
+			void * m_pinned_page = nullptr;
+
+		public:
+			ScopedPin(ALLOCATOR_TYPE * i_allocator) noexcept
+				: m_allocator(i_allocator)
+			{
+			}
+
+			ScopedPin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
+				: m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
+			{
+				if (m_pinned_page != nullptr)
+					m_allocator->pin_page(m_pinned_page);
+			}
+
+			bool pin_new(void * i_address) noexcept
+			{
+				auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
+				if (page != m_pinned_page)
+				{
+					if (m_pinned_page != nullptr)
+						m_allocator->unpin_page(m_pinned_page);
+					m_pinned_page = page;
+					if (m_pinned_page != nullptr)
+						m_allocator->pin_page(m_pinned_page);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			~ScopedPin()
+			{
+				if (m_pinned_page != nullptr)
+					m_allocator->unpin_page(m_pinned_page);
+			}
+		};
+    }
+
 
 
     /** Uses the global operator new to allocate a memory block with at least the specified size and alignment

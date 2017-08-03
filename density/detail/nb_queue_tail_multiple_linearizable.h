@@ -41,8 +41,7 @@ namespace density
 			/** Offset of the runtime_type in the layout of a value */
 			constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
 
-			/** Minimum offset of the element in the layout of a value (The actual offset is dependent on
-				the alignment of the element). */
+			/** Minimum offset of the element in the layout of a value (The actual offset is dependent on the alignment of the element). */
 			constexpr static uintptr_t s_element_min_offset = uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
 
 			/** Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
@@ -153,13 +152,13 @@ namespace density
 			/** Allocates a block of memory.
 				The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
 				@param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
-				@param i_include_type true if this is an element value, false if it's a raw allocation
+				@param i_include_type true if this is an element value, false if it's a raw block
 				@param i_size it must be > 0 and a multiple of the alignment
 				@param i_alignment is must be > 0 and a power of two */
 			Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
 			{
 				DENSITY_ASSERT_INTERNAL((i_control_bits & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0);
-				DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
+				DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && i_size > 0 && (i_size % i_alignment) == 0);
 				
 				if (i_alignment < min_alignment)
 				{
@@ -169,9 +168,11 @@ namespace density
 
 				auto const overhead = i_include_type ? s_element_min_offset : s_rawblock_min_offset;
 				auto const required_size = overhead + i_size + (i_alignment - min_alignment);
-				auto const required_blocks = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
+				auto const required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
-				bool fits_in_page = required_blocks < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
+				detail::ScopedPin<ALLOCATOR_TYPE> scoped_pin(this);
+
+				bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
 				if (fits_in_page)
 				{
 					auto tail = m_tail.load(mem_relaxed);
@@ -182,12 +183,12 @@ namespace density
 						{
 							// we can try the allocation
 							auto const new_control = reinterpret_cast<ControlBlock*>(tail);
-							auto const future_tail = tail + required_blocks * s_alloc_granularity;
+							auto const future_tail = tail + required_units * s_alloc_granularity;
 							auto const future_tail_offset = future_tail - uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-							auto transient_tail = tail + required_blocks;
+							auto transient_tail = tail + required_units;
 							if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
 							{								
-								DENSITY_ASSERT_INTERNAL(required_blocks < s_alloc_granularity);
+								DENSITY_ASSERT_INTERNAL(required_units < s_alloc_granularity);
 								if (m_tail.compare_exchange_weak(tail, transient_tail, mem_relaxed))
 								{
 									raw_atomic_store(&new_control->m_next, future_tail + i_control_bits, mem_relaxed);
@@ -211,19 +212,21 @@ namespace density
 							auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
 							auto const next = clean_tail + rest * s_alloc_granularity;
 
-							ALLOCATOR_TYPE::pin_page(incomplete_control);
-							auto updated_tail = m_tail.load(mem_relaxed);
-							if (updated_tail == tail)
+							if (scoped_pin.pin_new(incomplete_control))
 							{
-								uintptr_t expected_next = 0;
-								raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-									next + detail::NbQueue_Busy, mem_relaxed);
-								if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
-									tail = next;
+								auto updated_tail = m_tail.load(mem_relaxed);
+								if (updated_tail != tail)
+								{
+									tail = updated_tail;
+									continue;
+								}
 							}
-							else
-								tail = updated_tail;
-							ALLOCATOR_TYPE::unpin_page(incomplete_control);
+
+							uintptr_t expected_next = 0;
+							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
+								next + detail::NbQueue_Busy, mem_relaxed);
+							if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
+								tail = next;
 						}
 					}
 				}
@@ -244,9 +247,11 @@ namespace density
 				constexpr auto size = uint_upper_align(SIZE, alignment);
 				constexpr auto overhead = INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset;
 				constexpr auto required_size = overhead + size + (alignment - min_alignment);
-				constexpr auto required_blocks = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
+				constexpr auto required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
-				bool fits_in_page = required_blocks < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
+				detail::ScopedPin<ALLOCATOR_TYPE> scoped_pin(this);
+
+				bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
 				if (fits_in_page)
 				{
 					auto tail = m_tail.load(mem_relaxed);
@@ -257,9 +262,9 @@ namespace density
 						{
 							// we can try the allocation
 							auto const new_control = reinterpret_cast<ControlBlock*>(tail);
-							auto const future_tail = tail + required_blocks * s_alloc_granularity;
+							auto const future_tail = tail + required_units * s_alloc_granularity;
 							auto const future_tail_offset = future_tail - uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-							auto transient_tail = tail + required_blocks;
+							auto transient_tail = tail + required_units;
 							if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
 							{								
 								if (m_tail.compare_exchange_weak(tail, transient_tail, mem_relaxed))
@@ -285,19 +290,21 @@ namespace density
 							auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
 							auto const next = clean_tail + rest * s_alloc_granularity;
 
-							ALLOCATOR_TYPE::pin_page(incomplete_control);
-							auto updated_tail = m_tail.load(mem_relaxed);
-							if (updated_tail == tail)
+							if (scoped_pin.pin_new(incomplete_control))
 							{
-								uintptr_t expected_next = 0;
-								raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-									next + detail::NbQueue_Busy, mem_relaxed);
-								if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
-									tail = next;
+								auto updated_tail = m_tail.load(mem_relaxed);
+								if (updated_tail != tail)
+								{
+									tail = updated_tail;
+									continue;
+								}
 							}
-							else
-								tail = updated_tail;
-							ALLOCATOR_TYPE::unpin_page(incomplete_control);
+
+							uintptr_t expected_next = 0;
+							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
+								next + detail::NbQueue_Busy, mem_relaxed);
+							if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
+								tail = next;
 						}
 					}
 				}
@@ -386,25 +393,9 @@ namespace density
 				{
 					/* We are going to access the content of the end control, so we have to do a safe pin
 						(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-					struct ScopedPin
-					{
-						ALLOCATOR_TYPE * const m_allocator;
-						ControlBlock * const m_control;
-
-						ScopedPin(ALLOCATOR_TYPE * i_allocator, ControlBlock * i_control)
-							: m_allocator(i_allocator), m_control(i_control)
-						{
-							m_allocator->ALLOCATOR_TYPE::pin_page(m_control);
-						}
-
-						~ScopedPin()
-						{
-							m_allocator->ALLOCATOR_TYPE::unpin_page(m_control);
-						}
-					};
-					ScopedPin const end_block(this, i_end_control);
+					detail::ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
 					auto const updated_tail = reinterpret_cast<ControlBlock *>(m_tail.load(detail::mem_relaxed));
-					if (updated_tail != end_block.m_control)
+					if (updated_tail != i_end_control)
 					{
 						return updated_tail;
 					}
@@ -414,14 +405,14 @@ namespace density
 					auto new_page = create_page();
 
 					uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
-					if (!raw_atomic_compare_exchange_strong(&end_block.m_control->m_next, &expected_next,
+					if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
 						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
 					{
 						/* Some other thread has already linked a new page. We discard the page we
 							have just allocated. */
 						discard_created_page(new_page);
 
-						/* So end_block.m_control_block->m_next may now be the pointer to the next page
+						/* So i_end_control->m_next may now be the pointer to the next page
 							or 0 (if the page has been consumed in the meanwhile). */
 						if (expected_next == 0)
 						{

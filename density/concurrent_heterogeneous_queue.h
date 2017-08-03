@@ -44,6 +44,19 @@ namespace density
 
 	public:
 
+		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_puts = true;
+		
+		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_consumes = true;
+		
+		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
+			constrained by concurrent_puts and concurrent_consumes. */
+		static constexpr bool concurrent_put_consumes = true;
+
+		/** Whether this queue is sequential consistent. */
+		static constexpr bool is_seq_cst = true;
+
 		/** Minimum guaranteed alignment for every element. The actual alignment of an element may be stricter
 			if the type requires it. */
 		constexpr static size_t min_alignment = InnerQueue::min_alignment;

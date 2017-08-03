@@ -76,6 +76,8 @@ namespace density_tests
 			m_output << "\nallocator_type: " << truncated_type_name<typename QUEUE::allocator_type>();
 			m_output << "\npage_alignment: " << QUEUE::allocator_type::page_alignment;
 			m_output << "\npage_size: " << QUEUE::allocator_type::page_size;
+			m_output << "\nconc puts: " << QUEUE::concurrent_puts << "\t\t\tconc consume: " << QUEUE::concurrent_consumes;
+			m_output << "\nconc put-consumes: " << QUEUE::concurrent_put_consumes << "\t\t\tis_seq_cst: " << QUEUE::is_seq_cst;
 			m_output << "\nwith_exceptions: " << with_exceptions;
 			m_output << std::endl;
 
