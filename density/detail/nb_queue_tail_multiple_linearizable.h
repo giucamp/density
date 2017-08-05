@@ -72,6 +72,16 @@ namespace density
 				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
 				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
 			}
+			
+			/** Returns whether the input addresses belong to the same page and they are both != nullptr */
+			static bool same_nonnull_page(const void * i_first, const void * i_second) noexcept
+			{
+				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
+				auto const first = reinterpret_cast<uintptr_t>(i_first);
+				auto const second = reinterpret_cast<uintptr_t>(i_second);
+				//return (~first | ((first ^ second) & ~page_mask)) == 0;
+				return ((first ^ second) & ~page_mask) == 0 && first != 0;
+			}
 
 			NonblockingQueueTail() noexcept
 				: m_tail(s_invalid_control_block),
@@ -222,6 +232,7 @@ namespace density
 								}
 							}
 
+							// Note: NEEDS ZEROED-PAGES
 							uintptr_t expected_next = 0;
 							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
 								next + detail::NbQueue_Busy, mem_relaxed);
@@ -300,6 +311,7 @@ namespace density
 								}
 							}
 
+							// Note: NEEDS ZEROED-PAGES
 							uintptr_t expected_next = 0;
 							raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
 								next + detail::NbQueue_Busy, mem_relaxed);
