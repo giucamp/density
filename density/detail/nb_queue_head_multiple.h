@@ -294,18 +294,8 @@ namespace density
 							else
 							{
 								i_queue->ALLOCATOR_TYPE::pin_page(next);
-								
-								auto const updated_next_uint = raw_atomic_load(&control->m_next, detail::mem_seq_cst);
-								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
-								DENSITY_ASSERT_INTERNAL(updated_next == nullptr || updated_next == next);
-
 								i_queue->ALLOCATOR_TYPE::unpin_page(control);
-								control = updated_next;
-
-								if (updated_next == nullptr)
-								{
-									m_queue->ALLOCATOR_TYPE::unpin_page(next);
-								}
+								control = next;
 							}
 						}
 						else if (next != nullptr)
