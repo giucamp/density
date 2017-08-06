@@ -238,8 +238,7 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
 
-					auto head = i_queue->m_head.load(mem_relaxed);
-					auto next = head;
+					auto next = i_queue->m_head.load(mem_relaxed);
 					for (;;)
 					{
 						/*
@@ -271,23 +270,16 @@ namespace density
 								if ((next_uint & ~detail::NbQueue_InvalidNextPage) == 0)
 								{
 									/* We have found a zeroed ControlBlock */
-									head = i_queue->m_head.load(mem_relaxed);
+									next = i_queue->m_head.load(mem_relaxed);
 									bool should_continue;
-									if (Base::same_page(head, control))
-										should_continue = control < head;
+									if (Base::same_page(next, control))
+										should_continue = control < next;
 									else
 										should_continue = control != i_queue->get_tail_for_consumers();
 
-									if (should_continue)
-									{
-										// continue looping
-										next = head;
-									}
-									else
+									if (!should_continue)
 									{
 										// the queue is empty
-										i_queue->ALLOCATOR_TYPE::unpin_page(control);
-										control = nullptr;
 										break;
 									}
 								}
@@ -300,47 +292,46 @@ namespace density
 								}
 							}
 						}
-						else if (control != nullptr || next != nullptr)
-						{
-							// page switch - we don't update next, we just fix the pinning and update control to be = next
-							if (next == nullptr)
-							{
-								// the queue is empty
-								i_queue->ALLOCATOR_TYPE::unpin_page(control);
-								control = nullptr;
-								break;
-							}
-							else
-							{
-								i_queue->ALLOCATOR_TYPE::pin_page(next);
-								if(control != nullptr)
-									i_queue->ALLOCATOR_TYPE::unpin_page(control);
-								control = next;
-							}
-						}
 						else
 						{
-							// init queue
-							head = i_queue->m_head.load();
-							DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
-
-							if (head == nullptr)
+							if (control != nullptr || next != nullptr)
 							{
-								auto const initial_page = i_queue->Base::get_initial_page();
-
-								/* If this CAS succeeds, we have to update our local variable head. Otherwise
-									after the call we have the value of m_head stored by another concurrent consumer. */
-								if (i_queue->m_head.compare_exchange_strong(head, initial_page))
-									head = initial_page;
-
-								if (head == nullptr)
+								// page switch - we don't update next, we just fix the pinning and update control to be = next
+								if (next != nullptr)
 								{
-									// the queue is virgin and empty
+									i_queue->ALLOCATOR_TYPE::pin_page(next);
+									if (control != nullptr)
+										i_queue->ALLOCATOR_TYPE::unpin_page(control);
+									control = next;
+								}
+								else
+								{
+									// the queue is empty
 									break;
 								}
 							}
+							else
+							{
+								// control and next are both null - initialize the head
+								next = i_queue->m_head.load();
+								DENSITY_ASSERT_INTERNAL(address_is_aligned(next, Base::s_alloc_granularity));
 
-							next = head;
+								if (next == nullptr)
+								{
+									auto const initial_page = i_queue->Base::get_initial_page();
+
+									/* If this CAS succeeds, we have to update our local variable next. Otherwise
+										after the call we have the value of m_head stored by another concurrent consumer. */
+									if (i_queue->m_head.compare_exchange_strong(next, initial_page))
+										next = initial_page;
+
+									if (next == nullptr)
+									{
+										// the queue is virgin and empty
+										break;
+									}
+								}
+							}
 						}
 					}
 
