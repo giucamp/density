@@ -240,8 +240,10 @@ namespace density
             clear();
 
 			Consume consume;
-			consume.m_queue = this;
-			consume.clean_dead_elements();
+			if (consume.move_to_head(this))
+			{
+				consume.clean_dead_elements();
+			}
         }
 
         /** Returns whether the queue contains no elements.
@@ -264,12 +266,10 @@ namespace density
 		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue clear example 1 */
         void clear() noexcept
         {
-			for(;;)
+			consume_operation consume;
+			while(try_start_consume(consume))
             {
-				auto transaction = try_start_consume();
-                if (!transaction)
-                    break;
-                transaction.commit();
+                consume.commit();
             }
         }
 

@@ -498,12 +498,10 @@ namespace density
 		\snippet heterogeneous_queue_examples.cpp heterogeneous_queue clear example 1 */
         void clear() noexcept
         {
-			for(;;)
+			consume_operation consume;
+			while(try_start_consume(consume))
             {
-				auto transaction = try_start_consume();
-                if (!transaction)
-                    break;
-                transaction.commit();
+                consume.commit();
             }
 
             DENSITY_ASSERT_INTERNAL(empty());
