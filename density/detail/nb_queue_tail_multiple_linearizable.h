@@ -72,16 +72,6 @@ namespace density
 				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
 				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
 			}
-			
-			/** Returns whether the input addresses belong to the same page and they are both != nullptr */
-			static bool same_nonnull_page(const void * i_first, const void * i_second) noexcept
-			{
-				auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
-				auto const first = reinterpret_cast<uintptr_t>(i_first);
-				auto const second = reinterpret_cast<uintptr_t>(i_second);
-				//return (~first | ((first ^ second) & ~page_mask)) == 0;
-				return ((first ^ second) & ~page_mask) == 0 && first != 0;
-			}
 
 			NonblockingQueueTail() noexcept
 				: m_tail(s_invalid_control_block),
@@ -534,7 +524,7 @@ namespace density
 
 			ControlBlock * get_tail_for_consumers() const noexcept
 			{
-				return m_tail.load();
+				return reinterpret_cast<ControlBlock *>(m_tail.load() & ~(s_alloc_granularity - 1));
 			}
 
 			ControlBlock * get_initial_page() const noexcept
