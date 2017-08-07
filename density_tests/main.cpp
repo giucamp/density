@@ -48,6 +48,22 @@ DENSITY_NO_INLINE void sandbox()
 		}
 		assert(i == 1000);
 	}
+	{
+		nonblocking_heterogeneous_queue<> q;
+		int i;
+		for (i = 0; i < 1000; i++)
+			q.push(i);
+
+		i = 0;
+		nonblocking_heterogeneous_queue<>::consume_operation consume;
+		while (q.try_start_consume(consume))
+		{
+			assert(consume.element<int>() == i);
+			consume.commit();
+			i++;
+		}
+		assert(i == 1000);
+	}
 
 	{
 		nonblocking_heterogeneous_queue<> q1;

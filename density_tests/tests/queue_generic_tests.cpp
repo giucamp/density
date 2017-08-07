@@ -352,7 +352,7 @@ namespace density_tests
 		using namespace density;
 
 		std::vector<size_t> const concurrent_thread_counts{1, 2};
-		std::vector<size_t> const nonblocking_thread_counts{1, 2, 3, 7, 32};
+		std::vector<size_t> const nonblocking_thread_counts{1, 7, 32 * 1024};
 
 		EasyRandom rand = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 		

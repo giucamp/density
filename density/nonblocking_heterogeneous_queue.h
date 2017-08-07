@@ -240,7 +240,7 @@ namespace density
             clear();
 
 			Consume consume;
-			if (consume.move_to_head(this))
+			if (consume.assign_queue(this))
 			{
 				consume.clean_dead_elements();
 			}
@@ -315,7 +315,7 @@ namespace density
             put_transaction & operator = (const put_transaction &) = delete;
 
             /** Move constructs a put_transaction, transferring the state from the source.
-                    @param i_source source to move from. It becomes empty after the call. 
+                    @param i_source source to move from. It is left in a valid but indeterminate state. 
 
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_construct example 1
@@ -330,7 +330,7 @@ namespace density
             }
 
             /** Move assigns a put_transaction, transferring the state from the source.
-                @param i_source source to move from. It becomes empty after the call. 
+                @param i_source source to move from. It is left in a valid but indeterminate state.
 				
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_assign example 1
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_assign example 2 */
@@ -338,15 +338,9 @@ namespace density
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				put_transaction & operator = (put_transaction<OTHERTYPE> && i_source) noexcept
             {
-				if (this != static_cast<void*>(&i_source)) // cast to void to allow comparing pointers to unrelated types
-				{
-					if(!empty())
-						cancel();
-
-					using std::swap;
-					swap(m_put, i_source.m_put);
-					swap(m_queue, i_source.m_queue);
-				}
+				using std::swap;
+				swap(m_put, i_source.m_put);
+				swap(m_queue, i_source.m_queue);
 				return *this;
             }
 
@@ -637,12 +631,12 @@ namespace density
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation copy_assign example 1 */
             consume_operation & operator = (const consume_operation &) = delete;
 
-            /** Move constructor. The source is left empty. 			
+            /** Move constructor. The source is left in a valid but indeterminate state.
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation move_construct example 1 */
 			consume_operation(consume_operation && i_source) noexcept = default;
 
-            /** Move assignment. The source is left empty. 
+            /** Move assignment. The source is left in a valid but indeterminate state.
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation move_assign example 1 */
 			consume_operation & operator = (consume_operation && i_source) noexcept = default;
@@ -1286,7 +1280,7 @@ namespace density
             reentrant_put_transaction & operator = (const reentrant_put_transaction &) = delete;
 
             /** Move constructs a reentrant_put_transaction, transferring the state from the source.
-                    @param i_source source to move from. It becomes empty after the call. 
+                    @param i_source source to move from. It is left in a valid but indeterminate state.
 
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_construct example 1
@@ -1301,7 +1295,7 @@ namespace density
             }
 
             /** Move assigns a reentrant_put_transaction, transferring the state from the source.
-                @param i_source source to move from. It becomes empty after the call. 
+                @param i_source source to move from. It is left in a valid but indeterminate state.
 				
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_assign example 1
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_assign example 2 */
@@ -1309,15 +1303,9 @@ namespace density
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				reentrant_put_transaction & operator = (reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
             {
-				if (this != static_cast<void*>(&i_source)) // cast to void to allow comparing pointers to unrelated types
-				{
-					if(!empty())
-						cancel();
-
-					using std::swap;
-					swap(m_put, i_source.m_put);
-					swap(m_queue, i_source.m_queue);
-				}
+				using std::swap;
+				swap(m_put, i_source.m_put);
+				swap(m_queue, i_source.m_queue);
 				return *this;
             }
 
@@ -1608,11 +1596,12 @@ namespace density
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation copy_assign example 1 */
             reentrant_consume_operation & operator = (const reentrant_consume_operation &) = delete;
 
-            /** Move constructor. The source is left empty. 			
+            /** Move constructor. It is left in a valid but indeterminate state.
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation move_construct example 1 */
 			reentrant_consume_operation(reentrant_consume_operation && i_source) noexcept = default;
-            /** Move assignment. The source is left empty. 
+            
+			/** Move assignment. It is left in a valid but indeterminate state.
 			
 			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation move_assign example 1 */
 			reentrant_consume_operation & operator = (reentrant_consume_operation && i_source) noexcept = default;

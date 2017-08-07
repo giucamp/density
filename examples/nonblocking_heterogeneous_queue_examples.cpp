@@ -697,7 +697,6 @@ void nonblocking_heterogeneous_queue_reentrant_put_transaction_samples()
 	nonblocking_heterogeneous_queue<>::reentrant_put_transaction<> transaction2;
 	transaction2 = queue.start_reentrant_push(1);
 	transaction2 = std::move(transaction1);
-	assert(transaction1.empty());
 	transaction2.commit();
 	assert(transaction2.empty());
 	//! [nonblocking_heterogeneous_queue reentrant_put_transaction move_assign example 1]

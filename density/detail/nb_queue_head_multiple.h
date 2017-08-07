@@ -24,19 +24,16 @@ namespace density
 			using ControlBlock = typename Base::ControlBlock;
 
 			NonblockingQueueHead() noexcept
-				: m_head(nullptr)
 			{
 			}
 
 			NonblockingQueueHead(ALLOCATOR_TYPE && i_allocator) noexcept
-				: Base(std::move(i_allocator)),
-				m_head(nullptr)
+				: Base(std::move(i_allocator))
 			{
 			}
 
 			NonblockingQueueHead(const ALLOCATOR_TYPE & i_allocator)
-				: Base(i_allocator),
-				m_head(nullptr)
+				: Base(i_allocator)
 			{
 			}
 
@@ -82,18 +79,7 @@ namespace density
 
 				Consume & operator = (Consume && i_source) noexcept
 				{
-					if (this != &i_source)
-					{
-						if (m_control != nullptr)
-						{
-							m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
-						}
-						m_queue = i_source.m_queue;
-						m_control = i_source.m_control;
-						m_next_ptr = i_source.m_next_ptr;
-						i_source.m_control = nullptr;
-						i_source.m_next_ptr = 0;
-					}
+					swap(i_source);
 					return *this;
 				}
 
@@ -113,8 +99,9 @@ namespace density
 					swap(m_next_ptr, i_other.m_next_ptr);
 				}
 
-				/** Moves the Consume to the head, pinning it. The previously pinned page is unpinned.*/
-				bool move_to_head(NonblockingQueueHead * i_queue) noexcept
+				/** Attaches this Consume to a queue, pinning the head. The previously pinned page is unpinned.
+					@return true if a page was pinned, false if the queue is virgin. */
+				bool assign_queue(NonblockingQueueHead * i_queue) noexcept
 				{
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
 
@@ -123,14 +110,7 @@ namespace density
 
 					if (head == nullptr)
 					{
-						auto const initial_page = i_queue->Base::get_initial_page();
-
-						/* If this CAS succeeds, we have to update our local variable head. Otherwise
-							after the call we have the value of m_head stored by another concurrent consumer. */
-						if (i_queue->m_head.compare_exchange_strong(head, initial_page))
-							head = initial_page;
-
-						// in any case there is no more s_invalid_control_block
+						head = init_head(i_queue);
 						if (head == nullptr)
 						{
 							return false;
@@ -159,9 +139,9 @@ namespace density
 					return true;
 				}
 
-
 				bool is_queue_empty(const NonblockingQueueHead * i_queue) noexcept
 				{
+					// we may do changes to queue which are not observable from outside
 					return is_queue_empty(const_cast<NonblockingQueueHead *>(i_queue));
 				}
 
@@ -227,7 +207,7 @@ namespace density
 						}
 						else if (next != nullptr)
 						{
-							// page switch - we don't update next, we just fix the pinning and update control to be = next
+							// page switch - we don't update next, we just fix the pinning and set control = next
 							i_queue->ALLOCATOR_TYPE::pin_page(next);
 							if (control != nullptr)
 								i_queue->ALLOCATOR_TYPE::unpin_page(control);
@@ -249,8 +229,7 @@ namespace density
 					return is_empty;
 				}
 
-				/** \internal
-					Tries to start a consume operation. The Consume must be initially empty.
+				/** Tries to start a consume operation. The Consume must be initially empty.
 					If there are no consumable elements, the Consume remains empty (m_next_ptr == 0).
 					Otherwise m_next_ptr is the value to set on the ControlBox to commit the consume
 					(it has the NbQueue_Dead flag). */
@@ -317,39 +296,11 @@ namespace density
 									}
 								}
 							}
-#if 0
 							else if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Dead)
 							{
 								// clean up
-
-								auto expected = control;
-								if (!m_queue->m_head.compare_exchange_strong(expected, next,
-									detail::mem_seq_cst, detail::mem_relaxed))
-								{
-									// another thread is advancing the head, give up
-									continue;
-								}
-
-								if (next_uint & detail::NbQueue_External)
-								{
-									auto const external_block = static_cast<typename Base::ExternalBlock*>(
-										address_add(control, Base::s_element_min_offset));
-									m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
-								}
-
-								raw_atomic_store(&control->m_next, 0);
-								if (Base::same_page(control, next))
-								{
-									auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
-									auto const memset_size = address_diff(next, memset_dest);
-									std::memset(memset_dest, 0, memset_size);
-								}
-								else
-								{
-									m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);
-								}
+								cleanup_step(control, next_uint, next);
 							}
-#endif
 						}
 						else if (next != nullptr)
 						{
@@ -373,6 +324,40 @@ namespace density
 					m_control = control;
 				}
 
+				/** If m_head equals to i_control_block advance it, zeroing the memory. No pin\unpin is performed. */
+				bool cleanup_step(ControlBlock * const i_control_block, uintptr_t const i_next_uint, ControlBlock * const i_next)
+				{
+					auto expected = i_control_block;
+					if (m_queue->m_head.compare_exchange_strong(expected, i_next,
+						detail::mem_seq_cst, detail::mem_relaxed))
+					{
+						if (i_next_uint & detail::NbQueue_External)
+						{
+							auto const external_block = static_cast<typename Base::ExternalBlock*>(
+								address_add(i_control_block, Base::s_element_min_offset));
+							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
+						}
+
+						raw_atomic_store(&i_control_block->m_next, 0);
+						if (Base::same_page(i_control_block, i_next))
+						{
+							auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
+							auto const memset_size = address_diff(i_next, memset_dest);
+							std::memset(memset_dest, 0, memset_size);
+						}
+						else
+						{
+							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+						}
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+
+				/** Reads m_head. If it is still nullptr, tries to set it to the first page (if any) */
 				static ControlBlock * init_head(NonblockingQueueHead * i_queue) noexcept
 				{
 					// control and next are both null - initialize the head
@@ -392,7 +377,7 @@ namespace density
 					return next;
 				}
 
-
+				/** Commits a consumed element. After the call the Consume is empty. */
 				void commit_consume_impl() noexcept
 				{
 					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
@@ -412,11 +397,6 @@ namespace density
 
 				void clean_dead_elements() noexcept
 				{
-					//////////////////
-					if (!move_to_head(m_queue))
-						return;
-					//////////////////
-
 					auto control = m_control;
 
 					DENSITY_ASSERT_INTERNAL(control != nullptr);
@@ -504,7 +484,7 @@ namespace density
 			}; // Consume
 
 		private: // data members
-			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_head;
+			alignas(concurrent_alignment)std::atomic<ControlBlock*> m_head{nullptr};
 		};
 
 	} // namespace detail
