@@ -112,10 +112,21 @@ namespace density_tests
 
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
-				auto const thread_put_count = (i_target_put_count / m_thread_count) +
-					( (thread_index == 0) ? (i_target_put_count % m_thread_count) : 0 );
+				size_t thread_put_count = 0, thread_consume_count = 0;
 
-				threads[thread_index].start(thread_put_count);
+				if (QUEUE::concurrent_puts)
+					thread_put_count = (i_target_put_count / m_thread_count) +
+						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+				else
+					thread_put_count = thread_index == 0 ? i_target_put_count : 0;
+
+				if (QUEUE::concurrent_consumes)
+					thread_consume_count = (i_target_put_count / m_thread_count) +
+						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+				else
+					thread_consume_count = thread_index == 0 ? i_target_put_count : 0;
+
+				threads[thread_index].start(thread_put_count, thread_consume_count);
 			}
 
 			// wait for the test to be completed
@@ -241,9 +252,9 @@ namespace density_tests
 				m_incremental_stats = std::unique_ptr<IncrementalStats>(new IncrementalStats);
 			}
 
-			void start(size_t i_target_put_count)
+			void start(size_t i_target_put_count, size_t i_target_consume_count)
 			{
-				m_thread = std::thread([=] { thread_procedure(i_target_put_count); });
+				m_thread = std::thread([=] { thread_procedure(i_target_put_count, i_target_consume_count); });
 			}
 
 			void join()
@@ -302,31 +313,35 @@ namespace density_tests
 
 		private:
 			
-			void thread_procedure(size_t i_target_put_count)
+			void thread_procedure(size_t i_target_put_count, size_t i_target_consume_count)
 			{
-				for (size_t cycles = 0; m_put_committed < i_target_put_count || m_consumes_committed < i_target_put_count; cycles++)
+				for (size_t cycles = 0; m_put_committed < i_target_put_count || m_consumes_committed < i_target_consume_count; cycles++)
 				{
 					// decide between put and consume
 
-					auto const pending_put_index = m_random.get_int<size_t>(15);
-					if (pending_put_index < m_pending_reentrant_puts.size() &&
-						m_put_committed < i_target_put_count)
+					if (m_put_committed < i_target_put_count)
 					{
-						handle_pending_put(pending_put_index);
+						auto const pending_put_index = m_random.get_int<size_t>(15);
+						if (pending_put_index < m_pending_reentrant_puts.size())
+						{
+							handle_pending_put(pending_put_index);
+						}
 					}
 
-					auto const pending_consume_index = m_random.get_int<size_t>(15);
-					if (pending_consume_index < m_pending_reentrant_consumes.size() &&
-						m_consumes_committed < i_target_put_count)
+					if (m_consumes_committed < i_target_consume_count)
 					{
-						handle_pending_consume(pending_consume_index);
+						auto const pending_consume_index = m_random.get_int<size_t>(15);
+						if (pending_consume_index < m_pending_reentrant_consumes.size())
+						{
+							handle_pending_consume(pending_consume_index);
+						}
 					}
 
 					if (m_put_committed < i_target_put_count && m_random.get_bool())
 					{
 						put_one();						
 					}
-					else if(m_consumes_committed < i_target_put_count)
+					else if(m_consumes_committed < i_target_consume_count)
 					{
 						try_consume_one();
 					}

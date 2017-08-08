@@ -302,6 +302,7 @@
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
     <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h" />
+    <ClInclude Include="..\..\density\detail\nb_queue_head_single.h" />
     <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_linearizable.h" />
     <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_relaxed.h" />
     <ClInclude Include="..\..\density\detail\page_manager.h" />

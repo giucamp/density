@@ -61,6 +61,7 @@ namespace density
 #include <density/detail/nb_queue_tail_multiple_relaxed.h>
 #include <density/detail/nb_queue_tail_multiple_linearizable.h>
 #include <density/detail/nb_queue_head_multiple.h>
+#include <density/detail/nb_queue_head_single.h>
 
 namespace density
 {

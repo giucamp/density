@@ -12,7 +12,7 @@ namespace density
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
 				concurrent_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 			class NonblockingQueueHead< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
-			PROD_CARDINALITY, concurrent_cardinality_multiple, CONSISTENCY_MODEL>
+			PROD_CARDINALITY, concurrent_cardinality_single, CONSISTENCY_MODEL>
 				: protected NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL>
 		{
 		private:
@@ -54,9 +54,7 @@ namespace density
 				Base::swap(i_other);
 
 				// swap the head
-				auto const tmp = i_other.m_head.load();
-				i_other.m_head.store(m_head.load());
-				m_head.store(tmp);
+				std::swap(m_head, i_other.m_head);
 			}
 
 			struct Consume
@@ -83,13 +81,6 @@ namespace density
 					return *this;
 				}
 
-				~Consume()
-				{
-					if (m_control != nullptr)
-					{
-						m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
-					}
-				}
 
 				void swap(Consume & i_other) noexcept
 				{
@@ -105,36 +96,17 @@ namespace density
 				{
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
 
-					ControlBlock * head = i_queue->m_head.load();
-					DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+					m_control = i_queue->m_head;
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
 
-					if (head == nullptr)
+					if (m_control == nullptr)
 					{
-						head = init_head(i_queue);
-						if (head == nullptr)
+						m_control = init_head(i_queue);
+						if (m_control == nullptr)
 						{
 							return false;
 						}
 					}
-
-					while (DENSITY_UNLIKELY(!Base::same_page(m_control, head) || m_control == nullptr))
-					{
-						DENSITY_ASSERT_INTERNAL(m_control != head);
-
-						i_queue->ALLOCATOR_TYPE::pin_page(head);
-
-						if (m_control != nullptr)
-						{
-							i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
-						}
-
-						m_control = head;
-
-						head = i_queue->m_head.load();
-						DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
-					}
-
-					m_control = static_cast<ControlBlock*>(head);
 					m_queue = i_queue;
 					return true;
 				}
@@ -150,12 +122,14 @@ namespace density
 					m_queue = i_queue;
 
 					auto control = m_control;
+
+
 					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
 
 					bool is_empty = true;
 
-					auto next = i_queue->m_head.load(mem_relaxed);
+					auto next = i_queue->m_head;
 					for (;;)
 					{
 						/*
@@ -207,10 +181,6 @@ namespace density
 						}
 						else if (next != nullptr)
 						{
-							// page switch - we don't update next, we just fix the pinning and set control = next
-							i_queue->ALLOCATOR_TYPE::pin_page(next);
-							if (control != nullptr)
-								i_queue->ALLOCATOR_TYPE::unpin_page(control);
 							control = next;
 						}
 						else
@@ -241,7 +211,7 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 					DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
 
-					auto next = i_queue->m_head.load(mem_relaxed);
+					auto next = i_queue->m_head;
 					for (;;)
 					{
 						/*
@@ -271,18 +241,14 @@ namespace density
 								if ((next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
 								{
 									/* We try to set the flag NbQueue_Busy on it */
-									auto expected = next_uint;
-									if (raw_atomic_compare_exchange_strong(&control->m_next, &expected, next_uint | detail::NbQueue_Busy,
-										detail::mem_acquire, detail::mem_relaxed))
-									{
-										m_next_ptr = next_uint | NbQueue_Dead;
-										break;
-									}
+									raw_atomic_store(&control->m_next, next_uint | detail::NbQueue_Busy, detail::mem_relaxed);
+									m_next_ptr = next_uint | NbQueue_Dead;
+									break;
 								}
 								else
 								{
 									/* We have found a zeroed ControlBlock */
-									next = i_queue->m_head.load(mem_relaxed);
+									next = i_queue->m_head;
 									bool should_continue;
 									if (Base::same_page(next, control))
 										should_continue = control < next;
@@ -304,10 +270,6 @@ namespace density
 						}
 						else if (next != nullptr)
 						{
-							// page switch - we don't update next, we just fix the pinning and update control to be = next
-							i_queue->ALLOCATOR_TYPE::pin_page(next);
-							if (control != nullptr)
-								i_queue->ALLOCATOR_TYPE::unpin_page(control);
 							control = next;
 						}
 						else
@@ -327,10 +289,10 @@ namespace density
 				/** If m_head equals to i_control_block advance it, zeroing the memory. No pin\unpin is performed. */
 				bool cleanup_step(ControlBlock * const i_control_block, uintptr_t const i_next_uint, ControlBlock * const i_next)
 				{
-					auto expected = i_control_block;
-					if (m_queue->m_head.compare_exchange_strong(expected, i_next,
-						detail::mem_seq_cst, detail::mem_relaxed))
+					if (m_queue->m_head == i_control_block)
 					{
+						m_queue->m_head = i_next;
+						
 						if (i_next_uint & detail::NbQueue_External)
 						{
 							auto const external_block = static_cast<typename Base::ExternalBlock*>(
@@ -361,25 +323,18 @@ namespace density
 				static ControlBlock * init_head(NonblockingQueueHead * i_queue) noexcept
 				{
 					// control and next are both null - initialize the head
-					auto head = i_queue->m_head.load();
-					if (head == nullptr)
+					if (i_queue->m_head == nullptr)
 					{
-						auto const initial_page = i_queue->Base::get_initial_page();
-
-						/* If this CAS succeeds, we have to update our local variable head. Otherwise
-							after the call we have the value of m_head stored by another concurrent consumer. */
-						if (i_queue->m_head.compare_exchange_strong(head, initial_page))
-							head = initial_page;
+						i_queue->m_head = i_queue->Base::get_initial_page();
 					}
 
-					DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
-					return head;
+					DENSITY_ASSERT_INTERNAL(address_is_aligned(i_queue->m_head, Base::s_alloc_granularity));
+					return i_queue->m_head;
 				}
 
 				/** Commits a consumed element. After the call the Consume is empty. */
 				void commit_consume_impl() noexcept
 				{
-					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
 					// we expect to have NbQueue_Busy and not NbQueue_Dead...
@@ -409,13 +364,12 @@ namespace density
 							break;
 						}
 
-						auto expected = control;
-						if (!m_queue->m_head.compare_exchange_strong(expected, next,
-							detail::mem_seq_cst, detail::mem_relaxed))
+						if (m_queue->m_head != control)
 						{
-							// another thread is advancing the head, give up
 							break;
 						}
+						m_queue->m_head = next;
+
 
 						if (next_uint & detail::NbQueue_External)
 						{
@@ -445,8 +399,6 @@ namespace density
 						}
 						else
 						{
-							m_queue->ALLOCATOR_TYPE::pin_page(next);
-
 							#if DENSITY_DEBUG_INTERNAL
 								auto const updated_next_uint = raw_atomic_load(&control->m_next);
 								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
@@ -456,7 +408,6 @@ namespace density
 							raw_atomic_store(&control->m_next, 0);
 							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);							
 
-							m_queue->ALLOCATOR_TYPE::unpin_page(control);
 							control = next;
 						}
 					}
@@ -466,7 +417,6 @@ namespace density
 
 				void cancel_consume_impl() noexcept
 				{
-					DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
 					// we expect to have NbQueue_Busy and not NbQueue_Dead...
@@ -483,7 +433,7 @@ namespace density
 			}; // Consume
 
 		private: // data members
-			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_head{nullptr};
+			alignas(concurrent_alignment) ControlBlock * m_head{nullptr};
 		};
 
 	} // namespace detail

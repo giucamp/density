@@ -151,6 +151,9 @@
     <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\detail\nb_queue_head_single.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
