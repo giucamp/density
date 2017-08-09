@@ -132,6 +132,7 @@ namespace density
 					auto next = i_queue->m_head;
 					for (;;)
 					{
+						DENSITY_TEST_ARTIFICIAL_DELAY;
 						/*
 
 							- control and next are in the same page. In this case we continue iterating
@@ -164,6 +165,7 @@ namespace density
 								else
 								{
 									/* We have found a zeroed ControlBlock */
+									DENSITY_TEST_ARTIFICIAL_DELAY;
 									next = i_queue->m_head.load(mem_relaxed);
 									bool should_continue;
 									if (Base::same_page(next, control))
@@ -238,6 +240,7 @@ namespace density
 							/** Check if this element is ready to be consumed */
 							if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
 							{
+								DENSITY_TEST_ARTIFICIAL_DELAY;
 								if ((next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
 								{
 									/* We try to set the flag NbQueue_Busy on it */
@@ -300,15 +303,18 @@ namespace density
 							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}
 
+						DENSITY_TEST_ARTIFICIAL_DELAY;
 						raw_atomic_store(&i_control_block->m_next, 0);
 						if (Base::same_page(i_control_block, i_next))
 						{
+							DENSITY_TEST_ARTIFICIAL_DELAY;
 							auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
 							auto const memset_size = address_diff(i_next, memset_dest);
 							std::memset(memset_dest, 0, memset_size);
 						}
 						else
 						{
+							DENSITY_TEST_ARTIFICIAL_DELAY;
 							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
 						}
 						return true;
@@ -335,6 +341,8 @@ namespace density
 				/** Commits a consumed element. After the call the Consume is empty. */
 				void commit_consume_impl() noexcept
 				{
+					DENSITY_TEST_ARTIFICIAL_DELAY;
+
 					DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
 					// we expect to have NbQueue_Busy and not NbQueue_Dead...
@@ -356,6 +364,8 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(control != nullptr);
 					for (;;)
 					{
+						DENSITY_TEST_ARTIFICIAL_DELAY;
+
 						auto const next_uint = raw_atomic_load(&control->m_next);
 						auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 						if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
@@ -384,6 +394,8 @@ namespace density
 						
 						static_assert(offsetof(ControlBlock, m_next) == 0, "");
 						//std::memset(control, 0, address_diff(address_of_next, control));
+
+						DENSITY_TEST_ARTIFICIAL_DELAY;
 
 						if (DENSITY_LIKELY(is_same_page))
 						{
@@ -426,6 +438,8 @@ namespace density
 					DENSITY_ASSERT_INTERNAL((m_next_ptr & (detail::NbQueue_Dead | detail::NbQueue_Busy | detail::NbQueue_InvalidNextPage)) == detail::NbQueue_Dead);
 					raw_atomic_store(&m_control->m_next, m_next_ptr - detail::NbQueue_Dead, detail::mem_seq_cst);
 					m_next_ptr = 0;
+
+					DENSITY_TEST_ARTIFICIAL_DELAY;
 
 					clean_dead_elements();
 				}

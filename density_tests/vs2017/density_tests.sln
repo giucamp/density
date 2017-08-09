@@ -11,10 +11,18 @@ Global
 		Debug|x86 = Debug|x86
 		DebugClang|x64 = DebugClang|x64
 		DebugClang|x86 = DebugClang|x86
+		DebugClangWithDelays|x64 = DebugClangWithDelays|x64
+		DebugClangWithDelays|x86 = DebugClangWithDelays|x86
+		DebugWithDelays|x64 = DebugWithDelays|x64
+		DebugWithDelays|x86 = DebugWithDelays|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 		ReleaseClang|x64 = ReleaseClang|x64
 		ReleaseClang|x86 = ReleaseClang|x86
+		ReleaseClangWithDelays|x64 = ReleaseClangWithDelays|x64
+		ReleaseClangWithDelays|x86 = ReleaseClangWithDelays|x86
+		ReleaseWithDelays|x64 = ReleaseWithDelays|x64
+		ReleaseWithDelays|x86 = ReleaseWithDelays|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{78BC9721-9B56-4B41-A7F5-495945387937}.Debug|x64.ActiveCfg = Debug|x64
@@ -25,6 +33,14 @@ Global
 		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClang|x64.Build.0 = DebugClang|x64
 		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClang|x86.ActiveCfg = DebugClang|Win32
 		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClang|x86.Build.0 = DebugClang|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClangWithDelays|x64.ActiveCfg = DebugClangWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClangWithDelays|x64.Build.0 = DebugClangWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClangWithDelays|x86.ActiveCfg = DebugClangWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugClangWithDelays|x86.Build.0 = DebugClangWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugWithDelays|x64.ActiveCfg = DebugWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugWithDelays|x64.Build.0 = DebugWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugWithDelays|x86.ActiveCfg = DebugWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.DebugWithDelays|x86.Build.0 = DebugWithDelays|Win32
 		{78BC9721-9B56-4B41-A7F5-495945387937}.Release|x64.ActiveCfg = Release|x64
 		{78BC9721-9B56-4B41-A7F5-495945387937}.Release|x64.Build.0 = Release|x64
 		{78BC9721-9B56-4B41-A7F5-495945387937}.Release|x86.ActiveCfg = Release|Win32
@@ -33,6 +49,14 @@ Global
 		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClang|x64.Build.0 = ReleaseClang|x64
 		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClang|x86.ActiveCfg = ReleaseClang|Win32
 		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClang|x86.Build.0 = ReleaseClang|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClangWithDelays|x64.ActiveCfg = ReleaseClangWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClangWithDelays|x64.Build.0 = ReleaseClangWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClangWithDelays|x86.ActiveCfg = ReleaseClangWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseClangWithDelays|x86.Build.0 = ReleaseClangWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseWithDelays|x64.ActiveCfg = ReleaseWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseWithDelays|x64.Build.0 = ReleaseWithDelays|x64
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseWithDelays|x86.ActiveCfg = ReleaseWithDelays|Win32
+		{78BC9721-9B56-4B41-A7F5-495945387937}.ReleaseWithDelays|x86.Build.0 = ReleaseWithDelays|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

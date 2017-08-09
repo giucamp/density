@@ -369,13 +369,13 @@ namespace density_tests
 	{
 		using namespace density;
 
-		std::vector<size_t> const concurrent_thread_counts{1, 2};
+		//std::vector<size_t> const concurrent_thread_counts{1, 2};
 		std::vector<size_t> const nonblocking_thread_counts{1, 7, 32 * 1024};
 
 		EasyRandom rand = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 		
 		// heterogeneous_queue<void, ...>
-		single_queue_generic_test<heterogeneous_queue<>>(
+		/*single_queue_generic_test<heterogeneous_queue<>>(
 			i_flags, i_output, rand, i_element_count, {1});
 		single_queue_generic_test<heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
 			i_flags, i_output, rand, i_element_count, {1});
@@ -396,7 +396,7 @@ namespace density_tests
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
 			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
 		single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
-			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);
+			i_flags, i_output, rand, i_element_count, concurrent_thread_counts);*/
 
 		// nonblocking_heterogeneous_queue<void, ..., concurrent_cardinality_multiple, concurrent_cardinality_multiple, consistency_model_linearizable>
 		single_queue_generic_test<nb_queue_mul_mul_seqcst<>>(

@@ -486,6 +486,13 @@ namespace density
         }
     }
 
+	#if DENSITY_TEST_ENABLE_ARTIFICIAL_DELAY
+		void test_artificial_delay();
+		#define DENSITY_TEST_ARTIFICIAL_DELAY		::density::test_artificial_delay()
+	#else
+		#define DENSITY_TEST_ARTIFICIAL_DELAY
+	#endif
+
     /*! \page wid_list_iter_bench Widget list benchmarks
 
     These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: heterogeneous_array seems to perform better, but it's hard to tell how much.

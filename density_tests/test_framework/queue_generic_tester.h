@@ -113,20 +113,34 @@ namespace density_tests
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
 				size_t thread_put_count = 0, thread_consume_count = 0;
+				size_t delay_period = 1024 * 10;
+				std::chrono::microseconds delay(1000*20);
 
 				if (QUEUE::concurrent_puts)
+				{
 					thread_put_count = (i_target_put_count / m_thread_count) +
 						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+				}
 				else
+				{
+					// concurrent put not supported, we allow only the first thread to put
 					thread_put_count = thread_index == 0 ? i_target_put_count : 0;
+					delay_period *= thread_index == 0 ? i_target_put_count : 1;
+				}
 
 				if (QUEUE::concurrent_consumes)
+				{
 					thread_consume_count = (i_target_put_count / m_thread_count) +
 						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+				}
 				else
-					thread_consume_count = thread_index == 0 ? i_target_put_count : 0;
+				{
+					// concurrent put not supported, we allow only the last thread to put
+					thread_consume_count = thread_index == (m_thread_count - 1) ? i_target_put_count : 0;
+					delay_period *= thread_index == (m_thread_count - 1) ? i_target_put_count : 1;
+				}
 
-				threads[thread_index].start(thread_put_count, thread_consume_count);
+				threads[thread_index].start(thread_put_count, thread_consume_count, m_thread_count == 1 ? 0 : delay_period, delay);
 			}
 
 			// wait for the test to be completed
@@ -252,9 +266,10 @@ namespace density_tests
 				m_incremental_stats = std::unique_ptr<IncrementalStats>(new IncrementalStats);
 			}
 
-			void start(size_t i_target_put_count, size_t i_target_consume_count)
+			void start(size_t i_target_put_count, size_t i_target_consume_count, size_t i_max_delay_period, std::chrono::microseconds i_max_delay_time)
 			{
-				m_thread = std::thread([=] { thread_procedure(i_target_put_count, i_target_consume_count); });
+				m_thread = std::thread([=] { thread_procedure(i_target_put_count, i_target_consume_count,
+					i_max_delay_period, i_max_delay_time ); });
 			}
 
 			void join()
@@ -313,8 +328,11 @@ namespace density_tests
 
 		private:
 			
-			void thread_procedure(size_t i_target_put_count, size_t i_target_consume_count)
+			void thread_procedure(size_t const i_target_put_count, size_t const i_target_consume_count, 
+				size_t const i_max_delay_period, std::chrono::microseconds const i_max_delay_time)
 			{
+				ThreadArtificialDelay delay(m_random.get_int<size_t>(), i_max_delay_period, i_max_delay_time, &m_random );
+
 				for (size_t cycles = 0; m_put_committed < i_target_put_count || m_consumes_committed < i_target_consume_count; cycles++)
 				{
 					// decide between put and consume

@@ -175,6 +175,7 @@ namespace density
 				auto tail = m_tail.load(detail::mem_relaxed);
 				for (;;)
 				{
+					DENSITY_TEST_ARTIFICIAL_DELAY;
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block (and possibly the runtime type)
@@ -194,6 +195,8 @@ namespace density
 						if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail), 
 							detail::mem_acquire, detail::mem_relaxed))
 						{
+							DENSITY_TEST_ARTIFICIAL_DELAY;
+
 							/* Assign m_next, and set the flags. This is very important for the consumers,
 								because they that need this write happens before any other part of the
 								allocated memory is modified. */
@@ -233,6 +236,8 @@ namespace density
 				auto tail = m_tail.load(detail::mem_relaxed);
 				for (;;)
 				{
+					DENSITY_TEST_ARTIFICIAL_DELAY;
+
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block (and possibly the runtime type)
@@ -255,6 +260,8 @@ namespace density
 						if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail), 
 							detail::mem_acquire, detail::mem_relaxed))
 						{
+							DENSITY_TEST_ARTIFICIAL_DELAY;
+
 							/* Assign m_next, and set the flags. This is very important for the consumers,
 								because they that need this write happens before any other part of the
 								allocated memory is modified. */
@@ -346,6 +353,8 @@ namespace density
 
 				if (i_end_control != invalid_control_block())
 				{
+					DENSITY_TEST_ARTIFICIAL_DELAY;
+
 					/* We are going to access the content of the end control, so we have to do a safe pin
 						(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
 					ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
@@ -363,6 +372,8 @@ namespace density
 					if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
 						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
 					{
+						DENSITY_TEST_ARTIFICIAL_DELAY;
+
 						/* Some other thread has already linked a new page. We discard the page we
 							have just allocated. */
 						discard_created_page(new_page);
@@ -378,6 +389,7 @@ namespace density
 						DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
 					}
 
+					DENSITY_TEST_ARTIFICIAL_DELAY;
 					auto expected_tail = i_end_control;
 					if (m_tail.compare_exchange_strong(expected_tail, new_page))
 						return new_page;
@@ -393,6 +405,7 @@ namespace density
 			DENSITY_NO_INLINE ControlBlock * create_initial_page()
 			{
 				// m_initial_page = initial_page = create_page()
+				DENSITY_TEST_ARTIFICIAL_DELAY;
 				auto const first_page = create_page();
 				ControlBlock * initial_page = nullptr;
 				if (m_initial_page.compare_exchange_strong(initial_page, first_page))
@@ -405,6 +418,7 @@ namespace density
 				}
 
 				// m_tail = initial_page;
+				DENSITY_TEST_ARTIFICIAL_DELAY;
 				auto tail = invalid_control_block();
 				if (m_tail.compare_exchange_strong(tail, initial_page))
 				{
@@ -418,6 +432,8 @@ namespace density
 
 			ControlBlock * create_page()
 			{
+				DENSITY_TEST_ARTIFICIAL_DELAY;
+
 				auto const new_page = s_use_zeroed_pages ? 
 					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed()) :
 					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page());
@@ -428,6 +444,8 @@ namespace density
 
 			void discard_created_page(ControlBlock * i_new_page) noexcept
 			{
+				DENSITY_TEST_ARTIFICIAL_DELAY;
+
 				if (s_use_zeroed_pages)
 				{
 					auto const new_page_end_block = get_end_control_block(i_new_page);
@@ -442,6 +460,8 @@ namespace density
 
 			static void commit_put_impl(const Block & i_put) noexcept
 			{
+				DENSITY_TEST_ARTIFICIAL_DELAY;
+
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
@@ -464,6 +484,8 @@ namespace density
 
 			static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
 			{
+				DENSITY_TEST_ARTIFICIAL_DELAY;
+
 				// we expect to have NbQueue_Busy and not NbQueue_Dead
 				DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
 				DENSITY_ASSERT_INTERNAL(
