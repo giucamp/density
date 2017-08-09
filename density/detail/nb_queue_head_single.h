@@ -8,7 +8,7 @@ namespace density
 {
 	namespace detail
 	{
-		/** /internal Class template that implements consume operations */
+		/** \internal Class template that implements consume operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
 				concurrent_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 			class NonblockingQueueHead< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,

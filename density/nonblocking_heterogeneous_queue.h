@@ -44,12 +44,12 @@ namespace density
 			NbQueue_AllFlags = NbQueue_Busy | NbQueue_Dead | NbQueue_External | NbQueue_InvalidNextPage
 		};
 
-		/** /internal Class template that implements the low-level interface for put transaction */
+		/** \internal Class template that implements the low-level interface for put transaction */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
 			concurrent_cardinality CARDINALITY, consistency_model CONSISTENCY_MODEL >
 				class NonblockingQueueTail;
 
-		/** /internal Class template that implements the low-level interface for consume operations */
+		/** \internal Class template that implements the low-level interface for consume operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
 			concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 				class NonblockingQueueHead;
@@ -58,10 +58,11 @@ namespace density
 
 } // namespace density
 
+#include <density/detail/nb_queue_tail_single.h>
 #include <density/detail/nb_queue_tail_multiple_relaxed.h>
 #include <density/detail/nb_queue_tail_multiple_linearizable.h>
-#include <density/detail/nb_queue_head_multiple.h>
 #include <density/detail/nb_queue_head_single.h>
+#include <density/detail/nb_queue_head_multiple.h>
 
 namespace density
 {

@@ -10,8 +10,8 @@ namespace density
 	namespace detail
 	{
 		/** \internal Class template that implements put operations */
-		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_relaxed>
+		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, consistency_model CONSISTENCY_MODEL>
+			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_single, CONSISTENCY_MODEL>
 				: protected ALLOCATOR_TYPE
 		{
 		public:

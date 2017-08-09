@@ -32,7 +32,7 @@ namespace density
             uintptr_t m_next; /**< see the QueueControl::m_next above */
         };
 		
-		/** /internal Defines flags that can be set on QueueControl::m_next */
+		/** \internal Defines flags that can be set on QueueControl::m_next */
 		enum Queue_Flags : uintptr_t
 		{
 			Queue_Busy = 1, /**< if set someone is producing or consuming this value **/
