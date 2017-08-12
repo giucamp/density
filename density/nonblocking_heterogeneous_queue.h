@@ -60,7 +60,7 @@ namespace density
 
 #include <density/detail/nb_queue_tail_single.h>
 #include <density/detail/nb_queue_tail_multiple_relaxed.h>
-#include <density/detail/nb_queue_tail_multiple_linearizable.h>
+#include <density/detail/nb_queue_tail_multiple_seq_cst.h>
 #include <density/detail/nb_queue_head_single.h>
 #include <density/detail/nb_queue_head_multiple.h>
 
@@ -74,7 +74,7 @@ namespace density
 	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
 			concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
 			concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple,
-			consistency_model CONSISTENCY_MODEL = consistency_model_linearizable>
+			consistency_model CONSISTENCY_MODEL = consistency_model_seq_cst>
 		class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
 	{
 	private:
@@ -113,7 +113,7 @@ namespace density
 		static constexpr bool concurrent_put_consumes = true;
 
 		/** Whether this queue is sequential consistent. */
-		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_model_linearizable;
+		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_model_seq_cst;
 		
         static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
             "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");

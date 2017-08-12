@@ -18,13 +18,6 @@ namespace density
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
 
-			/** Structure used for elements that must be allocated outside the pages */
-			struct ExternalBlock
-			{
-				void * m_block = nullptr;
-				size_t m_size = 0, m_alignment = 0;
-			};
-
 			/** Minimum alignment used for the storage of the elements.
 				The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on 
@@ -59,8 +52,8 @@ namespace density
 				This mechanism allows the default constructor to be small, fast, and noexcept. */
 			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
 
-			/** Whether this tail allocates zeroed pages. The head will deallocate zeroed pages accordingly. */
-			constexpr static bool s_use_zeroed_pages = true;
+			/** Whether the head should zero the content of pages before deallocating. */
+			constexpr static bool s_deallocate_zeroed_pages = false;
 
 			/** Type-safe (at least for the caller) version of s_invalid_control_block */
 			static ControlBlock * invalid_control_block() noexcept
@@ -336,6 +329,7 @@ namespace density
 				else
 				{
 					// get or allocate a new page
+					DENSITY_ASSERT_INTERNAL(i_tail == page_end);
 					return get_or_allocate_next_page(i_tail);
 				}
 			}
@@ -434,9 +428,7 @@ namespace density
 			{
 				DENSITY_TEST_ARTIFICIAL_DELAY;
 
-				auto const new_page = s_use_zeroed_pages ? 
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed()) :
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page());
+				auto const new_page = static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed());
 				auto const new_page_end_block = get_end_control_block(new_page);
 				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
 				return new_page;
@@ -446,16 +438,9 @@ namespace density
 			{
 				DENSITY_TEST_ARTIFICIAL_DELAY;
 
-				if (s_use_zeroed_pages)
-				{
-					auto const new_page_end_block = get_end_control_block(i_new_page);
-					new_page_end_block->m_next = 0;
-					ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
-				}
-				else
-				{
-					ALLOCATOR_TYPE::deallocate_page(i_new_page);
-				}
+				auto const new_page_end_block = get_end_control_block(i_new_page);
+				new_page_end_block->m_next = 0;
+				ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
 			}
 
 			static void commit_put_impl(const Block & i_put) noexcept

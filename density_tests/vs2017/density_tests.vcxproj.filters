@@ -145,9 +145,6 @@
     <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_relaxed.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_linearizable.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
       <Filter>density\detail</Filter>
     </ClInclude>
@@ -155,6 +152,9 @@
       <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\nb_queue_tail_single.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_seq_cst.h">
       <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>

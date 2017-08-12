@@ -33,7 +33,7 @@ namespace density
 
 	enum consistency_model
 	{
-		consistency_model_linearizable,
+		consistency_model_seq_cst,
 		consistency_model_relaxed,
 	};
 
@@ -398,6 +398,13 @@ namespace density
 					m_allocator->unpin_page(m_pinned_page);
 			}
 		};
+
+			
+        struct ExternalBlock
+        {
+            void * m_block;
+            size_t m_size, m_alignment;
+        };
     }
 
 

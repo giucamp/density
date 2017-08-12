@@ -298,7 +298,7 @@ namespace density
 						
 						if (i_next_uint & detail::NbQueue_External)
 						{
-							auto const external_block = static_cast<typename Base::ExternalBlock*>(
+							auto const external_block = static_cast<ExternalBlock*>(
 								address_add(i_control_block, Base::s_element_min_offset));
 							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}
@@ -383,7 +383,7 @@ namespace density
 
 						if (next_uint & detail::NbQueue_External)
 						{
-							auto const external_block = static_cast<typename Base::ExternalBlock*>(
+							auto const external_block = static_cast<ExternalBlock*>(
 								address_add(control, Base::s_element_min_offset));
 							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}

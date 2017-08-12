@@ -11,19 +11,12 @@ namespace density
 	{
 		/** \internal Class template that implements put operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_linearizable>
+			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_seq_cst>
 				: protected ALLOCATOR_TYPE
 		{
 		public:
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
-
-			/** Structure used for elements that must be allocated outside the pages */
-			struct ExternalBlock
-			{
-				void * m_block = nullptr;
-				size_t m_size = 0, m_alignment = 0;
-			};
 
 			/** Minimum alignment used for the storage of the elements.
 				The storage of elements is always aligned according to the most-derived type. */
@@ -58,8 +51,8 @@ namespace density
 				This mechanism allows the default constructor to be small, fast, and noexcept. */
 			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
 
-			/** Whether this tail allocates zeroed pages. The head will deallocate zeroed pages accordingly. */
-			constexpr static bool s_use_zeroed_pages = true;
+			/** Whether the head should zero the content of pages before deallocating. */
+			constexpr static bool s_deallocate_zeroed_pages = false;
 
 			// some static checks
 			static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) && 
@@ -172,7 +165,7 @@ namespace density
 
 				detail::ScopedPin<ALLOCATOR_TYPE> scoped_pin(this);
 
-				bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
+				bool const fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
 				if (fits_in_page)
 				{
 					auto tail = m_tail.load(mem_relaxed);
@@ -465,9 +458,7 @@ namespace density
 
 			ControlBlock * create_page()
 			{
-				auto const new_page = s_use_zeroed_pages ? 
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed()) :
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page());
+				auto const new_page = static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed());
 				auto const new_page_end_block = get_end_control_block(new_page);
 				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
 				return new_page;
@@ -475,16 +466,9 @@ namespace density
 
 			void discard_created_page(ControlBlock * i_new_page) noexcept
 			{
-				if (s_use_zeroed_pages)
-				{
-					auto const new_page_end_block = get_end_control_block(i_new_page);
-					new_page_end_block->m_next = 0;
-					ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
-				}
-				else
-				{
-					ALLOCATOR_TYPE::deallocate_page(i_new_page);
-				}
+				auto const new_page_end_block = get_end_control_block(i_new_page);
+				new_page_end_block->m_next = 0;
+				ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
 			}
 
 			static void commit_put_impl(const Block & i_put) noexcept

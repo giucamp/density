@@ -18,13 +18,6 @@ namespace density
 
 			using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
 
-			/** Structure used for elements that must be allocated outside the pages */
-			struct ExternalBlock
-			{
-				void * m_block = nullptr;
-				size_t m_size = 0, m_alignment = 0;
-			};
-
 			/** Minimum alignment used for the storage of the elements.
 				The storage of elements is always aligned according to the most-derived type. */
 			constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on 
@@ -59,8 +52,8 @@ namespace density
 				This mechanism allows the default constructor to be small, fast, and noexcept. */
 			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
 
-			/** Whether this tail allocates zeroed pages. The head will deallocate zeroed pages accordingly. */
-			constexpr static bool s_use_zeroed_pages = true;
+			/** Whether the head should zero the content of pages before deallocating. */
+			constexpr static bool s_deallocate_zeroed_pages = false;
 
 			/** Type-safe (at least for the caller) version of s_invalid_control_block */
 			static ControlBlock * invalid_control_block() noexcept
@@ -119,9 +112,7 @@ namespace density
 				swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other));
 
 				// swap m_tail
-				auto const tmp = i_other.m_tail.load();
-				i_other.m_tail.store(m_tail.load());
-				m_tail.store(tmp);
+				swap(m_tail, i_other.m_tail);
 
 				// swap m_initial_page
 				auto const tmp1 = i_other.m_initial_page.load();
@@ -131,12 +122,9 @@ namespace density
 
 			~NonblockingQueueTail()
 			{
-				auto const tail = m_tail.load();
-				if (tail != invalid_control_block())
+				if (m_tail != invalid_control_block())
 				{
-					auto const end_block = get_end_control_block(tail);
-					end_block->m_next = 0;
-					ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
+					ALLOCATOR_TYPE::deallocate_page(m_tail);
 				}
 			}
 
@@ -172,42 +160,38 @@ namespace density
 					i_size = uint_upper_align(i_size, min_alignment);
 				}
 
-				auto tail = m_tail.load(detail::mem_relaxed);
+				auto tail = m_tail;
 				for (;;)
 				{
 					DENSITY_TEST_ARTIFICIAL_DELAY;
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block (and possibly the runtime type)
-					void * new_tail = address_add(tail, i_include_type ? s_element_min_offset : s_rawblock_min_offset);
+					void * address = address_add(tail, i_include_type ? s_element_min_offset : s_rawblock_min_offset);
 
 					// allocate space for the element
-					new_tail = address_upper_align(new_tail, i_alignment);
-					void * const user_storage = new_tail;
-					new_tail = address_add(new_tail, i_size);
-					new_tail = address_upper_align(new_tail, s_alloc_granularity);
+					address = address_upper_align(address, i_alignment);
+					void * const user_storage = address;
+					address = address_add(address, i_size);
+					address = address_upper_align(address, s_alloc_granularity);
+					auto const new_tail = static_cast<ControlBlock*>(address);
 
 					// check for page overflow
 					auto const new_tail_offset = address_diff(new_tail, address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
 					if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
 					{
-						/* No page overflow occurs with the new tail we have computed. */
-						if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail), 
-							detail::mem_acquire, detail::mem_relaxed))
-						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
+						/* note: while control_block->m_next is zero, no consumers may ever read this
+							variable. Maybe this does not need to be atomic. */
+						raw_atomic_store(&new_tail->m_next, 0, detail::mem_relaxed);
 
-							/* Assign m_next, and set the flags. This is very important for the consumers,
-								because they that need this write happens before any other part of the
-								allocated memory is modified. */
-							auto const control_block = tail;
-							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
-							DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
-							raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
+						auto const control_block = tail;
+						auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
+						DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
+						raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
-							DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
-							return { control_block, next_ptr, user_storage };
-						}
+						DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
+						m_tail = new_tail;
+						return { control_block, next_ptr, user_storage };
 					}
 					else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
 					{
@@ -233,7 +217,7 @@ namespace density
 				constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
 				constexpr auto over_aligned = alignment > min_alignment;
 
-				auto tail = m_tail.load(detail::mem_relaxed);
+				auto tail = m_tail;
 				for (;;)
 				{
 					DENSITY_TEST_ARTIFICIAL_DELAY;
@@ -241,38 +225,37 @@ namespace density
 					DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
 					// allocate space for the control block (and possibly the runtime type)
-					void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
+					void * address = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
 
 					// allocate space for the element
 					if (over_aligned)
 					{
-						new_tail = address_upper_align(new_tail, alignment);
+						address = address_upper_align(address, alignment);
 					}
-					void * const user_storage = new_tail;
-					new_tail = address_add(new_tail, size);
-					new_tail = address_upper_align(new_tail, s_alloc_granularity);
+					void * const user_storage = address;
+					address = address_add(address, size);
+					address = address_upper_align(address, s_alloc_granularity);
+					auto const new_tail = static_cast<ControlBlock*>(address);
 
 					// check for page overflow
 					auto const new_tail_offset = address_diff(new_tail, address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
 					if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
 					{
-						/* No page overflow occurs with the new tail we have computed. */
-						if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail), 
-							detail::mem_acquire, detail::mem_relaxed))
-						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
+						/* note: while control_block->m_next is zero, no consumers may ever read this
+							variable. Maybe this does not need to be atomic. */
+						raw_atomic_store(&new_tail->m_next, 0, detail::mem_relaxed);
 
-							/* Assign m_next, and set the flags. This is very important for the consumers,
-								because they that need this write happens before any other part of the
-								allocated memory is modified. */
-							auto const control_block = tail;
-							auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-							DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
-							raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
+						/* Assign m_next, and set the flags. This is very important for the consumers,
+							because they that need this write happens before any other part of the
+							allocated memory is modified. */
+						auto const control_block = tail;
+						auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
+						DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
+						raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
-							DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
-							return { control_block, next_ptr, user_storage };
-						}
+						DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
+						m_tail = new_tail;
+						return { control_block, next_ptr, user_storage };
 					}
 					else if (can_fit_in_a_page) // if this allocation may fit in a page
 					{
@@ -319,23 +302,18 @@ namespace density
 				{
 					/* There is space between the (presumed) current tail and the end control block.
 						We try to pad it with a dead element. */
-					auto expected_tail = i_tail;
-					if (m_tail.compare_exchange_weak(expected_tail, page_end, detail::mem_relaxed, detail::mem_relaxed))
-					{
-						// m_tail was successfully updated, now we can setup the padding element
-						auto const block = static_cast<ControlBlock*>(i_tail);
-						raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
-						return page_end;
-					}
-					else
-					{
-						// we have in expected_tail an updated value of m_tail
-						return expected_tail;
-					}
+
+					DENSITY_ASSERT_INTERNAL(m_tail == i_tail);
+					m_tail = i_tail;
+					
+					auto const block = static_cast<ControlBlock*>(i_tail);
+					raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
+					return page_end;
 				}
 				else
 				{
 					// get or allocate a new page
+					DENSITY_ASSERT_INTERNAL(i_tail == page_end);
 					return get_or_allocate_next_page(i_tail);
 				}
 			}
@@ -355,46 +333,16 @@ namespace density
 				{
 					DENSITY_TEST_ARTIFICIAL_DELAY;
 
-					/* We are going to access the content of the end control, so we have to do a safe pin
-						(that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-					ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
-					auto const updated_tail = m_tail.load(detail::mem_relaxed);
-					if (updated_tail != i_end_control)
-					{
-						return updated_tail;
-					}
-					// now the end control block is pinned, we can safely access it
-
 					// allocate and setup a new page
 					auto new_page = create_page();
 
-					uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
-					if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
-						reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
-					{
-						DENSITY_TEST_ARTIFICIAL_DELAY;
+					i_end_control->m_next = reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead;
 
-						/* Some other thread has already linked a new page. We discard the page we
-							have just allocated. */
-						discard_created_page(new_page);
 
-						/* So i_end_control->m_next may now be the pointer to the next page
-							or 0 (if the page has been consumed in the meanwhile). */
-						if (expected_next == 0)
-						{
-							return updated_tail;
-						}
+					DENSITY_ASSERT_INTERNAL(m_tail == i_end_control);
+					m_tail = new_page;
 
-						new_page = reinterpret_cast<ControlBlock*>(expected_next & ~detail::NbQueue_AllFlags);
-						DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
-					}
-
-					DENSITY_TEST_ARTIFICIAL_DELAY;
-					auto expected_tail = i_end_control;
-					if (m_tail.compare_exchange_strong(expected_tail, new_page))
-						return new_page;
-					else
-						return expected_tail;
+					return m_tail;
 				}
 				else
 				{
@@ -405,57 +353,26 @@ namespace density
 			DENSITY_NO_INLINE ControlBlock * create_initial_page()
 			{
 				// m_initial_page = initial_page = create_page()
-				DENSITY_TEST_ARTIFICIAL_DELAY;
-				auto const first_page = create_page();
-				ControlBlock * initial_page = nullptr;
-				if (m_initial_page.compare_exchange_strong(initial_page, first_page))
-				{
-					initial_page = first_page;
-				}
-				else
-				{
-					discard_created_page(first_page);
-				}
+				auto const initial_page = create_page();
+				DENSITY_ASSERT_INTERNAL(m_initial_page.load() == nullptr);
+				m_initial_page.store(initial_page);
 
 				// m_tail = initial_page;
 				DENSITY_TEST_ARTIFICIAL_DELAY;
-				auto tail = invalid_control_block();
-				if (m_tail.compare_exchange_strong(tail, initial_page))
-				{
-					return initial_page;
-				}
-				else
-				{
-					return tail;
-				}
+				DENSITY_ASSERT_INTERNAL(m_tail == invalid_control_block());
+				m_tail = initial_page;
+
+				return m_tail;
 			}
 
 			ControlBlock * create_page()
 			{
 				DENSITY_TEST_ARTIFICIAL_DELAY;
 
-				auto const new_page = s_use_zeroed_pages ? 
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed()) :
-					static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page());
+				auto const new_page = ALLOCATOR_TYPE::allocate_page();
 				auto const new_page_end_block = get_end_control_block(new_page);
 				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-				return new_page;
-			}
-
-			void discard_created_page(ControlBlock * i_new_page) noexcept
-			{
-				DENSITY_TEST_ARTIFICIAL_DELAY;
-
-				if (s_use_zeroed_pages)
-				{
-					auto const new_page_end_block = get_end_control_block(i_new_page);
-					new_page_end_block->m_next = 0;
-					ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
-				}
-				else
-				{
-					ALLOCATOR_TYPE::deallocate_page(i_new_page);
-				}
+				return static_cast<ControlBlock *>(new_page);
 			}
 
 			static void commit_put_impl(const Block & i_put) noexcept
@@ -499,7 +416,7 @@ namespace density
 
 			ControlBlock * get_tail_for_consumers() const noexcept
 			{
-				return m_tail.load();
+				return m_tail;
 			}
 
 			ControlBlock * get_initial_page() const noexcept
@@ -553,7 +470,7 @@ namespace density
 			}
 
 		private: // data members
-			alignas(concurrent_alignment) std::atomic<ControlBlock*> m_tail;
+			alignas(concurrent_alignment) ControlBlock * m_tail;
 			std::atomic<ControlBlock*> m_initial_page;
 		};
 
