@@ -1,7 +1,7 @@
 
 #include "test_framework/density_test_common.h"
 #include "test_framework/progress.h"
-#include "tests/queue_generic_tests.h"
+#include "tests/generic_tests/queue_generic_tests.h"
 #include <iostream>
 #include <cstdlib>
 #include <density/heterogeneous_queue.h>

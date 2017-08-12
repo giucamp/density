@@ -20,9 +20,6 @@
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\tests\queue_generic_tests.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_framework\progress.cpp">
       <Filter>test_framework</Filter>
     </ClCompile>
@@ -49,6 +46,21 @@
     </ClCompile>
     <ClCompile Include="..\tests\nonblocking_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\queue_generic_tests.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\heter_queue_generic_tests.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\conc_heter_queue_generic_tests.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_relaxed.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_seqcst.cpp">
+      <Filter>tests\generic_tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -124,9 +136,6 @@
     <ClInclude Include="..\tests\complex_polymorphism.h">
       <Filter>tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\tests\queue_generic_tests.h">
-      <Filter>tests</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\dynamic_type.h">
       <Filter>test_framework</Filter>
     </ClInclude>
@@ -157,6 +166,9 @@
     <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_seq_cst.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\tests\generic_tests\queue_generic_tests.h">
+      <Filter>tests\generic_tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
@@ -173,6 +185,9 @@
     </Filter>
     <Filter Include="examples">
       <UniqueIdentifier>{e16a494e-a770-4365-bfb5-871bcfaf855e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests\generic_tests">
+      <UniqueIdentifier>{bde40fab-7dc3-46aa-9141-e3800b57ccc9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

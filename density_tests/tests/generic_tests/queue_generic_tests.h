@@ -1,9 +1,9 @@
 #pragma once
-#include "../test_framework/density_test_common.h"
-#include "../test_framework/queue_generic_tester.h"
-#include "../test_framework/test_allocators.h"
-#include "../test_framework/test_objects.h"
-#include "../test_framework/exception_tests.h"
+#include "../../test_framework/density_test_common.h"
+#include "../../test_framework/queue_generic_tester.h"
+#include "../../test_framework/test_allocators.h"
+#include "../../test_framework/test_objects.h"
+#include "../../test_framework/exception_tests.h"
 #include <density/heterogeneous_queue.h>
 #include <density/concurrent_heterogeneous_queue.h>
 #include <density/nonblocking_heterogeneous_queue.h>
