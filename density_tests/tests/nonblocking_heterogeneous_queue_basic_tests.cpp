@@ -197,7 +197,7 @@ namespace density_tests
 			DENSITY_TEST_ASSERT(queue.empty());
 		}
 
-		static void tests(std::ostream & i_ostream)
+		static void tests(std::ostream & /*i_ostream*/)
 		{			
 			using density::runtime_type;
 

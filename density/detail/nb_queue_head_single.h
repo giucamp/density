@@ -171,7 +171,7 @@ namespace density
 									if (Base::same_page(next, control))
 										should_continue = control < next;
 									else
-										should_continue = control != i_queue->get_tail_for_consumers();
+										should_continue = false;
 
 									if (!should_continue)
 									{
@@ -256,7 +256,7 @@ namespace density
 									if (Base::same_page(next, control))
 										should_continue = control < next;
 									else
-										should_continue = control != i_queue->get_tail_for_consumers();
+										should_continue = false;
 
 									if (!should_continue)
 									{

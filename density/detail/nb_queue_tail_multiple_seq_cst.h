@@ -506,10 +506,10 @@ namespace density
 				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
-			ControlBlock * get_tail_for_consumers() const noexcept
+			/*ControlBlock * get_tail_for_consumers() const noexcept
 			{
 				return reinterpret_cast<ControlBlock *>(m_tail.load() & ~(s_alloc_granularity - 1));
-			}
+			}*/
 
 			ControlBlock * get_initial_page() const noexcept
 			{

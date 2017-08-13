@@ -338,8 +338,6 @@ namespace density
 
 					i_end_control->m_next = reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead;
 
-
-					DENSITY_ASSERT_INTERNAL(m_tail == i_end_control);
 					m_tail = new_page;
 
 					return m_tail;
@@ -369,10 +367,13 @@ namespace density
 			{
 				DENSITY_TEST_ARTIFICIAL_DELAY;
 
-				auto const new_page = ALLOCATOR_TYPE::allocate_page();
+				auto const new_page = static_cast<ControlBlock *>(ALLOCATOR_TYPE::allocate_page());
 				auto const new_page_end_block = get_end_control_block(new_page);
 				new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
-				return static_cast<ControlBlock *>(new_page);
+				
+				raw_atomic_store(&new_page->m_next, 0, mem_release);
+
+				return new_page;
 			}
 
 			static void commit_put_impl(const Block & i_put) noexcept
@@ -412,11 +413,6 @@ namespace density
 				// remove NbQueue_Busy and add NbQueue_Dead
 				auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
 				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
-			}
-
-			ControlBlock * get_tail_for_consumers() const noexcept
-			{
-				return m_tail;
 			}
 
 			ControlBlock * get_initial_page() const noexcept

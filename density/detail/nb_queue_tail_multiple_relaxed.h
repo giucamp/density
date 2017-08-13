@@ -53,7 +53,7 @@ namespace density
 			constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
 
 			/** Whether the head should zero the content of pages before deallocating. */
-			constexpr static bool s_deallocate_zeroed_pages = false;
+			constexpr static bool s_deallocate_zeroed_pages = true;
 
 			/** Type-safe (at least for the caller) version of s_invalid_control_block */
 			static ControlBlock * invalid_control_block() noexcept
@@ -482,10 +482,10 @@ namespace density
 				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
-			ControlBlock * get_tail_for_consumers() const noexcept
+			/*ControlBlock * get_tail_for_consumers() const noexcept
 			{
 				return m_tail.load();
-			}
+			}*/
 
 			ControlBlock * get_initial_page() const noexcept
 			{
