@@ -33,8 +33,8 @@ namespace density
 
 	enum consistency_model
 	{
-		consistency_model_seq_cst,
 		consistency_model_relaxed,
+		consistency_model_seq_cst,
 	};
 
                 // address functions

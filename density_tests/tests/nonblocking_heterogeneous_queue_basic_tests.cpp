@@ -4,7 +4,7 @@
 #include "../test_framework/test_allocators.h"
 #include "../test_framework/progress.h"
 #include "complex_polymorphism.h"
-#include <density/nonblocking_heterogeneous_queue.h>
+#include <density/lf_heter_queue.h>
 #include <type_traits>
 #include <iterator>
 
@@ -16,7 +16,7 @@ namespace density_tests
 		struct NbQueueBasicTests
 	{
 		template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
-			using nonblocking_heterogeneous_queue = density::nonblocking_heterogeneous_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
+			using lf_heter_queue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
 
 		static void nonblocking_heterogeneous_queue_lifetime_tests()
 		{
@@ -25,7 +25,7 @@ namespace density_tests
 
 			{
 				void_allocator allocator;
-				nonblocking_heterogeneous_queue<> queue(allocator); // copy construct allocator
+				lf_heter_queue<> queue(allocator); // copy construct allocator
 				queue.push(1);
 				queue.push(2);
 
@@ -47,7 +47,7 @@ namespace density_tests
 
 				// test allocator getters
 				move_only_void_allocator movable_alloc(5);
-				nonblocking_heterogeneous_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+				lf_heter_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
 
 				auto allocator_copy = other_queue.get_allocator();
 				(void)allocator_copy;
@@ -62,7 +62,7 @@ namespace density_tests
 			}
 		}
 
-		/** Basic tests nonblocking_heterogeneous_queue<void, ...> with a non-polymorphic base */
+		/** Basic tests lf_heter_queue<void, ...> with a non-polymorphic base */
 		template <typename QUEUE>
 			static void nonblocking_heterogeneous_queue_basic_void_tests()
 		{
@@ -100,7 +100,7 @@ namespace density_tests
 			i_queue.dyn_push_move(type, &move_source);
 		}
 
-		/** Test nonblocking_heterogeneous_queue with a non-polymorphic base */
+		/** Test lf_heter_queue with a non-polymorphic base */
 		static void nonblocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
 		{
 			using namespace density::type_features;
@@ -109,7 +109,7 @@ namespace density_tests
 
 			using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
 				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			nonblocking_heterogeneous_queue<NonPolymorphicBase, RunTimeType> queue;
+			lf_heter_queue<NonPolymorphicBase, RunTimeType> queue;
 
 			queue.push(NonPolymorphicBase());
 			queue.emplace<SingleDerivedNonPoly>();
@@ -138,7 +138,7 @@ namespace density_tests
 			DENSITY_TEST_ASSERT(queue.empty());
 		}
 
-		/** Test nonblocking_heterogeneous_queue with a polymorphic base */
+		/** Test lf_heter_queue with a polymorphic base */
 		static void nonblocking_heterogeneous_queue_basic_polymorphic_base_tests()
 		{
 			using namespace density::type_features;
@@ -147,7 +147,7 @@ namespace density_tests
 
 			using RunTimeType = runtime_type<PolymorphicBase, feature_list<
 				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			nonblocking_heterogeneous_queue<PolymorphicBase, RunTimeType> queue;
+			lf_heter_queue<PolymorphicBase, RunTimeType> queue;
 
 			queue.push(PolymorphicBase());
 			queue.emplace<SingleDerived>();
@@ -207,18 +207,18 @@ namespace density_tests
 
 			nonblocking_heterogeneous_queue_basic_polymorphic_base_tests();
 		
-			nonblocking_heterogeneous_queue_basic_void_tests<nonblocking_heterogeneous_queue<>>();
+			nonblocking_heterogeneous_queue_basic_void_tests<lf_heter_queue<>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<nonblocking_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+			nonblocking_heterogeneous_queue_basic_void_tests<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<nonblocking_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+			nonblocking_heterogeneous_queue_basic_void_tests<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
 		}
 
 	}; // NbQueueBasicTests
 
 
 
-	/** Basic tests for nonblocking_heterogeneous_queue<...> */
+	/** Basic tests for lf_heter_queue<...> */
 	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");

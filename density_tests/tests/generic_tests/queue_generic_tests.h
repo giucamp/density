@@ -4,9 +4,9 @@
 #include "../../test_framework/test_allocators.h"
 #include "../../test_framework/test_objects.h"
 #include "../../test_framework/exception_tests.h"
-#include <density/heterogeneous_queue.h>
-#include <density/concurrent_heterogeneous_queue.h>
-#include <density/nonblocking_heterogeneous_queue.h>
+#include <density/heter_queue.h>
+#include <density/conc_heter_queue.h>
+#include <density/lf_heter_queue.h>
 #include <string>
 #include <cstdint>
 #include <ostream>
@@ -357,23 +357,23 @@ namespace density_tests
 		{
 			using namespace density;
 
-			single_queue_generic_test<nonblocking_heterogeneous_queue<void, runtime_type<>, void_allocator,
+			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
 					PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<nonblocking_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
 				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<nonblocking_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
+			single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
 				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<nonblocking_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
 				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<nonblocking_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
+			single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
 				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 		}

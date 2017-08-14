@@ -4,7 +4,7 @@
 #include "../test_framework/test_allocators.h"
 #include "../test_framework/progress.h"
 #include "complex_polymorphism.h"
-#include <density/heterogeneous_queue.h>
+#include <density/heter_queue.h>
 #include <type_traits>
 #include <iterator>
 
@@ -16,7 +16,7 @@ namespace density_tests
 
 		{
 			void_allocator allocator;
-			heterogeneous_queue<> queue(allocator); // copy construct allocator
+			heter_queue<> queue(allocator); // copy construct allocator
 			queue.push(1);
 			queue.push(2);
 
@@ -45,7 +45,7 @@ namespace density_tests
 
 			// test allocator getters
 			move_only_void_allocator movable_alloc(5);
-			heterogeneous_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+			heter_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
 
 			auto allocator_copy = other_queue.get_allocator();
 			(void)allocator_copy;
@@ -62,7 +62,7 @@ namespace density_tests
 		//move_only_void_allocator
 	}
 
-	/** Basic tests heterogeneous_queue<void, ...> with a non-polymorphic base */
+	/** Basic tests heter_queue<void, ...> with a non-polymorphic base */
 	template <typename QUEUE>
 		void heterogeneous_queue_basic_void_tests()
 	{
@@ -106,14 +106,14 @@ namespace density_tests
 		i_queue.dyn_push_move(type, &move_source);
 	}
 
-	/** Test heterogeneous_queue with a non-polymorphic base */
+	/** Test heter_queue with a non-polymorphic base */
 	void heterogeneous_queue_basic_nonpolymorphic_base_tests()
 	{
 		using namespace density;
 		using namespace type_features;
 		using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
 			default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-		heterogeneous_queue<NonPolymorphicBase, RunTimeType> queue;
+		heter_queue<NonPolymorphicBase, RunTimeType> queue;
 
 		queue.push(NonPolymorphicBase());
 		queue.emplace<SingleDerivedNonPoly>();
@@ -147,14 +147,14 @@ namespace density_tests
 		DENSITY_TEST_ASSERT(queue.empty());
 	}
 
-	/** Test heterogeneous_queue with a polymorphic base */
+	/** Test heter_queue with a polymorphic base */
 	void heterogeneous_queue_basic_polymorphic_base_tests()
 	{
 		using namespace density;
 		using namespace type_features;
 		using RunTimeType = runtime_type<PolymorphicBase, feature_list<
 			default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-		heterogeneous_queue<PolymorphicBase, RunTimeType> queue;
+		heter_queue<PolymorphicBase, RunTimeType> queue;
 
 		queue.push(PolymorphicBase());
 		queue.emplace<SingleDerived>();
@@ -212,7 +212,7 @@ namespace density_tests
 		DENSITY_TEST_ASSERT(queue.empty());
 	}
 
-	/** Basic tests for heterogeneous_queue<...> */
+	/** Basic tests for heter_queue<...> */
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
@@ -225,10 +225,10 @@ namespace density_tests
 
 		using namespace density;
 		
-		heterogeneous_queue_basic_void_tests<heterogeneous_queue<>>();
+		heterogeneous_queue_basic_void_tests<heter_queue<>>();
 
-		heterogeneous_queue_basic_void_tests<heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+		heterogeneous_queue_basic_void_tests<heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-		heterogeneous_queue_basic_void_tests<heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+		heterogeneous_queue_basic_void_tests<heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
 	}
 }

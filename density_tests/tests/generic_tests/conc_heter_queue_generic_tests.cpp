@@ -10,19 +10,19 @@ namespace density_tests
 
 		std::vector<size_t> const concurrent_thread_counts{ 1, 2 };
 
-		detail::single_queue_generic_test<concurrent_heterogeneous_queue<>>(
+		detail::single_queue_generic_test<conc_heter_queue<>>(
 			i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
-		detail::single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
+		detail::single_queue_generic_test<conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
 			i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
-		detail::single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
+		detail::single_queue_generic_test<conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
 			i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
-		detail::single_queue_generic_test<concurrent_heterogeneous_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
+		detail::single_queue_generic_test<conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
 			i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
-		detail::single_queue_generic_test<concurrent_heterogeneous_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
+		detail::single_queue_generic_test<conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
 			i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 	}
 }

@@ -5,91 +5,61 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/density_common.h>
-#include <density/raw_atomic.h>
-#include <density/runtime_type.h>
-#include <density/void_allocator.h>
-#include <type_traits>
-#include <limits>
-
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4324) // structure was padded due to alignment specifier
-#endif
+#include <density/heter_queue.h>
+#include <mutex>
 
 namespace density
 {
+    /** Class template implementing a concurrent heterogeneous FIFO pseudo-container. 	
 
-	namespace detail
-	{
-		template<typename COMMON_TYPE> struct NbQueueControl // used by nonblocking_heterogeneous_queue<T,...>
-		{
-			volatile uintptr_t m_next; // raw atomic
-			COMMON_TYPE * m_element;
-		};
+		conc_heter_queue is a concurrent version of heter_queue, with a mutex embedded within. 
+		It allows different threads to put and consume elements concurrently without any external synchronization.
 
-		template<> struct NbQueueControl<void> // used by nonblocking_heterogeneous_queue<void,...>
-		{
-			volatile uintptr_t m_next; // raw atomic
-		};
+		@tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is 
+			implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue. 
+			Otherwise it should be an user-defined-type, and only types deriving from it can be added.
+        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
+                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+		
+		\n <b>Thread safeness</b>: Put and consumes can be execute concurrently. Lifetime function can't.
+		\n <b>Exception safeness</b>: Any function of conc_heter_queue is noexcept or provides the strong exception guarantee.
+		
 
-		enum NbQueue_Flags : uintptr_t
-		{
-			NbQueue_Busy = 1, /**< set on NbQueueControl::m_next when a thread is producing or consuming an element */
-			NbQueue_Dead = 2,  /**< set on NbQueueControl::m_next when an element is not consumable.
-							   If NbQueue_Dead is set, then NbQueue_Busy is meaningless.
-							   This flag is not revertible: once it is set, it can't be removed. */
-			NbQueue_External = 4,  /**< set on NbQueueControl::m_next in case of external allocation */
-			NbQueue_InvalidNextPage = 8,  /**< initial value for the pointer to the next page */
-			NbQueue_AllFlags = NbQueue_Busy | NbQueue_Dead | NbQueue_External | NbQueue_InvalidNextPage
-		};
-
-		/** \internal Class template that implements the low-level interface for put transaction */
-		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-			concurrent_cardinality CARDINALITY, consistency_model CONSISTENCY_MODEL >
-				class NonblockingQueueTail;
-
-		/** \internal Class template that implements the low-level interface for consume operations */
-		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-			concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
-				class NonblockingQueueHead;
-	
-	} // namespace detail
-
-} // namespace density
-
-#include <density/detail/nb_queue_tail_single.h>
-#include <density/detail/nb_queue_tail_multiple_relaxed.h>
-#include <density/detail/nb_queue_tail_multiple_seq_cst.h>
-#include <density/detail/nb_queue_head_single.h>
-#include <density/detail/nb_queue_head_multiple.h>
-
-namespace density
-{
-	/** \brief Concurrent heterogeneous FIFO container-like class template. 
-	
-		In contrast to heterogeneous_queue, the default constructor of nonblocking_heterogeneous_queue is not noexcept, 
-		and the move constructor and move assignment does not leave the source empty.
-	*/
-	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
-			concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
-			concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple,
-			consistency_model CONSISTENCY_MODEL = consistency_model_seq_cst>
-		class nonblocking_heterogeneous_queue : private detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
-	{
-	private:
-		using Base = detail::NonblockingQueueHead<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
-		using ControlBlock = typename Base::ControlBlock;
-		using Block = typename Base::Block;
-		using Consume = typename Base::Consume;
+		Implementation and performance notes
+		--------------------------
+		conc_heter_queue is basically an heter_queue protected by an std::mutex to avoid data races.
+		
+		Non-reentrant operations keep the mutex locked during the whole operation (until the operation is 
+		canceled or commited). Reentrant operations minimize the durations of the locks: the mutex is locked once when
+		the operation starts, and another time to commit or cancel the operation. */
+	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
+        class conc_heter_queue
+    {
+		using InnerQueue = heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
 
 		/** This type is used to make some functions of the inner classes accessible only by the queue */
 		enum class PrivateType {};
 
 	public:
 
-		/** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
-		constexpr static size_t min_alignment = Base::min_alignment;
+		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_puts = true;
+		
+		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
+		static constexpr bool concurrent_consumes = true;
+		
+		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
+			constrained by concurrent_puts and concurrent_consumes. */
+		static constexpr bool concurrent_put_consumes = true;
+
+		/** Whether this queue is sequential consistent. */
+		static constexpr bool is_seq_cst = true;
+
+		/** Minimum guaranteed alignment for every element. The actual alignment of an element may be stricter
+			if the type requires it. */
+		constexpr static size_t min_alignment = InnerQueue::min_alignment;
 
 		using common_type = COMMON_TYPE;
 		using runtime_type = RUNTIME_TYPE;
@@ -101,43 +71,20 @@ namespace density
         using const_reference = const value_type&;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
-
-		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
-		static constexpr bool concurrent_puts = PROD_CARDINALITY == concurrent_cardinality_multiple;
 		
-		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
-		static constexpr bool concurrent_consumes = CONSUMER_CARDINALITY == concurrent_cardinality_multiple;
-		
-		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
-			constrained by concurrent_puts and concurrent_consumes. */
-		static constexpr bool concurrent_put_consumes = true;
-
-		/** Whether this queue is sequential consistent. */
-		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_model_seq_cst;
-		
-        static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
-            "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
-
-        static_assert(std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
-            "COMMON_TYPE can't be cv-qualified, an array or a reference");
-
-		static_assert(is_power_of_2(ALLOCATOR_TYPE::page_alignment) &&
-			ALLOCATOR_TYPE::page_alignment >= ALLOCATOR_TYPE::page_size &&
-			(ALLOCATOR_TYPE::page_alignment % min_alignment) == 0,
-			"The alignment of the pages must be a power of 2, greater or equal to the size of the pages, and a multiple of min_alignment");
-
-        static_assert(ALLOCATOR_TYPE::page_size > (min_alignment + alignof(ControlBlock)) * 4, "Invalid page size");
+		class iterator;
+        class const_iterator;
 
         /** Default constructor. The allocator is default-constructed.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: unspecified.
+            \n <b>Throws</b>: nothing.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory and never throws. 
 				
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue default_construct example 1 */
-		nonblocking_heterogeneous_queue() noexcept = default;
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue default_construct example 1 */
+		conc_heter_queue() noexcept = default;
 
 		/** Constructor with allocator parameter. The allocator is copy-constructed.
 			@param i_source_allocator source used to copy-construct the allocator.
@@ -148,10 +95,10 @@ namespace density
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue construct_copy_alloc example 1 */
-        nonblocking_heterogeneous_queue(const ALLOCATOR_TYPE & i_source_allocator)
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue construct_copy_alloc example 1 */
+        conc_heter_queue(const ALLOCATOR_TYPE & i_source_allocator)
 				noexcept (std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
-            : Base(i_source_allocator)
+            : m_queue(i_source_allocator)
         {
         }
 
@@ -159,28 +106,32 @@ namespace density
 			@param i_source_allocator source used to move-construct the allocator.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: nothing.
+            \n <b>Throws</b>: whatever the move constructor of the allocator throws.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
 				This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 				
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue construct_move_alloc example 1 */
-        nonblocking_heterogeneous_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
-            : Base(std::move(i_source_allocator))
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue construct_move_alloc example 1 */
+        conc_heter_queue(ALLOCATOR_TYPE && i_source_allocator)
+				noexcept (std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value)
+            : m_queue(std::move(i_source_allocator))
         {
-			static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
         }
 
         /** Move constructor. The allocator is move-constructed from the one of the source.
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
 
             <b>Complexity</b>: constant.
-            \n <b>Throws</b>: unspecified.
+            \n <b>Throws</b>: nothing.
             \n <i>Implementation notes</i>:
                 - After the call the source is left empty. 
 				
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue move_construct example 1 */
-		nonblocking_heterogeneous_queue(nonblocking_heterogeneous_queue && i_source) noexcept = default;
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue move_construct example 1 */
+		conc_heter_queue(conc_heter_queue && i_source) noexcept
+			: m_queue(std::move(i_source.m_queue))
+		{
+
+		}
 
         /** Move assignment. The allocator is move-assigned from the one of the source.
                 @param i_source source to move the elements from. After the call the source is left in some valid but indeterminate state.
@@ -193,43 +144,44 @@ namespace density
                 - After the call the source is left empty.
                 - The complexity is linear in the number of elements in this queue.
 
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue move_assign example 1 */
-        nonblocking_heterogeneous_queue & operator = (nonblocking_heterogeneous_queue && i_source) noexcept
-        {
-            Base::swap(i_source);
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue move_assign example 1 */
+		conc_heter_queue & operator = (conc_heter_queue && i_source) noexcept
+		{
+			m_queue = std::move(i_source.m_queue);
 			return *this;
-        }
+		}
 
 		/** Returns a copy of the allocator
 		
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue get_allocator example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue get_allocator example 1 */
 		allocator_type get_allocator() noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
 		{
-			return *this;
+			return m_queue.get_allocator();
 		}
 
 		/** Returns a reference to the allocator 
 		
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue get_allocator_ref example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue get_allocator_ref example 1 */
 		allocator_type & get_allocator_ref() noexcept
 		{
-			return *this;
+			return m_queue.get_allocator_ref();
 		}
 
 		/** Returns a const reference to the allocator
 
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue get_allocator_ref example 2 */
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue get_allocator_ref example 2 */
 		const allocator_type & get_allocator_ref() const noexcept
 		{
-			return *this;
+			return m_queue.get_allocator_ref();
 		}
 
 		/** Swaps two queues. 
 		
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue swap example 1 */
-		friend inline void swap(nonblocking_heterogeneous_queue & i_first, nonblocking_heterogeneous_queue & i_second) noexcept
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue swap example 1 */
+		friend inline void swap(conc_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
+			conc_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
 		{
-			i_first.Base::swap(i_second);
+            swap(i_first.m_queue, i_second.m_queue);
 		}
 
         /** Destructor.
@@ -237,26 +189,18 @@ namespace density
             <b>Complexity</b>: linear.
             \n <b>Effects on iterators</b>: any iterator pointing to this queue is invalidated.
             \n <b>Throws</b>: Nothing. */
-        ~nonblocking_heterogeneous_queue()
-        {
-            clear();
-
-			Consume consume;
-			if (consume.assign_queue(this))
-			{
-				consume.clean_dead_elements();
-			}
-        }
+		~conc_heter_queue() = default;
 
         /** Returns whether the queue contains no elements.
 
             <b>Complexity</b>: Unspecified.
             \n <b>Throws</b>: Nothing. 
 
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue empty example 1 */
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue empty example 1 */
         bool empty() const noexcept
         {
-			return Consume().is_queue_empty(this);
+			std::lock_guard<std::mutex> lock(m_mutex);
+            return m_queue.empty();
         }
 
         /** Deletes all the elements in the queue.
@@ -265,14 +209,11 @@ namespace density
             \n <b>Effects on iterators</b>: any iterator is invalidated
             \n <b>Throws</b>: Nothing. 
 		
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue clear example 1 */
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue clear example 1 */
         void clear() noexcept
         {
-			consume_operation consume;
-			while(try_start_consume(consume))
-            {
-                consume.commit();
-            }
+			std::lock_guard<std::mutex> lock(m_mutex);
+			m_queue.clear();
         }
 
         /** Move-only class template that can be bound to a put transaction, otherwise it's empty.
@@ -280,7 +221,7 @@ namespace density
 			@tparam ELEMENT_COMPLETE_TYPE Complete type of elements that can be handled by a transaction, or void.
 				ELEMENT_COMPLETE_TYPE must decay to itself (it can't be cv-qualified).
 			
-			Transactional put functions on nonblocking_heterogeneous_queue return a non-empty put_transaction that can be 
+			Transactional put functions on conc_heter_queue return a non-empty put_transaction that can be 
 			used to allocate raw memory in the queue, inspect or alter the element while it is still not observable
 			in the queue, and commit or cancel the push. 
 			
@@ -308,52 +249,59 @@ namespace density
 
             /** Copy construction is not allowed.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction copy_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction copy_construct example 1 */
             put_transaction(const put_transaction &) = delete;
 
             /** Copy assignment is not allowed.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction copy_assign example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction copy_assign example 1 */
             put_transaction & operator = (const put_transaction &) = delete;
 
             /** Move constructs a put_transaction, transferring the state from the source.
-                    @param i_source source to move from. It is left in a valid but indeterminate state. 
+                    @param i_source source to move from. It becomes empty after the call. 
 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_construct example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction move_construct example 1
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_construct example 2 */
-            template <typename OTHERTYPE, typename = typename std::enable_if<
-					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction move_construct example 2 */
+			template <typename OTHERTYPE, typename = typename std::enable_if<
+				std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				put_transaction(put_transaction<OTHERTYPE> && i_source) noexcept
-					: m_put(i_source.m_put), m_queue(i_source.m_queue)
-            {
-                i_source.m_queue = nullptr;
-            }
+					: m_lock(std::move(i_source.m_lock)), m_put_transaction(std::move(i_source.m_put_transaction))
+			{
+			}
 
             /** Move assigns a put_transaction, transferring the state from the source.
-                @param i_source source to move from. It is left in a valid but indeterminate state.
+                @param i_source source to move from. It becomes empty after the call. 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_assign example 1
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction move_assign example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction move_assign example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction move_assign example 2 */
 			template <typename OTHERTYPE, typename = typename std::enable_if<
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				put_transaction & operator = (put_transaction<OTHERTYPE> && i_source) noexcept
             {
-				using std::swap;
-				swap(m_put, i_source.m_put);
-				swap(m_queue, i_source.m_queue);
+				if (this != static_cast<void*>(&i_source)) // cast to void to allow comparing pointers to unrelated types
+				{
+					if(!empty())
+						cancel();
+
+					put_transaction source(std::move(i_source));
+
+					using namespace density;
+					swap(m_put_transaction, source.m_put_transaction);
+					swap(m_lock, source.m_lock);
+				}
 				return *this;
             }
 
 			/** Swaps two instances of put_transaction.
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction swap example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction swap example 1 */
 			friend void swap(put_transaction & i_first, put_transaction & i_second) noexcept
 			{
-				using std::swap;
-				swap(i_first.m_put, i_second.m_put);
-				swap(i_first.m_queue, i_second.m_queue);
+				using namespace std;
+				swap(i_first.m_put_transaction, i_second.m_put_transaction);
+				swap(i_first.m_lock, i_second.m_lock);
 			}
 
             /** Allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
@@ -377,12 +325,10 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction raw_allocate example 1*/
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction raw_allocate example 1*/
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
-                DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
-                return push_data.m_user_storage;
+                return m_put_transaction.raw_allocate(i_size, i_alignment);
             }
 
             /** Allocates a memory block associated to the element being added in the queue, and copies the content from a range 
@@ -408,24 +354,12 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction raw_allocate_copy example 1*/
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
-				using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
-                using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
-
-                auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
-
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
-				for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                    new(curr) ValueType(*i_begin);
-                return elements;
+                return m_put_transaction.raw_allocate_copy(i_begin, i_end);
             }
 
 			/** Allocates a memory block associated to the element being added in the queue, and copies the content from a range.
@@ -449,12 +383,12 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue raw_allocate_copy example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
-                return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
+                return m_put_transaction.raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.
@@ -467,9 +401,9 @@ namespace density
                 \n <b>Throws</b>: Nothing. */
             void commit() noexcept
             {
-				DENSITY_ASSERT(!empty());					
-				Base::commit_put_impl(m_put);
-				m_queue = nullptr;
+				DENSITY_ASSERT(m_put_transaction && m_lock.owns_lock());
+				m_put_transaction.commit();
+				m_lock.unlock();
             }
 
 			/** Cancel the transaction. This object becomes empty.
@@ -481,31 +415,27 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction cancel example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction cancel example 1 */
             void cancel() noexcept
             {
-                DENSITY_ASSERT(!empty());
-				Base::cancel_put_impl(m_put);
-				m_queue = nullptr;
+				DENSITY_ASSERT(m_put_transaction && m_lock.owns_lock());
+				m_put_transaction.cancel();
+				m_lock.unlock();
             }
 
             /** Returns true whether this object is not currently bound to a transaction. 
 
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction empty example 1 */
-            bool empty() const noexcept { return m_queue == nullptr; }
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction empty example 1 */
+            bool empty() const noexcept { return m_put_transaction.empty(); }
 
 			/** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction operator_bool example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction operator_bool example 1 */
             explicit operator bool() const noexcept
             {
-                return m_queue != nullptr;
+                return m_put_transaction.operator bool();
             }
 
-			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
-
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return m_queue; }
 
             /** Returns a pointer to the object being added.
                 \n <i>Notes</i>: 
@@ -519,13 +449,13 @@ namespace density
 				\pre The behavior is undefined if either:
 					- this transaction is empty 
 					
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction element_ptr example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction element_ptr example 1
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction element_ptr example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction element_ptr example 2 */
             common_type * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return m_put.m_user_storage;
+                return m_put_transaction.element_ptr();
             }
 
 			/** Returns a reference to the element being added. This function can be used to modify the element 
@@ -540,7 +470,7 @@ namespace density
 				\pre The behavior is undefined if:
 					- this transaction is empty 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue typed_put_transaction element example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue typed_put_transaction element example 1 */
 			#ifndef DOXYGEN_DOC_GENERATION
             template <typename EL = ELEMENT_COMPLETE_TYPE>
 				typename std::enable_if<!std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value, EL>::type &
@@ -548,59 +478,48 @@ namespace density
 				ELEMENT_COMPLETE_TYPE &
 			#endif
 					element() const noexcept
-            {
-				return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr());
-			}
+                { return *static_cast<ELEMENT_COMPLETE_TYPE *>(m_put_transaction.element_ptr()); }
 
             /** Returns the type of the object being added.
 
 				\pre The behavior is undefined if either:
 					- this transaction is empty 
 		
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction complete_type example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
-                DENSITY_ASSERT(!empty());
-                return *Base::type_after_control(m_put.m_control_block);
+                return m_put_transaction.complete_type();
             }
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. 
 			
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue put_transaction destroy example 1 */
-            ~put_transaction()
-            {
-				if (m_queue != nullptr)
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction destroy example 1 */
+			~put_transaction()
+			{
+				if (m_lock.owns_lock())
 				{
-					Base::cancel_put_impl(m_put);
+					m_put_transaction.cancel();
 				}
-            }
+			}
 
             // internal only - can't be called from outside density
-            put_transaction(PrivateType, nonblocking_heterogeneous_queue * i_queue, const Block & i_put, 
-					std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
-				: m_put(i_put), m_queue(i_queue) 
-			{
-                m_put.m_user_storage = i_element;
-                m_put.m_control_block->m_element = i_element;
+            put_transaction(PrivateType, std::unique_lock<std::mutex> && i_lock, typename InnerQueue::template put_transaction<ELEMENT_COMPLETE_TYPE> && i_put_transaction) noexcept
+                : m_lock(std::move(i_lock)), m_put_transaction(std::move(i_put_transaction))
+            {
+				if (!m_put_transaction)
+					m_lock.unlock();
 			}
 
-			// internal only - can't be called from outside density
-            put_transaction(PrivateType, nonblocking_heterogeneous_queue * i_queue, const Block & i_put, 
-					std::true_type /*i_is_void*/, void *) noexcept
-				: m_put(i_put), m_queue(i_queue) 
-			{
-			}
-
-        private:
-			Block m_put;
-			nonblocking_heterogeneous_queue * m_queue = nullptr;
+        private: // data members
+			std::unique_lock<std::mutex> m_lock;
+			typename InnerQueue::template put_transaction<ELEMENT_COMPLETE_TYPE> m_put_transaction;
 			template <typename OTHERTYPE> friend class put_transaction;
         };
 
         /** Move-only class that can be bound to a consume operation, otherwise it's empty. 
 
 			
-		Consume functions on nonblocking_heterogeneous_queue return a non-empty consume_operation that can be 
+		Consume functions on conc_heter_queue return a non-empty consume_operation that can be 
 			used to inspect or alter the element while it is not observable in the queue, and 
 			commit or cancel the consume. 
 			
@@ -620,65 +539,64 @@ namespace density
 
 			/** Constructs an empty consume_operation 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation default_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation default_construct example 1 */
 			consume_operation() noexcept = default;
 
             /** Copy construction is not allowed 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation copy_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation copy_construct example 1 */
             consume_operation(const consume_operation &) = delete;
 
             /** Copy assignment is not allowed
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation copy_assign example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation copy_assign example 1 */
             consume_operation & operator = (const consume_operation &) = delete;
 
-            /** Move constructor. The source is left in a valid but indeterminate state.
+            /** Move constructor. The source is left empty. 			
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation move_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation move_construct example 1 */
 			consume_operation(consume_operation && i_source) noexcept = default;
 
-            /** Move assignment. The source is left in a valid but indeterminate state.
+            /** Move assignment. The source is left empty. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation move_assign example 1 */
-			consume_operation & operator = (consume_operation && i_source) noexcept = default;
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation move_assign example 1 */
+			consume_operation & operator = (consume_operation && i_source) noexcept
+			{
+				m_lock = std::move(i_source.m_lock);
+				m_consume_operation = std::move(i_source.m_consume_operation);
+				return *this;
+			}
 
             /** Destructor: cancel the operation (if any).
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation destroy example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation destroy example 1 */
             ~consume_operation()
             {
-				if (m_consume_data.m_next_ptr != 0)
-				{
-					m_consume_data.cancel_consume_impl();
-				}
+				if (m_lock.owns_lock())
+					cancel();
             }
 
 			/** Swaps two instances of consume_operation.
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation swap example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation swap example 1 */
 			friend void swap(consume_operation & i_first, consume_operation & i_second) noexcept
 			{
-				i_first.m_consume_data.swap(i_second.m_consume_data);
+				std::swap(i_first.m_lock, i_second.m_lock);
+				std::swap(i_first.m_consume_operation, i_second.m_consume_operation);
 			}
 
             /** Returns true whether this object does not hold the state of an operation.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation empty example 1 */
-            bool empty() const noexcept { return m_consume_data.m_next_ptr == 0; }
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation empty example 1 */
+            bool empty() const noexcept { return m_consume_operation.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation operator_bool example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept
-			{
-				return m_consume_data.m_next_ptr != 0;
-			}
-
-			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
-
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return static_cast<nonblocking_heterogeneous_queue*>(m_consume_data.m_queue); }
+            {
+                return m_consume_operation.operator bool();
+            }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -690,15 +608,9 @@ namespace density
                 \n <b>Throws</b>: Nothing. */
             void commit() noexcept
             {
-				DENSITY_ASSERT(!empty());
-
-				auto const & type = complete_type();
-				auto const element = element_ptr();
-				type.destroy(element);
-
-				type.RUNTIME_TYPE::~RUNTIME_TYPE();
-
-				m_consume_data.commit_consume_impl();
+                DENSITY_ASSERT(!empty());
+				m_consume_operation.commit();
+				m_lock.unlock();
             }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
@@ -717,19 +629,12 @@ namespace density
 				like invoke_destroy to do both the function call and the destruction of the capture in a single call,
 				making a single pseudo v-call instead of two. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation commit_nodestroy example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation commit_nodestroy example 1 */
             void commit_nodestroy() noexcept
             {
-				DENSITY_ASSERT(!empty());
-
-				bool destroy_type = !std::is_trivially_destructible<RUNTIME_TYPE>::value;
-				if (destroy_type)
-				{
-					auto const & type = complete_type();
-					type.RUNTIME_TYPE::~RUNTIME_TYPE();
-				}
-
-				m_consume_data.commit_consume_impl();
+                DENSITY_ASSERT(!empty());
+				m_consume_operation.commit_nodestroy();
+				m_lock.unlock();
             }
 
 			 /** Cancel the operation. This consume_operation becomes empty.
@@ -741,35 +646,34 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing. 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation cancel example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation cancel example 1 */
             void cancel() noexcept
             {
-				DENSITY_ASSERT(!empty());
-				m_consume_data.cancel_consume_impl();
+                DENSITY_ASSERT(!empty());
+				m_consume_operation.cancel();
+				m_lock.unlock();
             }
 
             /** Returns the type of the element being consumed.
 
                 \pre The behavior is undefined if this consume_operation is empty. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation complete_type example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
-				DENSITY_ASSERT(!empty());
-				return *Base::type_after_control(m_consume_data.m_control);
+                return m_consume_operation.complete_type();
             }
 
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
 				The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on nonblocking_heterogeneous_queue::min_alignment. 
+                \pos The returned address is aligned at least on conc_heter_queue::min_alignment. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation unaligned_element_ptr example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
             {
-				DENSITY_ASSERT(!empty());
-				return Base::get_unaligned_element(m_consume_data.m_control);
+				return m_consume_operation.unaligned_element_ptr();
             }
 
             /** Returns a pointer to the element being consumed.
@@ -778,11 +682,10 @@ namespace density
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation element_ptr example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation element_ptr example 1 */
             COMMON_TYPE * element_ptr() const noexcept
             {
-                DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control);
+                return m_consume_operation.element_ptr();
             }
 
 			/** Returns a reference to the element being consumed.
@@ -790,35 +693,36 @@ namespace density
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
 				\pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element.
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue consume_operation element example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
 				COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
-                DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
+                return m_consume_operation.template element<COMPLETE_ELEMENT_TYPE>();
             }
 
             // internal only - can't be called from outside density
-            consume_operation(PrivateType, nonblocking_heterogeneous_queue * i_queue) noexcept
+            consume_operation(PrivateType, std::unique_lock<std::mutex> && i_lock, typename InnerQueue::consume_operation && i_consume_operation) noexcept
+                : m_lock(std::move(i_lock)), m_consume_operation(std::move(i_consume_operation))
             {
-				m_consume_data.start_consume_impl(i_queue);
             }
 
 			// internal only - can't be called from outside density
-			bool start_consume_impl(PrivateType, nonblocking_heterogeneous_queue * i_queue)
+			bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
 			{
-				if(m_consume_data.m_next_ptr != 0)
-				{
-					m_consume_data.cancel_consume_impl();
-				}
-					
-				m_consume_data.start_consume_impl(i_queue);
+				if (m_lock.owns_lock())
+					cancel();
 
-				return m_consume_data.m_next_ptr != 0;
+				m_lock = std::unique_lock<std::mutex>(i_queue->m_mutex);
+				
+				bool const result = i_queue->m_queue.try_start_consume(m_consume_operation);
+				if (!result)
+					m_lock.unlock();
+				return result;
 			}
 
-		private:
-			Consume m_consume_data;
+        private:
+			std::unique_lock<std::mutex> m_lock;
+			typename InnerQueue::consume_operation m_consume_operation;
         };
 
         /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
@@ -840,7 +744,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue push example 1 */
         template <typename ELEMENT_TYPE>
             void push(ELEMENT_TYPE && i_source)
         {
@@ -865,7 +769,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue emplace example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
@@ -887,7 +791,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue dyn_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue dyn_push example 1 */
         void dyn_push(const runtime_type & i_type)
         {
             start_dyn_push(i_type).commit();
@@ -910,7 +814,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue dyn_push_copy example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue dyn_push_copy example 1 */
         void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
@@ -934,7 +838,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue dyn_push_move example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue dyn_push_move example 1 */
         void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
@@ -966,7 +870,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
             put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_push(ELEMENT_TYPE && i_source)
         {
@@ -997,37 +901,13 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_emplace example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
-			
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr; 
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
-
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(),
-				this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::unique_lock<std::mutex> lock(m_mutex);
+			return put_transaction<typename std::decay<ELEMENT_TYPE>::type>( PrivateType(), 
+				std::move(lock), m_queue.template start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)... ));
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1047,32 +927,11 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.default_construct(push_data.m_user_storage);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::unique_lock<std::mutex> lock(m_mutex);
+			return put_transaction<>(PrivateType(), std::move(lock), m_queue.start_dyn_push(i_type));
         }
 
 
@@ -1096,31 +955,11 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_copy example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_dyn_push_copy example 1 */
         put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-			
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;			
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.copy_construct(push_data.m_user_storage, i_source);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+			std::unique_lock<std::mutex> lock(m_mutex);
+			return put_transaction<>(PrivateType(), std::move(lock), m_queue.start_dyn_push_copy(i_type, i_source));
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, move-constructing it from the source..
@@ -1143,31 +982,11 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_dyn_push_move example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;			
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.move_construct(push_data.m_user_storage, i_source);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+			std::unique_lock<std::mutex> lock(m_mutex);
+			return put_transaction<>(PrivateType(), std::move(lock), m_queue.start_dyn_push_move(i_type, i_source));
         }
 		
 
@@ -1184,7 +1003,7 @@ namespace density
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue pop example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue pop example 1 */
         void pop() noexcept
         {
 			try_start_consume().commit();
@@ -1199,7 +1018,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_pop example 1 */
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_pop example 1 */
         bool try_pop() noexcept
         {
             if (auto operation = try_start_consume())
@@ -1215,10 +1034,14 @@ namespace density
 
 			A non-empty consume must be committed for the consume to have effect.
 
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_start_consume example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_start_consume example 1 */
         consume_operation try_start_consume() noexcept
         {
-            return consume_operation(PrivateType(), this);
+			std::unique_lock<std::mutex> lock(m_mutex);
+			auto consume = m_queue.try_start_consume();
+			if (!consume)
+				lock.unlock();
+			return consume_operation(PrivateType(), std::move(lock), std::move(consume));
         }
 
 		/** Tries to start a consume operation using an existing consume_operation.
@@ -1230,10 +1053,10 @@ namespace density
 			A non-empty consume must be committed for the consume to have effect.
 
 			This overload is similar to the one taking no arguments and returning a consume_operation.
-			For an nonblocking_heterogeneous_queue there is no performance difference between the two overloads. Anyway
+			For an conc_heter_queue there is no performance difference between the two overloads. Anyway
 			for lock-free concurrent queue this overload may be faster.
 
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_start_consume_ example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_start_consume_ example 1 */
 		bool try_start_consume(consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume_impl(PrivateType(), this);
@@ -1245,7 +1068,7 @@ namespace density
 			@tparam ELEMENT_COMPLETE_TYPE Complete type of elements that can be handled by a transaction, or void.
 				ELEMENT_COMPLETE_TYPE must decay to itself (it can't be cv-qualified).
 			
-			Reentrant transactional put functions on nonblocking_heterogeneous_queue return a non-empty reentrant_put_transaction that can be 
+			Reentrant transactional put functions on conc_heter_queue return a non-empty reentrant_put_transaction that can be 
 			used to allocate raw memory in the queue, inspect or alter the element while it is still not observable
 			in the queue, and commit or cancel the push. 
 			
@@ -1273,52 +1096,51 @@ namespace density
 
             /** Copy construction is not allowed.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction copy_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction copy_construct example 1 */
             reentrant_put_transaction(const reentrant_put_transaction &) = delete;
 
             /** Copy assignment is not allowed.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction copy_assign example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction copy_assign example 1 */
             reentrant_put_transaction & operator = (const reentrant_put_transaction &) = delete;
 
             /** Move constructs a reentrant_put_transaction, transferring the state from the source.
-                    @param i_source source to move from. It is left in a valid but indeterminate state.
+                    @param i_source source to move from. It becomes empty after the call. 
 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_construct example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction move_construct example 1
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_construct example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction move_construct example 2 */
             template <typename OTHERTYPE, typename = typename std::enable_if<
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				reentrant_put_transaction(reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
-					: m_put(i_source.m_put), m_queue(i_source.m_queue)
+					: m_queue(i_source.m_queue), m_put_transaction(std::move(i_source.m_put_transaction))
             {
                 i_source.m_queue = nullptr;
             }
 
             /** Move assigns a reentrant_put_transaction, transferring the state from the source.
-                @param i_source source to move from. It is left in a valid but indeterminate state.
+                @param i_source source to move from. It becomes empty after the call. 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_assign example 1
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction move_assign example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction move_assign example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction move_assign example 2 */
 			template <typename OTHERTYPE, typename = typename std::enable_if<
 					std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
 				reentrant_put_transaction & operator = (reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
             {
-				using std::swap;
-				swap(m_put, i_source.m_put);
-				swap(m_queue, i_source.m_queue);
+				m_queue = i_source.m_queue;
+				m_put_transaction = std::move(i_source.m_put_transaction);
+				i_source.m_queue = nullptr;
 				return *this;
             }
 
 			/** Swaps two instances of reentrant_put_transaction.
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction swap example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction swap example 1 */
 			friend void swap(reentrant_put_transaction & i_first, reentrant_put_transaction & i_second) noexcept
 			{
-				using std::swap;
-				swap(i_first.m_put, i_second.m_put);
-				swap(i_first.m_queue, i_second.m_queue);
+				std::swap(i_first.m_queue, i_second.m_queue);
+				std::swap(i_first.m_put_transaction, i_second.m_put_transaction);
 			}
 
             /** Allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
@@ -1342,12 +1164,12 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction raw_allocate example 1*/
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction raw_allocate example 1*/
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
-                DENSITY_ASSERT(!empty());
-				auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
-                return push_data.m_user_storage;
+				DENSITY_ASSERT(!empty());
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+				return m_put_transaction.raw_allocate(i_size, i_alignment);
             }
 
             /** Allocates a memory block associated to the element being added in the queue, and copies the content from a range 
@@ -1373,24 +1195,14 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction raw_allocate_copy example 1*/
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
-				using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
-                using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "reentrant_put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
-
-                auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
-
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
-				for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                    new(curr) ValueType(*i_begin);
-                return elements;
+				DENSITY_ASSERT(!empty());
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+				return m_put_transaction.raw_allocate_copy(i_begin, i_end);
             }
 
 			/** Allocates a memory block associated to the element being added in the queue, and copies the content from a range.
@@ -1414,12 +1226,14 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction raw_allocate_copy example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
-                return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
+				DENSITY_ASSERT(!empty());
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+				return m_put_transaction.raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.
@@ -1432,10 +1246,12 @@ namespace density
                 \n <b>Throws</b>: Nothing. */
             void commit() noexcept
             {
-				DENSITY_ASSERT(!empty());					
-				Base::commit_put_impl(m_put);
+                DENSITY_ASSERT(!empty());
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+				m_put_transaction.commit();
 				m_queue = nullptr;
             }
+
 
 			/** Cancel the transaction. This object becomes empty.
 
@@ -1446,22 +1262,26 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction cancel example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
-				Base::cancel_put_impl(m_put);
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+				m_put_transaction.cancel();
 				m_queue = nullptr;
             }
 
             /** Returns true whether this object does not hold the state of a transaction. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction empty example 1 */
-            bool empty() const noexcept { return m_queue == nullptr; }
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction empty example 1 */
+            bool empty() const noexcept
+			{
+				return m_queue == nullptr;
+			}
 
 			/** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction operator_bool example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction operator_bool example 1 */
             explicit operator bool() const noexcept
             {
                 return m_queue != nullptr;
@@ -1469,8 +1289,11 @@ namespace density
 
 			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return m_queue; }
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction queue example 1 */
+			conc_heter_queue * queue() const noexcept
+			{
+				return m_queue;
+			}
 
             /** Returns a pointer to the object being added.
                 \n <i>Notes</i>: 
@@ -1484,13 +1307,12 @@ namespace density
 				\pre The behavior is undefined if either:
 					- this transaction is empty 
 					
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction element_ptr example 1
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction element_ptr example 1
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction element_ptr example 2 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction element_ptr example 2 */
             common_type * element_ptr() const noexcept
             {
-                DENSITY_ASSERT(!empty());
-                return m_put.m_user_storage;
+                return m_put_transaction.element_ptr();
             }
 
 			/** Returns a reference to the element being added. This function can be used to modify the element 
@@ -1505,7 +1327,7 @@ namespace density
 				\pre The behavior is undefined if:
 					- this transaction is empty 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue typed_put_transaction element example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue typed_put_transaction element example 1 */
 			#ifndef DOXYGEN_DOC_GENERATION
             template <typename EL = ELEMENT_COMPLETE_TYPE>
 				typename std::enable_if<!std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value, EL>::type &
@@ -1513,59 +1335,47 @@ namespace density
 				ELEMENT_COMPLETE_TYPE &
 			#endif
 					element() const noexcept
-            {
-				return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr());
-			}
+                { return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr()); }
 
             /** Returns the type of the object being added.
 
 				\pre The behavior is undefined if either:
 					- this transaction is empty 
 		
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction complete_type example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
-                DENSITY_ASSERT(!empty());
-                return *Base::type_after_control(m_put.m_control_block);
+				return m_put_transaction.complete_type();
             }
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it. 
 			
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_put_transaction destroy example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction destroy example 1 */
             ~reentrant_put_transaction()
             {
-				if (m_queue != nullptr)
-				{
-					Base::cancel_put_impl(m_put);
-				}
+                if (m_put_transaction)
+                {
+					cancel();
+                }
             }
 
             // internal only - can't be called from outside density
-            reentrant_put_transaction(PrivateType, nonblocking_heterogeneous_queue * i_queue, const Block & i_put, 
-					std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
-				: m_put(i_put), m_queue(i_queue) 
-			{
-                m_put.m_user_storage = i_element;
-                m_put.m_control_block->m_element = i_element;
-			}
-
-			// internal only - can't be called from outside density
-            reentrant_put_transaction(PrivateType, nonblocking_heterogeneous_queue * i_queue, const Block & i_put, 
-					std::true_type /*i_is_void*/, void *) noexcept
-				: m_put(i_put), m_queue(i_queue) 
-			{
-			}
+            reentrant_put_transaction(PrivateType, conc_heter_queue * i_queue,
+				typename InnerQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE> && i_put_transaction) noexcept
+                : m_queue(i_queue), m_put_transaction(std::move(i_put_transaction))
+            {
+            }
 
         private:
-			Block m_put;
-			nonblocking_heterogeneous_queue * m_queue = nullptr;
+			conc_heter_queue * m_queue = nullptr;
+			typename InnerQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE> m_put_transaction;
 			template <typename OTHERTYPE> friend class reentrant_put_transaction;
         };
 
 
         /** Move-only class that can be bound to a reentrant consume operation, otherwise it's empty. 
 
-		Reentrant consume functions on nonblocking_heterogeneous_queue return a non-empty reentrant_consume_operation that can be 
+		Reentrant consume functions on conc_heter_queue return a non-empty reentrant_consume_operation that can be 
 			used to inspect or alter the element while it is not observable in the queue, and 
 			commit or cancel the consume. 
 			
@@ -1585,65 +1395,66 @@ namespace density
 
 			/** Constructs an empty reentrant_consume_operation 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation default_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation default_construct example 1 */
 			reentrant_consume_operation() noexcept = default;
 
             /** Copy construction is not allowed 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation copy_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation copy_construct example 1 */
             reentrant_consume_operation(const reentrant_consume_operation &) = delete;
 
             /** Copy assignment is not allowed
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation copy_assign example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation copy_assign example 1 */
             reentrant_consume_operation & operator = (const reentrant_consume_operation &) = delete;
 
-            /** Move constructor. It is left in a valid but indeterminate state.
+            /** Move constructor. The source is left empty. 			
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation move_construct example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation move_construct example 1 */
 			reentrant_consume_operation(reentrant_consume_operation && i_source) noexcept = default;
-            
-			/** Move assignment. It is left in a valid but indeterminate state.
+
+            /** Move assignment. The source is left empty. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation move_assign example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation move_assign example 1 */
 			reentrant_consume_operation & operator = (reentrant_consume_operation && i_source) noexcept = default;
 
             /** Destructor: cancel the operation (if any).
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation destroy example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation destroy example 1 */
             ~reentrant_consume_operation()
             {
-				if (m_consume_data.m_next_ptr != 0)
-				{
-					m_consume_data.cancel_consume_impl();
-				}
+                if(!empty())
+                {
+					cancel();
+                }
             }
 
 			/** Swaps two instances of reentrant_consume_operation.
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation swap example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation swap example 1 */
 			friend void swap(reentrant_consume_operation & i_first, reentrant_consume_operation & i_second) noexcept
 			{
-				i_first.m_consume_data.swap(i_second.m_consume_data);
+				std::swap(i_first.m_queue, i_second.m_queue);
+				std::swap(i_first.m_consume_operation, i_second.m_consume_operation);
 			}
 
             /** Returns true whether this object does not hold the state of an operation.
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation empty example 1 */
-            bool empty() const noexcept { return m_consume_data.m_next_ptr == 0; }
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation empty example 1 */
+            bool empty() const noexcept { return m_consume_operation.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !reentrant_consume_operation::empty. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation operator_bool example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept
             {
-                return m_consume_data.m_next_ptr != 0;
+                return m_consume_operation.operator bool();
             }
 
 			/** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation queue example 1 */
-			nonblocking_heterogeneous_queue * queue() const noexcept { return static_cast<nonblocking_heterogeneous_queue*>(m_consume_data.m_queue); }
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation queue example 1 */
+			conc_heter_queue * queue() const noexcept { return m_queue; }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -1656,14 +1467,8 @@ namespace density
             void commit() noexcept
             {
 				DENSITY_ASSERT(!empty());
-
-				auto const & type = complete_type();
-				auto const element = element_ptr();
-				type.destroy(element);
-
-				type.RUNTIME_TYPE::~RUNTIME_TYPE();
-
-				m_consume_data.commit_consume_impl();
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+                m_consume_operation.commit();
             }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
@@ -1682,19 +1487,12 @@ namespace density
 				like invoke_destroy to do both the function call and the destruction of the capture in a single call,
 				making a single pseudo v-call instead of two. 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation commit_nodestroy example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation commit_nodestroy example 1 */
             void commit_nodestroy() noexcept
             {
 				DENSITY_ASSERT(!empty());
-
-				bool destroy_type = !std::is_trivially_destructible<RUNTIME_TYPE>::value;
-				if (destroy_type)
-				{
-					auto const & type = complete_type();
-					type.RUNTIME_TYPE::~RUNTIME_TYPE();
-				}
-
-				m_consume_data.commit_consume_impl();
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+                m_consume_operation.commit_nodestroy();
             }
 
 			 /** Cancel the operation. This reentrant_consume_operation becomes empty.
@@ -1706,35 +1504,34 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing. 
 				
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation cancel example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation cancel example 1 */
             void cancel() noexcept
             {
 				DENSITY_ASSERT(!empty());
-				m_consume_data.cancel_consume_impl();
+				std::lock_guard<std::mutex> lock(m_queue->m_mutex);
+                m_consume_operation.cancel();
             }
 
             /** Returns the type of the element being consumed.
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation complete_type example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
-				DENSITY_ASSERT(!empty());
-				return *Base::type_after_control(m_consume_data.m_control);
+                return m_consume_operation.complete_type();
             }
 
             /** Returns a pointer that, if properly aligned to the alignment of the element type, points to the element.
 				The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on nonblocking_heterogeneous_queue::min_alignment. 
+                \pos The returned address is aligned at least on conc_heter_queue::min_alignment. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation unaligned_element_ptr example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
             {
-				DENSITY_ASSERT(!empty());
-				return Base::get_unaligned_element(m_consume_data.m_control);
+                return m_consume_operation.unaligned_element_ptr();
             }
 
             /** Returns a pointer to the element being consumed.
@@ -1743,11 +1540,10 @@ namespace density
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been committed or used as source for a move operation. 
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation element_ptr example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation element_ptr example 1 */
             COMMON_TYPE * element_ptr() const noexcept
             {
-                DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control);
+				return m_consume_operation.element_ptr();
             }
 
 			/** Returns a reference to the element being consumed.
@@ -1755,231 +1551,163 @@ namespace density
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been committed or used as source for a move operation.
 				\pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element.
 				
-				\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_consume_operation element example 1 */
+				\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
 				COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
-                DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
+                return m_consume_operation.template element<COMPLETE_ELEMENT_TYPE>();
             }
 
             // internal only - can't be called from outside density
-            reentrant_consume_operation(PrivateType, nonblocking_heterogeneous_queue * i_queue) noexcept
+            reentrant_consume_operation(PrivateType, conc_heter_queue * i_queue, 
+					typename InnerQueue::reentrant_consume_operation && i_consume_operation) noexcept
+                : m_queue(i_queue), m_consume_operation(std::move(i_consume_operation))
             {
-				m_consume_data.start_consume_impl(i_queue);
             }
 
 			// internal only - can't be called from outside density
-			bool start_consume_impl(PrivateType, nonblocking_heterogeneous_queue * i_queue)
+			bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
 			{
-				if(m_consume_data.m_next_ptr != 0)
+				// first we take the locks, because they may throw
+				std::unique_lock<std::mutex> lock;
+				if (m_queue != nullptr)
 				{
-					m_consume_data.cancel_consume_impl();
+					lock = std::unique_lock<std::mutex>(m_queue->m_mutex);
 				}
-					
-				m_consume_data.start_consume_impl(i_queue);
+				std::unique_lock<std::mutex> new_lock;
+				if (m_queue != i_queue && i_queue != nullptr)
+				{
+					new_lock = std::unique_lock<std::mutex>(i_queue->m_mutex);
+				}
 
-				return m_consume_data.m_next_ptr != 0;
+				// nothing can throw from now on
+				if (m_consume_operation)
+					m_consume_operation.cancel();
+				lock = std::move(new_lock);
+				m_queue = i_queue;
+				return m_queue->m_queue.try_start_reentrant_consume(m_consume_operation);
 			}
 
-		private:
-			Consume m_consume_data;
+        private:
+            conc_heter_queue * m_queue = nullptr;
+			typename InnerQueue::reentrant_consume_operation m_consume_operation;
         };
 
-        /** Same to nonblocking_heterogeneous_queue::push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::push, but allow reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             void reentrant_push(ELEMENT_TYPE && i_source)
         {
             return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to nonblocking_heterogeneous_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_emplace example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
             start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
-        /** Same to nonblocking_heterogeneous_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_dyn_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push example 1 */
         void reentrant_dyn_push(const runtime_type & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
         }
 
-        /** Same to nonblocking_heterogeneous_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_dyn_push_copy example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push_copy example 1 */
         void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
 
-        /** Same to nonblocking_heterogeneous_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_dyn_push_move example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push_move example 1 */
         void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
 
-        /** Same to nonblocking_heterogeneous_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_push(ELEMENT_TYPE && i_source)
         {
             return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to nonblocking_heterogeneous_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_emplace example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
-			
-			auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr; 
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
-
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(),
-				this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::lock_guard<std::mutex> lock(m_mutex);
+			auto put_transaction = m_queue.template start_reentrant_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+			return reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(), 
+				this, std::move(put_transaction) );
         }
 
-        /** Same to nonblocking_heterogeneous_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.default_construct(push_data.m_user_storage);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return reentrant_put_transaction<void>(PrivateType(), 
-				this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::lock_guard<std::mutex> lock(m_mutex);
+			auto put_transaction = m_queue.start_reentrant_dyn_push(i_type);
+			return reentrant_put_transaction<>(PrivateType(), 
+				this, std::move(put_transaction) );
         }
 
 
-        /** Same to nonblocking_heterogeneous_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_copy example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-			auto push_data = Base::template inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.copy_construct(push_data.m_user_storage, i_source);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return reentrant_put_transaction<void>(PrivateType(),
-				this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::lock_guard<std::mutex> lock(m_mutex);
+			auto put_transaction = m_queue.start_reentrant_dyn_push_copy(i_type, i_source);
+			return reentrant_put_transaction<>(PrivateType(), 
+				this, std::move(put_transaction) );
         }
 
-        /** Same to nonblocking_heterogeneous_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
-            \snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue start_reentrant_dyn_push_move example 1 */
+            \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-			auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
-
-			COMMON_TYPE * element = nullptr;
-			runtime_type * type = nullptr;
-			try
-			{
-				auto const type_storage = Base::type_after_control(push_data.m_control_block);
-				DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-				type = new (type_storage) runtime_type(i_type);
-				
-				DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-				element = i_type.move_construct(push_data.m_user_storage, i_source);
-			}
-			catch (...)
-			{
-				if (type != nullptr)
-					type->RUNTIME_TYPE::~RUNTIME_TYPE();
-				Base::cancel_put_nodestroy_impl(push_data);
-				throw;
-			}
-
-            return reentrant_put_transaction<void>(PrivateType(),
-				this, push_data, std::is_void<COMMON_TYPE>(), element);
+			std::lock_guard<std::mutex> lock(m_mutex);
+			auto put_transaction = m_queue.start_reentrant_dyn_push_move(i_type, i_source);
+			return reentrant_put_transaction<>(PrivateType(), 
+				this, std::move(put_transaction) );
         }
 		
         /** Removes and destroy the first element of the queue. This is the reentrant version of pop.
@@ -1996,7 +1724,7 @@ namespace density
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing 
 			
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue reentrant_pop example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_pop example 1 */
 		void reentrant_pop() noexcept
         {
 			try_start_reentrant_consume().commit();
@@ -2012,7 +1740,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing
-		\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_reentrant_pop example 1 */
+		\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_reentrant_pop example 1 */
         bool try_reentrant_pop() noexcept
         {
             if (auto operation = try_start_reentrant_consume())
@@ -2031,10 +1759,11 @@ namespace density
 
 			A non-empty consume must be committed for the consume to have effect.
 
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_start_reentrant_consume example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_start_reentrant_consume example 1 */
         reentrant_consume_operation try_start_reentrant_consume() noexcept
         {
-			 return reentrant_consume_operation(PrivateType(), this);
+			std::lock_guard<std::mutex> lock(m_mutex);
+			return reentrant_consume_operation(PrivateType(), this, m_queue.try_start_reentrant_consume());
         }
 		
 		/** Tries to start a consume operation using an existing consume_operation.
@@ -2048,18 +1777,19 @@ namespace density
 			A non-empty consume must be committed for the consume to have effect.
 
 			This overload is similar to the one taking no arguments and returning a consume_operation.
-			For an nonblocking_heterogeneous_queue there is no performance difference between the two overloads. Anyway
+			For an conc_heter_queue there is no performance difference between the two overloads. Anyway
 			for lock-free concurrent queue this overload may be faster.
 
-			\snippet nonblocking_heterogeneous_queue_examples.cpp nonblocking_heterogeneous_queue try_start_reentrant_consume_ example 1 */
+			\snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue try_start_reentrant_consume_ example 1 */
 		bool try_start_reentrant_consume(reentrant_consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume_impl(PrivateType(), this);
         }
-	};
+
+	private:
+		mutable std::mutex m_mutex;
+		InnerQueue m_queue;
+    };
+
 
 } // namespace density
-
-#ifdef _MSC_VER
-	#pragma warning(pop)
-#endif

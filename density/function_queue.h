@@ -5,13 +5,13 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/heterogeneous_queue.h>
+#include <density/heter_queue.h>
 #include <density/detail/function_queue_impl.h>
 
 namespace density
 {
 	template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
-		using function_queue = detail::FunctionQueueImpl< heterogeneous_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+		using function_queue = detail::FunctionQueueImpl< heter_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
 
 #if 0
 
@@ -39,7 +39,7 @@ namespace density
             std::cout << queue_2.consume_front(40., 2.) << std::endl;
         \endcode
 
-        small_function_queue internally uses a void heterogeneous_queue (a queue that can contain elements of any type).
+        small_function_queue internally uses a void heter_queue (a queue that can contain elements of any type).
         function_queue_impl never moves or reallocates its elements, and has both better performances and better behavior
         respect to small_function_queue when the number of elements is not small.
 

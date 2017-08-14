@@ -67,9 +67,6 @@
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\density_common.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -79,16 +76,10 @@
     <ClInclude Include="..\..\density\function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\heterogeneous_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\nonblocking_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\nonblocking_heterogeneous_queue.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\raw_atomic.h">
@@ -151,23 +142,32 @@
     <ClInclude Include="..\test_framework\queue_generic_tester.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_relaxed.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_head_single.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_single.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_seq_cst.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\tests\generic_tests\queue_generic_tests.h">
       <Filter>tests\generic_tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\lf_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\conc_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_seq_cst.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_relaxed.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_head_single.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h">
+      <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

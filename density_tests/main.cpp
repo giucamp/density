@@ -4,8 +4,8 @@
 #include "tests/generic_tests/queue_generic_tests.h"
 #include <iostream>
 #include <cstdlib>
-#include <density/heterogeneous_queue.h>
-#include <density/nonblocking_heterogeneous_queue.h>
+#include <density/heter_queue.h>
+#include <density/lf_heter_queue.h>
 
 namespace density_tests
 {
@@ -26,7 +26,7 @@ DENSITY_NO_INLINE void sandbox()
 	using namespace density;
 
 	{
-		heterogeneous_queue<> queue;
+		heter_queue<> queue;
 
 		for (int i = 0; i < 1000; i++)
 			queue.push(i);
@@ -34,7 +34,7 @@ DENSITY_NO_INLINE void sandbox()
 		queue.clear();
 	}
 	{
-		nonblocking_heterogeneous_queue<> q;
+		lf_heter_queue<> q;
 		int i;
 		for (i = 0; i < 1000; i++)
 			q.push(i);
@@ -49,13 +49,13 @@ DENSITY_NO_INLINE void sandbox()
 		assert(i == 1000);
 	}
 	{
-		nonblocking_heterogeneous_queue<> q;
+		lf_heter_queue<> q;
 		int i;
 		for (i = 0; i < 1000; i++)
 			q.push(i);
 
 		i = 0;
-		nonblocking_heterogeneous_queue<>::consume_operation consume;
+		lf_heter_queue<>::consume_operation consume;
 		while (q.try_start_consume(consume))
 		{
 			assert(consume.element<int>() == i);
@@ -66,16 +66,16 @@ DENSITY_NO_INLINE void sandbox()
 	}
 
 	{
-		nonblocking_heterogeneous_queue<> q1;
+		lf_heter_queue<> q1;
 	}
 	{
-		nonblocking_heterogeneous_queue<void> queue;
+		lf_heter_queue<void> queue;
 		queue.push(std::string());
 		queue.push(std::make_pair(4., 1));
 		assert(!queue.empty());
 	}
 	{
-	nonblocking_heterogeneous_queue<> queue;
+	lf_heter_queue<> queue;
 	queue.push(42);
 	assert(queue.try_start_consume().element<int>() == 42);
 	}

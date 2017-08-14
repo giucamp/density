@@ -11,7 +11,7 @@ namespace density
 	{
 		/** \internal Class template that implements put operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-			class NonblockingQueueTail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_seq_cst>
+			class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_seq_cst>
 				: protected ALLOCATOR_TYPE
 		{
 		public:
@@ -66,39 +66,39 @@ namespace density
 				return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
 			}
 
-			NonblockingQueueTail() noexcept
+			LFQueue_Tail() noexcept
 				: m_tail(s_invalid_control_block),
 				  m_initial_page(nullptr)
 			{
 			}
 
-			NonblockingQueueTail(ALLOCATOR_TYPE && i_allocator) noexcept
+			LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept
 				: ALLOCATOR_TYPE(std::move(i_allocator)),
 				  m_tail(s_invalid_control_block),
 				  m_initial_page(nullptr)
 			{
 			}
 
-			NonblockingQueueTail(const ALLOCATOR_TYPE & i_allocator)
+			LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
 				: ALLOCATOR_TYPE(i_allocator),
 				  m_tail(s_invalid_control_block),
 				  m_initial_page(nullptr)
 			{
 			}
 
-			NonblockingQueueTail(NonblockingQueueTail && i_source) noexcept
-				: NonblockingQueueTail()
+			LFQueue_Tail(LFQueue_Tail && i_source) noexcept
+				: LFQueue_Tail()
 			{
 				swap(i_source);
 			}
 
-			NonblockingQueueTail & operator = (NonblockingQueueTail && i_source) noexcept
+			LFQueue_Tail & operator = (LFQueue_Tail && i_source) noexcept
 			{
-				NonblockingQueueTail::swap(i_source);
+				LFQueue_Tail::swap(i_source);
 				return *this;
 			}
 
-			void swap(NonblockingQueueTail & i_other) noexcept
+			void swap(LFQueue_Tail & i_other) noexcept
 			{
 				// swap the allocator
 				using std::swap;
@@ -115,7 +115,7 @@ namespace density
 				m_initial_page.store(tmp1);
 			}
 
-			~NonblockingQueueTail()
+			~LFQueue_Tail()
 			{
 				auto const tail = m_tail.load();
 				DENSITY_ASSERT(uint_is_aligned(tail, s_alloc_granularity)); // put in progress?
@@ -506,10 +506,6 @@ namespace density
 				raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
 			}
 
-			/*ControlBlock * get_tail_for_consumers() const noexcept
-			{
-				return reinterpret_cast<ControlBlock *>(m_tail.load() & ~(s_alloc_granularity - 1));
-			}*/
 
 			ControlBlock * get_initial_page() const noexcept
 			{

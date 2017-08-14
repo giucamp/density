@@ -561,23 +561,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
-    <ClInclude Include="..\..\density\concurrent_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\conc_heter_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
-    <ClInclude Include="..\..\density\detail\nb_queue_head_multiple.h" />
-    <ClInclude Include="..\..\density\detail\nb_queue_head_single.h" />
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_seq_cst.h" />
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_multiple_relaxed.h" />
-    <ClInclude Include="..\..\density\detail\nb_queue_tail_single.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_head_single.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_seq_cst.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_relaxed.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h" />
     <ClInclude Include="..\..\density\detail\page_manager.h" />
     <ClInclude Include="..\..\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
-    <ClInclude Include="..\..\density\heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\heter_queue.h" />
     <ClInclude Include="..\..\density\io_runtimetype_features.h" />
     <ClInclude Include="..\..\density\lifo.h" />
     <ClInclude Include="..\..\density\nonblocking_function_queue.h" />
-    <ClInclude Include="..\..\density\nonblocking_heterogeneous_queue.h" />
+    <ClInclude Include="..\..\density\lf_heter_queue.h" />
     <ClInclude Include="..\..\density\raw_atomic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
     <ClInclude Include="..\..\density\void_allocator.h" />
