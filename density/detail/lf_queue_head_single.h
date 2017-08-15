@@ -167,11 +167,9 @@ namespace density
 									/* We have found a zeroed ControlBlock */
 									DENSITY_TEST_ARTIFICIAL_DELAY;
 									next = i_queue->m_head.load(mem_relaxed);
-									bool should_continue;
+									bool should_continue = false;
 									if (Base::same_page(next, control))
 										should_continue = control < next;
-									else
-										should_continue = false;
 
 									if (!should_continue)
 									{
@@ -252,11 +250,9 @@ namespace density
 								{
 									/* We have found a zeroed ControlBlock */
 									next = i_queue->m_head;
-									bool should_continue;
+									bool should_continue = false;
 									if (Base::same_page(next, control))
 										should_continue = control < next;
-									else
-										should_continue = false;
 
 									if (!should_continue)
 									{
@@ -304,18 +300,29 @@ namespace density
 						}
 
 						DENSITY_TEST_ARTIFICIAL_DELAY;
-						raw_atomic_store(&i_control_block->m_next, 0);
+
+						if (Base::s_deallocate_zeroed_pages)
+						{
+							raw_atomic_store(&i_control_block->m_next, 0);
+						}
+
+						DENSITY_TEST_ARTIFICIAL_DELAY;
+
 						if (Base::same_page(i_control_block, i_next))
 						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
-							auto const memset_size = address_diff(i_next, memset_dest);
-							std::memset(memset_dest, 0, memset_size);
+							if (Base::s_deallocate_zeroed_pages)
+							{
+								auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
+								auto const memset_size = address_diff(i_next, memset_dest);
+								std::memset(memset_dest, 0, memset_size);
+							}
 						}
 						else
 						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+							if (Base::s_deallocate_zeroed_pages)
+								m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+							else
+								m_queue->ALLOCATOR_TYPE::deallocate_page(i_control_block);
 						}
 						return true;
 					}
@@ -380,47 +387,46 @@ namespace density
 						}
 						m_queue->m_head = next;
 
-
 						if (next_uint & detail::NbQueue_External)
 						{
 							auto const external_block = static_cast<ExternalBlock*>(
 								address_add(control, Base::s_element_min_offset));
 							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}
-
-						bool const is_same_page = Base::same_page(control, next);
-						DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-						DENSITY_ASSERT_INTERNAL(is_same_page == (control != Base::get_end_control_block(control)));
 						
 						static_assert(offsetof(ControlBlock, m_next) == 0, "");
 						//std::memset(control, 0, address_diff(address_of_next, control));
 
 						DENSITY_TEST_ARTIFICIAL_DELAY;
 
+						auto const prev_control = control;
+						control = next;
+
+						if (Base::s_deallocate_zeroed_pages)
+						{
+							raw_atomic_store(&prev_control->m_next, 0);
+						}
+
+						bool const is_same_page = Base::same_page(control, prev_control);
+						DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(control, ALLOCATOR_TYPE::page_alignment));
+						DENSITY_ASSERT_INTERNAL(is_same_page == (prev_control != Base::get_end_control_block(prev_control)));
 						if (DENSITY_LIKELY(is_same_page))
 						{
-							raw_atomic_store(&control->m_next, 0);
-
-							auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
-							auto const memset_size = address_diff(next, memset_dest);
-							DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
-							DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
-							std::memset(memset_dest, 0, memset_size);
-
-							control = next;
+							if (Base::s_deallocate_zeroed_pages)
+							{
+								auto const memset_dest = const_cast<uintptr_t*>(&prev_control->m_next) + 1;
+								auto const memset_size = address_diff(next, memset_dest);
+								DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
+								DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
+								std::memset(memset_dest, 0, memset_size);
+							}
 						}
 						else
 						{
-							#if DENSITY_DEBUG_INTERNAL
-								auto const updated_next_uint = raw_atomic_load(&control->m_next);
-								auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
-								DENSITY_ASSERT_INTERNAL(updated_next == next);
-							#endif
-
-							raw_atomic_store(&control->m_next, 0);
-							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);							
-
-							control = next;
+							if (Base::s_deallocate_zeroed_pages)
+								m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(prev_control);
+							else
+								m_queue->ALLOCATOR_TYPE::deallocate_page(prev_control);
 						}
 					}
 

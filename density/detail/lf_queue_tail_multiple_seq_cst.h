@@ -121,9 +121,7 @@ namespace density
 				DENSITY_ASSERT(uint_is_aligned(tail, s_alloc_granularity)); // put in progress?
 				if (tail != s_invalid_control_block)
 				{
-					auto const end_block = get_end_control_block(reinterpret_cast<ControlBlock*>(tail));
-					end_block->m_next = 0;
-					ALLOCATOR_TYPE::deallocate_page_zeroed(end_block);
+					ALLOCATOR_TYPE::deallocate_page(reinterpret_cast<ControlBlock*>(tail));
 				}
 			}
 

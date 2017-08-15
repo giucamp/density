@@ -147,7 +147,7 @@ namespace density
 
 				bool is_queue_empty(const LFQueue_Head * i_queue) noexcept
 				{
-					// we may do changes to queue which are not observable from outside
+					// we may do changes to the queue which are not observable from outside
 					return is_queue_empty(const_cast<LFQueue_Head *>(i_queue));
 				}
 
@@ -200,11 +200,9 @@ namespace density
 									/* We have found a zeroed ControlBlock */
 									DENSITY_TEST_ARTIFICIAL_DELAY;
 									next = i_queue->m_head.load(mem_relaxed);
-									bool should_continue;
+									bool should_continue = false;
 									if (Base::same_page(next, control))
 										should_continue = control < next;
-									else
-										should_continue = false;
 
 									if (!should_continue)
 									{
@@ -298,11 +296,9 @@ namespace density
 									/* We have found a zeroed ControlBlock */
 									DENSITY_TEST_ARTIFICIAL_DELAY;
 									next = i_queue->m_head.load(mem_relaxed);
-									bool should_continue;
+									bool should_continue = false;
 									if (Base::same_page(next, control))
 										should_continue = control < next;
-									else
-										should_continue = false;
 
 									if (!should_continue)
 									{
@@ -351,6 +347,7 @@ namespace density
 						detail::mem_seq_cst, detail::mem_relaxed))
 					{
 						DENSITY_TEST_ARTIFICIAL_DELAY;
+
 						if (i_next_uint & detail::NbQueue_External)
 						{
 							auto const external_block = static_cast<ExternalBlock*>(
@@ -358,18 +355,28 @@ namespace density
 							m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
 						}
 
-						raw_atomic_store(&i_control_block->m_next, 0);
+						if (Base::s_deallocate_zeroed_pages)
+						{
+							raw_atomic_store(&i_control_block->m_next, 0);
+						}
+
+						DENSITY_TEST_ARTIFICIAL_DELAY;
+						
 						if (Base::same_page(i_control_block, i_next))
 						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
-							auto const memset_size = address_diff(i_next, memset_dest);
-							std::memset(memset_dest, 0, memset_size);
+							if (Base::s_deallocate_zeroed_pages)
+							{
+								auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
+								auto const memset_size = address_diff(i_next, memset_dest);
+								std::memset(memset_dest, 0, memset_size);
+							}
 						}
 						else
 						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+							if (Base::s_deallocate_zeroed_pages)
+								m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+							else
+								m_queue->ALLOCATOR_TYPE::deallocate_page(i_control_block);
 						}
 						return true;
 					}
@@ -462,16 +469,18 @@ namespace density
 
 						if (DENSITY_LIKELY(is_same_page))
 						{
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							raw_atomic_store(&control->m_next, 0);
+							if (Base::s_deallocate_zeroed_pages)
+							{
+								DENSITY_TEST_ARTIFICIAL_DELAY;
+								raw_atomic_store(&control->m_next, 0);
 
-							DENSITY_TEST_ARTIFICIAL_DELAY;
-							auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
-							auto const memset_size = address_diff(next, memset_dest);
-							DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
-							DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
-							std::memset(memset_dest, 0, memset_size);
-
+								DENSITY_TEST_ARTIFICIAL_DELAY;
+								auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
+								auto const memset_size = address_diff(next, memset_dest);
+								DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
+								DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
+								std::memset(memset_dest, 0, memset_size);
+							}
 							control = next;
 						}
 						else
@@ -485,8 +494,15 @@ namespace density
 								DENSITY_ASSERT_INTERNAL(updated_next == next);
 							#endif
 
-							raw_atomic_store(&control->m_next, 0);
-							m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);							
+							if (Base::s_deallocate_zeroed_pages)
+							{
+								raw_atomic_store(&control->m_next, 0);
+							}
+
+							if (Base::s_deallocate_zeroed_pages)
+								m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);
+							else
+								m_queue->ALLOCATOR_TYPE::deallocate_page(control);
 
 							m_queue->ALLOCATOR_TYPE::unpin_page(control);
 							control = next;
