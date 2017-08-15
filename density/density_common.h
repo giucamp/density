@@ -23,18 +23,25 @@
 namespace density
 {
 	/** This enum describes the concurrency supported by a set of functions. */
-	enum concurrent_cardinality
+	enum concurrency_cardinality
 	{
-		concurrent_cardinality_single, /**< Functions with this concurrent cardinality can be called by only one thread,
+		concurrency_single, /**< Functions with this concurrent cardinality can be called by only one thread,
 											or by multiple threads if externally synchronized with a mutex. */
-		concurrent_cardinality_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
+		concurrency_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
 											without external synchronization. */
 	};
 
 	enum consistency_model
 	{
-		consistency_model_relaxed,
-		consistency_model_seq_cst,
+		consistency_relaxed,
+		consistency_sequential,
+	};
+
+	enum progress_guarantee
+	{
+		progress_obstruction_free,
+		progress_lock_free,
+		progress_wait_free
 	};
 
                 // address functions

@@ -46,12 +46,12 @@ namespace density
 
 		/** \internal Class template that implements the low-level interface for put transactions */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-			concurrent_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
+			concurrency_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 				class LFQueue_Tail;
 
 		/** \internal Class template that implements the low-level interface for consume operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-			concurrent_cardinality PROD_CARDINALITY, concurrent_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
+			concurrency_cardinality PROD_CARDINALITY, concurrency_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
 				class LFQueue_Head;
 	
 	} // namespace detail
@@ -86,9 +86,9 @@ namespace density
 
 	*/
 	template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
-			concurrent_cardinality PROD_CARDINALITY = concurrent_cardinality_multiple,
-			concurrent_cardinality CONSUMER_CARDINALITY = concurrent_cardinality_multiple,
-			consistency_model CONSISTENCY_MODEL = consistency_model_seq_cst>
+			concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
+			concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
+			consistency_model CONSISTENCY_MODEL = consistency_sequential>
 		class lf_heter_queue : private detail::LFQueue_Head<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
 	{
 	private:
@@ -117,17 +117,17 @@ namespace density
         using difference_type = std::ptrdiff_t;
 
 		/** Whether multiple threads can do put operations on the same queue without any further synchronization. */
-		static constexpr bool concurrent_puts = PROD_CARDINALITY == concurrent_cardinality_multiple;
+		static constexpr bool concurrent_puts = PROD_CARDINALITY == concurrency_multiple;
 		
 		/** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
-		static constexpr bool concurrent_consumes = CONSUMER_CARDINALITY == concurrent_cardinality_multiple;
+		static constexpr bool concurrent_consumes = CONSUMER_CARDINALITY == concurrency_multiple;
 		
 		/** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
 			constrained by concurrent_puts and concurrent_consumes. */
 		static constexpr bool concurrent_put_consumes = true;
 
 		/** Whether this queue is sequential consistent. */
-		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_model_seq_cst;
+		static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_sequential;
 		
         static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
             "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");

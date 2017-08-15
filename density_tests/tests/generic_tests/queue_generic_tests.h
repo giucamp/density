@@ -349,9 +349,9 @@ namespace density_tests
 			}
 		}
 
-		template <density::concurrent_cardinality PROD_CARDINALITY = density::concurrent_cardinality_multiple,
-				density::concurrent_cardinality CONSUMER_CARDINALITY = density::concurrent_cardinality_multiple,
-				density::consistency_model CONSISTENCY_MODEL = density::consistency_model_seq_cst>
+		template <density::concurrency_cardinality PROD_CARDINALITY = density::concurrency_multiple,
+				density::concurrency_cardinality CONSUMER_CARDINALITY = density::concurrency_multiple,
+				density::consistency_model CONSISTENCY_MODEL = density::consistency_sequential>
 				void nb_queues_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 					EasyRandom & i_random, size_t i_element_count, std::vector<size_t> const & i_nonblocking_thread_counts)
 		{

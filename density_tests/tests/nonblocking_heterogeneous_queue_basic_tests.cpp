@@ -10,8 +10,8 @@
 
 namespace density_tests
 {
-	template < density::concurrent_cardinality PROD_CARDINALITY,
-		density::concurrent_cardinality CONSUMER_CARDINALITY,
+	template < density::concurrency_cardinality PROD_CARDINALITY,
+		density::concurrency_cardinality CONSUMER_CARDINALITY,
 		density::consistency_model CONSISTENCY_MODEL>
 		struct NbQueueBasicTests
 	{
@@ -223,10 +223,10 @@ namespace density_tests
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
 
-		constexpr auto mult = density::concurrent_cardinality_multiple;
-		constexpr auto single = density::concurrent_cardinality_single;
-		constexpr auto seq_cst = density::consistency_model_seq_cst;
-		constexpr auto relaxed = density::consistency_model_relaxed;
+		constexpr auto mult = density::concurrency_multiple;
+		constexpr auto single = density::concurrency_single;
+		constexpr auto seq_cst = density::consistency_sequential;
+		constexpr auto relaxed = density::consistency_relaxed;
 
 		NbQueueBasicTests<		mult,		mult,			seq_cst		>::tests(i_ostream);
 		NbQueueBasicTests<		single,		mult,			seq_cst		>::tests(i_ostream);

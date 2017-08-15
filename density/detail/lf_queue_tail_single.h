@@ -11,7 +11,7 @@ namespace density
 	{
 		/** \internal Class template that implements put operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, consistency_model CONSISTENCY_MODEL>
-			class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_single, CONSISTENCY_MODEL>
+			class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL>
 				: protected ALLOCATOR_TYPE
 		{
 		public:
@@ -181,8 +181,8 @@ namespace density
 					if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
 					{
 						/* note: while control_block->m_next is zero, no consumers may ever read this
-							variable. Maybe this does not need to be atomic. */
-						raw_atomic_store(&new_tail->m_next, 0, detail::mem_relaxed);
+							variable. So this does not need to be atomic store. */
+						new_tail->m_next = 0;
 
 						auto const control_block = tail;
 						auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
@@ -242,8 +242,8 @@ namespace density
 					if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
 					{
 						/* note: while control_block->m_next is zero, no consumers may ever read this
-							variable. Maybe this does not need to be atomic. */
-						raw_atomic_store(&new_tail->m_next, 0, detail::mem_relaxed);
+							variable. So this does not need to be atomic store. */
+						new_tail->m_next = 0;
 
 						/* Assign m_next, and set the flags. This is very important for the consumers,
 							because they that need this write happens before any other part of the
@@ -294,7 +294,7 @@ namespace density
 			/** Handles a page overflow of the tail. This function may allocate a new page.
 				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail
 					in then meanwhile.
-				@return an update value of tail, that makes the current thread progress. */
+				@return an updated value of tail, that makes the current thread progress. */
 			DENSITY_NO_INLINE ControlBlock * page_overflow(ControlBlock * const i_tail)
 			{
 				auto const page_end = get_end_control_block(i_tail);
@@ -319,10 +319,9 @@ namespace density
 			}
 
 
-			/** Tries to allocate a new page. In any case returns an update value of m_tail.
-				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail
-					in then meanwhile.
-				@return an update value of tail, that makes the current thread progress. */
+			/** Tries to allocate a new page. Returns the new value of m_tail.
+				@param i_tail the value read from m_tail. 
+				@return an updated value of tail, that makes the current thread progress. */
 			ControlBlock * get_or_allocate_next_page(ControlBlock * const i_end_control)
 			{
 				DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
@@ -348,7 +347,7 @@ namespace density
 				}
 			}
 
-			DENSITY_NO_INLINE ControlBlock * create_initial_page()
+			ControlBlock * create_initial_page()
 			{
 				// m_initial_page = initial_page = create_page()
 				auto const initial_page = create_page();

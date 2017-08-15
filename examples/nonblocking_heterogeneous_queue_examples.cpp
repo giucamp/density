@@ -20,8 +20,8 @@ namespace density_tests
 {
 	uint32_t compute_checksum(const void * i_data, size_t i_lenght);
 
-	template < density::concurrent_cardinality PROD_CARDINALITY,
-			density::concurrent_cardinality CONSUMER_CARDINALITY,
+	template < density::concurrency_cardinality PROD_CARDINALITY,
+			density::concurrency_cardinality CONSUMER_CARDINALITY,
 			density::consistency_model CONSISTENCY_MODEL>
 		struct NbQueueSamples
 	{
@@ -1487,10 +1487,10 @@ namespace density_tests
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue samples");
 		
-		constexpr auto mult = density::concurrent_cardinality_multiple;
-		constexpr auto single = density::concurrent_cardinality_single;
-		constexpr auto seq_cst = density::consistency_model_seq_cst;
-		constexpr auto relaxed = density::consistency_model_relaxed;
+		constexpr auto mult = density::concurrency_multiple;
+		constexpr auto single = density::concurrency_single;
+		constexpr auto seq_cst = density::consistency_sequential;
+		constexpr auto relaxed = density::consistency_relaxed;
 
 		NbQueueSamples<		mult,		mult,		seq_cst		>::samples(i_ostream);
 		NbQueueSamples<		single,		mult,		seq_cst		>::samples(i_ostream);

@@ -11,7 +11,7 @@ namespace density
 	{
 		/** \internal Class template that implements put operations */
 		template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-			class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrent_cardinality_multiple, consistency_model_seq_cst>
+			class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_sequential>
 				: protected ALLOCATOR_TYPE
 		{
 		public:
@@ -334,7 +334,7 @@ namespace density
 			/** Handles a page overflow of the tail. This function may allocate a new page.
 				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail
 					in then meanwhile.
-				@return an update value of tail, that makes the current thread progress. */
+				@return an updated value of tail, that makes the current thread progress. */
 			DENSITY_NO_INLINE uintptr_t page_overflow(uintptr_t const i_tail)
 			{
 				DENSITY_ASSERT_INTERNAL(uint_is_aligned(i_tail, s_alloc_granularity));
@@ -377,7 +377,7 @@ namespace density
 			/** Tries to allocate a new page. In any case returns an update value of m_tail.
 				@param i_tail the value read from m_tail. Note that other threads may have updated m_tail
 					in then meanwhile.
-				@return an update value of tail, that makes the current thread progress. */
+				@return an updated value of tail, that makes the current thread progress. */
 			ControlBlock * get_or_allocate_next_page(ControlBlock * const i_end_control)
 			{
 				DENSITY_ASSERT_INTERNAL(i_end_control != 0 &&

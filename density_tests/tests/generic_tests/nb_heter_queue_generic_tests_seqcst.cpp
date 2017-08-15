@@ -10,9 +10,9 @@ namespace density_tests
 
 		std::vector<size_t> const nonblocking_thread_counts{ 1, 2 };
 
-		constexpr auto mult = density::concurrent_cardinality_multiple;
-		constexpr auto single = density::concurrent_cardinality_single;
-		constexpr auto seq_cst = density::consistency_model_seq_cst;
+		constexpr auto mult = density::concurrency_multiple;
+		constexpr auto single = density::concurrency_single;
+		constexpr auto seq_cst = density::consistency_sequential;
 
 		detail::nb_queues_generic_tests<mult, mult, seq_cst>
 			(i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
