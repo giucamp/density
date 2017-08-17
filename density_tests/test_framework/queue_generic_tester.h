@@ -5,6 +5,7 @@
 #include "line_updater_stream_adapter.h"
 #include "test_objects.h"
 #include "histogram.h"
+#include "thread_affinity.h"
 #include <density/density_common.h> // for density::concurrent_alignment
 #include <vector>
 #include <thread>
@@ -12,6 +13,7 @@
 #include <ostream>
 #include <numeric>
 #include <memory>
+#include <limits>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -112,35 +114,51 @@ namespace density_tests
 
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
+				uint64_t thread_affinity = std::numeric_limits<uint64_t>::max();
 				size_t thread_put_count = 0, thread_consume_count = 0;
-				size_t delay_period = 1024 * 10;
-				std::chrono::microseconds delay(1000*20);
 
-				if (QUEUE::concurrent_puts)
+				auto concurrent_puts = QUEUE::concurrent_puts;
+				auto concurrent_consumes = QUEUE::concurrent_consumes;
+
+				if (concurrent_puts)
 				{
-					thread_put_count = (i_target_put_count / m_thread_count) +
-						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+					// distribute the puts to the threads - the first thread gets the remainder 
+					thread_put_count = i_target_put_count / m_thread_count;
+					if(thread_index == 0)
+						thread_put_count += i_target_put_count % m_thread_count;
 				}
 				else
 				{
-					// concurrent put not supported, we allow only the first thread to put
-					thread_put_count = thread_index == 0 ? i_target_put_count : 0;
-					delay_period *= thread_index == 0 ? i_target_put_count : 1;
+					// allow puts only to the first thread
+					if(thread_index == 0)
+						thread_put_count = i_target_put_count;
 				}
 
-				if (QUEUE::concurrent_consumes)
+				if (concurrent_consumes)
 				{
-					thread_consume_count = (i_target_put_count / m_thread_count) +
-						((thread_index == 0) ? (i_target_put_count % m_thread_count) : 0);
+					// distribute the consumes to the threads - the first thread gets the remainder
+					thread_consume_count = i_target_put_count / m_thread_count;
+					if(thread_index == 0)
+						thread_consume_count += i_target_put_count % m_thread_count;
 				}
 				else
 				{
-					// concurrent put not supported, we allow only the last thread to put
-					thread_consume_count = thread_index == (m_thread_count - 1) ? i_target_put_count : 0;
-					delay_period *= thread_index == (m_thread_count - 1) ? i_target_put_count : 1;
+					// allow consumes only to the first thread
+					if(thread_index == 0)
+						thread_consume_count = i_target_put_count;
 				}
 
-				threads[thread_index].start(thread_put_count, thread_consume_count, m_thread_count == 1 ? 0 : delay_period, delay);
+				if (m_thread_count > 2 && concurrent_puts != concurrent_consumes)
+				{
+					/* there are many threads, but the first thread has much more work. We reserve
+						the first cpu to it, to reduce the starvation of the other threads. */
+					if(thread_index == 0)
+						thread_affinity = 1;
+					else
+						thread_affinity ^= 1;
+				}
+
+				threads[thread_index].start(thread_put_count, thread_consume_count, thread_affinity);
 			}
 
 			// wait for the test to be completed
@@ -151,16 +169,18 @@ namespace density_tests
 				while(!complete)
 				{
 					size_t produced = 0, consumed = 0;
+					size_t active_threads = 0;
 					for (auto & thread : threads)
 					{
 						produced += thread.incremental_stats().m_produced.load();
 						consumed += thread.incremental_stats().m_consumed.load();
+						active_threads += thread.incremental_stats().m_thread_is_active.load() ? 1 : 0;
 					}
 					DENSITY_TEST_ASSERT(consumed <= i_target_put_count && produced <= i_target_put_count);
 					complete = consumed >= i_target_put_count && produced >= i_target_put_count;
 
 					progress.set_progress(consumed);
-					line << "Consumed: " << consumed << " (" << progress << "), enqueued: " << produced - consumed << std::endl;
+					line << "Active threads: " << active_threads << " Consumed: " << consumed << " (" << progress << "), enqueued: " << produced - consumed << std::endl;
 					if (!complete)
 					{
 						std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -226,6 +246,8 @@ namespace density_tests
 		{
 			std::atomic<size_t> m_produced{0};
 			std::atomic<size_t> m_consumed{0};
+			std::atomic<bool> m_thread_is_active{false};
+
 		};
 
 		struct FinalStats
@@ -266,10 +288,9 @@ namespace density_tests
 				m_incremental_stats = std::unique_ptr<IncrementalStats>(new IncrementalStats);
 			}
 
-			void start(size_t i_target_put_count, size_t i_target_consume_count, size_t i_max_delay_period, std::chrono::microseconds i_max_delay_time)
+			void start(size_t i_target_put_count, size_t i_target_consume_count, uint64_t i_affinity_mask)
 			{
-				m_thread = std::thread([=] { thread_procedure(i_target_put_count, i_target_consume_count,
-					i_max_delay_period, i_max_delay_time ); });
+				m_thread = std::thread([=] { thread_procedure(i_target_put_count, i_target_consume_count, i_affinity_mask); });
 			}
 
 			void join()
@@ -328,10 +349,11 @@ namespace density_tests
 
 		private:
 			
-			void thread_procedure(size_t const i_target_put_count, size_t const i_target_consume_count, 
-				size_t const i_max_delay_period, std::chrono::microseconds const i_max_delay_time)
+			void thread_procedure(size_t const i_target_put_count, size_t const i_target_consume_count, uint64_t i_affinity_mask)
 			{
-				ThreadArtificialDelay delay(m_random.get_int<size_t>(), i_max_delay_period, i_max_delay_time, &m_random );
+				set_thread_affinity(i_affinity_mask);
+
+				m_incremental_stats->m_thread_is_active.store(true);
 
 				for (size_t cycles = 0; m_put_committed < i_target_put_count || m_consumes_committed < i_target_consume_count; cycles++)
 				{
@@ -365,7 +387,7 @@ namespace density_tests
 					}
 
 					// update the progress periodically
-					if ((cycles & 4095) == 0)
+					if ((cycles & 255) == 0)
 					{
 						m_incremental_stats->m_produced.store(m_put_committed, std::memory_order_relaxed);
 						m_incremental_stats->m_consumed.store(m_consumes_committed, std::memory_order_relaxed);
@@ -379,6 +401,9 @@ namespace density_tests
 					destructor of the queue would trigger an undefined behavior */
 				m_pending_reentrant_consumes.clear();
 				m_pending_reentrant_puts.clear();
+
+				// to do: not exception safe
+				m_incremental_stats->m_thread_is_active.store(false);
 			}
 
 			void put_one()

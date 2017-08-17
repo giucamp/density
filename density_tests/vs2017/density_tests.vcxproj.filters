@@ -62,6 +62,9 @@
     <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_seqcst.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_framework\thread_affinity.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
@@ -168,6 +171,9 @@
     </ClInclude>
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h">
       <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\thread_affinity.h">
+      <Filter>test_framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

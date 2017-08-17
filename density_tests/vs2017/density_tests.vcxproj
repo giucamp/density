@@ -558,6 +558,7 @@
     <ClCompile Include="..\test_framework\progress.cpp" />
     <ClCompile Include="..\test_framework\shared_block_registry.cpp" />
     <ClCompile Include="..\test_framework\test_objects.cpp" />
+    <ClCompile Include="..\test_framework\thread_affinity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
@@ -595,6 +596,7 @@
     <ClInclude Include="..\test_framework\shared_block_registry.h" />
     <ClInclude Include="..\test_framework\test_allocators.h" />
     <ClInclude Include="..\test_framework\test_objects.h" />
+    <ClInclude Include="..\test_framework\thread_affinity.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
