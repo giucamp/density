@@ -26,16 +26,11 @@ namespace density_tests
 	void all_queues_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		uint32_t i_random_seed, size_t i_element_count)
 	{
-		using namespace density;
-
-		std::vector<size_t> const concurrent_thread_counts{ 1 };
-		std::vector<size_t> const nonblocking_thread_counts{ 1 };
-
 		EasyRandom rand = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 
-		heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+		/*heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 
-		concurr_heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+		concurr_heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);*/
 
 		concurr_heter_relaxed_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 

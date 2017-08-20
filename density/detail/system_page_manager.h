@@ -13,15 +13,6 @@ namespace density
 {
 	namespace detail
 	{
-		/** Options for system_page_manager::allocate_page */
-		enum class allocate_page_opt
-		{
-			only_available, /** Use only the memory already allocated from the system. The allocation
-								fails if all the regions are exhausted. */
-			allow_system_alloc, /** If necessary, allocate new system memory. The allocation fails
-								if the system is not able to allocate a new region. */
-		};
-
 		/** \internal 
 			Class template the provides thread safe irreversible page allocation from the system.
 
@@ -97,26 +88,24 @@ namespace density
 			/** Allocates a new page from the system. This function never throws.
 				@param allocate_page_opt. Specifies whether new memory can be allocated from the system. Must be
 					either allow_system_alloc or only_available.
-				@return the allocated page, or nullptr in case of failure. */
-			void * allocate_page(allocate_page_opt i_options) noexcept
+				@return the allocated page, or nullptr in case of failure.
+			
+				This function is wait-free if i_options is allocate_page_opt::only_available, obstruction-free otherwise. */
+			void * allocate_page(progress_guarantee i_progress_guarantee) noexcept
 			{
-				DENSITY_ASSERT_INTERNAL(i_options == allocate_page_opt::allow_system_alloc ||
-					i_options == allocate_page_opt::only_available );
-
 				auto new_region = static_cast<Region*>(nullptr);
 				auto curr_region = m_curr_region.load(std::memory_order_acquire);
 
-				/* Regions that enter the list are destroyed only at destruction time, so the iteration
-					is always safe. */
+				// Regions that enter the list are destroyed only at destruction time, so the following iteration is always safe
 				void * new_page;
-				while ( (new_page = allocate_from_region_optimistic(curr_region)) == nullptr)
+				while ( (new_page = allocate_from_region(i_progress_guarantee, curr_region)) == nullptr)
 				{
 					// we get the pointer to the next_region region, or allocate it
 					auto next_region = curr_region->m_next_region.load();
 					if (next_region == nullptr)
 					{
 						// check if the user want to allocate memory from the system
-						if (i_options == allocate_page_opt::only_available)
+						if (i_progress_guarantee != progress_guarantee::progress_obstruction_free)
 						{
 							return nullptr;
 						}
@@ -185,10 +174,17 @@ namespace density
 				uintptr_t m_start{ 0 };
 			};
 
-			/** Allocates a page in the specified region.
-				The case of successful allocation is the fast path. 
-			*/
-			static void * allocate_from_region_optimistic(Region * i_region) noexcept
+			static void * allocate_from_region(progress_guarantee i_progress_guarantee, Region * const i_region)
+			{
+				if (i_progress_guarantee != progress_wait_free)
+					return allocate_from_region_lockfree(i_region);
+				else
+					return allocate_from_region_waitfree(i_region);
+			}
+
+			/** Allocates a page in the specified region. This function is lock-free.
+				The case of successful allocation is the fast path. */
+			static void * allocate_from_region_lockfree(Region * const i_region) noexcept
 			{
 				/* First we blindly allocate the page, then we detect the overflow of m_curr. This is an 
 					optimistic method. To do: compare performances with a load-compare-exchange method. */
@@ -210,7 +206,23 @@ namespace density
 				}
 			}
 
-			/** Creates a new memory region big region_default_size_bytes. Try with smaller sizes on failure.
+			/** Allocates a page in the specified region. This function is wait-free, but it can fail in case of contention. */
+			static void * allocate_from_region_waitfree(Region * const i_region) noexcept
+			{
+				auto curr_address = i_region->m_curr.load(std::memory_order_relaxed);
+				auto new_address = curr_address + PAGE_CAPACITY_AND_ALIGNMENT;
+				DENSITY_ASSERT_INTERNAL( (curr_address >= i_region->m_end) == (new_address > i_region->m_end) ); // two different way to express the condition
+				if (curr_address < i_region->m_end)
+				{
+					if (i_region->m_curr.compare_exchange_weak(curr_address, new_address, std::memory_order_relaxed))
+					{
+						return reinterpret_cast<void*>(curr_address);
+					}
+				}
+				return nullptr;
+			}
+
+			/** Creates a new memory region big region_default_size_bytes. Tries with smaller sizes on failure.
 				After failing with region_min_size_bytes, return nullptr. */
 			static Region * create_region() noexcept
 			{
@@ -249,7 +261,7 @@ namespace density
 				return region;
 			}
 
-			static void delete_region(Region * i_region) noexcept
+			static void delete_region(Region * const i_region) noexcept
 			{
 				DENSITY_ASSERT_INTERNAL(i_region != nullptr);
 				operator delete (reinterpret_cast<void*>(i_region->m_start));

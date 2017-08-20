@@ -5,7 +5,7 @@
 #include "line_updater_stream_adapter.h"
 #include "test_objects.h"
 #include "histogram.h"
-#include "thread_affinity.h"
+#include "threading_extensions.h"
 #include <density/density_common.h> // for density::concurrent_alignment
 #include <vector>
 #include <thread>
@@ -112,10 +112,16 @@ namespace density_tests
 				threads.emplace_back(*this, queue, i_random, i_flags);
 			}
 
+			auto const num_of_processors = get_num_of_processors();
+			bool reserve_core1_to_main = (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
+
 			for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
 			{
 				uint64_t thread_affinity = std::numeric_limits<uint64_t>::max();
 				size_t thread_put_count = 0, thread_consume_count = 0;
+
+				if (reserve_core1_to_main)
+					thread_affinity -= 2;
 
 				auto concurrent_puts = QUEUE::concurrent_puts;
 				auto concurrent_consumes = QUEUE::concurrent_consumes;

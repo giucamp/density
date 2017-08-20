@@ -8,7 +8,7 @@ namespace density_tests
 	{
 		using namespace density;
 
-		std::vector<size_t> const nonblocking_thread_counts{ 1, 2, 32 * 1024 };
+		std::vector<size_t> const nonblocking_thread_counts{ 100 };
 
 		constexpr auto mult = density::concurrency_multiple;
 		constexpr auto single = density::concurrency_single;

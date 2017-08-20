@@ -99,10 +99,10 @@ void do_tests(std::ostream & i_ostream)
 	nonblocking_heterogeneous_queue_basic_tests(i_ostream);
 
 	i_ostream << "\n*** executing generic tests..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eNone, i_ostream, 3, 100000);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eNone, i_ostream, 3, 100000);
 
 	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
 
 	i_ostream << "\n*** executing load unload tests..." << std::endl;
 	load_unload_tests(std::cout);

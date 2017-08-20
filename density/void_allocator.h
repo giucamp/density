@@ -213,12 +213,18 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-			return page_manager::template allocate_page<detail::page_allocation_type::uninitialized>();
+			auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::uninitialized>(progress_obstruction_free);
+			if (new_page == nullptr)
+				throw std::bad_alloc();
+			return new_page;
         }
 
 		void * allocate_page_zeroed()
 		{
-			return page_manager::template allocate_page<detail::page_allocation_type::zeroed>();
+			auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::zeroed>(progress_obstruction_free);
+			if (new_page == nullptr)
+				throw std::bad_alloc();
+			return new_page;
 		}
 
         /** Deallocates a memory page. After the call accessing the page results in undefined behavior.

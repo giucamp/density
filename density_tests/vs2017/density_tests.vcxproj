@@ -558,7 +558,7 @@
     <ClCompile Include="..\test_framework\progress.cpp" />
     <ClCompile Include="..\test_framework\shared_block_registry.cpp" />
     <ClCompile Include="..\test_framework\test_objects.cpp" />
-    <ClCompile Include="..\test_framework\thread_affinity.cpp" />
+    <ClCompile Include="..\test_framework\threading_extensions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h" />
@@ -566,12 +566,14 @@
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
+    <ClInclude Include="..\..\density\detail\lf_page_stack.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_single.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_seq_cst.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_relaxed.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h" />
     <ClInclude Include="..\..\density\detail\page_manager.h" />
+    <ClInclude Include="..\..\density\detail\page_stack.h" />
     <ClInclude Include="..\..\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
     <ClInclude Include="..\..\density\heter_queue.h" />
@@ -596,7 +598,7 @@
     <ClInclude Include="..\test_framework\shared_block_registry.h" />
     <ClInclude Include="..\test_framework\test_allocators.h" />
     <ClInclude Include="..\test_framework\test_objects.h" />
-    <ClInclude Include="..\test_framework\thread_affinity.h" />
+    <ClInclude Include="..\test_framework\threading_extensions.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
