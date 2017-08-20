@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -32,14 +32,14 @@
     #elif defined(_MSC_VER)
         #define DENSITY_ASSERT(bool_expr)                __assume((bool_expr))
     #else
-        #define DENSITY_ASSERT(bool_expr)				(void)0
+        #define DENSITY_ASSERT(bool_expr)                (void)0
     #endif
 #endif
 
-#define DENSITY_ASSERT_ALIGNED(address, alignment)		DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
-#define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)	DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
+#define DENSITY_ASSERT_ALIGNED(address, alignment)        DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
+#define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
-#define DENSITY_ASSERT_INTERNAL(bool_expr)				DENSITY_ASSERT((bool_expr))
+#define DENSITY_ASSERT_INTERNAL(bool_expr)                DENSITY_ASSERT((bool_expr))
 
 #define DENSITY_LIKELY(bool_expr)                    (bool_expr)
 #define DENSITY_UNLIKELY(bool_expr)                  (bool_expr)
@@ -71,7 +71,7 @@
 namespace density
 {
     constexpr size_t concurrent_alignment = 64;
-	constexpr size_t default_page_capacity = 1024 * 16;
+    constexpr size_t default_page_capacity = 1024 * 16;
 
     /** Aliases for the synchronization classes.
         By default density uses the C++11 standard synchronization support. Anyway you can change these aliases
@@ -86,11 +86,11 @@ namespace density
         using memory_order = std::memory_order;
     }
 
-	/* concurrent data structures has been tested on x86-x64, but not on architectures with weak
+    /* concurrent data structures has been tested on x86-x64, but not on architectures with weak
         memory ordering. If you are willing to contribute to density, running the tests on other
         architectures, you can change this constant. */
     #if defined(_M_IX86) || defined(_M_X64)
-		constexpr bool enable_relaxed_atomics = false;
+        constexpr bool enable_relaxed_atomics = false;
     #else
         constexpr bool enable_relaxed_atomics = false;
     #endif
@@ -180,7 +180,7 @@ namespace density
         return res;
     }
 
-	template <typename TYPE>
-		using optional_or_bool = typename std::conditional<std::is_void<TYPE>::value, bool, optional<TYPE>>::type;
+    template <typename TYPE>
+        using optional_or_bool = typename std::conditional<std::is_void<TYPE>::value, bool, optional<TYPE>>::type;
 }
 

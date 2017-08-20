@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -339,7 +339,7 @@ namespace density
             {
                 static void * invoke(void * i_complete_dest, void * i_base_source)
                 {
-					DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
+                    DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
 
                     BASE * base_source = static_cast<BASE*>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
@@ -420,7 +420,7 @@ namespace density
                 static void invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
                 {
                     auto const base_dest = static_cast<BASE*>(i_base_dest);
-					auto const ptr = detail::down_cast<TYPE*>(base_dest);
+                    auto const ptr = detail::down_cast<TYPE*>(base_dest);
                     (*ptr)(std::forward<PARAMS>(i_params)...);
                     ptr->TYPE::~TYPE();
                 }
@@ -448,9 +448,9 @@ namespace density
         {
             using type = RET(*)(void * i_base_dest, PARAMS... i_params);
 
-			template <typename BASE, typename TYPE> struct Impl
+            template <typename BASE, typename TYPE> struct Impl
             {
-				static_assert(std::is_void<BASE>::value, "align_invoke_destroy: BASE must be a void type");
+                static_assert(std::is_void<BASE>::value, "align_invoke_destroy: BASE must be a void type");
 
                 static RET align_and_invoke_and_destroy(void * i_base_dest, PARAMS... i_params)
                 {
@@ -462,16 +462,16 @@ namespace density
                 static RET align_and_invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
                 {
                     auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
-					auto const derived = detail::down_cast<TYPE*>(base_dest);
-					auto && result = (*derived)(std::forward<PARAMS>(i_params)...);
+                    auto const derived = detail::down_cast<TYPE*>(base_dest);
+                    auto && result = (*derived)(std::forward<PARAMS>(i_params)...);
                     derived->TYPE::~TYPE();
                     return result;
                 }
                 static void align_and_invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
                 {
                     auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
-					auto const ptr = detail::down_cast<TYPE*>(base_dest);
-					(*ptr)(std::forward<PARAMS>(i_params)...);
+                    auto const ptr = detail::down_cast<TYPE*>(base_dest);
+                    (*ptr)(std::forward<PARAMS>(i_params)...);
                     ptr->TYPE::~TYPE();
                 }
             };
@@ -900,8 +900,8 @@ namespace density
             \n\b Requires:
                 - the feature type_features::move_construct must be included in the FEATURE_LIST
                 - the runtime_type must be non-empty
-			*/
-        common_type * move_construct(void * i_dest, common_type * i_source) const 
+            */
+        common_type * move_construct(void * i_dest, common_type * i_source) const
         {
             #if DENSITY_DEBUG
                 check_alignment(i_dest, std::conditional_t<
@@ -1002,21 +1002,21 @@ namespace density
             return m_table != i_other.m_table;
         }
 
-		/** Returns whether the target type of this runtime_type is exactly the one specified in the
-			template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
-		template <typename TYPE>
-			bool is() const noexcept
-		{
-			return m_table == detail::FeatureTable<common_type,
+        /** Returns whether the target type of this runtime_type is exactly the one specified in the
+            template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
+        template <typename TYPE>
+            bool is() const noexcept
+        {
+            return m_table == detail::FeatureTable<common_type,
                 typename std::decay<TYPE>::type, FEATURE_LIST>::s_table;
-		}
+        }
 
-		/** Returns an hash. This function is used for the partial specialization of std::hash
-			for runtime_type. */
-		size_t hash() const noexcept
-		{
-			return std::hash<const void*>()(m_table);
-		}
+        /** Returns an hash. This function is used for the partial specialization of std::hash
+            for runtime_type. */
+        size_t hash() const noexcept
+        {
+            return std::hash<const void*>()(m_table);
+        }
 
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
@@ -1042,14 +1042,14 @@ namespace density
 
 namespace std
 {
-	/** Partial specialization of std::hash to allow the use of density::runtime_type as keys
-		of unordered associative containers. */
-	template <typename COMMON_TYPE, typename FEATURE_LIST>
-		struct hash< density::runtime_type<COMMON_TYPE, FEATURE_LIST> >
-	{
-		size_t operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const noexcept
-		{
-			return i_runtime_type.hash();
-		}
-	};
+    /** Partial specialization of std::hash to allow the use of density::runtime_type as keys
+        of unordered associative containers. */
+    template <typename COMMON_TYPE, typename FEATURE_LIST>
+        struct hash< density::runtime_type<COMMON_TYPE, FEATURE_LIST> >
+    {
+        size_t operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const noexcept
+        {
+            return i_runtime_type.hash();
+        }
+    };
 }

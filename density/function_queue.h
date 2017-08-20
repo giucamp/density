@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -10,8 +10,8 @@
 
 namespace density
 {
-	template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
-		using function_queue = detail::FunctionQueueImpl< heter_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
+        using function_queue = detail::FunctionQueueImpl< heter_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
 
 #if 0
 
@@ -89,7 +89,7 @@ namespace density
             \n\b Complexity: constant. */
         optional_or_bool<RET_VAL> consume_front(PARAMS... i_params)
         {
-			return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+            return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes all the function objects in the queue.
@@ -108,39 +108,39 @@ namespace density
             return m_queue.empty();
         }
 
-	private:
+    private:
 
-		optional<RET_VAL> consume_front_impl(std::false_type, PARAMS... i_params)
-		{
-			auto cons = m_queue.start_consume();
-			if (cons)
-			{
-				auto && result = cons.complete_type().align_invoke_destroy(
-					cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
-				cons.commit_nodestroy();
-				return std::forward<RET_VAL>(result);
-			}
-			else
-			{
-				return optional<RET_VAL>();
-			}
-		}
+        optional<RET_VAL> consume_front_impl(std::false_type, PARAMS... i_params)
+        {
+            auto cons = m_queue.start_consume();
+            if (cons)
+            {
+                auto && result = cons.complete_type().align_invoke_destroy(
+                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                cons.commit_nodestroy();
+                return std::forward<RET_VAL>(result);
+            }
+            else
+            {
+                return optional<RET_VAL>();
+            }
+        }
 
-		bool consume_front_impl(std::true_type, PARAMS... i_params)
-		{
-			auto cons = m_queue.start_consume();
-			if (cons)
-			{
-				cons.complete_type().align_invoke_destroy(
-					cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
-				cons.commit_nodestroy();
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
+        bool consume_front_impl(std::true_type, PARAMS... i_params)
+        {
+            auto cons = m_queue.start_consume();
+            if (cons)
+            {
+                cons.complete_type().align_invoke_destroy(
+                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                cons.commit_nodestroy();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
     private:
         QUEUE m_queue;

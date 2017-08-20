@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -22,27 +22,27 @@
 
 namespace density
 {
-	/** This enum describes the concurrency supported by a set of functions. */
-	enum concurrency_cardinality
-	{
-		concurrency_single, /**< Functions with this concurrent cardinality can be called by only one thread,
-											or by multiple threads if externally synchronized with a mutex. */
-		concurrency_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
-											without external synchronization. */
-	};
+    /** This enum describes the concurrency supported by a set of functions. */
+    enum concurrency_cardinality
+    {
+        concurrency_single, /**< Functions with this concurrent cardinality can be called by only one thread,
+                                            or by multiple threads if externally synchronized with a mutex. */
+        concurrency_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
+                                            without external synchronization. */
+    };
 
-	enum consistency_model
-	{
-		consistency_relaxed,
-		consistency_sequential,
-	};
+    enum consistency_model
+    {
+        consistency_relaxed,
+        consistency_sequential,
+    };
 
-	enum progress_guarantee
-	{
-		progress_obstruction_free,
-		progress_lock_free,
-		progress_wait_free
-	};
+    enum progress_guarantee
+    {
+        progress_obstruction_free,
+        progress_lock_free,
+        progress_wait_free
+    };
 
                 // address functions
 
@@ -289,38 +289,38 @@ namespace density
         {
             return i_first > i_second ? i_first : i_second;
         }
-		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third) noexcept
-		{
-			return size_max(size_max(i_first, i_second), i_third);
-		}
-		constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
-		{
-			return size_max(size_max(i_first, i_second, i_third), i_fourth);
-		}
+        constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third) noexcept
+        {
+            return size_max(size_max(i_first, i_second), i_third);
+        }
+        constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
+        {
+            return size_max(size_max(i_first, i_second, i_third), i_fourth);
+        }
 
-		struct AlignmentHeader
+        struct AlignmentHeader
         {
             void * m_block;
         };
 
-		inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
-		{
-			auto const chars = static_cast<const unsigned char *>(i_start);
-			for (size_t char_index = 0; char_index < i_size; char_index++)
-			{
-				if (chars[char_index] != i_value)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		
-		constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
-		constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
-		constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
-		constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
-		constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
+        inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
+        {
+            auto const chars = static_cast<const unsigned char *>(i_start);
+            for (size_t char_index = 0; char_index < i_size; char_index++)
+            {
+                if (chars[char_index] != i_value)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
+        constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
+        constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
+        constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
+        constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
 
         /** Computes the base2 logarithm of a size_t. If the argument is zero or is
             not a power of 2, the behavior is undefined. */
@@ -361,52 +361,52 @@ namespace density
             return ScopeExit<SCOPE_EXIT_ACTION>(std::forward<SCOPE_EXIT_ACTION>(i_scope_exit_action));
         }
 
-		template <typename ALLOCATOR_TYPE>
-			class ScopedPin
-		{
-		private:
-			ALLOCATOR_TYPE * const m_allocator;
-			void * m_pinned_page = nullptr;
+        template <typename ALLOCATOR_TYPE>
+            class ScopedPin
+        {
+        private:
+            ALLOCATOR_TYPE * const m_allocator;
+            void * m_pinned_page = nullptr;
 
-		public:
-			ScopedPin(ALLOCATOR_TYPE * i_allocator) noexcept
-				: m_allocator(i_allocator)
-			{
-			}
+        public:
+            ScopedPin(ALLOCATOR_TYPE * i_allocator) noexcept
+                : m_allocator(i_allocator)
+            {
+            }
 
-			ScopedPin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
-				: m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
-			{
-				if (m_pinned_page != nullptr)
-					m_allocator->pin_page(m_pinned_page);
-			}
+            ScopedPin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
+                : m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
+            {
+                if (m_pinned_page != nullptr)
+                    m_allocator->pin_page(m_pinned_page);
+            }
 
-			bool pin_new(void * i_address) noexcept
-			{
-				auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
-				if (page != m_pinned_page)
-				{
-					if (m_pinned_page != nullptr)
-						m_allocator->unpin_page(m_pinned_page);
-					m_pinned_page = page;
-					if (m_pinned_page != nullptr)
-						m_allocator->pin_page(m_pinned_page);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
+            bool pin_new(void * i_address) noexcept
+            {
+                auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
+                if (page != m_pinned_page)
+                {
+                    if (m_pinned_page != nullptr)
+                        m_allocator->unpin_page(m_pinned_page);
+                    m_pinned_page = page;
+                    if (m_pinned_page != nullptr)
+                        m_allocator->pin_page(m_pinned_page);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
-			~ScopedPin()
-			{
-				if (m_pinned_page != nullptr)
-					m_allocator->unpin_page(m_pinned_page);
-			}
-		};
+            ~ScopedPin()
+            {
+                if (m_pinned_page != nullptr)
+                    m_allocator->unpin_page(m_pinned_page);
+            }
+        };
 
-			
+
         struct ExternalBlock
         {
             void * m_block;
@@ -417,11 +417,11 @@ namespace density
 
 
     /** Uses the global operator new to allocate a memory block with at least the specified size and alignment
-			@param i_size size of the requested memory block, in bytes
-			@param i_alignment alignment of the requested memory block, in bytes
-			@param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
-				from the beginning of the block.
-			@return address of the new memory block
+            @param i_size size of the requested memory block, in bytes
+            @param i_alignment alignment of the requested memory block, in bytes
+            @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
+                from the beginning of the block.
+            @return address of the new memory block
 
         \pre i_alignment is > 0 and is an integer power of 2
         \pre i_alignment_offset is <= i_size
@@ -457,12 +457,12 @@ namespace density
         return user_block;
     }
 
-    /** Deallocates a memory block allocated by aligned_allocate, using the global operator delete. After the call 
-				accessing the memory block results in undefined behavior.
-			@param i_block block to deallocate, or nullptr.
-			@param i_size size of the block to deallocate, in bytes.
-			@param i_alignment alignment of the memory block.
-			@param i_alignment_offset
+    /** Deallocates a memory block allocated by aligned_allocate, using the global operator delete. After the call
+                accessing the memory block results in undefined behavior.
+            @param i_block block to deallocate, or nullptr.
+            @param i_size size of the block to deallocate, in bytes.
+            @param i_alignment alignment of the memory block.
+            @param i_alignment_offset
 
         \pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
         \pre i_size and i_alignment are the same specified when allocating the block
@@ -500,12 +500,12 @@ namespace density
         }
     }
 
-	#if DENSITY_TEST_ENABLE_ARTIFICIAL_DELAY
-		void test_artificial_delay();
-		#define DENSITY_TEST_ARTIFICIAL_DELAY		::density::test_artificial_delay()
-	#else
-		#define DENSITY_TEST_ARTIFICIAL_DELAY
-	#endif
+    #if DENSITY_TEST_ENABLE_ARTIFICIAL_DELAY
+        void test_artificial_delay();
+        #define DENSITY_TEST_ARTIFICIAL_DELAY        ::density::test_artificial_delay()
+    #else
+        #define DENSITY_TEST_ARTIFICIAL_DELAY
+    #endif
 
     /*! \page wid_list_iter_bench Widget list benchmarks
 

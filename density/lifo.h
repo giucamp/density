@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -14,8 +14,8 @@ namespace density
 {
     /** Class template that provides a typeless LIFO memory management.
 
-        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements 
-			of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
+        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
+            of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
