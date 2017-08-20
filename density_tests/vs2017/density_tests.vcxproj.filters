@@ -181,6 +181,9 @@
     <ClInclude Include="..\..\density\detail\page_stack.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\detail\singleton_ptr.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

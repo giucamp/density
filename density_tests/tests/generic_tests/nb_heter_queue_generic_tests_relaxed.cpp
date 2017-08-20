@@ -1,6 +1,6 @@
 
 #include "queue_generic_tests.h"
-#include "test_framework/threading_extensions.h"
+#include "density_tests/test_framework/threading_extensions.h"
 
 namespace density_tests
 {

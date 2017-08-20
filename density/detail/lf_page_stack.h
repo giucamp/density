@@ -91,7 +91,7 @@ namespace density
             }
 
             /** Removes from the stack the first unpinned page.
-                As first operation, a pop temporary locks the whole stack. So it can safely walk and analyze
+                As first operation, a pop temporary locks the whole stack, so it can safely walk and analyze
                 the pages, and can edit the stack without incurring in the ABA problem. In the meanwhile,
                 any other thread will observe the stack as empty. After finishing the work, the stack is restored
                 (possibly with one less page). Another benefit of this mechanism is that PageFooter::m_next does
@@ -118,9 +118,8 @@ namespace density
                 }
             }
 
-            /** Empties the stack, removing all the pages. A null-terminated list of the removed pages is returned.
-                This function is optimized for the execution path in which at least a page was present.
-                @return The pages removed, or nullptr in the case the stack was already empty. */
+            /** Empties the stack, removing all the pages.
+                @return A non-concurrent stack of pages, possibly empty. */
             PageStack try_remove_all() noexcept
             {
                 auto first = m_first.load(detail::mem_acquire);

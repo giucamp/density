@@ -574,6 +574,7 @@
     <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h" />
     <ClInclude Include="..\..\density\detail\page_manager.h" />
     <ClInclude Include="..\..\density\detail\page_stack.h" />
+    <ClInclude Include="..\..\density\detail\singleton_ptr.h" />
     <ClInclude Include="..\..\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\density\function_queue.h" />
     <ClInclude Include="..\..\density\heter_queue.h" />

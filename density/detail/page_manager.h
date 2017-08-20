@@ -10,6 +10,7 @@
 #include <atomic>
 #include <density/density_common.h>
 #include <density/detail/lf_page_stack.h>
+#include <density/detail/singleton_ptr.h>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -29,22 +30,22 @@ namespace density
         /** \internal
 
         */
-        struct alignas(concurrent_alignment) FreePageStore
+        struct alignas(concurrent_alignment) PageAllocatorSlot
         {
         private:
 
-            FreePageStore(FreePageStore * i_next_slot) noexcept
+            PageAllocatorSlot(PageAllocatorSlot * i_next_slot) noexcept
                 : m_next_slot(i_next_slot)
             {
             }
 
-            ~FreePageStore() noexcept = default;
+            ~PageAllocatorSlot() noexcept = default;
 
         public:
 
             WF_PageStack m_page_stack;
             WF_PageStack m_zeroed_page_stack;
-            std::atomic<FreePageStore*> m_next_slot;
+            std::atomic<PageAllocatorSlot*> m_next_slot;
 
             WF_PageStack & get_stack(page_allocation_type const i_allocation_type) noexcept
             {
@@ -54,19 +55,19 @@ namespace density
 
             /** Creates a new thread slot.
                 May throw an std::bad_alloc. */
-            static FreePageStore * create(FreePageStore * const i_next_slot)
+            static PageAllocatorSlot * create(PageAllocatorSlot * const i_next_slot)
             {
-                auto const block = aligned_allocate(sizeof(FreePageStore), alignof(FreePageStore));
+                auto const block = aligned_allocate(sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
                 DENSITY_ASSERT_INTERNAL(block != nullptr);
-                return new(block) FreePageStore(i_next_slot);
+                return new(block) PageAllocatorSlot(i_next_slot);
             }
 
             /** Destroy a thread slot */
-            static void destroy(FreePageStore * const i_slot) noexcept
+            static void destroy(PageAllocatorSlot * const i_slot) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_slot != nullptr);
-                i_slot->~FreePageStore();
-                return aligned_deallocate(i_slot, sizeof(FreePageStore), alignof(FreePageStore));
+                i_slot->~PageAllocatorSlot();
+                return aligned_deallocate(i_slot, sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
             }
         };
 
@@ -130,18 +131,73 @@ namespace density
 
         private:
 
+            class GlobalState
+            {
+            public:
+
+                GlobalState(const GlobalState &) = delete;
+                GlobalState & operator = (const GlobalState &) = delete;
+
+                PageAllocatorSlot * assign_slot() noexcept
+                {
+                    auto result = m_last_assigned.load();
+                    m_last_assigned.store(result->m_next_slot.load());
+                    return result;
+                }
+
+                SYSTYEM_PAGE_MANAGER & sys_page_manager() noexcept
+                {
+                    return m_sys_page_manager;
+                }
+
+            private:
+
+                friend class SingletonPtr<GlobalState>;
+
+                GlobalState()
+                {
+                    auto const first = PageAllocatorSlot::create(nullptr);
+                    auto prev = first;
+                    for (int i = 0; i < 7; i++)
+                    {
+                        auto const curr = PageAllocatorSlot::create(nullptr);
+                        prev->m_next_slot.store(curr);
+                        prev = curr;
+                    }
+                    prev->m_next_slot.store(first);
+                    m_first_slot.store(first);
+                    m_last_assigned = first;
+                }
+
+                ~GlobalState()
+                {
+                    auto const first = m_first_slot.load();
+                    auto curr = first;
+                    do {
+                        auto const next = curr->m_next_slot.load();
+                        PageAllocatorSlot::destroy(curr);
+                        curr = next;
+                    } while (curr != first);
+                }
+
+            private:
+                SYSTYEM_PAGE_MANAGER m_sys_page_manager;
+                std::atomic<PageAllocatorSlot*> m_last_assigned{ nullptr };
+                std::atomic<PageAllocatorSlot*> m_first_slot{ nullptr };
+            };
+
             class ThreadEntry
             {
             private:
-                FreePageStore * m_current_slot, * m_victim_slot;
+                PageAllocatorSlot * m_current_slot, * m_victim_slot;
                 PageStack m_private_page_stack, m_private_zeroed_page_stack;
+                SingletonPtr<GlobalState> m_global_state;
 
             public:
 
                 ThreadEntry()
                 {
-                    auto & global_data = get_global_data();
-                    m_current_slot = global_data.assign_one();
+                    m_current_slot = m_global_state->assign_slot();
                     m_victim_slot = m_current_slot->m_next_slot.load();
                 }
 
@@ -239,8 +295,7 @@ namespace density
                     PageFooter * new_page = nullptr;
 
                     // First we try to use the memory already allocated from the system...
-                    GlobalData & global_data = get_global_data();
-                    void * new_page_mem = global_data.m_sys_page_manager.allocate_page(progress_wait_free);
+                    void * new_page_mem = m_global_state->sys_page_manager().allocate_page(progress_wait_free);
                     if (new_page_mem != nullptr)
                     {
                         new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -262,7 +317,7 @@ namespace density
                         if (new_page == nullptr && i_progress_guarantee == progress_obstruction_free)
                         {
                             // ...last chance, try possibly allocating new memory from the system
-                            new_page_mem = global_data.m_sys_page_manager.allocate_page(progress_obstruction_free);
+                            new_page_mem = m_global_state->sys_page_manager().allocate_page(progress_obstruction_free);
                             if (new_page_mem != nullptr)
                             {
                                 new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -282,7 +337,6 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(i_allocation_type == page_allocation_type::uninitialized || i_allocation_type == page_allocation_type::zeroed);
                     return i_allocation_type == page_allocation_type::zeroed ? m_private_zeroed_page_stack : m_private_page_stack;
                 }
-
 
                 void disccard_page_stack(page_allocation_type const i_allocation_type, PageStack & i_page_stack) noexcept
                 {
@@ -312,54 +366,6 @@ namespace density
 
 
             static thread_local ThreadEntry t_thread_entry;
-
-            struct GlobalData
-            {
-                SYSTYEM_PAGE_MANAGER m_sys_page_manager;
-
-                std::atomic<FreePageStore*> m_last_assigned{nullptr};
-                std::atomic<FreePageStore*> m_first_slot{nullptr};
-
-                GlobalData()
-                {
-                    auto const first = FreePageStore::create(nullptr);
-                    auto prev = first;
-                    for (int i = 0; i < 7; i++)
-                    {
-                        auto const curr = FreePageStore::create(nullptr);
-                        prev->m_next_slot.store(curr);
-                        prev = curr;
-                    }
-                    prev->m_next_slot.store(first);
-                    m_first_slot.store(first);
-                    m_last_assigned = first;
-                }
-
-                ~GlobalData()
-                {
-                    auto const first = m_first_slot.load();
-                    auto curr = first;
-                    do {
-                        auto const next = curr->m_next_slot.load();
-                        FreePageStore::destroy(curr);
-                        curr = next;
-                    } while (curr != first);
-                }
-
-                FreePageStore * assign_one() noexcept
-                {
-                    auto result = m_last_assigned.load();
-                    m_last_assigned.store(result->m_next_slot.load());
-                    return result;
-                }
-            };
-
-
-            static GlobalData & get_global_data()
-            {
-                static GlobalData s_global_data;
-                return s_global_data;
-            }
 
             static PageFooter * get_footer(void * const i_address) noexcept
             {
