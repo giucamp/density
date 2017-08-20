@@ -2,6 +2,10 @@
 #include "threading_extensions.h"
 #ifdef _WIN32
 	#include <Windows.h>
+#elif __linux__
+    #include <limits>
+    #include <unistd.h>
+    #include <sched.h>
 #endif
 
 namespace density_tests
@@ -30,6 +34,35 @@ namespace density_tests
 		{
 			return set_thread_affinity(i_thread.native_handle(), i_mask);
 		}
+        
+    #elif __linux__
+    
+    	uint64_t get_num_of_processors()
+		{
+            long res = sysconf(_SC_NPROCESSORS_ONLN);
+            if(res >= 1)
+                return static_cast<uint64_t>(res);
+            else
+                return 0;
+		}
+
+		bool set_thread_affinity(uint64_t i_mask)
+		{
+            cpu_set_t cpu_set;
+            CPU_ZERO(&cpu_set);
+            
+            uint64_t cpu_mask = 1;
+            for(int cpu_index = 0; cpu_index < CPU_SETSIZE; cpu_index++ )
+            {
+                if(cpu_index >= 64 || i_mask & cpu_mask)
+                {
+                    CPU_SET(cpu_index, &cpu_set);
+                }
+                cpu_mask <<= 1;         
+            }
+            
+            return sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set) == 0;
+		}
 
 	#else
 
@@ -40,7 +73,7 @@ namespace density_tests
 
 		bool set_thread_affinity(uint64_t)
 		{
-			return false;
+            return false;
 		}
 
 		bool set_thread_affinity(std::thread &, uint64_t)

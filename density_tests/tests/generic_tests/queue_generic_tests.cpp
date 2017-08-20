@@ -9,10 +9,10 @@ namespace density_tests
 	void concurr_heter_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		EasyRandom & i_rand, size_t i_element_count);
 
-	void concurr_heter_relaxed_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+	void lf_heter_relaxed_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		EasyRandom & i_rand, size_t i_element_count);
 
-	void concurr_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+	void lf_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		EasyRandom & i_rand, size_t i_element_count);
 
 	
@@ -28,12 +28,12 @@ namespace density_tests
 	{
 		EasyRandom rand = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 
-		/*heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+		heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 
-		concurr_heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);*/
+		concurr_heter_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 
-		concurr_heter_relaxed_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+		lf_heter_relaxed_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 
-		concurr_heter_seq_cst_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+		lf_heter_seq_cst_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 	}
 }

@@ -50,7 +50,7 @@ namespace density_tests
 		{
 			m_id_map = new std::atomic<int8_t>[id_map_size];
 			for (size_t i = 0; i < id_map_size; i++)
-				std::atomic_init(&m_id_map[i], 0);
+				std::atomic_init(&m_id_map[i], static_cast<int8_t>(0));
 		}
 
 		// copy not allowed

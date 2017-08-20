@@ -141,8 +141,8 @@ namespace density
                 ptr()->TYPE::~TYPE();
         }
 
-        template <typename TYPE, typename... PARAMS>
-            friend optional<TYPE> make_optional(PARAMS && ... i_construction_params);
+        template <typename TYPE_1, typename... PARAMS>
+            friend optional<TYPE_1> make_optional(PARAMS && ... i_construction_params);
 
         friend void swap(optional & i_first, optional & i_second) noexcept
         {

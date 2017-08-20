@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density\density_common.h>
+#include <density/density_common.h>
 #include <limits>
 #include "density_test_common.h"
 #include "easy_random.h"

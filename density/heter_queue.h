@@ -2672,8 +2672,8 @@ namespace density
 
         struct ExternalBlock
         {
-            void * m_element = nullptr;
-            size_t m_size = 0, m_alignment = 0;
+            void * m_element;
+            size_t m_size, m_alignment;
         };
 
         static void * get_end_of_page(void * i_address) noexcept

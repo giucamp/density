@@ -847,9 +847,9 @@ namespace density
         common_type * default_construct(void * i_dest) const
         {
             #if DENSITY_DEBUG
-                check_alignment(i_dest, std::conditional_t<
+                check_alignment(i_dest, typename std::conditional<
                     detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >() );
+                        std::true_type, std::false_type >::type() );
             #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>( get_feature<type_features::default_construct>()(i_dest) );
@@ -876,9 +876,9 @@ namespace density
         common_type * copy_construct(void * i_dest, const common_type * i_source) const
         {
             #if DENSITY_DEBUG
-                check_alignment(i_dest, std::conditional_t<
+                check_alignment(i_dest, typename std::conditional<
                     detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >() );
+                        std::true_type, std::false_type >::type() );
             #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
@@ -904,9 +904,9 @@ namespace density
         common_type * move_construct(void * i_dest, common_type * i_source) const
         {
             #if DENSITY_DEBUG
-                check_alignment(i_dest, std::conditional_t<
+                check_alignment(i_dest, typename std::conditional<
                     detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >() );
+                        std::true_type, std::false_type >::type() );
             #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>(get_feature<type_features::move_construct>()(i_dest, i_source));

@@ -138,7 +138,7 @@ namespace density
             struct Block
             {
                 ControlBlock * m_control_block;
-                uintptr_t m_next_ptr = 0;
+                uintptr_t m_next_ptr;
                 void * m_user_storage;
             };
 
@@ -254,7 +254,7 @@ namespace density
 
                         DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
                         m_tail = new_tail;
-                        return { control_block, next_ptr, user_storage };
+                        return Block{ control_block, next_ptr, user_storage };
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page
                     {

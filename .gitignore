@@ -24,4 +24,7 @@ doc/latex
 density_tests/vs2017/.vs
 density_tests/vs2017/x64
 density_tests/vs2017/.vs/
+density_tests/code_lite/.codelite
+density_tests/code_lite/Debug
+density_tests/code_lite/Release
 doc/doxygen/doxygen_out.txt

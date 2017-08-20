@@ -1,14 +1,20 @@
 
 #include "queue_generic_tests.h"
+#include "test_framework/threading_extensions.h"
 
 namespace density_tests
 {
-	void concurr_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+	void lf_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		EasyRandom & i_rand, size_t i_element_count)
 	{
 		using namespace density;
 
-		std::vector<size_t> const nonblocking_thread_counts{ 100 };
+        uint64_t cpu_count = get_num_of_processors();
+        if(cpu_count == 0)
+            cpu_count = 1;
+
+		std::vector<size_t> const nonblocking_thread_counts{ 
+            static_cast<size_t>(cpu_count * 10) };
 
 		constexpr auto mult = density::concurrency_multiple;
 		constexpr auto single = density::concurrency_single;

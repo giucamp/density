@@ -135,7 +135,7 @@ namespace density
             struct Block
             {
                 ControlBlock * m_control_block;
-                uintptr_t m_next_ptr = 0;
+                uintptr_t m_next_ptr;
                 void * m_user_storage;
             };
 
@@ -266,7 +266,7 @@ namespace density
 
                                     auto const user_storage = address_upper_align(address_add(new_control, overhead), alignment);
                                     DENSITY_ASSERT_INTERNAL(reinterpret_cast<uintptr_t>(user_storage) + size <= future_tail);
-                                    return { new_control, future_tail + CONTROL_BITS, user_storage };
+                                    return Block{ new_control, future_tail + CONTROL_BITS, user_storage };
                                 }
                             }
                             else
