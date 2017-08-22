@@ -86,10 +86,10 @@ namespace density
         public:
 
             /** Alignment guaranteed for the pages */
-            static constexpr size_t page_alignment = SYSTYEM_PAGE_MANAGER::page_alignment;
+            static constexpr size_t page_alignment = SYSTYEM_PAGE_MANAGER::page_alignment_and_size;
 
-            /** Usable size of the pages. */
-            static constexpr size_t page_size = SYSTYEM_PAGE_MANAGER::page_size - sizeof(PageFooter);
+            /** Usable size of the pages, in bytes. */
+            static constexpr size_t page_size = SYSTYEM_PAGE_MANAGER::page_alignment_and_size - sizeof(PageFooter);
 
             /** Tries to allocate a page */
             template <page_allocation_type ALLOCATION_TYPE>
@@ -129,10 +129,20 @@ namespace density
                 return get_footer(i_address)->m_pin_count.load(detail::mem_relaxed);
             }
 
+            size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
+            {
+                return t_thread_entry.try_reserve_lockfree_memory(i_progress_guarantee, i_size);
+            }
+
         private:
 
             class GlobalState
             {
+            private:
+                SYSTYEM_PAGE_MANAGER m_sys_page_manager;
+                std::atomic<PageAllocatorSlot*> m_last_assigned{ nullptr };
+                std::atomic<PageAllocatorSlot*> m_first_slot{ nullptr };
+
             public:
 
                 GlobalState(const GlobalState &) = delete;
@@ -179,11 +189,6 @@ namespace density
                         curr = next;
                     } while (curr != first);
                 }
-
-            private:
-                SYSTYEM_PAGE_MANAGER m_sys_page_manager;
-                std::atomic<PageAllocatorSlot*> m_last_assigned{ nullptr };
-                std::atomic<PageAllocatorSlot*> m_first_slot{ nullptr };
             };
 
             class ThreadEntry
@@ -255,6 +260,11 @@ namespace density
                     }
                 }
 
+                size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
+                {
+                    return m_global_state->try_reserve_region_memory(i_progress_guarantee, i_size);
+                }
+
             private:
 
                 PageFooter * try_steal_and_allocate(page_allocation_type const i_allocation_type) noexcept
@@ -295,7 +305,7 @@ namespace density
                     PageFooter * new_page = nullptr;
 
                     // First we try to use the memory already allocated from the system...
-                    void * new_page_mem = m_global_state->sys_page_manager().allocate_page(progress_wait_free);
+                    void * new_page_mem = m_global_state->sys_page_manager().try_allocate_page(progress_wait_free);
                     if (new_page_mem != nullptr)
                     {
                         new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -314,10 +324,10 @@ namespace density
 
                         } while (m_victim_slot != starting_victim_slot);
 
-                        if (new_page == nullptr && i_progress_guarantee == progress_obstruction_free)
+                        if (new_page == nullptr && i_progress_guarantee == progress_blocking)
                         {
                             // ...last chance, try possibly allocating new memory from the system
-                            new_page_mem = m_global_state->sys_page_manager().allocate_page(progress_obstruction_free);
+                            new_page_mem = m_global_state->sys_page_manager().try_allocate_page(progress_blocking);
                             if (new_page_mem != nullptr)
                             {
                                 new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -329,7 +339,14 @@ namespace density
 
                 void dump_private_stack(page_allocation_type const i_allocation_type)
                 {
-                    (void)i_allocation_type;
+                    auto & private_stack = get_private_stack(i_allocation_type);
+                    if (!private_stack.empty())
+                    {
+                        while (!m_current_slot->get_stack(i_allocation_type).try_push(private_stack))
+                        {
+                            m_current_slot = m_current_slot->m_next_slot.load();
+                        }
+                    }
                 }
 
                 PageStack & get_private_stack(page_allocation_type const i_allocation_type) noexcept
@@ -364,7 +381,6 @@ namespace density
                 }
             };
 
-
             static thread_local ThreadEntry t_thread_entry;
 
             static PageFooter * get_footer(void * const i_address) noexcept
@@ -383,7 +399,6 @@ namespace density
         template <typename SYSTYEM_PAGE_MANAGER>
             thread_local typename page_manager<SYSTYEM_PAGE_MANAGER>::ThreadEntry
                 page_manager<SYSTYEM_PAGE_MANAGER>::t_thread_entry;
-
 
     } // namespace detail
 

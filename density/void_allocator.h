@@ -126,22 +126,15 @@ namespace density
     /** Specialization of basic_void_allocator that uses the default page capacity. */
     using void_allocator = basic_void_allocator<default_page_capacity>;
 
-    /** This class encapsulates an untyped memory allocation service, modeling both the \ref UntypedAllocator_concept "UntypedAllocator"
+    /** Class template providing paged and legacy memory allocation. It models both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
-        basic_void_allocator is stateless. Any instance of basic_void_allocator compares equal to any instance of basic_void_allocator. This implies that
-        blocks and pages can be deallocated by any instance of basic_void_allocator.
+        basic_void_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_void_allocator.
 
         \section Implementation
         basic_void_allocator redirects block allocations to the language built-in operator new. Whenever the requested alignment
         is greater than alignof(std::max_align_t), basic_void_allocator allocates an overhead whose size is the maximum between
         the requested alignment and sizeof(void*). \n
-
-        Every thread is associated to a free-page cache. When a page is deallocated, if the cache has less than 4 pages,
-        the page to deallocate is pushed in this cache. When a page allocation is requested, a page from the cache is returned (if any).
-        Pushing/peeking to\from the cache is very fast, and does not require thread synchronization. \n
-        Note: on win32 basic_void_allocator is not redirecting page allocations to VirtualAlloc, since from several tests the latter resulted
-        around ten times slower than the operator new.
     */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
         class basic_void_allocator
@@ -150,19 +143,28 @@ namespace density
 
     public:
 
-        /** Size (in bytes) of a memory page. */
+        /** Usable size (in bytes) of memory pages. */
         static constexpr size_t page_size = page_manager::page_size;
 
-        /** Alignment (in bytes) of a memory page. */
+        /** Alignment (in bytes) of memory pages. */
         static constexpr size_t page_alignment = page_manager::page_alignment;
 
+        /** Default constructor */
         basic_void_allocator() noexcept = default;
+        
+        /** Copy constructor */
         basic_void_allocator(const basic_void_allocator&) noexcept = default;
+        
+        /** Move constructor */
         basic_void_allocator(basic_void_allocator&&) noexcept = default;
+        
+        /** Copy assignment */
         basic_void_allocator & operator = (const basic_void_allocator&) noexcept = default;
+        
+        /** Move assignment */
         basic_void_allocator & operator = (basic_void_allocator&&) noexcept = default;
 
-        /** Allocates a memory block with at least the specified size and alignment.
+        /** Allocates a legacy memory block with at least the specified size and alignment.
                 @param i_size size of the requested memory block, in bytes
                 @param i_alignment alignment of the requested memory block, in bytes
                 @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
@@ -174,26 +176,26 @@ namespace density
 
             A violation of any precondition results in undefined behavior.
 
-            \exception std::bad_alloc if the allocation fails
+            \n <b>Throws</b>: std::bad_alloc on failure.
 
             The content of the newly allocated block is undefined. */
         void * allocate(size_t i_size,
             size_t i_alignment = alignof(std::max_align_t),
-            size_t i_alignment_offset = 0) noexcept
+            size_t i_alignment_offset = 0)
         {
             return density::aligned_allocate(i_size, i_alignment, i_alignment_offset);
         }
 
-        /** Deallocates a memory block. After the call accessing the memory block results in undefined behavior.
+        /** Deallocates a memory block. After the call any access to the memory block results in undefined behavior.
                 @param i_block block to deallocate, or nullptr.
                 @param i_size size of the block to deallocate, in bytes.
                 @param i_alignment alignment of the memory block.
-                @param i_alignment_offset
+                @param i_alignment_offset offset of the alignment
 
             \pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
             \pre i_size and i_alignment are the same specified when allocating the block
 
-            \exception never throws
+            \n <b>Throws</b>: nothing
 
             If i_block is nullptr, the call has no effect. */
         void deallocate(void * i_block,
@@ -207,24 +209,39 @@ namespace density
         /** Allocates a memory page.
             @return address of the new memory page
 
-            \exception std::bad_alloc if the allocation fails
+            \n <b>Throws</b>: std::bad_alloc on failure.
 
-            All the pages have the same size and alignment requirement (see page_size and page_alignment).
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::uninitialized>(progress_obstruction_free);
+            auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::uninitialized>(progress_blocking);
             if (new_page == nullptr)
                 throw std::bad_alloc();
             return new_page;
         }
 
+        /** Tries to allocates a memory page.
+            @return address of the new memory page, or nullptr if the allocation fails
+
+            \n <b>Throws</b>: nothing
+
+            The content of the newly allocated page is undefined. */
+        void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
+        {
+            return page_manager::template try_allocate_page<detail::page_allocation_type::uninitialized>(i_progress_guarantee);
+        }
+
         void * allocate_page_zeroed()
         {
-            auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::zeroed>(progress_obstruction_free);
+            auto const new_page = page_manager::template try_allocate_page<detail::page_allocation_type::zeroed>(progress_blocking);
             if (new_page == nullptr)
                 throw std::bad_alloc();
             return new_page;
+        }
+
+        void * try_allocate_page_zeroed(progress_guarantee i_progress_guarantee) noexcept
+        {
+            return page_manager::template try_allocate_page<detail::page_allocation_type::zeroed>(i_progress_guarantee);
         }
 
         /** Deallocates a memory page. After the call accessing the page results in undefined behavior.
@@ -242,6 +259,19 @@ namespace density
         void deallocate_page_zeroed(void * i_page) noexcept
         {
             page_manager::template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
+        }
+
+        size_t reserve_lockfree_memory(size_t i_size)
+        {
+            auto const reserved_size = page_manager::try_reserve_lockfree_memory(progress_blocking, i_size);
+            if(reserved_size < i_size)
+                throw std::bad_alloc();
+            return reserved_size;
+        }
+
+        size_t try_reserve_lockfree_memory(progress_guarantee i_progress_guarantee, size_t i_size) noexcept
+        {
+            return page_manager::try_reserve_lockfree_memory(i_progress_guarantee, i_size);
         }
 
         /** Pins the page containing the specified address.

@@ -39,7 +39,7 @@ namespace density
 
     enum progress_guarantee
     {
-        progress_obstruction_free,
+        progress_blocking,
         progress_lock_free,
         progress_wait_free
     };
@@ -447,7 +447,7 @@ namespace density
             // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
             size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
             size_t const actual_size = i_size + extra_size;
-            auto complete_block = operator new (actual_size);
+            auto const complete_block = operator new (actual_size);
             user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
             detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
             header.m_block = complete_block;
@@ -462,10 +462,10 @@ namespace density
             @param i_block block to deallocate, or nullptr.
             @param i_size size of the block to deallocate, in bytes.
             @param i_alignment alignment of the memory block.
-            @param i_alignment_offset
+            @param i_alignment_offset offset of the alignment
 
         \pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
-        \pre i_size and i_alignment are the same specified when allocating the block
+        \pre i_size, i_alignment and i_alignment_offset are the same specified when allocating the block
 
         \exception never throws
 
