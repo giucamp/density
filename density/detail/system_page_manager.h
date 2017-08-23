@@ -137,13 +137,13 @@ namespace density
             struct Region
             {
                 /** Address of the next free page in the region. When >= m_end, the region is exhausted. */
-                sync::atomic<uintptr_t> m_curr{ 0 };
+                std::atomic<uintptr_t> m_curr{ 0 };
 
                 /** First address after the available memory of the region */
                 uintptr_t m_end{ 0 };
 
                 /** Pointer to the next memory region */
-                sync::atomic<Region*> m_next_region{ nullptr };
+                std::atomic<Region*> m_next_region{ nullptr };
 
                 /** Address of the first allocable page of the region */
                 uintptr_t m_start{ 0 };

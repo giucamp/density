@@ -97,9 +97,6 @@
     <ClInclude Include="..\..\density\detail\function_queue_impl.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\page_manager.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\system_page_manager.h">
       <Filter>density\detail</Filter>
     </ClInclude>
@@ -172,9 +169,6 @@
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_page_stack.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\threading_extensions.h">
       <Filter>test_framework</Filter>
     </ClInclude>
@@ -182,6 +176,12 @@
       <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\singleton_ptr.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\wf_page_stack.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\page_allocator.h">
       <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>

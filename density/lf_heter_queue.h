@@ -24,13 +24,13 @@ namespace density
     {
         template<typename COMMON_TYPE> struct NbQueueControl // used by lf_heter_queue<T,...>
         {
-            volatile uintptr_t m_next; // raw atomic
+            uintptr_t m_next; // raw atomic
             COMMON_TYPE * m_element;
         };
 
         template<> struct NbQueueControl<void> // used by lf_heter_queue<void,...>
         {
-            volatile uintptr_t m_next; // raw atomic
+            uintptr_t m_next; // raw atomic
         };
 
         enum NbQueue_Flags : uintptr_t

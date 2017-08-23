@@ -73,19 +73,6 @@ namespace density
     constexpr size_t concurrent_alignment = 64;
     constexpr size_t default_page_capacity = 1024 * 16;
 
-    /** Aliases for the synchronization classes.
-        By default density uses the C++11 standard synchronization support. Anyway you can change these aliases
-        to use another synchronization library, given that it is conforming to the standard one. */
-    namespace sync
-    {
-        using std::mutex;
-        using std::thread;
-        using std::lock_guard;
-        using std::atomic;
-        namespace this_thread = std::this_thread;
-        using memory_order = std::memory_order;
-    }
-
     /* concurrent data structures has been tested on x86-x64, but not on architectures with weak
         memory ordering. If you are willing to contribute to density, running the tests on other
         architectures, you can change this constant. */

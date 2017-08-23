@@ -346,7 +346,7 @@ namespace density
 
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
+                    UniquePin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
                     auto const updated_tail = m_tail.load(detail::mem_relaxed);
                     if (updated_tail != i_end_control)
                     {

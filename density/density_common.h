@@ -22,26 +22,45 @@
 
 namespace density
 {
-    /** This enum describes the concurrency supported by a set of functions. */
+    /** Specifies whether a set of functions actually support concurrency */
     enum concurrency_cardinality
     {
         concurrency_single, /**< Functions with this concurrent cardinality can be called by only one thread,
-                                            or by multiple threads if externally synchronized with a mutex. */
+                                            or by multiple threads if externally synchronized. */
         concurrency_multiple, /**< Multiple threads can call the functions with this concurrent cardinality
                                             without external synchronization. */
     };
 
+    /** Specifies which guarantee is provided on the order in which actions on a data structure are observable. */
     enum consistency_model
     {
-        consistency_relaxed,
-        consistency_sequential,
+        consistency_relaxed, /**< The order in which actions happens (or are observable) is not defined and
+                                  may vary from one thread to another. A single thread may observe its own
+                                  actions out of order. */
+        consistency_sequential, /**< A total ordering exists of all actions on a data structure. Given 
+                                    three actions A, B and C, if A happens before B, and B happens before
+                                    C, the A happens before C. */
     };
 
+    /** Specifies which guarantee an algorithm on a concurrent data struct provides about the progress and
+        the completion of the work. 
+
+        Members are sorted so that lower values specifies weaker guarantee. Progress guarantees are cumulative:
+        the guarantee G provides all the guarantees less than G.
+        
+        Dead locks and priority inversion may happen only in blocking algorithms.
+
+        See https://en.wikipedia.org/wiki/Non-blocking_algorithm. */
     enum progress_guarantee
     {
-        progress_blocking,
-        progress_lock_free,
-        progress_wait_free
+        progress_blocking, /**< The calling thread may wait for other thread to finish their work. Blocking 
+                                algorithms usually protects shared data with a mutex. */
+        progress_obstruction_free, /**< If all other threads are suspended, the calling thread is guaranteed 
+                                        to finish its work in a finite number of steps. */
+        progress_lock_free, /**< In case of contention, in a finite number of steps at least one thread
+                                 finishes the work. */
+        progress_wait_free /**<  The calling thread completes the work in a finite number of steps, 
+                                 independently from the other threads. */
     };
 
                 // address functions
@@ -245,37 +264,6 @@ namespace density
             return address_add( i_second, i_second_size ) > i_first;
     }
 
-    /** Allocates an object with the given size and alignment starting from a reference pointer, and update
-            it to the end of the allocation.
-        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block
-        @param i_size size (in bytes) of the block to allocate
-        @param i_alignment alignment (in bytes) of the block to allocate (must be a positive power of 2).
-        @return address of the new block. */
-    inline void * linear_alloc(void * & io_top_pointer, size_t i_size, size_t i_alignment)
-    {
-        DENSITY_ASSERT(is_power_of_2(i_alignment) && uint_is_aligned(i_size, i_alignment));
-        auto top = io_top_pointer;
-        auto const new_block = top = address_upper_align(top, i_alignment);
-        top = address_add(top, i_size);
-        io_top_pointer = top;
-        return new_block;
-    }
-
-    /** Allocates an object with the given size starting from a reference pointer, and update
-            it to the end of the allocation.
-        @param io_top_pointer pointer to the current address, which is incremented to make space for the new block
-        @param i_size size (in bytes) of the block to allocate
-        @param i_alignment alignment (in bytes) of the block to allocate (must be a positive power of 2).
-        @return address of the new block. */
-    inline void * linear_alloc(void * & io_top_pointer, size_t i_size)
-    {
-        auto top = io_top_pointer;
-        auto const new_block = top;
-        top = address_add(top, i_size);
-        io_top_pointer = top;
-        return new_block;
-    }
-
     namespace detail
     {
         // size_min: avoid including <algorithm> just to use std::min<size_t>
@@ -329,52 +317,21 @@ namespace density
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
 
-        template <typename SCOPE_EXIT_ACTION>
-            class ScopeExit
-        {
-        public:
-
-            ScopeExit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-                : m_scope_exit_action(std::move(i_scope_exit_action))
-            {
-                static_assert(noexcept(m_scope_exit_action()), "The scope exit action must be noexcept");
-            }
-
-            ~ScopeExit()
-            {
-                m_scope_exit_action();
-            }
-
-            ScopeExit(const ScopeExit &) = delete;
-            ScopeExit & operator = (const ScopeExit &) = delete;
-
-            ScopeExit(ScopeExit &&) noexcept = default;
-            ScopeExit & operator = (ScopeExit &&) noexcept = default;
-
-        private:
-            SCOPE_EXIT_ACTION m_scope_exit_action;
-        };
-
-        template <typename SCOPE_EXIT_ACTION>
-            inline ScopeExit<SCOPE_EXIT_ACTION> at_scope_exit(SCOPE_EXIT_ACTION && i_scope_exit_action)
-        {
-            return ScopeExit<SCOPE_EXIT_ACTION>(std::forward<SCOPE_EXIT_ACTION>(i_scope_exit_action));
-        }
-
+        /** \internal Utility that provides RAII pinning\unpinning of a memory page */
         template <typename ALLOCATOR_TYPE>
-            class ScopedPin
+            class UniquePin
         {
         private:
             ALLOCATOR_TYPE * const m_allocator;
             void * m_pinned_page = nullptr;
 
         public:
-            ScopedPin(ALLOCATOR_TYPE * i_allocator) noexcept
+            UniquePin(ALLOCATOR_TYPE * i_allocator) noexcept
                 : m_allocator(i_allocator)
             {
             }
 
-            ScopedPin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
+            UniquePin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
                 : m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
             {
                 if (m_pinned_page != nullptr)
@@ -399,7 +356,7 @@ namespace density
                 }
             }
 
-            ~ScopedPin()
+            ~UniquePin()
             {
                 if (m_pinned_page != nullptr)
                     m_allocator->unpin_page(m_pinned_page);
@@ -507,90 +464,7 @@ namespace density
         #define DENSITY_TEST_ARTIFICIAL_DELAY
     #endif
 
-    /*! \page wid_list_iter_bench Widget list benchmarks
-
-    These tests iterate an existing list of widgets many times, and do something with every of them. These are the test with the more variable results: heterogeneous_array seems to perform better, but it's hard to tell how much.
-
-    ptr_vector is a std::vector of std::unique_ptr's, den_list is a heterogeneous_array<Widget>. They are created before the test runs, with this code:
-
-    \code{.cpp}
-        static auto ptr_vector = []() {
-            vector<unique_ptr<Widget>> res;
-            for (size_t i = 0; i < 3000; i++)
-            {
-                switch (i % 3)
-                {
-                    case 0: res.push_back(make_unique<Widget>()); break;
-                    case 1: res.push_back(make_unique<TextWidget>()); break;
-                    case 2: res.push_back(make_unique<ImageWidget>()); break;
-                    default: break;
-                }
-            }
-            return res;
-        }();
-
-        static auto den_list = []() {
-            heterogeneous_array<Widget> list;
-            for (size_t i = 0; i < 3000; i++)
-            {
-                switch (i % 3)
-                {
-                    case 0: list.push_back(Widget()); break;
-                    case 1: list.push_back(TextWidget()); break;
-                    case 2: list.push_back(ImageWidget()); break;
-                    default: break;
-                }
-            }
-            return list;
-        }();
-    \endcode
-
-    \section list_iter_bench_sec1 Call a virtual function on every widget
-
-    For every widget a virtual function is called. Widget are defined with this code:
-    \code{.cpp}
-        struct Widget { int var[8]; virtual void f() { memset(var, 0, sizeof(var) ); } };
-        struct TextWidget : Widget { int var[3]; void f() { memset(var, 0, sizeof(var)); }  };
-        struct ImageWidget : Widget { int var[8]; void f() { memset(var, 0, sizeof(var)); } };
-    \endcode
-    \image html iterate_dense_list_and_call_virtual_func.png width=10cm
-
-    \section list_iter_bench_sec2 Set some variables on every widget
-
-    For every widget some variable is set. Widget are defined with this code:
-    \code{.cpp}
-        struct Widget { int a, b, c, d, e, f, g, h; };
-        struct TextWidget : Widget { char str[8]; };
-        struct ImageWidget : Widget { float a, b, c; };
-    \endcode
-    \image html iterate_dense_list_and_set_variables.png width=10cm
-
-    \page any_bench Comparison benchmarks with boost::any
-    This test just instances an homogeneous queue and fill it with int's
-    \image html queue_push.png width=10cm
-
-    This test iterates an homogeneous container and get the std::type_info for every element. The containers are created by this code:
-
-    \code{.cpp}
-        static auto any_vector = []() {
-            vector<boost::any> res;
-            for (size_t i = 0; i < 3000; i++)
-            {
-                res.push_back(static_cast<int>(i));
-            }
-            return res;
-        }();
-
-        static auto den_list = []() {
-            heterogeneous_array<void> res;
-            for (size_t i = 0; i < 3000; i++)
-            {
-                res.push_back(static_cast<int>(i));
-            }
-            return res;
-        }();
-    \endcode
-    \image html iterate_an_heterogeneous_list_and_print_type_name.png width=10cm
+    /*! 
 
     \page func_queue_bench Function queue benchmarks
 

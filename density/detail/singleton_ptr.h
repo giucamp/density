@@ -39,8 +39,8 @@ namespace density
             /** Constructs the SingletonPtr, possibly constructing the singleton. */
             SingletonPtr() noexcept(std::is_nothrow_default_constructible<SINGLETON>::value)
             {
-                /*volatile void * p = &s_global_ptr_instance;
-                (void)p;*/
+                volatile void * no_strip = &s_global_ptr_instance;
+                (void)no_strip;
                 add_ref();
             }
 
@@ -162,7 +162,7 @@ namespace density
 
         private:
             static typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type s_singleton_storage;
-            static volatile uintptr_t s_ref_count;
+            static uintptr_t s_ref_count;
             static SingletonPtr<SINGLETON> s_global_ptr_instance;
         };
 
@@ -170,7 +170,7 @@ namespace density
             typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type SingletonPtr<SINGLETON>::s_singleton_storage;
         
         template <typename SINGLETON>
-            volatile uintptr_t SingletonPtr<SINGLETON>::s_ref_count;
+            uintptr_t SingletonPtr<SINGLETON>::s_ref_count;
 
         template <typename SINGLETON>
             SingletonPtr<SINGLETON> SingletonPtr<SINGLETON>::s_global_ptr_instance;

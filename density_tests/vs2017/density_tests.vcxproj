@@ -566,13 +566,13 @@
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
-    <ClInclude Include="..\..\density\detail\lf_page_stack.h" />
+    <ClInclude Include="..\..\density\detail\wf_page_stack.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_single.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_seq_cst.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_relaxed.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h" />
-    <ClInclude Include="..\..\density\detail\page_manager.h" />
+    <ClInclude Include="..\..\density\detail\page_allocator.h" />
     <ClInclude Include="..\..\density\detail\page_stack.h" />
     <ClInclude Include="..\..\density\detail\singleton_ptr.h" />
     <ClInclude Include="..\..\density\detail\system_page_manager.h" />

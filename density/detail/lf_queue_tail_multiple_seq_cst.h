@@ -160,7 +160,7 @@ namespace density
                 auto const required_size = overhead + i_size + (i_alignment - min_alignment);
                 auto const required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
-                detail::ScopedPin<ALLOCATOR_TYPE> scoped_pin(this);
+                detail::UniquePin<ALLOCATOR_TYPE> scoped_pin(this);
 
                 bool const fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -240,7 +240,7 @@ namespace density
                 constexpr auto required_size = overhead + size + (alignment - min_alignment);
                 constexpr auto required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
-                detail::ScopedPin<ALLOCATOR_TYPE> scoped_pin(this);
+                detail::UniquePin<ALLOCATOR_TYPE> scoped_pin(this);
 
                 bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -385,7 +385,7 @@ namespace density
                 {
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    detail::ScopedPin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
+                    detail::UniquePin<ALLOCATOR_TYPE> const end_block(this, i_end_control);
                     auto const updated_tail = reinterpret_cast<ControlBlock *>(m_tail.load(detail::mem_relaxed));
                     if (updated_tail != i_end_control)
                     {
