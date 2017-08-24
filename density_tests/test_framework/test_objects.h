@@ -89,6 +89,11 @@ namespace density_tests
 		#endif
 		static std::atomic<size_t> s_instance_counter;
 	};
+    
+    #if defined(__GNUG__)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wattributes" // warning: requested alignment X is larger than 128
+    #endif
 
 	template <size_t SIZE, size_t ALIGNMENT>
 		class alignas(ALIGNMENT) TestObject : InstanceCounted
@@ -152,6 +157,10 @@ namespace density_tests
 	private:
 		typename std::aligned_storage<SIZE, ALIGNMENT>::type m_storage;
 	};
+    
+    #if defined(__GNUG__)
+        #pragma GCC diagnostic pop
+    #endif
 
 	template <typename COMMON_TYPE = void>
 		class TestRuntimeTime : private InstanceCounted

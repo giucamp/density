@@ -336,12 +336,6 @@ namespace density
                     {
                         case std::memory_order_relaxed:
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELAXED, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELAXED, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELAXED, __ATOMIC_SEQ_CST);
                         default:
                             DENSITY_ASSERT(false);
                             return false;
@@ -358,8 +352,6 @@ namespace density
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_CONSUME);
                         case std::memory_order_acquire:
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_SEQ_CST);
                         default:
                             DENSITY_ASSERT(false);
                             return false;
@@ -376,8 +368,6 @@ namespace density
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_CONSUME);
                         case std::memory_order_acquire:
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_SEQ_CST);
                         default:
                             DENSITY_ASSERT(false);
                             return false;
@@ -394,8 +384,6 @@ namespace density
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_CONSUME);
                         case std::memory_order_acquire:
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_SEQ_CST);
                         default:
                             DENSITY_ASSERT(false);
                             return false;
@@ -412,8 +400,6 @@ namespace density
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_CONSUME);
                         case std::memory_order_acquire:
                             return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_SEQ_CST);
                         default:
                             DENSITY_ASSERT(false);
                             return false;

@@ -9,6 +9,7 @@
 #include <limits>
 #include <cstddef>
 #include <utility>
+#include <atomic> // for std::memory_order
 
 #define DENSITY_VERSION            0x0010
 

@@ -427,14 +427,13 @@ namespace density
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
-                using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(std::is_trivially_destructible<ValueType>::value,
                     "put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
+                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
@@ -1404,14 +1403,13 @@ namespace density
                 typename std::iterator_traits<INPUT_ITERATOR>::value_type *
                     raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
-                using DiffType = typename std::iterator_traits<INPUT_ITERATOR>::difference_type;
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(std::is_trivially_destructible<ValueType>::value,
                     "reentrant_put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<DiffType>(count) == count_s);
+                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
