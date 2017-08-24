@@ -119,9 +119,11 @@ namespace density
 
                 while (i_size > curr_region->m_cumulative_available_memory)
                 {
-                    curr_region = get_next_region(i_progress_guarantee, curr_region, &new_region);
-                    if (curr_region == nullptr)
+                    auto next_region = get_next_region(i_progress_guarantee, curr_region, &new_region);
+                    if (next_region == nullptr)
                         break;
+
+                    curr_region = next_region;
                 }
 
                 if (new_region != nullptr)

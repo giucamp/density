@@ -1568,6 +1568,8 @@ namespace density
             // internal only - can't be called from outside density
             bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
             {
+                DENSITY_ASSERT_INTERNAL(i_queue != nullptr);
+                   
                 // first we take the locks, because they may throw
                 std::unique_lock<std::mutex> lock;
                 if (m_queue != nullptr)

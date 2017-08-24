@@ -57,7 +57,7 @@ namespace density_tests
 		void check()
 		{
 			NonPolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_double = 22.);
+			DENSITY_TEST_ASSERT(m_double == 22.);
 		}
 		
 		virtual ~PolymorphicBase()
