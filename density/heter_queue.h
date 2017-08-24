@@ -661,7 +661,7 @@ namespace density
                 auto const count = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
+                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
                     new(curr) ValueType(*i_begin);
                 return elements;
@@ -1666,7 +1666,7 @@ namespace density
                 auto const count = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType), alignof(ValueType)));
+                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
                     new(curr) ValueType(*i_begin);
                 return elements;
