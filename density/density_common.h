@@ -10,13 +10,8 @@
 #include <cstddef>
 #include <utility>
 
-#define DENSITY_VERSION            0x0009
-/**
-    Breaking changes from version 0x0007:
-        - The \ref PagedAllocator_concept "PagedAllocator" concept previously required page_size and page_alignment
-            to be static functions (to avoid using the constexpr keyword). In version 0x0008 page_size and page_alignment
-            are required to be static constexpr variables.
-*/
+#define DENSITY_VERSION            0x0010
+
 
 #include <density/density_config.h>
 
@@ -319,24 +314,27 @@ namespace density
 
         /** \internal Utility that provides RAII pinning\unpinning of a memory page */
         template <typename ALLOCATOR_TYPE>
-            class UniquePin
+            class PinGuard
         {
         private:
             ALLOCATOR_TYPE * const m_allocator;
             void * m_pinned_page = nullptr;
 
         public:
-            UniquePin(ALLOCATOR_TYPE * i_allocator) noexcept
+            PinGuard(ALLOCATOR_TYPE * i_allocator) noexcept
                 : m_allocator(i_allocator)
             {
             }
 
-            UniquePin(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
+            PinGuard(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
                 : m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
             {
                 if (m_pinned_page != nullptr)
                     m_allocator->pin_page(m_pinned_page);
             }
+
+            PinGuard(const PinGuard &) = delete;
+            PinGuard & operator = (const PinGuard &) = delete;
 
             bool pin_new(void * i_address) noexcept
             {
@@ -356,7 +354,7 @@ namespace density
                 }
             }
 
-            ~UniquePin()
+            ~PinGuard()
             {
                 if (m_pinned_page != nullptr)
                     m_allocator->unpin_page(m_pinned_page);
@@ -380,8 +378,10 @@ namespace density
                 from the beginning of the block.
             @return address of the new memory block
 
-        \pre i_alignment is > 0 and is an integer power of 2
-        \pre i_alignment_offset is <= i_size
+            \pre The behavior is undefined if either:
+                - i_alignment is zero or it is not an integer power of 2
+                - i_size is not a multiple of i_alignment
+                - i_alignment_offset is greater than i_size
 
         A violation of any precondition results in undefined behavior.
 
@@ -414,17 +414,18 @@ namespace density
         return user_block;
     }
 
-    /** Deallocates a memory block allocated by aligned_allocate, using the global operator delete. After the call
-                accessing the memory block results in undefined behavior.
+    /** Deallocates a memory block allocated by aligned_allocate, using the global operator delete.
+        After the call any access to the memory block results in undefined behavior.
             @param i_block block to deallocate, or nullptr.
             @param i_size size of the block to deallocate, in bytes.
             @param i_alignment alignment of the memory block.
             @param i_alignment_offset offset of the alignment
 
-        \pre i_block is a memory block allocated with any instance of basic_void_allocator, or nullptr
-        \pre i_size, i_alignment and i_alignment_offset are the same specified when allocating the block
+            \pre The behavior is undefined if either:
+                - i_block is not a memory block allocated by the function allocate
+                - i_size, i_alignment and i_alignment_offset are not the same specified when the block was allocated
 
-        \exception never throws
+        \n <b>Throws</b>: nothing
 
         If i_block is nullptr, the call has no effect. */
     inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept

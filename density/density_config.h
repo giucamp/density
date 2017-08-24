@@ -62,15 +62,10 @@
     #define DENSITY_ENV_HAS_THREADING                   1
 #endif
 
-#include <atomic>
-#include <thread>
-#include <mutex>
-#include <atomic>
-
-
 namespace density
 {
     constexpr size_t concurrent_alignment = 64;
+
     constexpr size_t default_page_capacity = 1024 * 16;
 
     /* concurrent data structures has been tested on x86-x64, but not on architectures with weak

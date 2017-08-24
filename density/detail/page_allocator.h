@@ -202,7 +202,7 @@ namespace density
 
             size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
             {
-                return m_global_state->try_reserve_region_memory(i_progress_guarantee, i_size);
+                return m_global_state->sys_page_manager().try_reserve_region_memory(i_progress_guarantee, i_size);
             }
 
             static void pin_page(void * const i_address) noexcept

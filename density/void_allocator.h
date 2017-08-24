@@ -78,17 +78,17 @@ namespace density
 
     /*! \page PagedAllocator_concept PagedAllocator concept
         The PagedAllocator concept encapsulates a page-based untyped memory allocation service. All pages allocated by a
-        PagedAllocator have the same size and alignment requirements.
+        PagedAllocator have the same fixed size and alignment requirements.
 
         <table>
         <caption id="multi_row">PagedAllocator Requirements</caption>
-        <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
+        <tr><th style="width:700px">Requirement</th><th>Semantic</th></tr>
 
-        <tr><td>Static constexpr member variable: @code static size_t page_size; @endcode </td></tr>
+        <tr><td>Static constexpr member variable: @code static constexpr size_t page_size; @endcode </td></tr>
         <td>Specifies the size of a page in bytes, that is always less than or equal to the alignment.\n Note: there is no
-            constraint on the page size. Accessing memory past the end of a page is undefined behaviour. </td> </tr>
+            constraint on the page size. Accessing memory past the end of a page causes undefined behavior. </td> </tr>
 
-        <tr><td>Static constexpr member variable: @code static const size_t page_alignment; @endcode </td></tr>
+        <tr><td>Static constexpr member variable: @code static constexpr size_t page_alignment; @endcode </td></tr>
         <td>Specifies the minimum alignment of a page in bytes, that is always greater than zero and an integer power of 2. </td> </tr>
 
         <tr><td>Non-static member function: @code void * allocate_page(); @endcode </td></tr>
@@ -98,8 +98,36 @@ namespace density
         The return value is a pointer to the first byte of the memory page. The content of the page is undefined. \n
         </td></tr>
 
-        <tr><td>Non-static member function: @code void deallocate_page(void * i_page) noexcept; @endcode </td></tr>
-        <td>Deallocates a memory page. </td></tr>
+        <tr><td>Non-static noexcept member function: @code void * try_allocate_page(progress_guarantee i_progress_guarantee); @endcode </td></tr>
+            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the 
+            page is aligned at least to \em page_alignment. The return value is a pointer to the first byte of the memory page. The content of the
+            page is undefined. Returns null on failure.
+        </td></tr>
+
+        <tr><td>Non-static member function: @code void * allocate_page_zeroed(); @endcode </td></tr>
+            <td>Allocates a memory page large at least \em page_size bytes. The first byte of the page is aligned at
+            least to \em page_alignment. On failure this function should throw a
+            <a href="http://en.cppreference.com/w/cpp/memory/new/bad_alloc">std::bad_alloc</a>. \n
+        The return value is a pointer to the first byte of the memory page. The content of the page is zeroed. \n
+        </td></tr>
+
+        <tr><td>Non-static noexcept member function: @code void * try_allocate_page_zeroed(progress_guarantee i_progress_guarantee); @endcode </td></tr>
+            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the 
+            page is aligned at least to \em page_alignment. The return value is a pointer to the first byte of the memory page. The content of the
+            page is zeroed. Returns null on failure.
+        </td></tr>
+
+        <tr><td>Non-static noexcept member function: @code void deallocate_page(void * i_page); @endcode </td></tr>
+        <td>Deallocates the memory page containing the provided address. This function must be wait-free. </td></tr>
+
+        <tr><td>Non-static noexcept member function: @code void deallocate_page_zeroed(void * i_page); @endcode </td></tr>
+        <td>Deallocates the memory page containing the provided address, assuming that as soon it is not pinned its content is zeroed. This function must be wait-free. </td></tr>
+
+        <tr><td>Non-static noexcept member function: @code void pin_page(void * i_page); @endcode </td></tr>
+        <td>Pins the memory page containing the provided address, preventing it from being altered or recycled. The page be already deallocated, in which case the caller will unpin it immediately. This function must be lock-free. </td></tr>
+
+        <tr><td>Non-static noexcept member function: @code void unpin_page(void * i_page); @endcode </td></tr>
+        <td>Unpins the memory page containing the provided address, that must have previously been pinned, stopping the effect of the pin. This function must be lock-free. </td></tr>
 
         <tr><td>Operators == and !=</td></tr>
         <td>Checks for equality\\inequality.
@@ -129,13 +157,7 @@ namespace density
     /** Class template providing paged and legacy memory allocation. It models both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
-        basic_void_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_void_allocator.
-
-        \section Implementation
-        basic_void_allocator redirects block allocations to the language built-in operator new. Whenever the requested alignment
-        is greater than alignof(std::max_align_t), basic_void_allocator allocates an overhead whose size is the maximum between
-        the requested alignment and sizeof(void*). \n
-    */
+        basic_void_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_void_allocator. */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
         class basic_void_allocator
     {
@@ -150,19 +172,19 @@ namespace density
         /** Alignment (in bytes) of memory pages. */
         static constexpr size_t page_alignment = PageAllocator::page_alignment;
 
-        /** Default constructor */
+        /** Trivial default constructor */
         basic_void_allocator() noexcept = default;
         
-        /** Copy constructor */
+        /** Trivial copy constructor */
         basic_void_allocator(const basic_void_allocator&) noexcept = default;
         
-        /** Move constructor */
+        /** Trivial move constructor */
         basic_void_allocator(basic_void_allocator&&) noexcept = default;
         
-        /** Copy assignment */
+        /** Trivial copy assignment */
         basic_void_allocator & operator = (const basic_void_allocator&) noexcept = default;
         
-        /** Move assignment */
+        /** Trivial move assignment */
         basic_void_allocator & operator = (basic_void_allocator&&) noexcept = default;
 
         /** Allocates a legacy memory block with the specified size and alignment.
@@ -175,6 +197,7 @@ namespace density
             \pre The behavior is undefined if either:
                 - i_alignment is zero or it is not an integer power of 2
                 - i_size is not a multiple of i_alignment
+                - i_alignment_offset is greater than i_size
 
             \n <b>Progress guarantee</b>: the same of the built-in operator new
             \n <b>Throws</b>: std::bad_alloc on failure
@@ -238,6 +261,13 @@ namespace density
             return PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::uninitialized>(i_progress_guarantee);
         }
 
+        /** Allocates a memory page.
+            @return address of the new memory page
+
+            \n <b>Progress guarantee</b>: possibly blocking
+            \n <b>Throws</b>: std::bad_alloc on failure.
+
+            The content of the newly allocated page is zeroed. */
         void * allocate_page_zeroed()
         {
             auto const new_page = PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::zeroed>(progress_blocking);
@@ -246,29 +276,61 @@ namespace density
             return new_page;
         }
 
+        /** Tries to allocates a memory page.
+            @return address of the new memory page, or nullptr if the allocation fails
+
+            \n <b>Progress guarantee</b>: specified by the argument
+            \n <b>Throws</b>: nothing
+
+            The content of the newly allocated page is zeroed. */
         void * try_allocate_page_zeroed(progress_guarantee i_progress_guarantee) noexcept
         {
             return PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::zeroed>(i_progress_guarantee);
         }
 
-        /** Deallocates a memory page. After the call accessing the page results in undefined behavior.
-            @param i_page page to deallocate. Cannot be nullptr.
+        /** Deallocates a memory page. If the page is still pinned by some threads, it is not altered or recycled
+                by the allocator until it is unpinned.
+            @param i_page pointer to a byte within the page to deallocate. Can't be nullptr.
 
-            \pre i_page is a memory page allocated with any instance of basic_void_allocator
+            \pre The behavior is undefined if either:
+                - i_page is not a page allocated by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
 
-            \exception never throws */
+            \n <b>Progress guarantee</b>: wait free
+            \n <b>Throws</b>: nothing */
         void deallocate_page(void * i_page) noexcept
         {
+            DENSITY_ASSERT(i_page != nullptr);
             PageAllocator::thread_local_instance().template deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
         }
 
-        // the page may be not still zeroed, if it is pinned
+        /** Deallocates a memory page. If the page is still pinned by some threads, it is not altered or recycled
+                by the allocator until it is unpinned.
+            If the page is not pinned, it must be zeroed. Otherwise it must be zeroed when the last pin is removed.
+            @param i_page pointer to a byte within the page to deallocate. Can't be nullptr.
+
+            \pre The behavior is undefined if either:
+                - i_page is not a page allocated by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
+                - when the last pin is removed the page is not completely zeroed
+
+            \n <b>Progress guarantee</b>: wait free
+            \n <b>Throws</b>: nothing */
         void deallocate_page_zeroed(void * i_page) noexcept
         {
             PageAllocator::thread_local_instance().template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
         }
 
-        size_t reserve_lockfree_memory(size_t i_size)
+        /** Reserve the specified memory size from the system for lock-free page allocation.
+            @param i_size the space (in bytes) that the internal page allocator should reserve for page allocation.
+            @return space (in bytes) that actually owned by the page allocator. It is greater than or equal to i_size
+
+            The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions 
+            are returned to the system only during the destruction of global objects. \n
+            This function ensures that the sum of memory available in the regions is at least the specified size.
+            Note: some of this space may be already allocated as pages.
+
+            \n <b>Progress guarantee</b>: possibly blocking
+            \n <b>Throws</b>: std::bad_alloc on failure. */
+        static size_t reserve_lockfree_page_memory(size_t i_size)
         {
             auto const reserved_size = PageAllocator::thread_local_instance().try_reserve_lockfree_memory(progress_blocking, i_size);
             if(reserved_size < i_size)
@@ -276,31 +338,73 @@ namespace density
             return reserved_size;
         }
 
-        size_t try_reserve_lockfree_memory(progress_guarantee i_progress_guarantee, size_t i_size) noexcept
+        /** Tries to reserve the specified memory size from the system for lock-free page allocation.
+            @param i_progress_guarantee minimum progress guarantee of this call. If it is not progress_blocking,
+                no region is allocated
+            @param i_size the space (in bytes) that the internal page allocator should reserve for page allocation.
+            @return space (in bytes) that actually owned by the page allocator. If it is less than i_size, the
+                function has failed. This may happen for an out of memory or because a new region was necessary but
+                the specified progress guarantee does not allow region allocation.
+
+            The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions 
+            are returned to the system only during the destruction of global objects. \n
+            This function verifies that the sum of memory available in the regions is at least the specified size.
+            Note: some of this space may be already allocated as pages.
+
+            \n <b>Progress guarantee</b>: specified by the argument
+            \n <b>Throws</b>: nothing. */
+        static size_t try_reserve_lockfree_page_memory(progress_guarantee i_progress_guarantee, size_t i_size) noexcept
         {
             return PageAllocator::thread_local_instance().try_reserve_lockfree_memory(i_progress_guarantee, i_size);
         }
 
-        /** Pins the page containing the specified address.
-            The owner page is obtained from the address as address_lower_align(i_address, page_alignment).
-            If the owner page is currently allocated, the return value is a non-empty scoped_pin.
-            If the owner page was allocated from this allocator instance, but was the deallocated, the
-            behaviour is implementation defined (no undefined behaviour): the scoped_pin may be empty or not.
-            The user is supposded to detect such cases in some way and discard the returned scoped_pin.
+        /** Pins the page containing the specified address, incrementing an internal page_specific ref-count.
 
-            While a page has a scoped_pin asdsociated with it, if the page gets deallocated, the allocator
-            will not alter its content in any way, and will not allocate a page in the samer address. */
-        void pin_page(void * i_address) noexcept
+            @param i_page pointer to a byte within the page to deallocate. Can't be nullptr.
+
+            If the page has been already deallocated no undefined behavior occurs: the caller should detect this case
+            and unpin the page immediately. Using a deallocated-then-pinned page in any other way other than unpinning 
+            (including accessing its content) causes undefined behavior. \n
+            If the page is still allocated then the pin ensures that, while the page is pinned:
+                - the content of the page is not altered by the allocator
+                - the page is not returned by a call to allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed.
+                - if the page gets deallocated with a call to allocate_page_zeroed or try_allocate_page_zeroed, the memory
+                    may be still not zeroed.
+
+            Every call to pin_page should be matched by a call to unpin_page by the same thread. A thread may pin the same page
+            multiple times, provided that it unpins the page the same number of times.
+
+
+            \pre The behavior is undefined if either:
+                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
+
+            \n <b>Progress guarantee</b>: lock-free
+            \n <b>Throws</b>: nothing. */
+        void pin_page(void * i_page) noexcept
         {
-            PageAllocator::thread_local_instance().pin_page(i_address);
+            PageAllocator::thread_local_instance().pin_page(i_page);
         }
 
-        /** @return the number of pins before the modification */
+        /** Removes a pin from the page, decrementing the internal ref-count.
+        
+            \pre The behavior is undefined if either:
+                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
+                - the page was not previously pinned by this thread        
+        
+            \n <b>Progress guarantee</b>: lock-free
+            \n <b>Throws</b>: nothing. */
         void unpin_page(void * i_address) noexcept
         {
             PageAllocator::thread_local_instance().unpin_page(i_address);
         }
 
+        /** Returns the number of times the specified page has been pinned by any thread. This function is useful only for diagnostic or debugging.
+        
+            \pre The behavior is undefined if either:
+                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed 
+        
+            \n <b>Progress guarantee</b>: wait-free
+            \n <b>Throws</b>: nothing. */
         uintptr_t get_pin_count(const void * i_address) noexcept
         {
             return PageAllocator::thread_local_instance().get_pin_count(i_address);
@@ -315,31 +419,6 @@ namespace density
             @return always false. */
         bool operator != (const basic_void_allocator &) const noexcept
             { return false; }
-
-        /** Allocates and constructs an object. The alignment of the object is always respected.
-                @param i_construction_params argument list to be forwarded to the constructor of the object.
-                @return a pointer to the new object
-
-            Objects created by new_object must be deleted by delete_object. Using the language builtin delete on an object
-            created by new_object causes undefined behavior. Since all basic_void_allocator objects compares equal, an instance of
-            basic_void_allocator can delete an object created by another instance.
-        */
-        template <typename TYPE, typename... CONSTRUCTION_PARAMS>
-            TYPE * new_object(CONSTRUCTION_PARAMS && ... i_construction_params)
-        {
-            return new(allocate(sizeof(TYPE), alignof(TYPE))) TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
-        }
-
-        /** Deletes an object created with new_object*/
-        template <typename TYPE>
-            void delete_object(TYPE * i_object) noexcept
-        {
-            if (i_object != nullptr)
-            {
-                i_object->~TYPE();
-                deallocate(i_object, sizeof(TYPE), alignof(TYPE));
-            }
-        }
     };
 
 } // namespace density

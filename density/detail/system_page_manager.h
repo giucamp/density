@@ -117,7 +117,7 @@ namespace density
                 
                 auto curr_region = m_curr_region.load(std::memory_order_acquire);
 
-                while (i_size < curr_region->m_cumulative_available_memory)
+                while (i_size > curr_region->m_cumulative_available_memory)
                 {
                     curr_region = get_next_region(i_progress_guarantee, curr_region, &new_region);
                     if (curr_region == nullptr)
