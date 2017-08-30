@@ -25,6 +25,8 @@ DENSITY_NO_INLINE void sandbox()
 {
 	using namespace density;
 
+    //void_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
+
 	{
 		heter_queue<> queue;
 
@@ -98,11 +100,19 @@ void do_tests(std::ostream & i_ostream)
 	nonblocking_heterogeneous_queue_samples(i_ostream);
 	nonblocking_heterogeneous_queue_basic_tests(i_ostream);
 
+    size_t const element_count = 10000;
+
 	i_ostream << "\n*** executing generic tests..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eNone, i_ostream, 3, 100000);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, 3, element_count);
 
 	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, 100000);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, element_count);
+
+	i_ostream << "\n*** executing generic tests with test allocators..." << std::endl;
+	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread, i_ostream, 3, element_count);
+
+	i_ostream << "\n*** executing generic tests with test allocators and exceptions..." << std::endl;
+	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, element_count);
 
 	i_ostream << "\n*** executing load unload tests..." << std::endl;
 	load_unload_tests(std::cout);

@@ -166,7 +166,7 @@ namespace density
                                 {
                                     /* We have found a zeroed ControlBlock */
                                     DENSITY_TEST_ARTIFICIAL_DELAY;
-                                    next = i_queue->m_head.load(mem_relaxed);
+                                    next = i_queue->m_head;
                                     bool should_continue = false;
                                     if (Base::same_page(next, control))
                                         should_continue = control < next;

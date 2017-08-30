@@ -26,7 +26,8 @@ namespace density_tests
 		struct NbQueueSamples
 	{
 		template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
-			using lf_heter_queue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
+			using lf_heter_queue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 	
 		static void nonblocking_heterogeneous_queue_put_samples()
 		{

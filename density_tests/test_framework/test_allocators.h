@@ -17,7 +17,7 @@ namespace density_tests
         and \ref PagedAllocator_concept "PagedAllocator".
 		This class is based on density::basic_void_allocator, and uses a shared registry to detect bugs
 		in the memory management of containers (and pseudo-containers).
-		This class uses a mutex to be thread-safe. */
+		This class uses a mutex to be thread-safe, and doing so violates the progress guarantee of try- functions. */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = density::default_page_capacity>
 		class DeepTestAllocator : public density::basic_void_allocator<PAGE_CAPACITY_AND_ALIGNMENT>
     {
@@ -40,6 +40,20 @@ namespace density_tests
             return block;
         }
 
+        void * try_allocate(
+            density::progress_guarantee i_progress_guarantee,
+            size_t i_size,
+            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment_offset = 0) noexcept
+        {
+            auto const result = Base::try_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
+            if (result != nullptr)
+            {
+			    m_registry.register_block(s_default_category, result, i_size, i_alignment, i_alignment_offset);
+            }
+            return result;
+        }
+
         void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
         {
             m_registry.unregister_block(s_default_category, i_block, i_size, i_alignment, i_alignment_offset);
@@ -52,6 +66,16 @@ namespace density_tests
 
             auto page = Base::allocate_page();
             m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            return page;
+        }
+
+        void * try_allocate_page(density::progress_guarantee i_progress_guarantee)
+        {
+			auto page = Base::try_allocate_page(i_progress_guarantee);
+            if (page != nullptr)
+            {
+                m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            }
             return page;
         }
 
@@ -68,6 +92,16 @@ namespace density_tests
 
             auto page = Base::allocate_page_zeroed();
             m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            return page;
+        }
+        
+        void * try_allocate_page_zeroed(density::progress_guarantee i_progress_guarantee)
+        {
+			auto page = Base::try_allocate_page_zeroed(i_progress_guarantee);
+            if (page != nullptr)
+            {
+                m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            }
             return page;
         }
 
@@ -107,8 +141,7 @@ namespace density_tests
 	/* Allocators that meets the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator".
 		This class is based on density::basic_void_allocator, and uses atomic counters to detect bugs
-		in the memory management of containers (and pseudo-containers).
-		This class is lock-free if std::atomic<uintptr_t> is lock-free. */
+		in the memory management of containers (and pseudo-containers). */
 	template <size_t PAGE_CAPACITY_AND_ALIGNMENT = density::default_page_capacity>
 		class UnmovableFastTestAllocator : private density::basic_void_allocator<PAGE_CAPACITY_AND_ALIGNMENT>
 	{
@@ -149,7 +182,7 @@ namespace density_tests
 
 		void * allocate(size_t i_size,
 			size_t i_alignment = alignof(std::max_align_t),
-			size_t i_alignment_offset = 0) noexcept
+			size_t i_alignment_offset = 0)
 		{
 			m_living_allocations.fetch_add(1, std::memory_order_relaxed);
 			m_living_bytes.fetch_add(i_size, std::memory_order_relaxed);
@@ -157,6 +190,22 @@ namespace density_tests
 
 			return Base::allocate(i_size, i_alignment, i_alignment_offset);
 		}
+
+        void * try_allocate(
+            density::progress_guarantee i_progress_guarantee,
+            size_t i_size,
+            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment_offset = 0) noexcept
+        {
+            auto const result = Base::try_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
+            if (result != nullptr)
+            {
+			    m_living_allocations.fetch_add(1, std::memory_order_relaxed);
+			    m_living_bytes.fetch_add(i_size, std::memory_order_relaxed);
+			    m_total_allocations.fetch_add(1, std::memory_order_relaxed);
+            }
+            return result;
+        }
 
 		void deallocate(void * i_block,
 			size_t i_size,
@@ -179,6 +228,18 @@ namespace density_tests
 			return result;
         }
 
+        void * try_allocate_page(density::progress_guarantee i_progress_guarantee)
+        {
+            auto const result = Base::try_allocate_page(i_progress_guarantee);
+            if (result)
+            {
+                m_living_pages.fetch_add(1, std::memory_order_relaxed);
+                m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
+                DENSITY_TEST_ASSERT(density::address_is_aligned(result, page_alignment));
+            }
+            return result;
+        }
+
 		void * allocate_page_zeroed()
 		{
 			m_living_pages.fetch_add(1, std::memory_order_relaxed);
@@ -188,6 +249,19 @@ namespace density_tests
 
 			DENSITY_TEST_ASSERT(density::detail::mem_equal(result, page_size, 0));
 			return result;
+		}
+
+        void * try_allocate_page_zeroed(density::progress_guarantee i_progress_guarantee)
+		{
+               auto const result = Base::try_allocate_page_zeroed(i_progress_guarantee);
+            if (result)
+            {
+                m_living_pages.fetch_add(1, std::memory_order_relaxed);
+			    m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);        
+                DENSITY_TEST_ASSERT(density::address_is_aligned(result, page_alignment));
+                DENSITY_TEST_ASSERT(density::detail::mem_equal(result, page_size, 0));
+            }
+            return result;
 		}
 
 		void deallocate_page(void * i_page) noexcept

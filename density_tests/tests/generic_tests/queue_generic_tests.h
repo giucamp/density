@@ -357,25 +357,46 @@ namespace density_tests
 		{
 			using namespace density;
 
-			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
-					PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            {
+                // test conversion from proress_guarantee to LfQueue_ProgressGuarantee
+                using namespace density::detail;
+                static_assert(ToLfGuarantee(progress_blocking, true) == LfQueue_Throwing, "");
+                static_assert(ToLfGuarantee(progress_blocking, false) == LfQueue_Blocking, "");
+                static_assert(ToLfGuarantee(progress_obstruction_free, false) == LfQueue_LockFree, "");
+                static_assert(ToLfGuarantee(progress_lock_free, false) == LfQueue_LockFree, "");
+                static_assert(ToLfGuarantee(progress_wait_free, false) == LfQueue_WaitFree, "");
 
-			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
-				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+                // test conversion from LfQueue_ProgressGuarantee to proress_guarantee
+                static_assert(ToDenGuarantee(LfQueue_Throwing) == progress_blocking, "");
+                static_assert(ToDenGuarantee(LfQueue_Blocking) == progress_blocking, "");
+                static_assert(ToDenGuarantee(LfQueue_LockFree) == progress_lock_free, "");
+                static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
+            }
 
-			single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
-				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            if (i_flags && QueueTesterFlags::eUseTestAllocators)
+            {
+		        single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
-				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+		        single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-			single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
-				PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-				i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+		        single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+
+		        single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
+            else
+            {
+			    single_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
+					    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+				    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
 		}
 
 	} // namespace detail

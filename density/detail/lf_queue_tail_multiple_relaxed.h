@@ -15,7 +15,8 @@ namespace density
         {
         public:
 
-            using ControlBlock = typename detail::NbQueueControl<COMMON_TYPE>;
+            using ControlBlock = LfQueueControl<COMMON_TYPE>;
+            using Block = LfBlock<COMMON_TYPE>;
 
             /** Minimum alignment used for the storage of the elements.
                 The storage of elements is always aligned according to the most-derived type. */
@@ -28,7 +29,7 @@ namespace density
                 The ControlBlock is always at offset 0 in the layout of a value or raw block. */
             constexpr static uintptr_t s_alloc_granularity = size_max( size_max( concurrent_alignment,
                 alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock) ),
-                min_alignment, detail::size_log2(detail::NbQueue_AllFlags + 1) );
+                min_alignment, size_log2(NbQueue_AllFlags + 1) );
 
             /** Offset of the runtime_type in the layout of a value */
             constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
@@ -139,23 +140,145 @@ namespace density
                 return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
             }
 
-            /** This struct contains the result of an allocation. */
-            struct Block
+            Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
             {
-                ControlBlock * m_control_block;
-                uintptr_t m_next_ptr;
-                void * m_user_storage;
-            };
+                return try_inplace_allocate_impl<LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
+            }
+
+            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Block inplace_allocate()
+            {
+                return try_inplace_allocate_impl<LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+            }
+
+            Block try_inplace_allocate(progress_guarantee i_progress_guarantee, uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment) noexcept
+            {
+                switch (i_progress_guarantee)
+                {
+                case progress_wait_free:
+                    return try_inplace_allocate_impl<LfQueue_WaitFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                case progress_lock_free:
+                case progress_obstruction_free:
+                    return try_inplace_allocate_impl<LfQueue_LockFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                default:
+                    DENSITY_ASSERT_INTERNAL(false);
+                case progress_blocking:
+                    return try_inplace_allocate_impl<LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
+                }
+            }
+            
+            /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
+            template <progress_guarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Block try_inplace_allocate() noexcept
+            {
+                return try_inplace_allocate_impl<ToLfGuarantee(PROGRESS_GUARANTEE, false), CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+            }
+
+            ControlBlock * get_initial_page() const noexcept
+            {
+                return m_initial_page.load();
+            }
+
+            static void commit_put_impl(const Block & i_put) noexcept
+            {
+                DENSITY_TEST_ARTIFICIAL_DELAY;
+
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove the flag NbQueue_Busy
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
+            }
+
+            static void cancel_put_impl(const Block & i_put) noexcept
+            {
+                // destroy the element and the type
+                auto type_ptr = type_after_control(i_put.m_control_block);
+                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
+                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+
+                cancel_put_nodestroy_impl(i_put);
+            }
+
+            static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
+            {
+                DENSITY_TEST_ARTIFICIAL_DELAY;
+
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove NbQueue_Busy and add NbQueue_Dead
+                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
+            }
+
+            static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
+            {
+                return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
+            }
+
+            static void * get_unaligned_element(LfQueueControl<void> * i_control) noexcept
+            {
+                auto result = address_add(i_control, s_element_min_offset);
+                if (i_control->m_next & NbQueue_External)
+                {
+                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
+                        we don't need to align further */
+                    result = static_cast<ExternalBlock*>(result)->m_block;
+                }
+                return result;
+            }
+
+            static void * get_element(LfQueueControl<void> * i_control) noexcept
+            {
+                auto result = address_add(i_control, s_element_min_offset);
+                if (i_control->m_next & NbQueue_External)
+                {
+                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
+                        we don't need to align further */
+                    result = static_cast<ExternalBlock*>(result)->m_block;
+                }
+                else
+                {
+                    result = address_upper_align(result, type_after_control(i_control)->alignment());
+                }
+                return result;
+            }
+
+            template <typename TYPE>
+                static void * get_unaligned_element(LfQueueControl<TYPE> * i_control) noexcept
+            {
+                return i_control->m_element;
+            }
+
+            template <typename TYPE>
+                static TYPE * get_element(LfQueueControl<TYPE> * i_control) noexcept
+            {
+                return i_control->m_element;
+            }
+
+
+        private:
 
             /** Allocates a block of memory.
                 The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
+                @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Block
                 @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
                 @param i_include_type true if this is an element value, false if it's a raw allocation
                 @param i_size it must be > 0 and a multiple of the alignment
                 @param i_alignment is must be > 0 and a power of two */
-            Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+            template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
+                Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
             {
-                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0);
+                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
+                
+                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0);
                 DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
 
                 if (i_alignment < min_alignment)
@@ -164,7 +287,7 @@ namespace density
                     i_size = uint_upper_align(i_size, min_alignment);
                 }
 
-                auto tail = m_tail.load(detail::mem_relaxed);
+                auto tail = m_tail.load(mem_relaxed);
                 for (;;)
                 {
                     DENSITY_TEST_ARTIFICIAL_DELAY;
@@ -185,43 +308,70 @@ namespace density
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail),
-                            detail::mem_acquire, detail::mem_relaxed))
+                            mem_acquire, mem_relaxed))
                         {
                             DENSITY_TEST_ARTIFICIAL_DELAY;
 
                             auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
-                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&tail->m_next, detail::mem_relaxed) == 0);
-                            raw_atomic_store(&tail->m_next, next_ptr, detail::mem_release);
+                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&tail->m_next, mem_relaxed) == 0);
+                            raw_atomic_store(&tail->m_next, next_ptr, mem_release);
 
                             DENSITY_ASSERT_INTERNAL(tail < get_end_control_block(tail));
                             return { tail, next_ptr, user_storage };
                         }
+                        else
+                        {
+                            if (guarantee == LfQueue_WaitFree)
+                            {
+                                return Block();
+                            }
+                        }
                     }
                     else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                     {
-                        tail = page_overflow(tail);
+                        tail = page_overflow(guarantee, tail);
+                        if (guarantee != LfQueue_Throwing)
+                        {
+                            if (tail == nullptr)
+                            {
+                                return Block();
+                            }
+                        }
+                        else
+                        {
+                            DENSITY_ASSERT_INTERNAL(tail != nullptr);
+                        }
                     }
                     else
                     {
                         // this allocation would never fit in a page, allocate an external block
-                        return external_allocate(i_control_bits, i_size, i_alignment);
+                        if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
+                        {
+                            return Block();
+                        }
+                        else
+                        {
+                            return external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
+                        }
                     }
                 }
             }
 
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
-            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block inplace_allocate()
+            template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Block try_inplace_allocate_impl() noexcept
             {
-                static_assert((CONTROL_BITS & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0, "");
+                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
+
+                static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = detail::size_max(ALIGNMENT, min_alignment);
+                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
                 constexpr auto size = uint_upper_align(SIZE, alignment);
                 constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
                 constexpr auto over_aligned = alignment > min_alignment;
 
-                auto tail = m_tail.load(detail::mem_relaxed);
+                auto tail = m_tail.load(mem_relaxed);
                 for (;;)
                 {
                     DENSITY_TEST_ARTIFICIAL_DELAY;
@@ -246,7 +396,7 @@ namespace density
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail),
-                            detail::mem_acquire, detail::mem_relaxed))
+                            mem_acquire, mem_relaxed))
                         {
                             DENSITY_TEST_ARTIFICIAL_DELAY;
 
@@ -255,34 +405,80 @@ namespace density
                                 allocated memory is modified. */
                             auto const control_block = tail;
                             auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
-                            raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
+                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, mem_relaxed) == 0);
+                            raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
 
                             DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
                             return Block{ control_block, next_ptr, user_storage };
                         }
+                        else
+                        {
+                            if (guarantee == LfQueue_WaitFree)
+                            {
+                                return Block();
+                            }
+                        }
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page
                     {
-                        tail = page_overflow(tail);
+                        tail = page_overflow(guarantee, tail);
+                        if (guarantee != LfQueue_Throwing)
+                        {
+                            if (tail == nullptr)
+                            {
+                                return Block();
+                            }
+                        }
+                        else
+                        {
+                            DENSITY_ASSERT_INTERNAL(tail != nullptr);
+                        }
                     }
                     else
                     {
                         // this allocation would never fit in a page, allocate an external block
-                        return external_allocate(CONTROL_BITS, SIZE, ALIGNMENT);
+                        if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
+                        {
+                            return Block();
+                        }
+                        else
+                        {
+                            return external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
+                        }
                     }
                 }
             }
 
-            /** Used by inplace_allocate when the block can't be allocated in a page- */
-            Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+            /** Used by inplace_allocate when the block can't be allocated in a page. */
+            template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
+                Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
             {
-                auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
+                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
+
+                void * external_block;
+                if (guarantee == LfQueue_Throwing)
+                {
+                    external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
+                }
+                else
+                {
+                    external_block = ALLOCATOR_TYPE::try_allocate(ToDenGuarantee(PROGRESS_GUARANTEE), i_size, i_alignment);
+                    if (external_block == nullptr)
+                    {
+                        return Block();
+                    }
+                }
+
                 try
                 {
                     /* external blocks always allocate space for the type, because it would be complicated
                         for the consumers to handle both cases*/
-                    auto const inplace_put = inplace_allocate(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    if (inplace_put.m_user_storage == nullptr)
+                    {
+                        ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
+                        return Block();
+                    }
                     new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
                     return Block{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
                 }
@@ -297,27 +493,33 @@ namespace density
             }
 
             /** Handles a page overflow of the tail. This function may allocate a new page.
+                @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function fails
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
-                @return an updated value of tail, that makes the current thread progress. */
-            DENSITY_NO_INLINE ControlBlock * page_overflow(ControlBlock * const i_tail)
+                @return an updated value of tail that makes the current thread progress, or nullptr in case of failure. */
+            DENSITY_NO_INLINE ControlBlock * page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee, ControlBlock * const i_tail)
             {
+                // the memory protection currently used (pinning) is based on an atomic increment, that is not wait-free
+                if (i_progress_guarantee == LfQueue_WaitFree)
+                {
+                    return nullptr;
+                }
+
                 auto const page_end = get_end_control_block(i_tail);
                 if (i_tail < page_end)
                 {
                     /* There is space between the (presumed) current tail and the end control block.
                         We try to pad it with a dead element. */
                     auto expected_tail = i_tail;
-                    if (m_tail.compare_exchange_weak(expected_tail, page_end, detail::mem_relaxed, detail::mem_relaxed))
+                    if (m_tail.compare_exchange_weak(expected_tail, page_end, mem_relaxed, mem_relaxed))
                     {
                         // m_tail was successfully updated, now we can setup the padding element
                         auto const block = static_cast<ControlBlock*>(i_tail);
-                        raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
+                        raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + NbQueue_Dead, mem_release);
                         return page_end;
                     }
                     else
                     {
-                        // we have in expected_tail an updated value of m_tail
                         return expected_tail;
                     }
                 }
@@ -325,16 +527,17 @@ namespace density
                 {
                     // get or allocate a new page
                     DENSITY_ASSERT_INTERNAL(i_tail == page_end);
-                    return get_or_allocate_next_page(i_tail);
+                    return get_or_allocate_next_page(i_progress_guarantee, i_tail);
                 }
             }
 
 
             /** Tries to allocate a new page. In any case returns an update value of m_tail.
+                @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function returns nullptr
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
-                @return an updated value of tail, that makes the current thread progress. */
-            ControlBlock * get_or_allocate_next_page(ControlBlock * const i_end_control)
+                @return an updated value of tail that makes the current thread progress, or nullptr in case of failure. */
+            ControlBlock * get_or_allocate_next_page(LfQueue_ProgressGuarantee const i_progress_guarantee, ControlBlock * const i_end_control)
             {
                 DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
                     address_is_aligned(i_end_control, s_alloc_granularity) &&
@@ -347,7 +550,7 @@ namespace density
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
                     PinGuard<ALLOCATOR_TYPE> const end_block(this, i_end_control);
-                    auto const updated_tail = m_tail.load(detail::mem_relaxed);
+                    auto const updated_tail = m_tail.load(mem_relaxed);
                     if (updated_tail != i_end_control)
                     {
                         return updated_tail;
@@ -355,11 +558,15 @@ namespace density
                     // now the end control block is pinned, we can safely access it
 
                     // allocate and setup a new page
-                    auto new_page = create_page();
+                    auto new_page = create_page(i_progress_guarantee);
+                    if (new_page == nullptr)
+                    {
+                        return nullptr;
+                    }
 
-                    uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
+                    uintptr_t expected_next = NbQueue_InvalidNextPage;
                     if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
-                        reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
+                        reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead))
                     {
                         DENSITY_TEST_ARTIFICIAL_DELAY;
 
@@ -374,7 +581,7 @@ namespace density
                             return updated_tail;
                         }
 
-                        new_page = reinterpret_cast<ControlBlock*>(expected_next & ~detail::NbQueue_AllFlags);
+                        new_page = reinterpret_cast<ControlBlock*>(expected_next & ~NbQueue_AllFlags);
                         DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
                     }
 
@@ -387,15 +594,22 @@ namespace density
                 }
                 else
                 {
-                    return create_initial_page();
+                    return create_initial_page(i_progress_guarantee);
                 }
             }
 
-            DENSITY_NO_INLINE ControlBlock * create_initial_page()
+            DENSITY_NO_INLINE ControlBlock * create_initial_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
             {
                 // m_initial_page = initial_page = create_page()
                 DENSITY_TEST_ARTIFICIAL_DELAY;
-                auto const first_page = create_page();
+                auto const first_page = create_page(i_progress_guarantee);
+                if (first_page == nullptr)
+                {
+                    return nullptr;
+                }
+
+                /* note: in case of failure of the following CAS we do not give in even if we are wait-free, 
+                    because this is a oneshot operation, so we can't possibly stick in a loop. */
                 ControlBlock * initial_page = nullptr;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))
                 {
@@ -419,13 +633,25 @@ namespace density
                 }
             }
 
-            ControlBlock * create_page()
+            ControlBlock * create_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
             {
                 DENSITY_TEST_ARTIFICIAL_DELAY;
 
-                auto const new_page = static_cast<ControlBlock*>(ALLOCATOR_TYPE::allocate_page_zeroed());
-                auto const new_page_end_block = get_end_control_block(new_page);
-                new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
+                auto const new_page = static_cast<ControlBlock*>(
+                    i_progress_guarantee == LfQueue_Throwing ? ALLOCATOR_TYPE::allocate_page_zeroed() :
+                    ALLOCATOR_TYPE::try_allocate_page_zeroed(ToDenGuarantee(i_progress_guarantee)) );
+                if (new_page != nullptr)
+                {
+                    auto const new_page_end_block = get_end_control_block(new_page);
+                    new_page_end_block->m_next = NbQueue_InvalidNextPage;
+                }
+                else
+                {
+                    if (i_progress_guarantee == LfQueue_Throwing)
+                    {
+                        throw std::bad_alloc();
+                    }
+                }
                 return new_page;
             }
 
@@ -436,95 +662,6 @@ namespace density
                 auto const new_page_end_block = get_end_control_block(i_new_page);
                 new_page_end_block->m_next = 0;
                 ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
-            }
-
-            static void commit_put_impl(const Block & i_put) noexcept
-            {
-                DENSITY_TEST_ARTIFICIAL_DELAY;
-
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
-            }
-
-            static void cancel_put_impl(const Block & i_put) noexcept
-            {
-                // destroy the element and the type
-                auto type_ptr = type_after_control(i_put.m_control_block);
-                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
-                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-                cancel_put_nodestroy_impl(i_put);
-            }
-
-            static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
-            {
-                DENSITY_TEST_ARTIFICIAL_DELAY;
-
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                // remove NbQueue_Busy and add NbQueue_Dead
-                auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
-            }
-
-            ControlBlock * get_initial_page() const noexcept
-            {
-                return m_initial_page.load();
-            }
-
-            static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
-            {
-                return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
-            }
-
-            static void * get_unaligned_element(detail::NbQueueControl<void> * i_control)
-            {
-                auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & detail::NbQueue_External)
-                {
-                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
-                        we don't need to align further */
-                    result = static_cast<ExternalBlock*>(result)->m_block;
-                }
-                return result;
-            }
-
-            static void * get_element(detail::NbQueueControl<void> * i_control)
-            {
-                auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & detail::NbQueue_External)
-                {
-                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
-                        we don't need to align further */
-                    result = static_cast<ExternalBlock*>(result)->m_block;
-                }
-                else
-                {
-                    result = address_upper_align(result, type_after_control(i_control)->alignment());
-                }
-                return result;
-            }
-
-            template <typename TYPE>
-                static void * get_unaligned_element(detail::NbQueueControl<TYPE> * i_control)
-            {
-                return i_control->m_element;
-            }
-
-            template <typename TYPE>
-                static TYPE * get_element(detail::NbQueueControl<TYPE> * i_control)
-            {
-                return i_control->m_element;
             }
 
         private: // data members

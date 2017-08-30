@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <utility>
 #include <atomic> // for std::memory_order
+#include <new>
 
 #define DENSITY_VERSION            0x0010
 
@@ -49,7 +50,7 @@ namespace density
         See https://en.wikipedia.org/wiki/Non-blocking_algorithm. */
     enum progress_guarantee
     {
-        progress_blocking, /**< The calling thread may wait for other thread to finish their work. Blocking 
+        progress_blocking, /**< The calling thread may wait for other threads to finish their work. Blocking 
                                 algorithms usually protects shared data with a mutex. */
         progress_obstruction_free, /**< If all other threads are suspended, the calling thread is guaranteed 
                                         to finish its work in a finite number of steps. */
@@ -411,6 +412,65 @@ namespace density
             header.m_block = complete_block;
             DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
                 address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+        }
+        return user_block;
+    }
+
+    /** Uses the global operator new to try to allocate a memory block with at least the specified size and alignment
+        Currently only blocking allocations are supported: if i_progress_guarantee is not progress_blocking, this function
+        always returns nullptr.
+            @param i_progress_guarantee progress guarantee to provide
+            @param i_size size of the requested memory block, in bytes
+            @param i_alignment alignment of the requested memory block, in bytes
+            @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
+                from the beginning of the block.
+            @return address of the new memory block, or nullptr in case of failure
+
+            \pre The behavior is undefined if either:
+                - i_alignment is zero or it is not an integer power of 2
+                - i_size is not a multiple of i_alignment
+                - i_alignment_offset is greater than i_size
+
+        A violation of any precondition results in undefined behavior.
+
+        \exception none
+
+        The content of the newly allocated block is undefined. */
+    inline void * try_aligned_allocate(progress_guarantee i_progress_guarantee,
+        size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
+    {
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(i_alignment_offset <= i_size);
+
+        if (i_progress_guarantee != progress_blocking)
+        {
+            return nullptr;
+        }
+
+        // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
+        void * user_block;
+        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        {
+            user_block = operator new (i_size, std::nothrow);
+        }
+        else
+        {
+            // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
+            size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const actual_size = i_size + extra_size;
+            auto const complete_block = operator new (actual_size, std::nothrow);
+            if (complete_block != nullptr)
+            {
+                user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
+                detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+                header.m_block = complete_block;
+                DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
+                    address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+            }
+            else
+            {
+                user_block = nullptr;
+            }
         }
         return user_block;
     }

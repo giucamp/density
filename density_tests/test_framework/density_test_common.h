@@ -21,7 +21,8 @@ namespace density_tests
 	{
 		eNone = 0,
 		eTestExceptions = 1 << 1,
-		eReserveCoreToMainThread = 1 << 2,
+        eUseTestAllocators = 1 << 2,
+		eReserveCoreToMainThread = 1 << 3,
 	};
 
 	constexpr QueueTesterFlags operator | (QueueTesterFlags i_first, QueueTesterFlags i_second) noexcept

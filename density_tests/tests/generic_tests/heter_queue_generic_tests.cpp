@@ -8,19 +8,24 @@ namespace density_tests
 	{
 		using namespace density;
 
-		detail::single_queue_generic_test<heter_queue<>>(
-			i_flags, i_output, i_rand, i_element_count, { 1 });
+        if(i_flags && QueueTesterFlags::eUseTestAllocators)
+        {
+            detail::single_queue_generic_test<heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
+			    i_flags, i_output, i_rand, i_element_count, { 1 });
 		
-		detail::single_queue_generic_test<heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
-			i_flags, i_output, i_rand, i_element_count, { 1 });
+		    detail::single_queue_generic_test<heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
+			    i_flags, i_output, i_rand, i_element_count, { 1 });
 		
-		detail::single_queue_generic_test<heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
-			i_flags, i_output, i_rand, i_element_count, { 1 });
+		    detail::single_queue_generic_test<heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
+			    i_flags, i_output, i_rand, i_element_count, { 1 });
 		
-		detail::single_queue_generic_test<heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
-			i_flags, i_output, i_rand, i_element_count, { 1 });
-		
-		detail::single_queue_generic_test<heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
-			i_flags, i_output, i_rand, i_element_count, { 1 });
+		    detail::single_queue_generic_test<heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
+			    i_flags, i_output, i_rand, i_element_count, { 1 });
+        }
+        else
+        {
+            detail::single_queue_generic_test<heter_queue<>>(
+                i_flags, i_output, i_rand, i_element_count, { 1 });
+        }
 	}
 }

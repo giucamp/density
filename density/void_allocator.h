@@ -192,7 +192,7 @@ namespace density
                 @param i_alignment alignment of the requested memory block, in bytes
                 @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only i_alignment_offset
                     bytes from the beginning of the block.
-                @return address of the new memory block
+                @return address of the new memory block, always != nullptr
 
             \pre The behavior is undefined if either:
                 - i_alignment is zero or it is not an integer power of 2
@@ -208,6 +208,34 @@ namespace density
             size_t i_alignment_offset = 0)
         {
             return density::aligned_allocate(i_size, i_alignment, i_alignment_offset);
+        }
+
+        /** Tries to allocates a legacy memory block with the specified size and alignment.
+            Currently only blocking allocations are supported: if i_progress_guarantee is not progress_blocking, this function
+            always returns nullptr.
+                @param i_progress_guarantee progress guarantee
+                @param i_size size of the requested memory block, in bytes
+                @param i_alignment alignment of the requested memory block, in bytes
+                @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only i_alignment_offset
+                    bytes from the beginning of the block.
+                @return address of the new memory block, or nullptr in case of failure
+
+            \pre The behavior is undefined if either:
+                - i_alignment is zero or it is not an integer power of 2
+                - i_size is not a multiple of i_alignment
+                - i_alignment_offset is greater than i_size
+
+            \n <b>Progress guarantee</b>: specified by the parameter
+            \n <b>Throws</b>: nothing
+
+            The content of the newly allocated block is undefined. */
+        void * try_allocate(
+            progress_guarantee i_progress_guarantee,
+            size_t i_size,
+            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment_offset = 0) noexcept
+        {
+            return density::try_aligned_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
         }
 
         /** Deallocates a legacy memory block. After the call any access to the memory block results in undefined behavior.
@@ -234,7 +262,7 @@ namespace density
         }
 
         /** Allocates a memory page.
-            @return address of the new memory page
+            @return address of the new memory page, always != nullptr
 
             \n <b>Progress guarantee</b>: possibly blocking
             \n <b>Throws</b>: std::bad_alloc on failure.
@@ -262,7 +290,7 @@ namespace density
         }
 
         /** Allocates a memory page.
-            @return address of the new memory page
+            @return address of the new memory page, always != nullptr
 
             \n <b>Progress guarantee</b>: possibly blocking
             \n <b>Throws</b>: std::bad_alloc on failure.
