@@ -153,18 +153,20 @@ namespace density
 
                 bool is_queue_empty(LFQueue_Head * i_queue) noexcept
                 {
-                    m_queue = i_queue;
-
-                    auto control = m_control;
                     DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
 
+                    if (!assign_queue(i_queue))
+                    {
+                        return true;
+                    }
+                    
                     bool is_empty = true;
+                    auto control = m_control;
+                    auto next = control;
 
-                    auto next = i_queue->m_head.load(mem_relaxed);
                     for (;;)
                     {
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
+                        DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
 
                         /*
 
@@ -179,7 +181,7 @@ namespace density
                             - control is nullptr. This Consume has to be initialized
 
                         */
-                        if (DENSITY_LIKELY(Base::same_page(control, next) && control != nullptr))
+                        if (DENSITY_LIKELY(Base::same_page(control, next)))
                         {
                             control = next;
 
@@ -212,24 +214,13 @@ namespace density
                                 }
                             }
                         }
-                        else if (next != nullptr)
-                        {
-                            // page switch - we don't update next, we just fix the pinning and set control = next
-                            i_queue->ALLOCATOR_TYPE::pin_page(next);
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
-                            if (control != nullptr)
-                                i_queue->ALLOCATOR_TYPE::unpin_page(control);
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
-                            control = next;
-                        }
                         else
                         {
-                            next = init_head(i_queue);
-                            if (next == nullptr)
-                            {
-                                // the queue is virgin and empty
-                                break;
-                            }
+                            // page switch - we don't update next, we just fix the pinning and set control = next
+                            DENSITY_ASSERT_INTERNAL(next != nullptr);
+                            i_queue->ALLOCATOR_TYPE::pin_page(next);
+                            i_queue->ALLOCATOR_TYPE::unpin_page(control);
+                            control = next;
                         }
                     }
 
@@ -244,16 +235,19 @@ namespace density
                     (it has the NbQueue_Dead flag). */
                 void start_consume_impl(LFQueue_Head * i_queue) noexcept
                 {
-                    m_queue = i_queue;
-
-                    auto control = m_control;
                     DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
+                    
+                    if (!assign_queue(i_queue))
+                    {
+                        return;
+                    }
+                    auto control = m_control;
+                    auto next = control;
 
-                    auto next = i_queue->m_head.load(mem_relaxed);
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
                     for (;;)
                     {
+                        DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
+
                         /*
 
                             - control and next are in the same page. In this case we continue iterating
@@ -267,7 +261,7 @@ namespace density
                             - control is nullptr. This Consume has to be initialized
 
                         */
-                        if (DENSITY_LIKELY(Base::same_page(control, next) && control != nullptr))
+                        if (DENSITY_LIKELY(Base::same_page(control, next)))
                         {
                             control = next;
 
@@ -313,24 +307,13 @@ namespace density
                                 cleanup_step(control, next_uint, next);
                             }
                         }
-                        else if (next != nullptr)
-                        {
-                            // page switch - we don't update next, we just fix the pinning and update control to be = next
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
-                            i_queue->ALLOCATOR_TYPE::pin_page(next);
-                            if (control != nullptr)
-                                i_queue->ALLOCATOR_TYPE::unpin_page(control);
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
-                            control = next;
-                        }
                         else
                         {
-                            next = init_head(i_queue);
-                            if (next == nullptr)
-                            {
-                                // the queue is virgin and empty
-                                break;
-                            }
+                            // page switch - we don't update next, we just fix the pinning and set control = next
+                            DENSITY_ASSERT_INTERNAL(next != nullptr);
+                            i_queue->ALLOCATOR_TYPE::pin_page(next);
+                            i_queue->ALLOCATOR_TYPE::unpin_page(control);
+                            control = next;
                         }
                     }
 
