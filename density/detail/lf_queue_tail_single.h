@@ -315,7 +315,7 @@ namespace density
                     }
                     else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                     {
-                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -378,9 +378,6 @@ namespace density
                             variable. So this does not need to be atomic store. */
                         new_tail->m_next = 0;
 
-                        /* Assign m_next, and set the flags. This is very important for the consumers,
-                            because they that need this write happens before any other part of the
-                            allocated memory is modified. */
                         auto const control_block = tail;
                         auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
                         DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
@@ -392,7 +389,7 @@ namespace density
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page
                     {
-                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -506,7 +503,7 @@ namespace density
                         return nullptr;
                     }
 
-                    i_end_control->m_next = reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead;
+                    raw_atomic_store(&i_end_control->m_next, reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead);
 
                     m_tail = new_page;
 
