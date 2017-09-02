@@ -773,7 +773,7 @@ namespace density
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
-            start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
+            start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
         /** Adds at the end of queue an element of a type known at runtime, default-constructing it.
@@ -903,10 +903,10 @@ namespace density
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            return put_transaction<typename std::decay<ELEMENT_TYPE>::type>( PrivateType(),
+            return put_transaction<ELEMENT_TYPE>( PrivateType(),
                 std::move(lock), m_queue.template start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)... ));
         }
 
@@ -1595,7 +1595,7 @@ namespace density
             typename InnerQueue::reentrant_consume_operation m_consume_operation;
         };
 
-        /** Same to conc_heter_queue::push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::push, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1603,10 +1603,10 @@ namespace density
         template <typename ELEMENT_TYPE>
             void reentrant_push(ELEMENT_TYPE && i_source)
         {
-            return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+            return reentrant_emplace<ELEMENT_TYPE>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to conc_heter_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1617,7 +1617,7 @@ namespace density
             start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
-        /** Same to conc_heter_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1627,7 +1627,7 @@ namespace density
             start_reentrant_dyn_push(i_type).commit();
         }
 
-        /** Same to conc_heter_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1637,7 +1637,7 @@ namespace density
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
 
-        /** Same to conc_heter_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to conc_heter_queue::dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1647,7 +1647,7 @@ namespace density
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
 
-        /** Same to conc_heter_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_push, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1658,21 +1658,21 @@ namespace density
             return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to conc_heter_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            reentrant_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             auto put_transaction = m_queue.template start_reentrant_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
-            return reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(),
+            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(),
                 this, std::move(put_transaction) );
         }
 
-        /** Same to conc_heter_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1686,7 +1686,7 @@ namespace density
         }
 
 
-        /** Same to conc_heter_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push_copy, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -1699,7 +1699,7 @@ namespace density
                 this, std::move(put_transaction) );
         }
 
-        /** Same to conc_heter_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to conc_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>

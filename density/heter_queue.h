@@ -655,7 +655,7 @@ namespace density
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count = static_cast<size_t>(count_s);
@@ -1141,7 +1141,7 @@ namespace density
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
-            start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
+            start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
         /** Adds at the end of queue an element of a type known at runtime, default-constructing it.
@@ -1271,7 +1271,7 @@ namespace density
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -1298,7 +1298,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(),
+            return put_transaction<ELEMENT_TYPE>(PrivateType(),
                 this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
@@ -1660,7 +1660,7 @@ namespace density
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "reentrant_put_transaction provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count = static_cast<size_t>(count_s);
@@ -2098,7 +2098,7 @@ namespace density
             ControlBlock * m_control;
         };
 
-        /** Same to heter_queue::push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to heter_queue::push, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2109,7 +2109,7 @@ namespace density
             return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to heter_queue::emplace, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2117,10 +2117,10 @@ namespace density
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
+            start_reentrant_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
-        /** Same to heter_queue::dyn_push, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2130,7 +2130,7 @@ namespace density
             start_reentrant_dyn_push(i_type).commit();
         }
 
-        /** Same to heter_queue::dyn_push_copy, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to heter_queue::dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2140,7 +2140,7 @@ namespace density
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
 
-        /** Same to heter_queue::dyn_push_move, but allow reentrancy: during the construction of the element the queue is in a
+        /** Same to heter_queue::dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
             valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2150,7 +2150,7 @@ namespace density
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
 
-        /** Same to heter_queue::start_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to heter_queue::start_push, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2161,13 +2161,13 @@ namespace density
             return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Same to heter_queue::start_emplace, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+            reentrant_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
@@ -2194,11 +2194,11 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>(PrivateType(),
+            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(),
                 this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
-        /** Same to heter_queue::start_dyn_push, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2232,7 +2232,7 @@ namespace density
         }
 
 
-        /** Same to heter_queue::start_dyn_push_copy, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to heter_queue::start_dyn_push_copy, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>
@@ -2265,7 +2265,7 @@ namespace density
                 this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
-        /** Same to heter_queue::start_dyn_push_move, but allow reentrancy: during the construction of the element, and until the state of
+        /** Same to heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
             the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
 
             <b>Examples</b>

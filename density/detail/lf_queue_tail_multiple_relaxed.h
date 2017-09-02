@@ -168,10 +168,21 @@ namespace density
             }
             
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
-            template <progress_guarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block try_inplace_allocate() noexcept
+            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Block try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
             {
-                return try_inplace_allocate_impl<ToLfGuarantee(PROGRESS_GUARANTEE, false), CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                switch (i_progress_guarantee)
+                {
+                case progress_wait_free:
+                    return try_inplace_allocate_impl<LfQueue_WaitFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                case progress_lock_free:
+                case progress_obstruction_free:
+                    return try_inplace_allocate_impl<LfQueue_LockFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                default:
+                    DENSITY_ASSERT_INTERNAL(false);
+                case progress_blocking:
+                    return try_inplace_allocate_impl<LfQueue_Blocking, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                }
             }
 
             ControlBlock * get_initial_page() const noexcept

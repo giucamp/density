@@ -31,20 +31,23 @@ namespace density_tests
 	
 		static void nonblocking_heterogeneous_queue_put_samples()
 		{
-			using density::runtime_type;
+			using namespace density;
+
 		{
 			lf_heter_queue<> queue;
 
+        {
 			//! [lf_heter_queue push example 1]
 			queue.push(12);
 			queue.push(std::string("Hello world!!"));
 			//! [lf_heter_queue push example 1]	
-
+        }
+        {
 			//! [lf_heter_queue emplace example 1]
 			queue.emplace<int>();
 			queue.emplace<std::string>(12, '-');
-			//! [lf_heter_queue emplace example 1]	
-
+			//! [lf_heter_queue emplace example 1]		
+        }
 		{
 			//! [lf_heter_queue start_push example 1]
 			auto put = queue.start_push(12);
@@ -112,8 +115,8 @@ namespace density_tests
 
 			std::string const source("Hello world!!");
 			auto const type = MyRunTimeType::make<decltype(source)>();
-			auto put = queue.start_dyn_push_copy(type, &source);
-			put.commit();
+            auto put = queue.start_dyn_push_copy(type, &source);
+            put.commit();
 			//! [lf_heter_queue start_dyn_push_copy example 1]
 		}
 		{
@@ -127,6 +130,138 @@ namespace density_tests
 			auto put = queue.start_dyn_push_move(type, &source);
 			put.commit();
 			//! [lf_heter_queue start_dyn_push_move example 1]
+		}
+		}
+
+        static void nonblocking_heterogeneous_queue_try_put_samples()
+		{
+			using namespace density;
+
+		{
+			lf_heter_queue<> queue;
+
+        {
+			//! [lf_heter_queue try_push example 1]
+            bool successful = false;
+            if (queue.try_push(progress_wait_free, 12))
+            {
+                successful = queue.try_push(progress_wait_free, std::string("Hello world!!"));
+            }
+			//! [lf_heter_queue try_push example 1]	
+            (void)successful;
+        }
+        {
+			//! [lf_heter_queue try_emplace example 1]
+            bool successful = false;
+			if (queue.try_emplace<int>(progress_wait_free))
+            {
+                successful = queue.try_emplace<std::string>(progress_wait_free, 12, '-');
+            }
+			//! [lf_heter_queue try_emplace example 1]
+        }
+		{
+			//! [lf_heter_queue try_start_push example 1]
+            if (auto put = queue.try_start_push(progress_wait_free, 12))
+            {
+			    put.element() += 2;
+			    put.commit(); // commits a 14
+            }
+			//! [lf_heter_queue try_start_push example 1]	
+		}
+		{
+			//! [lf_heter_queue try_start_emplace example 1]
+			if (auto put = queue.try_start_emplace<std::string>(progress_wait_free, 4, '*'))
+            {
+                put.element() += "****";
+                put.commit(); // commits a "********"
+            }
+			//! [lf_heter_queue try_start_emplace example 1]	
+		}
+		}
+		{
+			//! [lf_heter_queue try_dyn_push example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			auto const type = MyRunTimeType::make<int>();
+            if (queue.try_dyn_push(progress_wait_free, type)) // appends 0
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_dyn_push example 1]
+		}
+		{
+			//! [lf_heter_queue try_dyn_push_copy example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string const source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (queue.try_dyn_push_copy(progress_wait_free, type, &source))
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_dyn_push_copy example 1]
+		}
+		{
+			//! [lf_heter_queue try_dyn_push_move example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (queue.try_dyn_push_move(progress_wait_free, type, &source))
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_dyn_push_move example 1]
+		}
+
+		{
+			//! [lf_heter_queue try_start_dyn_push example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			auto const type = MyRunTimeType::make<int>();
+            if (auto put = queue.try_start_dyn_push(progress_wait_free, type))
+            {
+                // ....
+                put.commit();
+            }
+			//! [lf_heter_queue try_start_dyn_push example 1]
+		}
+		{
+			//! [lf_heter_queue try_start_dyn_push_copy example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string const source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (auto put = queue.try_start_dyn_push_copy(progress_wait_free, type, &source))
+            {
+                // ...
+                put.commit();
+            }            
+			//! [lf_heter_queue try_start_dyn_push_copy example 1]
+		}
+		{
+			//! [lf_heter_queue try_start_dyn_push_move example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (auto put = queue.try_start_dyn_push_move(progress_wait_free, type, &source))
+            {
+                put.commit();
+            }
+			//! [lf_heter_queue try_start_dyn_push_move example 1]
 		}
 		}
 
@@ -650,6 +785,142 @@ namespace density_tests
 			auto put = queue.start_reentrant_dyn_push_move(type, &source);
 			put.commit();
 			//! [lf_heter_queue start_reentrant_dyn_push_move example 1]
+		}
+		}
+
+        static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
+		{
+			using namespace density;
+
+		{
+			lf_heter_queue<> queue;
+
+			//! [lf_heter_queue try_reentrant_push example 1]
+            if (queue.try_reentrant_push(progress_blocking, 12))
+            {
+                if (queue.try_reentrant_push(progress_blocking, std::string("Hello world!!")))
+                {
+                    // ...
+                }
+            }
+			//! [lf_heter_queue try_reentrant_push example 1]	
+
+			//! [lf_heter_queue try_reentrant_emplace example 1]
+			if (queue.try_reentrant_emplace<int>(progress_blocking))
+            {
+                if (queue.try_reentrant_emplace<std::string>(progress_blocking, 12, '-'))
+                {
+                    // ...
+                }
+            }
+			//! [lf_heter_queue try_reentrant_emplace example 1]	
+
+		{
+			//! [lf_heter_queue try_start_reentrant_push example 1]
+            if (auto put = queue.try_start_reentrant_push(progress_blocking, 12))
+            {
+                // ...
+                put.element() += 2;
+                put.commit(); // commits a 14
+            }
+            //! [lf_heter_queue try_start_reentrant_push example 1]	
+		}
+		{
+			//! [lf_heter_queue try_start_reentrant_emplace example 1]
+            if (auto put = queue.try_start_reentrant_emplace<std::string>(progress_blocking, 4, '*'))
+            {
+                // ...
+                put.element() += "****";
+                put.commit(); // commits a "********"
+            }
+            //! [lf_heter_queue try_start_reentrant_emplace example 1]	
+		}
+		}
+		{
+			//! [lf_heter_queue try_reentrant_dyn_push example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			auto const type = MyRunTimeType::make<int>();
+            if (queue.try_reentrant_dyn_push(progress_blocking, type)) // appends 0
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_reentrant_dyn_push example 1]
+		}
+		{
+			//! [lf_heter_queue try_reentrant_dyn_push_copy example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string const source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (queue.try_reentrant_dyn_push_copy(progress_blocking, type, &source))
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_reentrant_dyn_push_copy example 1]
+		}
+		{
+			//! [lf_heter_queue try_reentrant_dyn_push_move example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (queue.try_reentrant_dyn_push_move(progress_blocking, type, &source))
+            {
+                // ...
+            }
+			//! [lf_heter_queue try_reentrant_dyn_push_move example 1]
+		}
+
+		{
+			//! [lf_heter_queue try_start_reentrant_dyn_push example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			auto const type = MyRunTimeType::make<int>();
+            if (auto put = queue.try_start_reentrant_dyn_push(progress_blocking, type))
+            {
+                // ...
+                put.commit();
+            }
+			//! [lf_heter_queue try_start_reentrant_dyn_push example 1]
+		}
+		{
+			//! [lf_heter_queue try_start_reentrant_dyn_push_copy example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string const source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (auto put = queue.try_start_reentrant_dyn_push_copy(progress_blocking, type, &source))
+            {
+                // ...
+                put.commit();
+            }
+			//! [lf_heter_queue try_start_reentrant_dyn_push_copy example 1]
+		}
+		{
+			//! [lf_heter_queue try_start_reentrant_dyn_push_move example 1]
+			using namespace density::type_features;
+			using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
+			lf_heter_queue<void, MyRunTimeType> queue;
+
+			std::string source("Hello world!!");
+			auto const type = MyRunTimeType::make<decltype(source)>();
+            if (auto put = queue.try_start_reentrant_dyn_push_move(progress_blocking, type, &source))
+            {
+                // ...
+                put.commit();
+            }
+			//! [lf_heter_queue try_start_reentrant_dyn_push_move example 1]
 		}
 		}
 
@@ -1311,18 +1582,6 @@ namespace density_tests
 			//! [lf_heter_queue clear example 1]
 		}
 		{
-			//! [lf_heter_queue pop example 1]
-			lf_heter_queue<> queue;
-			queue.push(1);
-			queue.push(2);
-
-			queue.pop();
-			auto consume = queue.try_start_consume();
-			assert(consume.element<int>() == 2);
-			consume.commit();
-			//! [lf_heter_queue pop example 1]
-		}
-		{
 			//! [lf_heter_queue try_pop example 1]
 			lf_heter_queue<> queue;
 	
@@ -1403,18 +1662,6 @@ namespace density_tests
 			//! [lf_heter_queue reentrant example 1]
 		}
 		{
-			//! [lf_heter_queue reentrant_pop example 1]
-			lf_heter_queue<> queue;
-			queue.push(1);
-			queue.push(2);
-
-			queue.reentrant_pop();
-			auto consume = queue.try_start_consume();
-			assert(consume.element<int>() == 2);
-			consume.commit();
-			//! [lf_heter_queue reentrant_pop example 1]
-		}
-		{
 			//! [lf_heter_queue try_reentrant_pop example 1]
 			lf_heter_queue<> queue;
 	
@@ -1471,11 +1718,15 @@ namespace density_tests
 
 			nonblocking_heterogeneous_queue_put_samples();
 
+            nonblocking_heterogeneous_queue_try_put_samples();
+
 			nonblocking_heterogeneous_queue_put_transaction_samples();
 
 			nonblocking_heterogeneous_queue_consume_operation_samples();
 
 			nonblocking_heterogeneous_queue_reentrant_put_samples();
+
+            nonblocking_heterogeneous_queue_reentrant_try_put_samples();
 
 			nonblocking_heterogeneous_queue_reentrant_put_transaction_samples();
 

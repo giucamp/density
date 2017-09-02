@@ -41,12 +41,6 @@
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\nonblocking_heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\tests\nonblocking_heterogeneous_queue_basic_tests.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\tests\generic_tests\queue_generic_tests.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
@@ -64,6 +58,12 @@
     </ClCompile>
     <ClCompile Include="..\test_framework\threading_extensions.cpp">
       <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\lf_heterogeneous_queue_basic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\examples\lf_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
