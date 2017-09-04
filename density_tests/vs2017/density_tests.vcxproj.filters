@@ -50,12 +50,6 @@
     <ClCompile Include="..\tests\generic_tests\conc_heter_queue_generic_tests.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_relaxed.cpp">
-      <Filter>tests\generic_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_seqcst.cpp">
-      <Filter>tests\generic_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_framework\threading_extensions.cpp">
       <Filter>test_framework</Filter>
     </ClCompile>
@@ -64,6 +58,12 @@
     </ClCompile>
     <ClCompile Include="..\..\examples\lf_heterogeneous_queue_examples.cpp">
       <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_relaxed.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_seqcst.cpp">
+      <Filter>tests\generic_tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

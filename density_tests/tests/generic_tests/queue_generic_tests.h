@@ -26,12 +26,13 @@ namespace density_tests
 		{
 			using ElementType = int;
 		
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				if(i_rand.get_bool())
 					queue.push(1);
 				else
 					queue.reentrant_push(1);
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -59,13 +60,14 @@ namespace density_tests
 		{
 			using ElementType = std::string;
 
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				std::string str("hello world!");
 				if(i_rand.get_bool())
 					queue.push(str);
 				else
 					queue.reentrant_push(str);
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -94,7 +96,7 @@ namespace density_tests
 		{
 			using ElementType = uint8_t;
 
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				if (i_rand.get_bool(.9))
 				{
@@ -115,6 +117,7 @@ namespace density_tests
 						case 3: queue.reentrant_dyn_push_move(type, &val); break;
 					}
 				}
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -143,12 +146,13 @@ namespace density_tests
 		{
 			using ElementType = uint16_t;
 
-			static void put(QUEUE & queue, EasyRandom &)
+			static bool put(QUEUE & queue, EasyRandom &)
 			{
 				auto put = queue.template start_emplace<uint16_t>(static_cast<uint16_t>(15));
 				put.element() += 1;
 				exception_checkpoint();
 				put.commit(); // commit a 16. From now on, the element can be consumed
+                return true;
 			}
 				
 			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -172,13 +176,117 @@ namespace density_tests
 			}
 		};
 
+        inline density::progress_guarantee get_rand_progress_guarantee(EasyRandom & i_rand)
+        {
+            using namespace density;
+            switch (i_rand.get_int(3))
+            {
+                default:
+                    DENSITY_TEST_ASSERT(false);
+                case 0: 
+                    return progress_blocking;
+                case 1: 
+                    return progress_obstruction_free;
+                case 2:
+                    return progress_lock_free;
+                case 3:
+                    return progress_wait_free;
+            }
+
+        }
+
+        template <typename QUEUE>
+			struct TryPutFloat
+		{
+			using ElementType = float;
+
+            static constexpr float s_value = 3.1415f;
+
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
+			{
+                auto source = s_value;
+                auto const progress_guarantee = get_rand_progress_guarantee(i_rand);
+                switch (i_rand.get_int(3))
+                {
+                default:
+                    DENSITY_TEST_ASSERT(false);
+                case 0:
+                    return queue.try_push(progress_guarantee, source);
+                case 1:
+                    return queue.template try_emplace<float>(progress_guarantee, source);
+                case 2:
+                    return queue.try_dyn_push_copy(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>(), &source);
+                case 3:
+                    return queue.try_dyn_push_move(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>(), &source);
+
+                /*case 2:
+                {
+                    auto put = queue.template try_start_dyn_push(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>());
+                    if (put)
+                    {
+                        *static_cast<float*>(put.element_ptr()) += source;
+                        put.commit();
+                    }
+                    return static_cast<bool>(put);
+                }*/
+                }
+			}
+				
+			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & queue, EasyRandom & i_rand)
+			{
+                auto source = s_value;
+                auto const progress_guarantee = get_rand_progress_guarantee(i_rand);
+                switch (i_rand.get_int(3))
+                {
+                default:
+                    DENSITY_TEST_ASSERT(false);
+                case 0:
+                    return queue.try_start_reentrant_push(progress_guarantee, source);
+                case 1:
+                    return queue.template try_start_reentrant_emplace<float>(progress_guarantee, source);
+                case 2:
+                    return queue.try_start_reentrant_dyn_push_copy(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>(), &source);
+                case 3:
+                    return queue.try_start_reentrant_dyn_push_move(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>(), &source);
+
+                /*case 2:
+                {
+                    auto put = queue.template try_start_reentrant_dyn_push(progress_guarantee,
+                        QUEUE::runtime_type::template make<float>());
+                    if (put)
+                    {
+                        *static_cast<float*>(put.element_ptr()) += source;
+                    }
+                    return static_cast<bool>(put);
+                }*/
+                }
+			}
+
+			static void consume(const typename QUEUE::consume_operation & i_consume)
+			{
+				DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+				DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == s_value);			
+			}
+		
+			static void reentrant_consume(const typename QUEUE::reentrant_consume_operation & i_consume)
+			{
+				DENSITY_TEST_ASSERT(i_consume.complete_type().template is<ElementType>());
+				DENSITY_TEST_ASSERT(i_consume.template element<ElementType>() == s_value);			
+			}
+		};
+
 		template <typename QUEUE, size_t SIZE, size_t ALIGNMENT>
 			struct PutTestObject
 		{
 			using ElementType = TestObject<SIZE, ALIGNMENT>;
 
 
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				if (i_rand.get_bool(.9))
 				{
@@ -190,6 +298,7 @@ namespace density_tests
 					ElementType source;
 					queue.dyn_push_copy(type, &source);
 				}
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<void> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -222,11 +331,12 @@ namespace density_tests
 
 			using ElementType = Data;
 
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				auto put = queue.template start_emplace<ElementType>();
 				put_impl(put, i_rand);
 				put.commit();
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<> reentrant_put(QUEUE & i_queue, EasyRandom & i_rand)
@@ -298,13 +408,14 @@ namespace density_tests
 		{
 			using ElementType = uint32_t;
 
-			static void put(QUEUE & queue, EasyRandom & i_rand)
+			static bool put(QUEUE & queue, EasyRandom & i_rand)
 			{
 				uint32_t val = 32;
 				if(i_rand.get_bool())
 					queue.push(val);
 				else
 					queue.reentrant_push(val);
+                return true;
 			}
 
 			static typename QUEUE::template reentrant_put_transaction<> reentrant_put(QUEUE & i_queue, EasyRandom &)
@@ -349,6 +460,28 @@ namespace density_tests
 			}
 		}
 
+		template <typename QUEUE>
+			void single_lf_queue_generic_test(QueueTesterFlags i_flags, std::ostream & i_output, EasyRandom & i_random, size_t i_element_count, 
+				std::vector<size_t> i_thread_count_vector)
+		{
+			for (auto thread_count : i_thread_count_vector)
+			{
+				QueueGenericTester<QUEUE> tester(i_output, thread_count);
+				tester.template add_test_case<PutInt<QUEUE>>();
+				tester.template add_test_case<PutUInt8<QUEUE>>();
+				tester.template add_test_case<PutUInt16<QUEUE>>();
+				tester.template add_test_case<PutString<QUEUE>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
+				tester.template add_test_case<PutTestObject<QUEUE, 2048, 2048>>();
+				tester.template add_test_case<PutRawBlocks<QUEUE>>();
+                tester.template add_test_case<TryPutFloat<QUEUE>>();
+				tester.template add_test_case<ReentrantPush<QUEUE>>();
+
+				tester.run(i_flags, i_random, i_element_count);
+			}
+		}
+
 		template <density::concurrency_cardinality PROD_CARDINALITY = density::concurrency_multiple,
 				density::concurrency_cardinality CONSUMER_CARDINALITY = density::concurrency_multiple,
 				density::consistency_model CONSISTENCY_MODEL = density::consistency_sequential>
@@ -375,25 +508,25 @@ namespace density_tests
 
             if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
-		        single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+		        single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
 			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-		        single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
+		        single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
 			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-		        single_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+		        single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
 			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-		        single_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
+		        single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
 			        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }
             else
             {
-			    single_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
+			    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
 					    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
 				    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }

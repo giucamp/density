@@ -546,8 +546,8 @@
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\generic_tests\conc_heter_queue_generic_tests.cpp" />
     <ClCompile Include="..\tests\generic_tests\heter_queue_generic_tests.cpp" />
-    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_relaxed.cpp" />
-    <ClCompile Include="..\tests\generic_tests\nb_heter_queue_generic_tests_seqcst.cpp" />
+    <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_relaxed.cpp" />
+    <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_seqcst.cpp" />
     <ClCompile Include="..\tests\generic_tests\queue_generic_tests.cpp" />
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\load_unload_tests.cpp" />

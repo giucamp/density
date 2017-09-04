@@ -163,6 +163,7 @@ namespace density_tests
 			//! [lf_heter_queue try_start_push example 1]
             if (auto put = queue.try_start_push(progress_wait_free, 12))
             {
+                // ..
 			    put.element() += 2;
 			    put.commit(); // commits a 14
             }
@@ -172,6 +173,7 @@ namespace density_tests
 			//! [lf_heter_queue try_start_emplace example 1]
 			if (auto put = queue.try_start_emplace<std::string>(progress_wait_free, 4, '*'))
             {
+                // ..
                 put.element() += "****";
                 put.commit(); // commits a "********"
             }
@@ -259,6 +261,7 @@ namespace density_tests
 			auto const type = MyRunTimeType::make<decltype(source)>();
             if (auto put = queue.try_start_dyn_push_move(progress_wait_free, type, &source))
             {
+                // ..
                 put.commit();
             }
 			//! [lf_heter_queue try_start_dyn_push_move example 1]

@@ -27,7 +27,7 @@ namespace density_tests
 	{
 	public:
 
-		using PutTestCase = void (*)(QUEUE & i_queue, EasyRandom &);
+		using PutTestCase = bool (*)(QUEUE & i_queue, EasyRandom &);
 		using ConsumeTestCase = void (*)(const typename QUEUE::consume_operation & i_queue);
 
 		using ReentrantPutTestCase = typename QUEUE::template reentrant_put_transaction<void> (*)(QUEUE & i_queue, EasyRandom &);
@@ -422,19 +422,24 @@ namespace density_tests
 
 					if (m_random.get_bool())
 					{
-						(*m_parent_tester.m_put_cases[type_index])(m_queue, m_random);
+						bool put_done = (*m_parent_tester.m_put_cases[type_index])(m_queue, m_random);
+                        if (put_done)
+                        {
+                            // done! From now on no exception can occur
+                            auto & counters = m_final_stats.m_counters[type_index];
+                            counters.m_existing++;
+                            counters.m_spawned++;
 
-						// done! From now on no exception can occur
-						auto & counters = m_final_stats.m_counters[type_index];
-						counters.m_existing++;
-						counters.m_spawned++;
-
-						m_put_committed++;
+                            m_put_committed++;
+                        }
 					}
 					else
 					{
 						auto transaction = (*m_parent_tester.m_reentrant_put_cases[type_index])(m_queue, m_random);
-						m_pending_reentrant_puts.push_back(ReentrantPut(type_index, std::move(transaction)));
+                        if (transaction)
+                        {
+                            m_pending_reentrant_puts.push_back(ReentrantPut(type_index, std::move(transaction)));
+                        }
 					}
 				};
 
