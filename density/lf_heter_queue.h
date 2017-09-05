@@ -18,8 +18,7 @@
 #endif
 
 namespace density
-{
-
+{   
     namespace detail
     {
         template<typename COMMON_TYPE> struct LfQueueControl // used by lf_heter_queue<T,...>
@@ -80,7 +79,7 @@ namespace density
             concurrency_cardinality PROD_CARDINALITY, concurrency_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
                 class LFQueue_Head;
 
-        /** This struct contains the result of a low-level allocation. */
+        /** \internal This struct contains the result of a low-level allocation. */
         template<typename COMMON_TYPE> struct LfBlock
         {
             LfQueueControl<COMMON_TYPE> * m_control_block;
@@ -105,11 +104,8 @@ namespace density
 
 namespace density
 {
-    /** \brief Concurrent lock-free heterogeneous FIFO container-like class template.
-
-        lf_heter_queue is a concurrent version of heter_queue, with a mutex embedded within. Puts and consumes use a lock-free
-        algorithm. For the overall operations to be always lock-free, the allocator must be lock-free too.
-        void_allocator, the default allocator, is lock-free
+    /** Concurrent lock-free heterogeneous FIFO container-like class template. lf_heter_queue is a concurrent version 
+        of heter_queue that uses lock free algorithms for both put transactions and put operations.
 
         @tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is
             implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue.
@@ -122,7 +118,133 @@ namespace density
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently
         @tparam CONSISTENCY_MODEL specifies whether the queue is linearizable
 
+        \n <b>Thread safeness</b>: A thread doing put operations and another thread doing consumes don't need to be synchronized.
+                If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.
+                If CONSUMER_CARDINALITY is concurrency_multiple, multiple threads are allowed to consume without any synchronization.
+        \n <b>Exception safeness</b>: Any function of lf_heter_queue is noexcept or provides the strong exception guarantee.
 
+        This class template uses lock-free algorithms for both put operations and consume operations. Anyway, for the overall 
+        put or consume to be lock-free, if a memory operation is necessary, it must be lock-free too. The default allocator,
+        void_allocator, can manage pages in lock freedom within its current capacity (that is, if the number of allocated, pinned,
+        or thread-owned pages exceeds the previous peek, and all the memory regions are exhausted, it must request a new memory
+        region to the system, so it can't guarantee lock-freedom). void_allocator::reserve_lockfree_page_memory and 
+        void_allocator::try_reserve_lockfree_page_memory can be used to reserve a capacity in advance.
+
+        The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose 
+        size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
+        can't be lock-free.
+
+        This class template provides all the put functions provided by heter_queue, and furthermore it adds the try_ variants, that:
+        - Don't throw in case of failure allocating memory. Anyway they pass through any exception thrown by the constructor of the 
+            element and the constructor of the runtime type.
+        - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is 
+            requested, but it requires a memory operation that the allocator is not able to complete in lock-freedom, the put fails.
+            In the current implementation, wait-free put operation may fail even in isolation, because page pinning is lock-free but not wait-free.
+
+        This table shows all the put functions supported by lf_heter_queue:
+
+        <table>
+        <caption id="multi_row">Put functions</caption>
+        <tr>
+            <th style="width:150px">Group</th>
+            <th style="width:100px">Normal</th>
+            <th style="width:100px">Transactional</th>
+            <th style="width:100px">Reentrant</th>
+            <th style="width:100px">Transactional-Reentrant</th>
+            <th style="width:130px">Type binding</th>
+            <th style="width:130px">Constructor</th>
+        </tr>
+        <tr>
+            <td>push</td>
+            <td>@code push @endcode</td>
+            <td>@code start_push @endcode</td>
+            <td>@code reentrant_push @endcode</td>
+            <td>@code start_reentrant_push @endcode</td>
+            <td>Compile time</td>
+            <td>Copy/Move</td>
+        </tr>
+        <tr>
+            <td>emplace</td>
+            <td>@code emplace @endcode</td>
+            <td>@code start_emplace @endcode</td>
+            <td>@code reentrant_emplace @endcode</td>
+            <td>@code start_reentrant_emplace @endcode</td>
+            <td>Compile time</td>
+            <td>Any</td>
+        </tr>
+        <tr>
+            <td>dynamic push</td>
+            <td>@code dyn_push @endcode</td>
+            <td>@code start_dyn_push @endcode</td>
+            <td>@code reentrant_dyn_push @endcode</td>
+            <td>@code start_reentrant_dyn_push @endcode</td>
+            <td>Runtime</td>
+            <td>Default</td>
+        </tr>
+        <tr>
+            <td>dynamic push (copy)</td>
+            <td>@code dyn_push_copy @endcode</td>
+            <td>@code start_dyn_push_copy @endcode</td>
+            <td>@code reentrant_dyn_push_copy @endcode</td>
+            <td>@code start_reentrant_dyn_push_copy @endcode</td>
+            <td>Runtime</td>
+            <td>Copy</td>
+        </tr>
+        <tr>
+            <td>dynamic push (move)</td>
+            <td>@code dyn_push_move @endcode</td>
+            <td>@code start_dyn_push_move @endcode</td>
+            <td>@code reentrant_dyn_push_move @endcode</td>
+            <td>@code start_reentrant_dyn_push_move @endcode</td>
+            <td>Runtime</td>
+            <td>Move</td>
+        </tr>
+        <tr>
+            <td>try push</td>
+            <td>@code try_push @endcode</td>
+            <td>@code try_start_push @endcode</td>
+            <td>@code try_reentrant_push @endcode</td>
+            <td>@code try_start_reentrant_push @endcode</td>
+            <td>Compile time</td>
+            <td>Copy/Move</td>
+        </tr>
+        <tr>
+            <td>try emplace</td>
+            <td>@code try_emplace @endcode</td>
+            <td>@code try_start_emplace @endcode</td>
+            <td>@code try_reentrant_emplace @endcode</td>
+            <td>@code try_start_reentrant_emplace @endcode</td>
+            <td>Compile time</td>
+            <td>Any</td>
+        </tr>
+        <tr>
+            <td>try dynamic push</td>
+            <td>@code try_dyn_push @endcode</td>
+            <td>@code try_start_dyn_push @endcode</td>
+            <td>@code try_reentrant_dyn_push @endcode</td>
+            <td>@code try_start_reentrant_dyn_push @endcode</td>
+            <td>Runtime</td>
+            <td>Default</td>
+        </tr>
+        <tr>
+            <td>try dynamic push (copy)</td>
+            <td>@code try_dyn_push_copy @endcode</td>
+            <td>@code try_start_dyn_push_copy @endcode</td>
+            <td>@code try_reentrant_dyn_push_copy @endcode</td>
+            <td>@code try_start_reentrant_dyn_push_copy @endcode</td>
+            <td>Runtime</td>
+            <td>Copy</td>
+        </tr>
+        <tr>
+            <td>try dynamic push (move)</td>
+            <td>@code try_dyn_push_move @endcode</td>
+            <td>@code try_start_dyn_push_move @endcode</td>
+            <td>@code try_reentrant_dyn_push_move @endcode</td>
+            <td>@code try_start_reentrant_dyn_push_move @endcode</td>
+            <td>Runtime</td>
+            <td>Move</td>
+        </tr>
+        </table>
     */
     template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
@@ -827,7 +949,7 @@ namespace density
                 The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on lf_heter_queue::min_alignment.
+                \post The returned address is aligned at least on lf_heter_queue::min_alignment.
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
@@ -984,7 +1106,7 @@ namespace density
 
             @param i_type type of the new element
             @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
 
             \n <b>Requires</b>:
@@ -1011,7 +1133,7 @@ namespace density
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_source object to be used as source to construct of new element.
                 - If this argument is an l-value, the new element copy-constructed.
@@ -1044,7 +1166,7 @@ namespace density
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_construction_params construction parameters for the new element.
             @return The associated transaction object.
@@ -1100,7 +1222,7 @@ namespace density
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_type type of the new element.
             @return The associated transaction object.
@@ -1146,11 +1268,11 @@ namespace density
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -1193,11 +1315,11 @@ namespace density
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -1236,9 +1358,12 @@ namespace density
 
         /** Tries to append at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
             it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns false (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_source object to be used as source to construct of new element.
@@ -1269,9 +1394,12 @@ namespace density
 
         /** Tries to append at the end of queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
             a perfect forwarded parameter pack.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns false (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             \n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
 
@@ -1306,9 +1434,12 @@ namespace density
         }
 
         /** Tries to add at the end of queue an element of a type known at runtime, default-constructing it.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns false (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
@@ -1335,10 +1466,13 @@ namespace density
             return true;
         }
 
-        /** Tries to appends at the end of queue an element of a type known at runtime, copy-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns false (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory.
+        /** Tries to add at the end of queue an element of a type known at runtime, copy-constructing it from the source.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
@@ -1368,14 +1502,17 @@ namespace density
         }
 
         /** Tries add at the end of queue an element of a type known at runtime, move-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns false (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element
             @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return whether the put operation was successful
 
@@ -1400,18 +1537,21 @@ namespace density
             return true;
         }
 
-        /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns an empty transaction (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. Committing an empty transaction causes undefined behavior, so the caller should
-            alway check whether the transaction is empty.
+        /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it 
+            from the source.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            indicate  a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
             \n This function allocates the required space, constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_source object to be used as source to construct of new element.
@@ -1439,18 +1579,21 @@ namespace density
             return try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
+        /** Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            indicate  a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
             \n This function allocates the required space, constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns an empty transaction (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. Committing an empty transaction causes undefined behavior, so the caller should
-            alway check whether the transaction is empty.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_construction_params construction parameters for the new element.
@@ -1530,17 +1673,20 @@ namespace density
                 this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
-        /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
+        /** Tries to begin a transaction that appends an element of a type known at runtime, default-constructing it.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            indicate  a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns an empty transaction (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. Committing an empty transaction causes undefined behavior, so the caller should
-            alway check whether the transaction is empty.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
@@ -1585,22 +1731,25 @@ namespace density
         }
 
 
-        /** Begins a transaction that appends an element of a type known at runtime, copy-constructing it from the source..
+        /** Tries to begin a transaction that appends an element of a type known at runtime, copy-constructing it from the source.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            indicate  a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+            
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns an empty transaction (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. Committing an empty transaction causes undefined behavior, so the caller should
-            alway check whether the transaction is empty.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -1641,22 +1790,25 @@ namespace density
             return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Begins a transaction that appends an element of a type known at runtime, move-constructing it from the source..
+        /** Tries to begin a transaction that appends an element of a type known at runtime, move-constructing it from the source.
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            indicate  a failure, and has no observable effects. This function fails if:
+            - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+            - there is a contention between threads, and the wait-free progress guarantee is requested
+            - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+            
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
             If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects.
             Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any
-            function is called in this timespan, the behavior is undefined.
-            \n If the put operation can't be completed with the specified progress guarantee, the function fails with no observable effects.
-            If this function fails to allocate a memory page or a legacy block, it returns an empty transaction (no exception thrown). A failure with
-            the blocking progress guarantee indicates an out of memory. Committing an empty transaction causes undefined behavior, so the caller should
-            alway check whether the transaction is empty.
+            function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -2240,7 +2392,7 @@ namespace density
                 The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on lf_heter_queue::min_alignment.
+                \post The returned address is aligned at least on lf_heter_queue::min_alignment.
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept

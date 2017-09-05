@@ -17,7 +17,7 @@ namespace density
         @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
-        Memory is allocated\freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
+        Memory is allocated/freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
@@ -317,7 +317,7 @@ namespace density
     };
 
     /** Stateless class template that provides a thread local LIFO memory management.
-        Memory is allocated\freed with the member function allocate and deallocate. A living block is a block allocated,
+        Memory is allocated/freed with the member function allocate and deallocate. A living block is a block allocated,
         eventually reallocated, but not yet deallocated. Every thread has its own stack of living blocks.
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED BY A THREAD. If a block which is not
         the most recently allocated living block of the calling thread is deallocated or reallocated, the behavior is undefined.

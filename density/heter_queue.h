@@ -1035,7 +1035,7 @@ namespace density
                 The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on heter_queue::min_alignment.
+                \post The returned address is aligned at least on heter_queue::min_alignment.
 
                 \snippet heterogeneous_queue_examples.cpp heter_queue consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
@@ -1192,7 +1192,7 @@ namespace density
 
             @param i_type type of the new element
             @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
 
             \n <b>Requires</b>:
@@ -1358,7 +1358,7 @@ namespace density
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -1406,7 +1406,7 @@ namespace density
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from\to a base to\from a derived class can be done only
+                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
                 by the type system of the language.
             @return The associated transaction object.
 
@@ -2040,7 +2040,7 @@ namespace density
                 The returned address is guaranteed to be aligned to min_alignment
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been used as source for a move operation.
-                \pos The returned address is aligned at least on heter_queue::min_alignment.
+                \post The returned address is aligned at least on heter_queue::min_alignment.
 
                 \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
