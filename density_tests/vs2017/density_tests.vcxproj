@@ -568,6 +568,7 @@
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
+    <ClInclude Include="..\..\density\detail\lf_queue_common.h" />
     <ClInclude Include="..\..\density\detail\wf_page_stack.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_single.h" />

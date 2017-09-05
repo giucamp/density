@@ -184,6 +184,9 @@
     <ClInclude Include="..\..\density\detail\page_allocator.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_common.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

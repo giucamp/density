@@ -1,0 +1,7 @@
+1) heterogeneous_queue is allocating a runtime type for raw allocations
+2) added is<> on the runtime type. Add to the concept
+3) check the try_consume's
+4) check that threads release pages to the system
+5) update the page allocator concept
+6) optimize nonblocking put when the type is known at runtime
+7) review density common (some functions are undocumented)
