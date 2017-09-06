@@ -343,42 +343,54 @@ namespace density_tests
 			//! [lf_heter_queue put_transaction move_construct example 1]
 
 			//! [lf_heter_queue put_transaction move_construct example 2]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
 			// put_transaction<void> can be move constructed from any put_transaction<T>
-			static_assert(std::is_constructible<lf_heter_queue<>::put_transaction<void>, lf_heter_queue<>::put_transaction<void> &&>::value, "");
-			static_assert(std::is_constructible<lf_heter_queue<>::put_transaction<void>, lf_heter_queue<>::put_transaction<int> &&>::value, "");
+			static_assert(std::is_constructible<typename LfQueue::template put_transaction<void>, typename LfQueue::template put_transaction<void> &&>::value, "");
+			static_assert(std::is_constructible<typename LfQueue::template put_transaction<void>, typename LfQueue::template put_transaction<int> &&>::value, "");
 
 			// put_transaction<T> can be move constructed only from put_transaction<T>
-			static_assert(!std::is_constructible<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<void> &&>::value, "");
-			static_assert(!std::is_constructible<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<float> &&>::value, "");
-			static_assert(std::is_constructible<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<int> &&>::value, "");
+			static_assert(!std::is_constructible<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<void> &&>::value, "");
+			static_assert(!std::is_constructible<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<float> &&>::value, "");
+			static_assert(std::is_constructible<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<int> &&>::value, "");
 			//! [lf_heter_queue put_transaction move_construct example 2]
 		}
-		{
-			//! [lf_heter_queue put_transaction move_assign example 1]
-			lf_heter_queue<> queue;
-			auto transaction1 = queue.start_push(1);
+        {
+            //! [lf_heter_queue put_transaction move_assign example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 
-			lf_heter_queue<>::put_transaction<> transaction2;
-			transaction2 = std::move(transaction1);
-			assert(transaction1.empty());
-			transaction2.commit();
-			assert(transaction2.empty());
-			//! [lf_heter_queue put_transaction move_assign example 1]
+            LfQueue queue;
+            auto transaction1 = queue.start_push(1);
 
+            typename LfQueue::template put_transaction<> transaction2;
+            transaction2 = std::move(transaction1);
+            assert(transaction1.empty());
+            transaction2.commit();
+            assert(transaction2.empty());
+            //! [lf_heter_queue put_transaction move_assign example 1]
+        }
+        {
 			//! [lf_heter_queue put_transaction move_assign example 2]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
 			// put_transaction<void> can be move assigned from any put_transaction<T>
-			static_assert(std::is_assignable<lf_heter_queue<>::put_transaction<void>, lf_heter_queue<>::put_transaction<void> &&>::value, "");
-			static_assert(std::is_assignable<lf_heter_queue<>::put_transaction<void>, lf_heter_queue<>::put_transaction<int> &&>::value, "");
+			static_assert(std::is_assignable<typename LfQueue::template put_transaction<void>, typename LfQueue::template put_transaction<void> &&>::value, "");
+			static_assert(std::is_assignable<typename LfQueue::template put_transaction<void>, typename LfQueue::template put_transaction<int> &&>::value, "");
 
 			// put_transaction<T> can be move assigned only from put_transaction<T>
-			static_assert(!std::is_assignable<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<void> &&>::value, "");
-			static_assert(!std::is_assignable<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<float> &&>::value, "");
-			static_assert(std::is_assignable<lf_heter_queue<>::put_transaction<int>, lf_heter_queue<>::put_transaction<int> &&>::value, "");
+			static_assert(!std::is_assignable<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<void> &&>::value, "");
+			static_assert(!std::is_assignable<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<float> &&>::value, "");
+			static_assert(std::is_assignable<typename LfQueue::template put_transaction<int>, typename LfQueue::template put_transaction<int> &&>::value, "");
 			//! [lf_heter_queue put_transaction move_assign example 2]
 		}
 		{
 			//! [lf_heter_queue put_transaction raw_allocate example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
 			struct Msg
 			{
 				std::chrono::high_resolution_clock::time_point m_time = std::chrono::high_resolution_clock::now();
@@ -387,7 +399,7 @@ namespace density_tests
 			};
 
 			auto post_message = [&queue](const void * i_data, size_t i_len) {
-				auto transaction = queue.start_emplace<Msg>();
+				auto transaction = queue.template start_emplace<Msg>();
 				transaction.element().m_len = i_len;
 				transaction.element().m_data = transaction.raw_allocate(i_len, 1);
 				memcpy(transaction.element().m_data, i_data, i_len);
@@ -402,9 +414,10 @@ namespace density_tests
 			auto consume_all_msgs = [&queue, &start_time] {
 				while (auto consume = queue.try_start_consume())
 				{
-					auto const checksum = compute_checksum(consume.element<Msg>().m_data, consume.element<Msg>().m_len);
+                    auto const & msg = consume.template element<Msg>();
+					auto const checksum = compute_checksum(msg.m_data, msg.m_len);
 					std::cout << "Message with checksum " << checksum << " at ";
-					std::cout << (consume.element<Msg>().m_time - start_time).count() << std::endl;
+					std::cout << (msg.m_time - start_time).count() << std::endl;
 					consume.commit();
 				}
 			};
@@ -417,15 +430,19 @@ namespace density_tests
 			//! [lf_heter_queue put_transaction raw_allocate example 1]
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction raw_allocate_copy example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
 			struct Msg
 			{
 				size_t m_len = 0;
 				char * m_chars = nullptr;
 			};
 			auto post_message = [&queue](const char * i_data, size_t i_len) {
-				auto transaction = queue.start_emplace<Msg>();
+				auto transaction = queue.template start_emplace<Msg>();
 				transaction.element().m_len = i_len;
 				transaction.element().m_chars = transaction.raw_allocate_copy(i_data, i_data + i_len);
 				memcpy(transaction.element().m_chars, i_data, i_len);
@@ -435,14 +452,18 @@ namespace density_tests
 			(void)post_message;
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction raw_allocate_copy example 2]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
 			struct Msg
 			{
 				char * m_chars = nullptr;
 			};
 			auto post_message = [&queue](const std::string & i_string) {
-				auto transaction = queue.start_emplace<Msg>();
+				auto transaction = queue.template start_emplace<Msg>();
 				transaction.element().m_chars = transaction.raw_allocate_copy(i_string);
 				transaction.commit();
 			};
@@ -450,9 +471,13 @@ namespace density_tests
 			(void)post_message;
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction empty example 1]
-			lf_heter_queue<>::put_transaction<> transaction;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+            typename LfQueue::template put_transaction<> transaction;
 			assert(transaction.empty());
 
 			transaction = queue.start_push(1);
@@ -460,9 +485,13 @@ namespace density_tests
 			//! [lf_heter_queue put_transaction empty example 1]
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction operator_bool example 1]
-			lf_heter_queue<>::put_transaction<> transaction;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+            typename LfQueue::template put_transaction<> transaction;
 			assert(!transaction);
 
 			transaction = queue.start_push(1);
@@ -471,7 +500,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue put_transaction cancel example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
 
 			// start and cancel a put
 			assert(queue.empty());
@@ -485,13 +517,17 @@ namespace density_tests
 			// start and commit a put
 			put = queue.start_push(42);
 			put.commit();
-			assert(queue.try_start_consume().element<int>() == 42);
+			assert(queue.try_start_consume().template element<int>() == 42);
 			//! [lf_heter_queue put_transaction cancel example 1]
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction element_ptr example 1]
-			int value = 42;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+            
+            int value = 42;
 			auto put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
 			assert(*static_cast<int*>(put.element_ptr()) == 42);
 			std::cout << "Putting an " << put.complete_type().type_info().name() << "..." << std::endl;
@@ -506,25 +542,36 @@ namespace density_tests
 			//! [lf_heter_queue put_transaction element_ptr example 2]
 		}
 		{
-			lf_heter_queue<> queue;
-			//! [lf_heter_queue put_transaction complete_type example 1]
+            //! [lf_heter_queue put_transaction complete_type example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
 			int value = 42;
 			auto put = queue.start_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
-			assert(put.complete_type().is<int>());
+			assert(put.complete_type().template is<int>());
 			std::cout << "Putting an " << put.complete_type().type_info().name() << "..." << std::endl;
 			//! [lf_heter_queue put_transaction complete_type example 1]
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue put_transaction destroy example 1]
-			queue.start_push(42); /* this transaction is destroyed without being committed,
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+            
+            queue.start_push(42); /* this transaction is destroyed without being committed,
 									so it gets canceled automatically. */
 			//! [lf_heter_queue put_transaction destroy example 1]
 		}
 		{
-			lf_heter_queue<> queue;
 			//! [lf_heter_queue typed_put_transaction element example 1]
-	
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
 			int value = 42;
 			auto untyped_put = queue.start_reentrant_dyn_push_copy(runtime_type<>::make<decltype(value)>(), &value);
 
@@ -546,9 +593,13 @@ namespace density_tests
 			using namespace density::type_features;
 			
 			{
-				lf_heter_queue<> queue;
-		    //! [lf_heter_queue consume_operation default_construct example 1]
-			using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+			//! [lf_heter_queue consume_operation default_construct example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+                
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
                 PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 			
             typename LfQueue::consume_operation consume;
@@ -564,7 +615,7 @@ namespace density_tests
 			//! [lf_heter_queue consume_operation copy_construct example 1]
 
 			//! [lf_heter_queue consume_operation copy_assign example 1]
-			static_assert(!std::is_copy_assignable<typename lf_heter_queue<>::consume_operation>::value, "");
+			static_assert(!std::is_copy_assignable<typename LfQueue::consume_operation>::value, "");
 			//! [lf_heter_queue consume_operation copy_assign example 1]
 
 		{
@@ -729,7 +780,7 @@ namespace density_tests
 			queue.push(42);
 
 			typename LfQueue::consume_operation consume = queue.try_start_consume();
-			bool const is_overaligned = alignof(int) > lf_heter_queue<>::min_alignment;
+			bool const is_overaligned = alignof(int) > LfQueue::min_alignment;
 			void * const unaligned_ptr = consume.unaligned_element_ptr();
 			int * element_ptr;
 			if (is_overaligned)
@@ -769,6 +820,7 @@ namespace density_tests
 			using namespace density;
 
 		{
+        {
             using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
                 PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 			
@@ -783,7 +835,7 @@ namespace density_tests
 			queue.template reentrant_emplace<int>();
 			queue.template reentrant_emplace<std::string>(12, '-');
 			//! [lf_heter_queue reentrant_emplace example 1]	
-
+        }
 		{
 			//! [lf_heter_queue start_reentrant_push example 1]
             using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
@@ -882,7 +934,10 @@ namespace density_tests
 			using namespace density;
 
 		{
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+			LfQueue queue;
 
 			//! [lf_heter_queue try_reentrant_push example 1]
             if (queue.try_reentrant_push(progress_blocking, 12))
@@ -895,9 +950,9 @@ namespace density_tests
 			//! [lf_heter_queue try_reentrant_push example 1]	
 
 			//! [lf_heter_queue try_reentrant_emplace example 1]
-			if (queue.try_reentrant_emplace<int>(progress_blocking))
+			if (queue.template try_reentrant_emplace<int>(progress_blocking))
             {
-                if (queue.try_reentrant_emplace<std::string>(progress_blocking, 12, '-'))
+                if (queue.template try_reentrant_emplace<std::string>(progress_blocking, 12, '-'))
                 {
                     // ...
                 }
@@ -916,7 +971,7 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue try_start_reentrant_emplace example 1]
-            if (auto put = queue.try_start_reentrant_emplace<std::string>(progress_blocking, 4, '*'))
+            if (auto put = queue.template try_start_reentrant_emplace<std::string>(progress_blocking, 4, '*'))
             {
                 // ...
                 put.element() += "****";
@@ -1051,7 +1106,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue reentrant_put_transaction move_construct example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			auto transaction1 = queue.start_reentrant_push(1);
 
 			// move from transaction1 to transaction2
@@ -1335,17 +1393,19 @@ namespace density_tests
 	    assert(consume.empty());
 		//! [lf_heter_queue reentrant_consume_operation default_construct example 1]
 			}
-
-			//! [lf_heter_queue reentrant_consume_operation copy_construct example 1]
-	        using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+        {
+            //! [lf_heter_queue reentrant_consume_operation copy_construct example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
-			static_assert(!std::is_copy_constructible<typename LfQueue::reentrant_consume_operation>::value, "");
-			//! [lf_heter_queue reentrant_consume_operation copy_construct example 1]
+            static_assert(!std::is_copy_constructible<typename LfQueue::reentrant_consume_operation>::value, "");
+            //! [lf_heter_queue reentrant_consume_operation copy_construct example 1]
 
-			//! [lf_heter_queue reentrant_consume_operation copy_assign example 1]
-			static_assert(!std::is_copy_assignable<lf_heter_queue<>::reentrant_consume_operation>::value, "");
-			//! [lf_heter_queue reentrant_consume_operation copy_assign example 1]
-
+            //! [lf_heter_queue reentrant_consume_operation copy_assign example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+            static_assert(!std::is_copy_assignable<typename LfQueue::reentrant_consume_operation>::value, "");
+            //! [lf_heter_queue reentrant_consume_operation copy_assign example 1]
+        }
 		{
 			//! [lf_heter_queue reentrant_consume_operation move_construct example 1]
 			using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
@@ -1527,7 +1587,7 @@ namespace density_tests
 			queue.push(42);
 
 			typename LfQueue::reentrant_consume_operation consume = queue.try_start_reentrant_consume();
-			bool const is_overaligned = alignof(int) > lf_heter_queue<>::min_alignment;
+			bool const is_overaligned = alignof(int) > LfQueue::min_alignment;
 			void * const unaligned_ptr = consume.unaligned_element_ptr();
 			int * element_ptr;
 			if (is_overaligned)
@@ -1699,24 +1759,32 @@ namespace density_tests
 		{
 			//! [lf_heter_queue construct_copy_alloc example 1]
 			void_allocator allocator;
-			lf_heter_queue<> queue(allocator);
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue(allocator);
 			//! [lf_heter_queue construct_copy_alloc example 1]
 		}
 		{
 			//! [lf_heter_queue construct_move_alloc example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
 			void_allocator allocator;
-			lf_heter_queue<> queue(std::move(allocator));
+			LfQueue queue(std::move(allocator));
 			//! [lf_heter_queue construct_move_alloc example 1]
 		}
 		{
 			//! [lf_heter_queue move_assign example 1]
-			using MyRunTimeType = runtime_type<void, feature_list<default_construct, copy_construct, destroy, size, alignment, equals>>;
+            using MyRunTimeType = runtime_type<void, feature_list<default_construct, copy_construct, destroy, size, alignment, equals>>;
 		
-			lf_heter_queue<void, MyRunTimeType> queue;
-			queue.push(std::string());
+            using LfQueue = lf_heter_queue<void, MyRunTimeType, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+			LfQueue queue;
+			queue.push(std::string("abc"));
 			queue.push(std::make_pair(4., 1));
 
-			lf_heter_queue<void, MyRunTimeType> queue_1;
+			LfQueue queue_1;
 			queue_1 = std::move(queue);
 
 			assert(queue.empty());
@@ -1726,19 +1794,28 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue get_allocator example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			assert(queue.get_allocator() == void_allocator());
 			//! [lf_heter_queue get_allocator example 1]
 		}
 		{
 			//! [lf_heter_queue get_allocator_ref example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			assert(queue.get_allocator_ref() == void_allocator());
 			//! [lf_heter_queue get_allocator_ref example 1]
 		}
 		{
 			//! [lf_heter_queue get_allocator_ref example 2]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			auto const & queue_ref = queue;
 			assert(queue_ref.get_allocator_ref() == void_allocator());
 			//! [lf_heter_queue get_allocator_ref example 2]
@@ -1746,7 +1823,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue swap example 1]
-			lf_heter_queue<> queue, queue_1;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue, queue_1;
 			queue.push(1);
 			swap(queue, queue_1);
 
@@ -1756,7 +1836,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue swap example 2]
-			lf_heter_queue<> queue, queue_1;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue, queue_1;
 			queue.push(1);
 			{
 				using namespace std;
@@ -1768,7 +1851,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue empty example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			assert(queue.empty());
 			queue.push(1);
 			assert(!queue.empty());
@@ -1776,7 +1862,10 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue clear example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+
+            LfQueue queue;
 			queue.push(1);
 			queue.clear();
 			assert(queue.empty());
@@ -1784,8 +1873,11 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue try_pop example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 	
+            LfQueue queue;
+
 			bool pop_result = queue.try_pop();
 			assert(pop_result == false);
 	
@@ -1795,14 +1887,16 @@ namespace density_tests
 			pop_result = queue.try_pop();
 			assert(pop_result == true);
 			auto consume = queue.try_start_consume();
-			assert(consume.element<int>() == 2);
+			assert(consume.template element<int>() == 2);
 			consume.commit();
 			//! [lf_heter_queue try_pop example 1]
 		}
 		{
 			//! [lf_heter_queue try_start_consume example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 	
+            LfQueue queue;
 			auto consume_1 = queue.try_start_consume();
 			assert(!consume_1);
 	
@@ -1810,36 +1904,42 @@ namespace density_tests
 
 			auto consume_2 = queue.try_start_consume();
 			assert(consume_2);
-			assert(consume_2.element<int>() == 42);
+			assert(consume_2.template element<int>() == 42);
 			consume_2.commit();
 			//! [lf_heter_queue try_start_consume example 1]
 		}
 		{
 			//! [lf_heter_queue try_start_consume_ example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 	
-			lf_heter_queue<>::consume_operation consume_1;
+            LfQueue queue;
+
+			typename LfQueue::consume_operation consume_1;
 			bool const bool_1 = queue.try_start_consume(consume_1);
 			assert(!bool_1 && !consume_1);
 	
 			queue.push(42);
 
-			lf_heter_queue<>::consume_operation consume_2;
+			typename LfQueue::consume_operation consume_2;
 			auto bool_2 = queue.try_start_consume(consume_2);
 			assert(consume_2 && bool_2);
-			assert(consume_2.element<int>() == 42);
+			assert(consume_2.template element<int>() == 42);
 			consume_2.commit();
 			//! [lf_heter_queue try_start_consume_ example 1]
 			(void)bool_1;
 			(void)bool_2;
 		}
 		{
-			lf_heter_queue<> queue;
-
-			//! [lf_heter_queue reentrant example 1]
+            //! [lf_heter_queue reentrant example 1]
 			// start 3 reentrant put transactions
-			auto put_1 = queue.start_reentrant_push(1);
-			auto put_2 = queue.start_reentrant_emplace<std::string>("Hello world!");
+			
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
+
+            auto put_1 = queue.start_reentrant_push(1);
+			auto put_2 = queue.template start_reentrant_emplace<std::string>("Hello world!");
 			double pi = 3.14;
 			auto put_3 = queue.start_reentrant_dyn_push_copy(runtime_type<>::make<double>(), &pi);
 			assert(queue.empty()); // the queue is still empty, because no transaction has been committed
@@ -1847,12 +1947,12 @@ namespace density_tests
 			// commit and start consuming "Hello world!"
 			put_2.commit();
 			auto consume2 = queue.try_start_reentrant_consume();
-			assert(!consume2.empty() && consume2.complete_type().is<std::string>());
+			assert(!consume2.empty() && consume2.complete_type().template is<std::string>());
 
 			// commit and start consuming 1
 			put_1.commit();
 			auto consume1 = queue.try_start_reentrant_consume();
-			assert(!consume1.empty() && consume1.complete_type().is<int>());
+			assert(!consume1.empty() && consume1.complete_type().template is<int>());
 
 			// cancel 3.14, and commit the consumes
 			put_3.cancel();
@@ -1864,7 +1964,9 @@ namespace density_tests
 		}
 		{
 			//! [lf_heter_queue try_reentrant_pop example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
 	
 			bool pop_result = queue.try_reentrant_pop();
 			assert(pop_result == false);
@@ -1875,13 +1977,15 @@ namespace density_tests
 			pop_result = queue.try_reentrant_pop();
 			assert(pop_result == true);
 			auto consume = queue.try_start_reentrant_consume();
-			assert(consume.element<int>() == 2);
+			assert(consume.template element<int>() == 2);
 			consume.commit();
 			//! [lf_heter_queue try_reentrant_pop example 1]
 		}
 		{
 			//! [lf_heter_queue try_start_reentrant_consume example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
 	
 			auto consume_1 = queue.try_start_reentrant_consume();
 			assert(!consume_1);
@@ -1890,24 +1994,26 @@ namespace density_tests
 
 			auto consume_2 = queue.try_start_reentrant_consume();
 			assert(consume_2);
-			assert(consume_2.element<int>() == 42);
+			assert(consume_2.template element<int>() == 42);
 			consume_2.commit();
 			//! [lf_heter_queue try_start_reentrant_consume example 1]
 		}
 		{
 			//! [lf_heter_queue try_start_reentrant_consume_ example 1]
-			lf_heter_queue<> queue;
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator, 
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
 	
-			lf_heter_queue<>::reentrant_consume_operation consume_1;
+			typename LfQueue::reentrant_consume_operation consume_1;
 			bool const bool_1 = queue.try_start_reentrant_consume(consume_1);
 			assert(!bool_1 && !consume_1);
 	
 			queue.push(42);
 
-			lf_heter_queue<>::reentrant_consume_operation consume_2;
+			typename LfQueue::reentrant_consume_operation consume_2;
 			auto bool_2 = queue.try_start_reentrant_consume(consume_2);
 			assert(consume_2 && bool_2);
-			assert(consume_2.element<int>() == 42);
+			assert(consume_2.template element<int>() == 42);
 			consume_2.commit();
 			//! [lf_heter_queue try_start_reentrant_consume_ example 1]
 			(void)bool_2;
