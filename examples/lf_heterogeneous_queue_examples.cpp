@@ -470,7 +470,107 @@ namespace density_tests
 			//! [lf_heter_queue put_transaction raw_allocate_copy example 2]
 			(void)post_message;
 		}
+        {
+			//! [lf_heter_queue put_transaction try_raw_allocate example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
+			struct Msg
+			{
+				std::chrono::high_resolution_clock::time_point m_time = std::chrono::high_resolution_clock::now();
+				size_t m_len = 0;
+				void * m_data = nullptr;
+			};
+
+			auto post_message = [&queue](const void * i_data, size_t i_len) {
+                if (auto transaction = queue.template try_start_emplace<Msg>(progress_lock_free))
+                {
+                    // if we fail to allocate the raw block, we don't commit the put transaction
+				    transaction.element().m_len = i_len;
+                    transaction.element().m_data = transaction.try_raw_allocate(progress_lock_free, i_len, 1);
+                    if (transaction.element().m_data)
+                    {
+                        memcpy(transaction.element().m_data, i_data, i_len);
+
+                        assert(!transaction.empty()); // a put transaction is not empty if it's bound to an element being put
+                        transaction.commit();
+                        assert(transaction.empty()); // the commit makes the transaction empty
+                    }
+                }
+			};
+
+			auto const start_time = std::chrono::high_resolution_clock::now();
+
+			auto consume_all_msgs = [&queue, &start_time] {
+				while (auto consume = queue.try_start_consume())
+				{
+                    auto const & msg = consume.template element<Msg>();
+					auto const checksum = compute_checksum(msg.m_data, msg.m_len);
+					std::cout << "Message with checksum " << checksum << " at ";
+					std::cout << (msg.m_time - start_time).count() << std::endl;
+					consume.commit();
+				}
+			};
+
+			int msg_1 = 42, msg_2 = 567;
+			post_message(&msg_1, sizeof(msg_1));
+			post_message(&msg_2, sizeof(msg_2));
+
+			consume_all_msgs();
+			//! [lf_heter_queue put_transaction try_raw_allocate example 1]
+		}
 		{
+			//! [lf_heter_queue put_transaction try_raw_allocate_copy example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+			struct Msg
+			{
+				size_t m_len = 0;
+				char * m_chars = nullptr;
+			};
+			auto post_message = [&queue](const char * i_data, size_t i_len) {
+				auto transaction = queue.template try_start_emplace<Msg>(progress_lock_free);
+				
+                // if we fail to allocate the raw block, we don't commit the put transaction
+                transaction.element().m_len = i_len;
+                transaction.element().m_chars = transaction.try_raw_allocate_copy(progress_lock_free, i_data, i_data + i_len);
+                if (transaction.element().m_chars)
+                {
+                    memcpy(transaction.element().m_chars, i_data, i_len);
+                    transaction.commit();
+                }
+			};
+			//! [lf_heter_queue put_transaction try_raw_allocate_copy example 1]
+			(void)post_message;
+		}
+		{
+			//! [lf_heter_queue put_transaction try_raw_allocate_copy example 2]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+			struct Msg
+			{
+				char * m_chars = nullptr;
+			};
+			auto post_message = [&queue](const std::string & i_string) {
+				auto transaction = queue.template try_start_emplace<Msg>(progress_lock_free);
+
+                // if we fail to allocate the raw block, we don't commit the put transaction
+                transaction.element().m_chars = transaction.try_raw_allocate_copy(progress_lock_free, i_string);
+                if (transaction.element().m_chars)
+                {
+                    transaction.commit();
+                }
+			};
+			//! [lf_heter_queue put_transaction try_raw_allocate_copy example 2]
+			(void)post_message;
+		}
+        {
 			//! [lf_heter_queue put_transaction empty example 1]
             using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
@@ -1250,6 +1350,106 @@ namespace density_tests
 				transaction.commit();
 			};
 			//! [lf_heter_queue reentrant_put_transaction raw_allocate_copy example 2]
+			(void)post_message;
+		}
+        {
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			LfQueue queue;
+			struct Msg
+			{
+				std::chrono::high_resolution_clock::time_point m_time = std::chrono::high_resolution_clock::now();
+				size_t m_len = 0;
+				void * m_data = nullptr;
+			};
+
+			auto post_message = [&queue](const void * i_data, size_t i_len) {
+                if (auto transaction = queue.template try_start_reentrant_emplace<Msg>(progress_lock_free))
+                {
+                    // if we fail to allocate the raw block, we don't commit the put transaction
+				    transaction.element().m_len = i_len;
+                    transaction.element().m_data = transaction.try_raw_allocate(progress_lock_free, i_len, 1);
+                    if (transaction.element().m_data)
+                    {
+                        memcpy(transaction.element().m_data, i_data, i_len);
+
+                        assert(!transaction.empty()); // a put transaction is not empty if it's bound to an element being put
+                        transaction.commit();
+                        assert(transaction.empty()); // the commit makes the transaction empty
+                    }
+                }
+			};
+
+			auto const start_time = std::chrono::high_resolution_clock::now();
+
+			auto consume_all_msgs = [&queue, &start_time] {
+				while (auto consume = queue.try_start_consume())
+				{
+                    auto const & msg = consume.template element<Msg>();
+					auto const checksum = compute_checksum(msg.m_data, msg.m_len);
+					std::cout << "Message with checksum " << checksum << " at ";
+					std::cout << (msg.m_time - start_time).count() << std::endl;
+					consume.commit();
+				}
+			};
+
+			int msg_1 = 42, msg_2 = 567;
+			post_message(&msg_1, sizeof(msg_1));
+			post_message(&msg_2, sizeof(msg_2));
+
+			consume_all_msgs();
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate example 1]
+		}
+		{
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+			struct Msg
+			{
+				size_t m_len = 0;
+				char * m_chars = nullptr;
+			};
+			auto post_message = [&queue](const char * i_data, size_t i_len) {
+				auto transaction = queue.template try_start_reentrant_emplace<Msg>(progress_lock_free);
+				
+                // if we fail to allocate the raw block, we don't commit the put transaction
+                transaction.element().m_len = i_len;
+                transaction.element().m_chars = transaction.try_raw_allocate_copy(progress_lock_free, i_data, i_data + i_len);
+                if (transaction.element().m_chars)
+                {
+                    memcpy(transaction.element().m_chars, i_data, i_len);
+                    transaction.commit();
+                }
+			};
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1]
+			(void)post_message;
+		}
+		{
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2]
+            using LfQueue = lf_heter_queue<void, runtime_type<>, void_allocator,
+                PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			
+            LfQueue queue;
+
+			struct Msg
+			{
+				char * m_chars = nullptr;
+			};
+			auto post_message = [&queue](const std::string & i_string) {
+				auto transaction = queue.template try_start_reentrant_emplace<Msg>(progress_lock_free);
+
+                // if we fail to allocate the raw block, we don't commit the put transaction
+                transaction.element().m_chars = transaction.try_raw_allocate_copy(progress_lock_free, i_string);
+                if (transaction.element().m_chars)
+                {
+                    transaction.commit();
+                }
+			};
+			//! [lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2]
 			(void)post_message;
 		}
 		{

@@ -531,7 +531,7 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                @param i_source_range to be iterated
+                @param i_source_range to be copied
 
                 \n <b>Requires</b>:
                     - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
@@ -545,12 +545,144 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue raw_allocate_copy example 2 */
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
+            }
+
+            /** Tries to allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
+                the elements in the memory pages. If the block does not fit in one page, the block is allocated using non-paged memory services
+                of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_size size in bytes of the block to allocate.
+                @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2, and less than or
+                        equal to i_size.
+                @return pointer to the allocated storage, or null in case of failure
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+                    - the alignment is not valid
+                    - the size is not a multiple of the alignment
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: nothing.
+                
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate example 1*/
+            void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
+            {
+                DENSITY_ASSERT(!empty());
+                auto push_data = m_queue->try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Dead, false, i_size, i_alignment);
+                return push_data.m_user_storage;
+            }
+
+            /** Tries to allocate a memory block associated to the element being added in the queue, and copies the content from a range
+                of iterators. The block may be allocated contiguously with the elements in the memory pages. If the block does not
+                fit in one page, the block is allocated using non-paged memory services of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_begin first element to be copied
+                @param i_end first element not to be copied
+                @return pointer to the allocated array, or null in case of failure
+
+                \n <b>Requires</b>:
+                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+                    - i_end is not reachable from i_begin
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
+
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate_copy example 1*/
+            template <typename INPUT_ITERATOR>
+                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
+                    try_raw_allocate_copy(progress_guarantee i_progress_guarantee, INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
+                        noexcept(std::is_nothrow_copy_constructible<typename std::iterator_traits<INPUT_ITERATOR>::value_type>::value)
+            {
+                using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
+                static_assert(std::is_trivially_destructible<ValueType>::value,
+                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+
+                auto const count_s = std::distance(i_begin, i_end);
+                auto const count = static_cast<size_t>(count_s);
+                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+
+                auto const elements = static_cast<ValueType*>(try_raw_allocate(i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
+                if (elements != nullptr)
+                {
+                    for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
+                        new(curr) ValueType(*i_begin);
+                }
+                return elements;
+            }
+
+            /** Tries top allocate a memory block associated to the element being added in the queue, and copies the content from a range.
+                The block may be allocated contiguously with the elements in the memory pages. If the block does not
+                fit in one page, the block is allocated using non-paged memory services of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_source_range to be copied
+                @return pointer to the allocated array, or null in case of failure
+
+                \n <b>Requires</b>:
+                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate_copy example 2 */
+            template <typename INPUT_RANGE>
+                auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
+                    noexcept(noexcept(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
+                        -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+            {
+                return try_raw_allocate_copy(i_progress_guarantee,
+                    std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.
@@ -1980,7 +2112,7 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                @param i_source_range to be iterated
+                @param i_source_range to be copied
 
                 \n <b>Requires</b>:
                     - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
@@ -2000,6 +2132,138 @@ namespace density
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
+            }
+
+            /** Tries to allocates a memory block associated to the element being added in the queue. The block may be allocated contiguously with
+                the elements in the memory pages. If the block does not fit in one page, the block is allocated using non-paged memory services
+                of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_size size in bytes of the block to allocate.
+                @param i_alignment alignment of the block to allocate. It must be a non-zero power of 2, and less than or
+                        equal to i_size.
+                @return pointer to the allocated storage, or null in case of failure
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+                    - the alignment is not valid
+                    - the size is not a multiple of the alignment
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: nothing.
+                
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate example 1*/
+            void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
+            {
+                DENSITY_ASSERT(!empty());
+                auto push_data = m_queue->try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Dead, false, i_size, i_alignment);
+                return push_data.m_user_storage;
+            }
+
+            /** Tries to allocate a memory block associated to the element being added in the queue, and copies the content from a range
+                of iterators. The block may be allocated contiguously with the elements in the memory pages. If the block does not
+                fit in one page, the block is allocated using non-paged memory services of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_begin first element to be copied
+                @param i_end first element not to be copied
+                @return pointer to the allocated array, or null in case of failure
+
+                \n <b>Requires</b>:
+                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+                    - i_end is not reachable from i_begin
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
+
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1*/
+            template <typename INPUT_ITERATOR>
+                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
+                    try_raw_allocate_copy(progress_guarantee i_progress_guarantee, INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
+                        noexcept(std::is_nothrow_copy_constructible<typename std::iterator_traits<INPUT_ITERATOR>::value_type>::value)
+            {
+                using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
+                static_assert(std::is_trivially_destructible<ValueType>::value,
+                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+
+                auto const count_s = std::distance(i_begin, i_end);
+                auto const count = static_cast<size_t>(count_s);
+                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+
+                auto const elements = static_cast<ValueType*>(try_raw_allocate(i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
+                if (elements != nullptr)
+                {
+                    for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
+                        new(curr) ValueType(*i_begin);
+                }
+                return elements;
+            }
+
+            /** Tries to allocate a memory block associated to the element being added in the queue, and copies the content from a range.
+                The block may be allocated contiguously with the elements in the memory pages. If the block does not
+                fit in one page, the block is allocated using non-paged memory services of the allocator.
+
+                \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
+                    content of the block is undefined.
+
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                a failure, and has no observable effects. This function fails if:
+                - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                - there is a contention between threads, and the wait-free progress guarantee is requested
+                - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
+
+                @param i_progress_guarantee progress guarantee to respect
+                @param i_source_range to be copied
+                @return pointer to the allocated array, or null in case of failure
+
+                \n <b>Requires</b>:
+                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - the value type must be trivially destructible
+
+                \pre The behavior is undefined if either:
+                    - this transaction is empty
+
+                <b>Complexity</b>: Unspecified.
+                \n <b>Effects on iterators</b>: no iterator is invalidated
+                \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
+                \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+
+            \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2 */
+            template <typename INPUT_RANGE>
+                auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
+                    noexcept(noexcept(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
+                        -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+            {
+                return try_raw_allocate_copy(i_progress_guarantee,
+                    std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.

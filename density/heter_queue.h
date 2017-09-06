@@ -674,7 +674,7 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                @param i_source_range to be iterated
+                @param i_source_range to be copied
 
                 \n <b>Requires</b>:
                     - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
@@ -688,7 +688,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet heterogeneous_queue_examples.cpp heter_queue raw_allocate_copy example 2 */
+            \snippet heterogeneous_queue_examples.cpp heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
                     -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
@@ -1679,7 +1679,7 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                @param i_source_range to be iterated
+                @param i_source_range to be copied
 
                 \n <b>Requires</b>:
                     - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
