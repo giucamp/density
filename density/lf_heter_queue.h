@@ -38,7 +38,11 @@ namespace density
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently
-        @tparam CONSISTENCY_MODEL specifies whether the queue is linearizable
+        @tparam CONSISTENCY_MODEL Specifies whether the queue is linearizable.
+            Implementation note: Currently this parameter affects only put operations, and only in case of multiple producers:
+            in case of relaxed consistency model, for a small amount of time, during the first phase of a put transaction, the
+            queue is truncated, so any thread can successfully put further elements, but those elements are not observable to any
+            thread, even the one who did the put.
 
         \n <b>Thread safeness</b>: A thread doing put operations and another thread doing consumes don't need to be synchronized.
                 If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.
@@ -62,6 +66,8 @@ namespace density
         - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is 
             requested, but it requires a memory operation that the allocator is not able to complete in lock-freedom, the put fails.
             In the current implementation, wait-free put operation may fail even in isolation, because page pinning is lock-free but not wait-free.
+
+        Also raw allocation functions have the try_ versions. They do not throw in case of failure, but just return null.
 
         This table shows all the put functions supported by lf_heter_queue:
 
@@ -172,10 +178,12 @@ namespace density
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
             consistency_model CONSISTENCY_MODEL = consistency_sequential>
-        class lf_heter_queue : private detail::LFQueue_Head<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
+        class lf_heter_queue : private detail::LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY,
+                detail::LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL> >
     {
     private:
-        using Base = detail::LFQueue_Head<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+        using Base = detail::LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY,
+                detail::LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL> >;
         using ControlBlock = typename Base::ControlBlock;
         using Block = typename Base::Block;
         using Consume = typename Base::Consume;

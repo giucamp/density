@@ -10,16 +10,12 @@ namespace density
 {
     namespace detail
     {
-        /** \internal Class template that implements consume operations */
-        template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-                concurrency_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
-            class LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
-            PROD_CARDINALITY, concurrency_multiple, CONSISTENCY_MODEL>
-                : protected LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL>
+        /** \internal Class template that implements consume operations with multiple producers */
+        template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename QUEUE_TAIL >
+            class LFQueue_Head<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, QUEUE_TAIL> : protected QUEUE_TAIL
         {
         private:
-
-            using Base = LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL>;
+            using Base = QUEUE_TAIL;
 
         protected:
 

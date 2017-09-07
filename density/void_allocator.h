@@ -347,32 +347,37 @@ namespace density
             PageAllocator::thread_local_instance().template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
         }
 
-        /** Reserve the specified memory size from the system for lock-free page allocation.
+        /** Reserves the specified memory size from the system for lock-free page allocation.
             @param i_size the space (in bytes) that the internal page allocator should reserve for page allocation.
-            @return space (in bytes) that actually owned by the page allocator. It is greater than or equal to i_size
+            @param o_reserved_size pointer to a size_t that receives the actual space (in bytes) that the allocator has
+                allocated from the system, always greater or equal to i_size. This parameter can be null, in which case
+                the actual reserved size is not returned.
 
-            The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions 
-            are returned to the system only during the destruction of global objects. \n
-            This function ensures that the sum of memory available in the regions is at least the specified size.
+            The internal page allocator requests memory regions from the system and uses them to allocate pages with a 
+            lock-free algorithm. Regions are returned to the system only during the destruction of global objects. \n
+            This function ensures that the sum of the capacity available in the all the regions is at least the specified 
+            size. If a new region is necessary in order to reach the specified capacity, but the allocation from the system
+            fails, this function throw a std::bad_alloc. \n
             Note: some of this space may be already allocated as pages.
 
             \n <b>Progress guarantee</b>: possibly blocking
             \n <b>Throws</b>: std::bad_alloc on failure. */
-        static size_t reserve_lockfree_page_memory(size_t i_size)
+        static void reserve_lockfree_page_memory(size_t i_size, size_t * o_reserved_size = nullptr)
         {
-            auto const reserved_size = PageAllocator::thread_local_instance().try_reserve_lockfree_memory(progress_blocking, i_size);
-            if(reserved_size < i_size)
+            if (!try_reserve_lockfree_page_memory(progress_blocking, i_size, o_reserved_size))
+            {
                 throw std::bad_alloc();
-            return reserved_size;
+            }
         }
 
         /** Tries to reserve the specified memory size from the system for lock-free page allocation.
             @param i_progress_guarantee minimum progress guarantee of this call. If it is not progress_blocking,
                 no region is allocated
             @param i_size the space (in bytes) that the internal page allocator should reserve for page allocation.
-            @return space (in bytes) that actually owned by the page allocator. If it is less than i_size, the
-                function has failed. This may happen for an out of memory or because a new region was necessary but
-                the specified progress guarantee does not allow region allocation.
+            @param o_reserved_size pointer to a size_t that receives the actual space (in bytes) that the allocator has
+                allocated from the system, always greater or equal to i_size. This parameter can be null, in which case
+                the actual reserved size is not returned
+            @return whether the requested size is less than or equal to the actual reserved space
 
             The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions 
             are returned to the system only during the destruction of global objects. \n
@@ -381,9 +386,12 @@ namespace density
 
             \n <b>Progress guarantee</b>: specified by the argument
             \n <b>Throws</b>: nothing. */
-        static size_t try_reserve_lockfree_page_memory(progress_guarantee i_progress_guarantee, size_t i_size) noexcept
+        static bool try_reserve_lockfree_page_memory(progress_guarantee i_progress_guarantee, size_t i_size, size_t * o_reserved_size = nullptr) noexcept
         {
-            return PageAllocator::thread_local_instance().try_reserve_lockfree_memory(i_progress_guarantee, i_size);
+            auto const reserved_size = PageAllocator::thread_local_instance().try_reserve_lockfree_memory(i_progress_guarantee, i_size);
+            if (o_reserved_size != nullptr)
+                *o_reserved_size = reserved_size;
+            return reserved_size >= i_size;
         }
 
         /** Pins the page containing the specified address, incrementing an internal page_specific ref-count.

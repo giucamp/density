@@ -59,7 +59,7 @@ namespace density
 
         /** \internal Class template that implements the low-level interface for consume operations */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
-            concurrency_cardinality PROD_CARDINALITY, concurrency_cardinality CONSUMER_CARDINALITY, consistency_model CONSISTENCY_MODEL >
+            concurrency_cardinality CONSUMER_CARDINALITY, typename QUEUE_TAIL >
                 class LFQueue_Head;
 
         /** \internal This struct contains the result of a low-level allocation. */
