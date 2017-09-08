@@ -4,29 +4,28 @@
 #include "../test_framework/test_allocators.h"
 #include "../test_framework/progress.h"
 #include "complex_polymorphism.h"
-#include <density/lf_heter_queue.h>
+#include <density/sp_heter_queue.h>
 #include <type_traits>
 #include <iterator>
 
 namespace density_tests
 {
 	template < density::concurrency_cardinality PROD_CARDINALITY,
-		density::concurrency_cardinality CONSUMER_CARDINALITY,
-		density::consistency_model CONSISTENCY_MODEL>
-		struct NbQueueBasicTests
+		density::concurrency_cardinality CONSUMER_CARDINALITY>
+		    struct SpQueueBasicTests
 	{
 		template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
-			using LfHeterQueue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+			using SpHeterQueue = density::sp_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
+                    PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
-		static void nonblocking_heterogeneous_queue_lifetime_tests()
+		static void spinlocking_heterogeneous_queue_lifetime_tests()
 		{
 			using density::void_allocator;
 			using density::runtime_type;
 
 			{
 				void_allocator allocator;
-				LfHeterQueue<> queue(allocator); // copy construct allocator
+				SpHeterQueue<> queue(allocator); // copy construct allocator
 				queue.push(1);
 				queue.push(2);
 
@@ -48,7 +47,7 @@ namespace density_tests
 
 				// test allocator getters
 				move_only_void_allocator movable_alloc(5);
-				LfHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+				SpHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
 
 				auto allocator_copy = other_queue.get_allocator();
 				(void)allocator_copy;
@@ -63,9 +62,9 @@ namespace density_tests
 			}
 		}
 
-		/** Basic tests LfHeterQueue<void, ...> with a non-polymorphic base */
+		/** Basic tests SpHeterQueue<void, ...> with a non-polymorphic base */
 		template <typename QUEUE>
-			static void nonblocking_heterogeneous_queue_basic_void_tests()
+			static void spinlocking_heterogeneous_queue_basic_void_tests()
 		{
 			static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -101,8 +100,8 @@ namespace density_tests
 			i_queue.dyn_push_move(type, &move_source);
 		}
 
-		/** Test LfHeterQueue with a non-polymorphic base */
-		static void nonblocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
+		/** Test SpHeterQueue with a non-polymorphic base */
+		static void spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
 		{
 			using namespace density::type_features;
 			using density::runtime_type;
@@ -110,7 +109,7 @@ namespace density_tests
 
 			using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
 				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			LfHeterQueue<NonPolymorphicBase, RunTimeType> queue;
+			SpHeterQueue<NonPolymorphicBase, RunTimeType> queue;
 
 			queue.push(NonPolymorphicBase());
 			queue.template emplace<SingleDerivedNonPoly>();
@@ -139,8 +138,8 @@ namespace density_tests
 			DENSITY_TEST_ASSERT(queue.empty());
 		}
 
-		/** Test LfHeterQueue with a polymorphic base */
-		static void nonblocking_heterogeneous_queue_basic_polymorphic_base_tests()
+		/** Test SpHeterQueue with a polymorphic base */
+		static void spinlocking_heterogeneous_queue_basic_polymorphic_base_tests()
 		{
 			using namespace density::type_features;
 			using density::runtime_type;
@@ -148,7 +147,7 @@ namespace density_tests
 
 			using RunTimeType = runtime_type<PolymorphicBase, feature_list<
 				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			LfHeterQueue<PolymorphicBase, RunTimeType> queue;
+			SpHeterQueue<PolymorphicBase, RunTimeType> queue;
 
 			queue.push(PolymorphicBase());
 			queue.template emplace<SingleDerived>();
@@ -202,41 +201,34 @@ namespace density_tests
 		{			
 			using density::runtime_type;
 
-			nonblocking_heterogeneous_queue_lifetime_tests();
+			spinlocking_heterogeneous_queue_lifetime_tests();
 
-			nonblocking_heterogeneous_queue_basic_nonpolymorphic_base_tests();
+			spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests();
 
-			nonblocking_heterogeneous_queue_basic_polymorphic_base_tests();
+			spinlocking_heterogeneous_queue_basic_polymorphic_base_tests();
 		
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<>>();
+			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
 		}
 
-	}; // NbQueueBasicTests
+	}; // SpQueueBasicTests
 
 
 
-	/** Basic tests for lf_heter_queue<...> */
-	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
+	/** Basic tests for sp_heter_queue<...> */
+	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
 
 		constexpr auto mult = density::concurrency_multiple;
 		constexpr auto single = density::concurrency_single;
-		constexpr auto seq_cst = density::consistency_sequential;
-		constexpr auto relaxed = density::consistency_relaxed;
 
-		NbQueueBasicTests<		mult,		mult,			seq_cst		>::tests(i_ostream);
-		NbQueueBasicTests<		single,		mult,			seq_cst		>::tests(i_ostream);
-		NbQueueBasicTests<		mult,		single,			seq_cst		>::tests(i_ostream);
-		NbQueueBasicTests<		single,		single,			seq_cst		>::tests(i_ostream);
-		
-		NbQueueBasicTests<		mult,		mult,			relaxed		>::tests(i_ostream);
-		NbQueueBasicTests<		single,		mult,			relaxed		>::tests(i_ostream);
-		NbQueueBasicTests<		mult,		single,			relaxed		>::tests(i_ostream);
-		NbQueueBasicTests<		single,		single,			relaxed		>::tests(i_ostream);
+		SpQueueBasicTests<		mult,		mult	    >::tests(i_ostream);
+		SpQueueBasicTests<		single,		mult	    >::tests(i_ostream);
+		SpQueueBasicTests<		mult,		single	    >::tests(i_ostream);
+		SpQueueBasicTests<		single,		single	    >::tests(i_ostream);
 	}
 }

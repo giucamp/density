@@ -15,6 +15,8 @@ namespace density_tests
 	void lf_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 		EasyRandom & i_rand, size_t i_element_count);
 
+    void sp_heter_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+		EasyRandom & i_rand, size_t i_element_count);
 	
 	/** Runs the generic test on all the queues 
 		@param i_flags misc options
@@ -35,5 +37,7 @@ namespace density_tests
 		lf_heter_relaxed_queue_generic_tests(i_flags, i_output, rand, i_element_count);
 
 		lf_heter_seq_cst_queue_generic_tests(i_flags, i_output, rand, i_element_count);
+
+        sp_heter_generic_tests(i_flags, i_output, rand, i_element_count);
 	}
 }

@@ -59,7 +59,7 @@ namespace density
             struct Consume
             {
                 LFQueue_Head * m_queue = nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
-                ControlBlock * m_control = nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
+                ControlBlock * m_control = nullptr; /**< Current control block. Independent from the empty-ness of the Consume */
                 uintptr_t m_next_ptr = 0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and only if m_next_ptr == 0 */
 
                 Consume() noexcept = default;

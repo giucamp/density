@@ -542,6 +542,7 @@
     <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\lf_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\..\examples\sp_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\generic_tests\conc_heter_queue_generic_tests.cpp" />
@@ -549,9 +550,11 @@
     <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_relaxed.cpp" />
     <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_seqcst.cpp" />
     <ClCompile Include="..\tests\generic_tests\queue_generic_tests.cpp" />
+    <ClCompile Include="..\tests\generic_tests\sp_heter_queue_generic_tests_seqcst.cpp" />
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\load_unload_tests.cpp" />
     <ClCompile Include="..\tests\lf_heterogeneous_queue_basic_tests.cpp" />
+    <ClCompile Include="..\tests\sp_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\test_framework\density_test_common.cpp" />
     <ClCompile Include="..\test_framework\dynamic_type.cpp" />
     <ClCompile Include="..\test_framework\exception_tests.cpp" />
@@ -569,6 +572,7 @@
     <ClInclude Include="..\..\density\density_config.h" />
     <ClInclude Include="..\..\density\detail\function_queue_impl.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_common.h" />
+    <ClInclude Include="..\..\density\detail\sp_queue_tail_multiple.h" />
     <ClInclude Include="..\..\density\detail\wf_page_stack.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h" />
     <ClInclude Include="..\..\density\detail\lf_queue_head_single.h" />
@@ -587,6 +591,7 @@
     <ClInclude Include="..\..\density\lf_heter_queue.h" />
     <ClInclude Include="..\..\density\raw_atomic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
+    <ClInclude Include="..\..\density\sp_heter_queue.h" />
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\tests\complex_polymorphism.h" />
     <ClInclude Include="..\tests\generic_tests\queue_generic_tests.h" />

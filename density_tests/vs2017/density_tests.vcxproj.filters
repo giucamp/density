@@ -65,6 +65,15 @@
     <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_seqcst.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\sp_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\sp_heterogeneous_queue_basic_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\generic_tests\sp_heter_queue_generic_tests_seqcst.cpp">
+      <Filter>tests\generic_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">
@@ -185,6 +194,12 @@
       <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\lf_queue_common.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\sp_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\sp_queue_tail_multiple.h">
       <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>

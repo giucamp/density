@@ -18,6 +18,9 @@ namespace density_tests
 	void nonblocking_heterogeneous_queue_samples(std::ostream & i_ostream);
 	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
+    void spinlocking_heterogeneous_queue_samples(std::ostream & i_ostream);
+	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
+
 	void load_unload_tests(std::ostream & i_ostream);
 }
 
@@ -100,19 +103,24 @@ void do_tests(std::ostream & i_ostream)
 	nonblocking_heterogeneous_queue_samples(i_ostream);
 	nonblocking_heterogeneous_queue_basic_tests(i_ostream);
 
+    spinlocking_heterogeneous_queue_samples(i_ostream);
+	spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+
     size_t const element_count = 10000;
 
+    uint32_t random_seed = 0; // 0 -> non-deterministic
+
 	i_ostream << "\n*** executing generic tests..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, 3, element_count);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, random_seed, element_count);
 
 	i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, element_count);
+	all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, random_seed, element_count);
 
 	i_ostream << "\n*** executing generic tests with test allocators..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread, i_ostream, 3, element_count);
+	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread, i_ostream, random_seed, element_count);
 
 	i_ostream << "\n*** executing generic tests with test allocators and exceptions..." << std::endl;
-	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, 3, element_count);
+	all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, random_seed, element_count);
 
 	i_ostream << "\n*** executing load unload tests..." << std::endl;
 	load_unload_tests(std::cout);

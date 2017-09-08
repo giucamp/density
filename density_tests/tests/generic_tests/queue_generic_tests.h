@@ -7,6 +7,7 @@
 #include <density/heter_queue.h>
 #include <density/conc_heter_queue.h>
 #include <density/lf_heter_queue.h>
+#include <density/sp_heter_queue.h>
 #include <string>
 #include <cstdint>
 #include <ostream>
@@ -485,7 +486,7 @@ namespace density_tests
 		template <density::concurrency_cardinality PROD_CARDINALITY = density::concurrency_multiple,
 				density::concurrency_cardinality CONSUMER_CARDINALITY = density::concurrency_multiple,
 				density::consistency_model CONSISTENCY_MODEL = density::consistency_sequential>
-				void nb_queues_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+				void lf_queues_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
 					EasyRandom & i_random, size_t i_element_count, std::vector<size_t> const & i_nonblocking_thread_counts)
 		{
 			using namespace density;
@@ -528,6 +529,39 @@ namespace density_tests
             {
 			    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
 					    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+				    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
+		}
+
+		template <density::concurrency_cardinality PROD_CARDINALITY = density::concurrency_multiple,
+				density::concurrency_cardinality CONSUMER_CARDINALITY = density::concurrency_multiple>
+				void sp_queues_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+					EasyRandom & i_random, size_t i_element_count, std::vector<size_t> const & i_nonblocking_thread_counts)
+		{
+			using namespace density;
+
+            if (i_flags && QueueTesterFlags::eUseTestAllocators)
+            {
+		        single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+
+		        single_lf_queue_generic_test<sp_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+
+		        single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+
+		        single_lf_queue_generic_test<sp_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
+			        PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
+			        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
+            else
+            {
+			    single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, void_allocator,
+					    PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
 				    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }
 		}
