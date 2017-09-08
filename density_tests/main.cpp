@@ -22,6 +22,8 @@ namespace density_tests
 	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
 	void load_unload_tests(std::ostream & i_ostream);
+
+    void func_queue_samples(std::ostream &);
 }
 
 DENSITY_NO_INLINE void sandbox()
@@ -105,6 +107,8 @@ void do_tests(std::ostream & i_ostream)
 
     spinlocking_heterogeneous_queue_samples(i_ostream);
 	spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+
+    func_queue_samples(i_ostream);
 
     size_t const element_count = 10000;
 

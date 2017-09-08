@@ -1077,7 +1077,7 @@ namespace density
             Consume m_consume_data;
         };
 
-        /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
+        /** Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
                 it from the source.
 
             @param i_source object to be used as source to construct of new element.
@@ -1103,7 +1103,7 @@ namespace density
             return emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Appends at the end of queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
+        /** Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
 
@@ -1128,7 +1128,7 @@ namespace density
             start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
         }
 
-        /** Adds at the end of queue an element of a type known at runtime, default-constructing it.
+        /** Adds at the end of the queue an element of a type known at runtime, default-constructing it.
 
             @param i_type type of the new element.
 
@@ -1149,7 +1149,7 @@ namespace density
             start_dyn_push(i_type).commit();
         }
 
-        /** Appends at the end of queue an element of a type known at runtime, copy-constructing it from the source.
+        /** Appends at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
 
             @param i_type type of the new element.
             @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>.
@@ -1172,7 +1172,7 @@ namespace density
             start_dyn_push_copy(i_type, i_source).commit();
         }
 
-        /** Adds at the end of queue an element of a type known at runtime, move-constructing it from the source.
+        /** Adds at the end of the queue an element of a type known at runtime, move-constructing it from the source.
 
             @param i_type type of the new element
             @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
@@ -1426,7 +1426,7 @@ namespace density
             return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
-        /** Tries to append at the end of queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
+        /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
             it from the source.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
             a failure, and has no observable effects. This function fails if:
@@ -1462,7 +1462,7 @@ namespace density
             return try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Tries to append at the end of queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
+        /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
             a perfect forwarded parameter pack.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
             a failure, and has no observable effects. This function fails if:
@@ -1503,7 +1503,7 @@ namespace density
             return true;
         }
 
-        /** Tries to add at the end of queue an element of a type known at runtime, default-constructing it.
+        /** Tries to add at the end of the queue an element of a type known at runtime, default-constructing it.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
@@ -1536,7 +1536,7 @@ namespace density
             return true;
         }
 
-        /** Tries to add at the end of queue an element of a type known at runtime, copy-constructing it from the source.
+        /** Tries to add at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
@@ -1571,7 +1571,7 @@ namespace density
             return true;
         }
 
-        /** Tries add at the end of queue an element of a type known at runtime, move-constructing it from the source.
+        /** Tries add at the end of the queue an element of a type known at runtime, move-constructing it from the source.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with

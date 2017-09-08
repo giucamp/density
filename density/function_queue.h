@@ -10,86 +10,169 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator >
-        using function_queue = detail::FunctionQueueImpl< heter_queue<void, detail::FunctionRuntimeType<CALLABLE>, ALLOCATOR_TYPE>, CALLABLE >;
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure MODE = function_standard_erasure >
+        class function_queue;
 
-#if 0
+    /** Function queue */
+    template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE, function_type_erasure MODE >
+        class function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, MODE>
+    {    
+    private:
+        using UnderlyingQueue = heter_queue<void, detail::FunctionRuntimeType<MODE, RET_VAL (PARAMS...)>, ALLOCATOR_TYPE>;
+        UnderlyingQueue m_queue;
 
-    /** Queue of callable objects (or function object).
-
-        Every element in the queue is a type-erased callable object (like a std::function). Elements that can be added to
-        the queue include:
-            - lambda expressions
-            - classes overloading the function call operator
-            - the result a std::bind
-
-        This container is similar to a std::deque of std::function objects, but has more specialized storage strategy:
-        the state of all the callable object is stored tightly and linearly in the memory.
-
-        The template argument FUNCTION is the function type used as signature for the function object contained in the queue.
-        For example:
-
-        \code{.cpp}
-            function_queue_impl<void()> queue_1;
-            queue_1.push([]() { std::cout << "hello!" << std::endl; });
-            queue_1.consume_front();
-
-            function_queue_impl<int(double, double)> queue_2;
-            queue_2.push([](double a, double b) { return static_cast<int>(a + b); });
-            std::cout << queue_2.consume_front(40., 2.) << std::endl;
-        \endcode
-
-        small_function_queue internally uses a void heter_queue (a queue that can contain elements of any type).
-        function_queue_impl never moves or reallocates its elements, and has both better performances and better behavior
-        respect to small_function_queue when the number of elements is not small.
-
-        \n<b> Thread safeness</b>: None. The user is responsible to avoid race conditions.
-        \n<b>Exception safeness</b>: Any function of function_queue_impl is noexcept or provides the strong exception guarantee.
-
-        There is not a constant time function that gives the number of elements in a function_queue_impl in constant time,
-        but std::distance will do (in linear time). Anyway function_queue_impl::mem_size, function_queue_impl::mem_capacity and
-        function_queue_impl::empty work in constant time.
-        Insertion is allowed only at the end (with the methods function_queue_impl::push or function_queue_impl::emplace).
-        Removal is allowed only at the begin (with the methods function_queue_impl::pop or function_queue_impl::consume). */
-    template < typename QUEUE, typename RET_VAL, typename... PARAMS >
-        class function_queue_impl<RET_VAL (PARAMS...)> final
-    {
     public:
 
-        using value_type = RET_VAL(PARAMS...);
+        /** Alias to heter_queue::put_transaction. */
+        template <typename ELEMENT_COMPLETE_TYPE>
+            using put_transaction = typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>; 
 
-        /** Adds a new function at the end of queue.
-            @param i_source object to be used as source to construct of new element.
-                - If this argument is an l-value, the new element copy-constructed (and the source object is left unchanged).
-                - If this argument is an r-value, the new element move-constructed (and the source object will have an undefined but valid content).
+        /** Alias to heter_queue::reentrant_put_transaction. */
+        template <typename ELEMENT_COMPLETE_TYPE>
+            using reentrant_put_transaction = typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>; 
 
-            \n\b Requires:
-                - ELEMENT_COMPLETE_TYPE must be a callable object that has RET_VAL as return type and PARAMS... as parameters
-                - the type ELEMENT_COMPLETE_TYPE must copy constructible (in case of l-value) or move constructible (in case of r-value)
-
-            \n<b> Effects on iterators </b>: all the iterators are invalidated
-            \n\b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            \n\b Complexity: constant amortized (a reallocation may be required). */
+        /** Adds at the end of the queue a callable object.
+            
+        See heter_queue::push for a detailed description.
+            
+        \snippet func_queue_examples.cpp function_queue push example 1
+        \snippet func_queue_examples.cpp function_queue push example 2 */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
-        /** Invokes the first function object of the queue and then deletes it from the queue.
-            This function is equivalent to a call to invoke_front followed by a call to pop, but has better performance.
-            If the queue is empty, the behavior is undefined.
-                @param i_params... parameters to be passed to the function object
-                @return the value returned by the function object.
+        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
+                a perfect forwarded parameter pack.
+            \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
-            \n<b> Effects on iterators </b>: all the iterators are invalidated
-            \n\b Throws: anything that the function object invocation throws
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            \n\b Complexity: constant. */
-        optional_or_bool<RET_VAL> consume_front(PARAMS... i_params)
+            See heter_queue::emplace for a detailed description.
+            
+        \snippet func_queue_examples.cpp function_queue emplace example 1 */
+        template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
+            void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
         {
-            return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+            m_queue.template emplace<ELEMENT_COMPLETE_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+        }
+
+        /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
+                or move-constructing it from the source.
+
+            See heter_queue::start_push for a detailed description.
+
+            <b>Examples</b>
+            \snippet func_queue_examples.cpp function_queue start_push example 1 */
+        template <typename ELEMENT_TYPE>
+            put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_push(ELEMENT_TYPE && i_source)
+        {
+            return m_queue.start_push(std::forward<ELEMENT_TYPE>(i_source));
+        }
+
+
+        /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
+            inplace-constructing it from a perfect forwarded parameter pack.
+
+            See heter_queue::start_emplace for a detailed description.
+
+            <b>Examples</b>
+            \snippet func_queue_examples.cpp function_queue start_emplace example 1 */
+        template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
+            put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        {
+            return m_queue.template start_emplace<ELEMENT_TYPE>(std::forward<ELEMENT_TYPE>(i_construction_params)...);
+        }
+
+        /** Adds at the end of the queue a callable object.
+            
+        See heter_queue::reentrant_push for a detailed description.
+            
+        \snippet func_queue_examples.cpp function_queue reentrant_push example 1 */
+        template <typename ELEMENT_COMPLETE_TYPE>
+            void reentrant_push(ELEMENT_COMPLETE_TYPE && i_source)
+        {
+            m_queue.reentrant_push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+        }
+
+        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
+                a perfect forwarded parameter pack.
+            \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
+
+            See heter_queue::reentrant_emplace for a detailed description.
+            
+        \snippet func_queue_examples.cpp function_queue reentrant_emplace example 1 */
+        template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
+            void reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        {
+            m_queue.template reentrant_emplace<ELEMENT_COMPLETE_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+        }
+
+        /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
+                or move-constructing it from the source.
+
+            See heter_queue::start_reentrant_push for a detailed description.
+
+            <b>Examples</b>
+            \snippet func_queue_examples.cpp function_queue start_reentrant_push example 1 */
+        template <typename ELEMENT_TYPE>
+            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_push(ELEMENT_TYPE && i_source)
+        {
+            return m_queue.start_reentrant_push(std::forward<ELEMENT_TYPE>(i_source));
+        }
+
+
+        /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
+            inplace-constructing it from a perfect forwarded parameter pack.
+
+            See heter_queue::start_reentrant_emplace for a detailed description.
+
+            <b>Examples</b>
+            \snippet func_queue_examples.cpp function_queue start_reentrant_emplace example 1 */
+        template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
+            reentrant_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        {
+            return m_queue.template start_reentrant_emplace<ELEMENT_TYPE>(std::forward<ELEMENT_TYPE>(i_construction_params)...);
+        }
+
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+            from the queue. Otherwise no operation is performed.
+
+            @param i_params... parameters to be forwarded to the function object
+            @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
+                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                an empty optional in case the queue was empty.
+
+            This function is not reentrant: if the callable object accesses in any way this queue, the behavior
+            is undefined. Use function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
+
+            \b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
+            
+            \snippet func_queue_examples.cpp function_queue try_consume example 1 */
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+            try_consume(PARAMS &&... i_params)
+        {
+            return try_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+        }
+
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+            from the queue. Otherwise no operation is performed.
+
+            @param i_params... parameters to be forwarded to the function object
+            @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
+                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                an empty optional in case the queue was empty.
+
+            This function is reentrant: the callable object may access in any way this queue.
+
+            \b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            
+            \snippet func_queue_examples.cpp function_queue try_reentrant_consume example 1 */
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+            try_reentrant_consume(PARAMS &&... i_params)
+        {
+            return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes all the function objects in the queue.
@@ -99,6 +182,7 @@ namespace density
             \n\b Complexity: linear. */
         void clear() noexcept
         {
+            DENSITY_ASSERT(MODE != function_manual_clear);
             m_queue.clear();
         }
 
@@ -110,15 +194,15 @@ namespace density
 
     private:
 
-        optional<RET_VAL> consume_front_impl(std::false_type, PARAMS... i_params)
+        optional<RET_VAL> try_consume_impl(std::false_type, PARAMS &&... i_params)
         {
-            auto cons = m_queue.start_consume();
+            auto cons = m_queue.try_start_consume();
             if (cons)
             {
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
-                return std::forward<RET_VAL>(result);
+                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
             }
             else
             {
@@ -126,9 +210,9 @@ namespace density
             }
         }
 
-        bool consume_front_impl(std::true_type, PARAMS... i_params)
+        bool try_consume_impl(std::true_type, PARAMS &&... i_params)
         {
-            auto cons = m_queue.start_consume();
+            auto cons = m_queue.try_start_consume();
             if (cons)
             {
                 cons.complete_type().align_invoke_destroy(
@@ -142,10 +226,37 @@ namespace density
             }
         }
 
-    private:
-        QUEUE m_queue;
-    };
+        optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS &&... i_params)
+        {
+            auto cons = m_queue.try_start_reentrant_consume();
+            if (cons)
+            {
+                auto && result = cons.complete_type().align_invoke_destroy(
+                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                cons.commit_nodestroy();
+                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
+            }
+            else
+            {
+                return optional<RET_VAL>();
+            }
+        }
 
-#endif
+        bool try_reentrant_consume_impl(std::true_type, PARAMS &&... i_params)
+        {
+            auto cons = m_queue.try_start_reentrant_consume();
+            if (cons)
+            {
+                cons.complete_type().align_invoke_destroy(
+                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                cons.commit_nodestroy();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    };
 
 } // namespace density

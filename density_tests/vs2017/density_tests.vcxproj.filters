@@ -74,6 +74,9 @@
     <ClCompile Include="..\tests\generic_tests\sp_heter_queue_generic_tests_seqcst.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\concurrent_function_queue.h">

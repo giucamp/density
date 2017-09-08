@@ -146,7 +146,7 @@ namespace density
 
     private:
         TYPE * ptr() { return reinterpret_cast<TYPE *>(&m_storage); }
-        const TYPE * ptr() const { return reinterpret_cast<TYPE *>(&m_storage); }
+        const TYPE * ptr() const { return reinterpret_cast<const TYPE *>(&m_storage); }
 
     private:
         typename std::aligned_storage<sizeof(TYPE), alignof(TYPE)>::type m_storage;
@@ -161,8 +161,5 @@ namespace density
         new(&res.m_storage) TYPE(std::forward<PARAMS>(i_construction_params)...);
         return res;
     }
-
-    template <typename TYPE>
-        using optional_or_bool = typename std::conditional<std::is_void<TYPE>::value, bool, optional<TYPE>>::type;
 }
 

@@ -60,6 +60,15 @@ namespace density
                                  independently from the other threads. */
     };
 
+    /** Specifies a set of features provided by the built-in type erasure system for callable objects */
+    enum function_type_erasure
+    {
+        function_standard_erasure, /**< Callable objects can be invoked-destroyed (i.e. consumed), and just 
+                                        destroyed (i.e. discarded). No copy or move is supported. */
+        function_manual_clear /**< Callable objects only support invoke-destroy (i.e. consume). Destruction
+                                    without invocation is not supported.*/
+    };
+
                 // address functions
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)

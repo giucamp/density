@@ -11,11 +11,13 @@ namespace density
 {
     namespace detail
     {
-        template < typename CALLABLE >
+        /** \internal Private class template used as runtime type for function queues */
+        template < function_type_erasure MODE, typename CALLABLE >
             class FunctionRuntimeType;
 
+        /** \internal Private class template used as runtime type for function queues with function_standard_erasure */
         template < typename RET_VAL, typename... PARAMS >
-            class FunctionRuntimeType<RET_VAL (PARAMS...)>
+            class FunctionRuntimeType<function_standard_erasure, RET_VAL (PARAMS...)>
         {
         public:
 
@@ -90,73 +92,72 @@ namespace density
             AlignDestroyFunc m_align_destroy = nullptr;
         };
 
-
-        template < typename QUEUE, typename FUNCTION > class FunctionQueueImpl;
-
-        template < typename QUEUE, typename RET_VAL, typename... PARAMS >
-            class FunctionQueueImpl<QUEUE, RET_VAL (PARAMS...)> final
+        /** \internal Private class template used as runtime type for function queues with function_manual_clear */
+        template < typename RET_VAL, typename... PARAMS >
+            class FunctionRuntimeType<function_manual_clear, RET_VAL (PARAMS...)>
         {
         public:
 
-            using value_type = RET_VAL(PARAMS...);
+            using common_type = void;
 
-            template <typename ELEMENT_COMPLETE_TYPE>
-                void push(ELEMENT_COMPLETE_TYPE && i_source)
+            template <typename TYPE>
+                static FunctionRuntimeType make() noexcept
             {
-                m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+                return FunctionRuntimeType{ &Impl<TYPE>::align_invoke_destroy };
             }
 
-            optional_or_bool<RET_VAL> try_consume_front(PARAMS... i_params)
+            bool empty() const noexcept
             {
-                return consume_front_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+                return m_align_invoke_destroy == nullptr;
             }
 
             void clear() noexcept
             {
-                m_queue.clear();
+                m_align_invoke_destroy = nullptr;
             }
 
-            bool empty() noexcept
+            void destroy(void * i_dest) const noexcept
             {
-                return m_queue.empty();
+                // with function_manual_clear calling destroy causes undefined behavior
+                DENSITY_ASSERT(false);
             }
 
-        private:
-
-            optional<RET_VAL> consume_front_impl(std::false_type, PARAMS... i_params)
+            RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params) const
             {
-                auto cons = m_queue.start_consume();
-                if (cons)
-                {
-                    auto && result = cons.complete_type().align_invoke_destroy(
-                        cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
-                    cons.commit_nodestroy();
-                    return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
-                }
-                else
-                {
-                    return optional<RET_VAL>();
-                }
+                return (*m_align_invoke_destroy)(i_dest, std::forward<PARAMS>(i_params)...);
             }
 
-            bool consume_front_impl(std::true_type, PARAMS... i_params)
+            size_t alignment() const
             {
-                auto cons = m_queue.start_consume();
-                if (cons)
-                {
-                    cons.complete_type().align_invoke_destroy(
-                        cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
-                    cons.commit_nodestroy();
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return 1;
             }
 
-        private:
-            QUEUE m_queue;
+            template <typename ACTUAL_TYPE>
+                struct Impl
+            {
+                static RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params)
+                {
+                    return align_invoke_destroy_impl(std::is_void<RET_VAL>(), i_dest, std::forward<PARAMS>(i_params)...);
+                }
+
+                static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS &&... i_params)
+                {
+                    auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
+                    auto && ret = (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
+                    return ret;
+                }
+
+                static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS &&... i_params)
+                {
+                    auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
+                    (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
+                }
+            };
+
+            using AlignInvokeDestroyFunc = RET_VAL(*)(void * i_dest, PARAMS &&... i_params);
+            AlignInvokeDestroyFunc m_align_invoke_destroy = nullptr;
         };
 
     } // namespace detail
