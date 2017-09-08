@@ -44,8 +44,10 @@ namespace density
         }
     };
 
-    /** Concurrent lock-free heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version 
-        of heter_queue that uses lock free algorithms for both put transactions and put operations.
+    /** Concurrent heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version 
+        of heter_queue that uses a mix of lock free algorithms and spin locking.
+        This class is very similar to lf_heter_queue, with the difference that if multiple producers are supported, they
+        use a spin-locking mutex to synchronize the write to the tail.
 
         @tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is
             implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue.
@@ -61,13 +63,6 @@ namespace density
                 If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.
                 If CONSUMER_CARDINALITY is concurrency_multiple, multiple threads are allowed to consume without any synchronization.
         \n <b>Exception safeness</b>: Any function of sp_heter_queue is noexcept or provides the strong exception guarantee.
-
-        This class template uses lock-free algorithms for both put operations and consume operations. Anyway, for the overall 
-        put or consume to be lock-free, if a memory operation is necessary, it must be lock-free too. The default allocator,
-        void_allocator, can manage pages in lock freedom within its current capacity (that is, if the number of allocated, pinned,
-        or thread-owned pages exceeds the previous peek, and all the memory regions are exhausted, it must request a new memory
-        region to the system, so it can't guarantee lock-freedom). void_allocator::reserve_lockfree_page_memory and 
-        void_allocator::try_reserve_lockfree_page_memory can be used to reserve a capacity in advance.
 
         The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose 
         size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
@@ -1614,7 +1609,7 @@ namespace density
 
         /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it 
             from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1656,7 +1651,7 @@ namespace density
 
         /** Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1749,7 +1744,7 @@ namespace density
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, default-constructing it.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1807,7 +1802,7 @@ namespace density
 
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, copy-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1866,7 +1861,7 @@ namespace density
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, move-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 

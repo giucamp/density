@@ -1601,7 +1601,7 @@ namespace density
 
         /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it 
             from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1643,7 +1643,7 @@ namespace density
 
         /** Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1736,7 +1736,7 @@ namespace density
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, default-constructing it.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1794,7 +1794,7 @@ namespace density
 
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, copy-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
@@ -1853,7 +1853,7 @@ namespace density
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, move-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns and empty transaction to
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
                 the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
