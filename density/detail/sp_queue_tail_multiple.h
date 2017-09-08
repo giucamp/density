@@ -26,6 +26,11 @@ namespace density
                 m_lock.clear();
             }
 
+            bool try_lock() noexcept
+            {
+                return !m_lock.test_and_set(std::memory_order_acquire);
+            }
+
             void lock() noexcept
             {
                 BUSY_WAIT_FUNC & busy_wait = *this;
@@ -45,7 +50,7 @@ namespace density
             BUSY_WAIT_FUNC m_busy_wait;
         };
 
-        /** \internal Class template that implements put operations */
+        /** \internal Class template that implements put operations for spin-locking queues */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename BUSY_WAIT_FUNC>
             class SpQueue_TailMultiple : protected ALLOCATOR_TYPE
         {
@@ -328,7 +333,16 @@ namespace density
                 }
 
 
-                std::lock_guard<decltype(m_mutex)> const lock(m_mutex);
+                std::unique_lock<decltype(m_mutex)> lock(m_mutex, std::defer_lock);
+                if (guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking)
+                {
+                    lock.lock();
+                }
+                else
+                {
+                    if (!lock.try_lock())
+                        return Block{};
+                }
 
                 auto tail = m_tail;
                 for (;;)
@@ -400,7 +414,16 @@ namespace density
                 constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
                 constexpr auto over_aligned = alignment > min_alignment;
 
-                std::lock_guard<decltype(m_mutex)> const lock(m_mutex);
+                std::unique_lock<decltype(m_mutex)> lock(m_mutex, std::defer_lock);
+                if (guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking)
+                {
+                    lock.lock();
+                }
+                else
+                {
+                    if (!lock.try_lock())
+                        return Block{};
+                }
 
                 auto tail = m_tail;
                 for (;;)
