@@ -120,6 +120,7 @@ namespace density
             {
                 // with function_manual_clear calling destroy causes undefined behavior
                 DENSITY_ASSERT(false);
+                (void)i_dest;
             }
 
             RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params) const

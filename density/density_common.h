@@ -17,6 +17,8 @@
 
 #include <density/density_config.h>
 
+
+/** namespace density */
 namespace density
 {
     /** Specifies whether a set of functions actually support concurrency */

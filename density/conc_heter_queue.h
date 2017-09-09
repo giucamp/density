@@ -178,7 +178,7 @@ namespace density
         /** Swaps two queues.
 
         \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue swap example 1 */
-        friend inline void swap(conc_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
+        friend void swap(conc_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
             conc_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
         {
             swap(i_first.m_queue, i_second.m_queue);

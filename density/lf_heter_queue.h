@@ -36,9 +36,9 @@ namespace density
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
-        @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently
-        @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently
-        @tparam CONSISTENCY_MODEL Specifies whether the queue is linearizable.
+        @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
+        @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
+        @tparam CONSISTENCY_MODEL Specifies whether the queue is linearizable. Must be a member of density::consistency_model.
             Implementation note: Currently this parameter affects only put operations, and only in case of multiple producers:
             in case of relaxed consistency model, for a small amount of time, during the first phase of a put transaction, the
             queue is truncated, so any thread can successfully put further elements, but those elements are not observable to any
@@ -332,7 +332,7 @@ namespace density
         /** Swaps two queues.
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue swap example 1 */
-        friend inline void swap(lf_heter_queue & i_first, lf_heter_queue & i_second) noexcept
+        friend void swap(lf_heter_queue & i_first, lf_heter_queue & i_second) noexcept
         {
             i_first.Base::swap(i_second);
         }

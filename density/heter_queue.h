@@ -449,7 +449,7 @@ namespace density
         /** Swaps two queues.
 
         \snippet heterogeneous_queue_examples.cpp heter_queue swap example 1 */
-        friend inline void swap(heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
+        friend void swap(heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
             heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
         {
             using std::swap;

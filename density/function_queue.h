@@ -10,19 +10,72 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure MODE = function_standard_erasure >
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure ERASURE = function_standard_erasure >
         class function_queue;
 
-    /** Function queue */
-    template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE, function_type_erasure MODE >
-        class function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, MODE>
+    /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. function_queue is an adaptor for heter_queue.
+
+        @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+        @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure. 
+        
+        If ERASURE == function_manual_clear, function_queue is not able to destroy the callable objects without invoking them.
+            This produces a performance benefit, but:
+            - The function function_queue::clear can't be used (calling it causes undefined behavior)
+            - When the destructor of function_queue is called, the queue must be already empty
+
+        \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
+        \n <b>Exception safeness</b>: Any function of function_queue is noexcept or provides the strong exception guarantee.
+    */
+    #ifndef DOXYGEN_DOC_GENERATION
+        template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE, function_type_erasure ERASURE >
+            class function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, ERASURE>
+    #else
+        template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure ERASURE = function_standard_erasure >
+                class function_queue
+    #endif
     {    
     private:
-        using UnderlyingQueue = heter_queue<void, detail::FunctionRuntimeType<MODE, RET_VAL (PARAMS...)>, ALLOCATOR_TYPE>;
+        using UnderlyingQueue = heter_queue<void, detail::FunctionRuntimeType<ERASURE, RET_VAL (PARAMS...)>, ALLOCATOR_TYPE>;
         UnderlyingQueue m_queue;
 
     public:
 
+        /** Default constructor.
+        
+        \snippet func_queue_examples.cpp function_queue default construct example 1 */
+        function_queue() noexcept = default;
+
+        /** Move constructor.
+        
+        \snippet func_queue_examples.cpp function_queue move construct example 1 */
+        function_queue(function_queue && i_source) noexcept = default;
+
+        /** Move assignment.
+        
+        \snippet func_queue_examples.cpp function_queue move assign example 1 */
+        function_queue & operator = (function_queue && i_source) noexcept = default;
+
+        /** Swaps two function queues. 
+        
+        \snippet func_queue_examples.cpp function_queue swap example 1 */
+        friend void swap(function_queue & i_first, function_queue & i_second) noexcept
+        {
+            using std::swap;
+            swap(i_first.m_queue, i_second.m_queue);
+        }
+
+        /** Destructor */
+        ~function_queue()
+        {
+            auto erasure = ERASURE;
+            if (erasure == function_manual_clear)
+            {
+                DENSITY_ASSERT(empty());
+            }
+        }
+        
         /** Alias to heter_queue::put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
             using put_transaction = typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>; 
@@ -175,14 +228,17 @@ namespace density
             return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
-        /** Deletes all the function objects in the queue.
+        /** Deletes all the callable objects in the queue.
+            
+            \pre The behavior is undefined if either:
+                - ERASURE is function_manual_clear
+            
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n\b Complexity: linear. */
         void clear() noexcept
         {
-            DENSITY_ASSERT(MODE != function_manual_clear);
+            DENSITY_ASSERT(ERASURE != function_manual_clear);
             m_queue.clear();
         }
 
