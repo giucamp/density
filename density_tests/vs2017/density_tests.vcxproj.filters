@@ -86,6 +86,9 @@
     <ClCompile Include="..\..\examples\sp_func_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\misc_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">

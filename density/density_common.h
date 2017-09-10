@@ -378,6 +378,12 @@ namespace density
             void * m_block;
             size_t m_size, m_alignment;
         };
+
+        /** \internal Provides the size of a type. Unlike the built-in sizeof operator, if the type is empty returns 0. */
+        template <typename TYPE> struct size_of
+        {
+            static constexpr size_t value = std::is_empty<TYPE>::value ? 0 : sizeof(TYPE);
+        };
     }
 
 

@@ -45,7 +45,7 @@ namespace density
                 (*m_align_destroy)(i_dest);
             }
 
-            RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params) const
+            RET_VAL align_invoke_destroy(void * i_dest, PARAMS... i_params) const
             {
                 return (*m_align_invoke_destroy)(i_dest, std::forward<PARAMS>(i_params)...);
             }
@@ -58,7 +58,7 @@ namespace density
             template <typename ACTUAL_TYPE>
                 struct Impl
             {
-                static RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params)
+                static RET_VAL align_invoke_destroy(void * i_dest, PARAMS... i_params)
                 {
                     return align_invoke_destroy_impl(std::is_void<RET_VAL>(), i_dest, std::forward<PARAMS>(i_params)...);
                 }
@@ -69,7 +69,7 @@ namespace density
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
                 }
 
-                static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS &&... i_params)
+                static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
                     auto && ret = (*aligned_dest)(std::forward<PARAMS>(i_params)...);
@@ -77,7 +77,7 @@ namespace density
                     return ret;
                 }
 
-                static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS &&... i_params)
+                static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
                     (*aligned_dest)(std::forward<PARAMS>(i_params)...);
@@ -85,7 +85,7 @@ namespace density
                 }
             };
 
-            using AlignInvokeDestroyFunc = RET_VAL(*)(void * i_dest, PARAMS &&... i_params);
+            using AlignInvokeDestroyFunc = RET_VAL(*)(void * i_dest, PARAMS... i_params);
             using AlignDestroyFunc = void(*)(void * i_dest);
 
             AlignInvokeDestroyFunc m_align_invoke_destroy = nullptr;
@@ -123,7 +123,7 @@ namespace density
                 (void)i_dest;
             }
 
-            RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params) const
+            RET_VAL align_invoke_destroy(void * i_dest, PARAMS... i_params) const
             {
                 return (*m_align_invoke_destroy)(i_dest, std::forward<PARAMS>(i_params)...);
             }
@@ -136,12 +136,12 @@ namespace density
             template <typename ACTUAL_TYPE>
                 struct Impl
             {
-                static RET_VAL align_invoke_destroy(void * i_dest, PARAMS &&... i_params)
+                static RET_VAL align_invoke_destroy(void * i_dest, PARAMS... i_params)
                 {
                     return align_invoke_destroy_impl(std::is_void<RET_VAL>(), i_dest, std::forward<PARAMS>(i_params)...);
                 }
 
-                static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS &&... i_params)
+                static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
                     auto && ret = (*aligned_dest)(std::forward<PARAMS>(i_params)...);
@@ -149,7 +149,7 @@ namespace density
                     return ret;
                 }
 
-                static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS &&... i_params)
+                static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
                     (*aligned_dest)(std::forward<PARAMS>(i_params)...);
@@ -157,7 +157,7 @@ namespace density
                 }
             };
 
-            using AlignInvokeDestroyFunc = RET_VAL(*)(void * i_dest, PARAMS &&... i_params);
+            using AlignInvokeDestroyFunc = RET_VAL(*)(void * i_dest, PARAMS... i_params);
             AlignInvokeDestroyFunc m_align_invoke_destroy = nullptr;
         };
 

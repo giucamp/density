@@ -367,7 +367,7 @@ namespace density
             
             \snippet lf_func_queue_examples.cpp lf_function_queue try_consume example 1 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
-            try_consume(PARAMS &&... i_params)
+            try_consume(PARAMS... i_params)
         {
             return try_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
@@ -387,7 +387,7 @@ namespace density
             
             \snippet lf_func_queue_examples.cpp lf_function_queue try_reentrant_consume example 1 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
-            try_reentrant_consume(PARAMS &&... i_params)
+            try_reentrant_consume(PARAMS... i_params)
         {
             return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
@@ -423,7 +423,7 @@ namespace density
 
     private:
 
-        optional<RET_VAL> try_consume_impl(std::false_type, PARAMS &&... i_params)
+        optional<RET_VAL> try_consume_impl(std::false_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_consume();
             if (cons)
@@ -439,7 +439,7 @@ namespace density
             }
         }
 
-        bool try_consume_impl(std::true_type, PARAMS &&... i_params)
+        bool try_consume_impl(std::true_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_consume();
             if (cons)
@@ -455,7 +455,7 @@ namespace density
             }
         }
 
-        optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS &&... i_params)
+        optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_reentrant_consume();
             if (cons)
@@ -471,7 +471,7 @@ namespace density
             }
         }
 
-        bool try_reentrant_consume_impl(std::true_type, PARAMS &&... i_params)
+        bool try_reentrant_consume_impl(std::true_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_reentrant_consume();
             if (cons)

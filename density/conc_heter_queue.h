@@ -502,7 +502,7 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             put_transaction(PrivateType, std::unique_lock<std::mutex> && i_lock, typename InnerQueue::template put_transaction<ELEMENT_COMPLETE_TYPE> && i_put_transaction) noexcept
                 : m_lock(std::move(i_lock)), m_put_transaction(std::move(i_put_transaction))
             {
@@ -700,13 +700,13 @@ namespace density
                 return m_consume_operation.template element<COMPLETE_ELEMENT_TYPE>();
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             consume_operation(PrivateType, std::unique_lock<std::mutex> && i_lock, typename InnerQueue::consume_operation && i_consume_operation) noexcept
                 : m_lock(std::move(i_lock)), m_consume_operation(std::move(i_consume_operation))
             {
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
             {
                 if (m_lock.owns_lock())
@@ -1359,7 +1359,7 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_put_transaction(PrivateType, conc_heter_queue * i_queue,
                 typename InnerQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE> && i_put_transaction) noexcept
                 : m_queue(i_queue), m_put_transaction(std::move(i_put_transaction))
@@ -1558,14 +1558,14 @@ namespace density
                 return m_consume_operation.template element<COMPLETE_ELEMENT_TYPE>();
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_consume_operation(PrivateType, conc_heter_queue * i_queue,
                     typename InnerQueue::reentrant_consume_operation && i_consume_operation) noexcept
                 : m_queue(i_queue), m_consume_operation(std::move(i_consume_operation))
             {
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
             {
                 DENSITY_ASSERT_INTERNAL(i_queue != nullptr);

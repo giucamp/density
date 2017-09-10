@@ -819,13 +819,13 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::true_type, void *) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::false_type, COMMON_TYPE * i_element_storage) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
@@ -1070,13 +1070,13 @@ namespace density
                 return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             consume_operation(PrivateType, heter_queue * i_queue, ControlBlock * i_control) noexcept
                 : m_queue(i_queue), m_control(i_control)
             {
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, heter_queue * i_queue)
             {
                 if (m_control != nullptr)
@@ -1276,7 +1276,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<0, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+            auto push_data = inplace_allocate<0, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -1824,12 +1824,12 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::true_type, void *) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
                     { }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
@@ -2075,13 +2075,13 @@ namespace density
                 return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_consume_operation(PrivateType, heter_queue * i_queue, ControlBlock * i_control) noexcept
                 : m_queue(i_queue), m_control(i_control)
             {
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, heter_queue * i_queue) noexcept
             {
                 if (m_control != nullptr)
@@ -2172,7 +2172,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<detail::Queue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+            auto push_data = inplace_allocate<detail::Queue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;

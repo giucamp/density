@@ -9,6 +9,8 @@
 
 namespace density_tests
 {
+    void misc_examples();
+
 	void heterogeneous_queue_samples(std::ostream & i_ostream);
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
@@ -100,6 +102,8 @@ void do_tests(std::ostream & i_ostream)
 	using namespace density_tests;
 
 	PrintScopeDuration dur(i_ostream, "all tests");
+
+    misc_examples();
 
 	heterogeneous_queue_samples(i_ostream);
 	heterogeneous_queue_basic_tests(i_ostream);

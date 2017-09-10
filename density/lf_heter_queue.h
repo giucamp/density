@@ -818,7 +818,7 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             put_transaction(PrivateType, lf_heter_queue * i_queue, const Block & i_put,
                     std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
@@ -827,7 +827,7 @@ namespace density
                 m_put.m_control_block->m_element = i_element;
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             put_transaction(PrivateType, lf_heter_queue * i_queue, const Block & i_put,
                     std::true_type /*i_is_void*/, void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
@@ -1047,13 +1047,13 @@ namespace density
                 return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             consume_operation(PrivateType, lf_heter_queue * i_queue) noexcept
             {
                 m_consume_data.start_consume_impl(i_queue);
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
                 if(m_consume_data.m_next_ptr != 0)
@@ -1253,7 +1253,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -1683,7 +1683,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>(i_progress_guarantee);
+            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>(i_progress_guarantee);
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<ELEMENT_TYPE>();
@@ -2399,7 +2399,7 @@ namespace density
                 }
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_put_transaction(PrivateType, lf_heter_queue * i_queue, const Block & i_put,
                     std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
@@ -2408,7 +2408,7 @@ namespace density
                 m_put.m_control_block->m_element = i_element;
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_put_transaction(PrivateType, lf_heter_queue * i_queue, const Block & i_put,
                     std::true_type /*i_is_void*/, void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
@@ -2622,13 +2622,13 @@ namespace density
                 return *static_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             reentrant_consume_operation(PrivateType, lf_heter_queue * i_queue) noexcept
             {
                 m_consume_data.start_consume_impl(i_queue);
             }
 
-            // internal only - can't be called from outside density
+            /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
                 if(m_consume_data.m_next_ptr != 0)
@@ -2719,7 +2719,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2938,7 +2938,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, sizeof(ELEMENT_TYPE), alignof(ELEMENT_TYPE)>(i_progress_guarantee);
+            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>(i_progress_guarantee);
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<ELEMENT_TYPE>();
