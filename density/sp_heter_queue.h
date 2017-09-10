@@ -35,9 +35,12 @@ namespace density
                 SpQueue_TailMultiple<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC> >::type;
     }
 
+    /** Callable empty type used as default busy wait by sp_heter_queue. */
     class default_busy_wait
     {
     public:
+
+        /** Calls std::this_thread::yield. */
         void operator () () noexcept
         {
             std::this_thread::yield();
