@@ -58,6 +58,9 @@ namespace density
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
+        @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock. 
+            The default is density::default_busy_wait, that calls std::this_thread::yield.
+            
 
         \n <b>Thread safeness</b>: A thread doing put operations and another thread doing consumes don't need to be synchronized.
                 If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.

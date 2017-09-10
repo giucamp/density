@@ -10,7 +10,7 @@
 
 namespace density_tests
 {
-	void concurrent_heterogeneous_queue_lifetime_tests()
+	void conc_heterogeneous_queue_lifetime_tests()
 	{
 		using namespace density;
 
@@ -57,7 +57,7 @@ namespace density_tests
 
 	/** Basic tests conc_heter_queue<void, ...> with a non-polymorphic base */
 	template <typename QUEUE>
-		void concurrent_heterogeneous_queue_basic_void_tests()
+		void conc_heterogeneous_queue_basic_void_tests()
 	{
 		static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -94,7 +94,7 @@ namespace density_tests
 	}
 
 	/** Test conc_heter_queue with a non-polymorphic base */
-	void concurrent_heterogeneous_queue_basic_nonpolymorphic_base_tests()
+	void conc_heterogeneous_queue_basic_nonpolymorphic_base_tests()
 	{
 		using namespace density;
 		using namespace type_features;
@@ -130,7 +130,7 @@ namespace density_tests
 	}
 
 	/** Test conc_heter_queue with a polymorphic base */
-	void concurrent_heterogeneous_queue_basic_polymorphic_base_tests()
+	void conc_heterogeneous_queue_basic_polymorphic_base_tests()
 	{
 		using namespace density;
 		using namespace type_features;
@@ -187,22 +187,22 @@ namespace density_tests
 	}
 
 	/** Basic tests for conc_heter_queue<...> */
-	void concurrent_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
+	void conc_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
 
-		concurrent_heterogeneous_queue_lifetime_tests();
+		conc_heterogeneous_queue_lifetime_tests();
 
-		concurrent_heterogeneous_queue_basic_nonpolymorphic_base_tests();
+		conc_heterogeneous_queue_basic_nonpolymorphic_base_tests();
 
-		concurrent_heterogeneous_queue_basic_polymorphic_base_tests();
+		conc_heterogeneous_queue_basic_polymorphic_base_tests();
 
 		using namespace density;
 		
-		concurrent_heterogeneous_queue_basic_void_tests<conc_heter_queue<>>();
+		conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<>>();
 
-		concurrent_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+		conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-		concurrent_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+		conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
 	}
 }

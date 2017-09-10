@@ -19,7 +19,7 @@ namespace density_tests
 			using LfHeterQueue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 
-		static void nonblocking_heterogeneous_queue_lifetime_tests()
+		static void lf_heterogeneous_queue_lifetime_tests()
 		{
 			using density::void_allocator;
 			using density::runtime_type;
@@ -65,7 +65,7 @@ namespace density_tests
 
 		/** Basic tests LfHeterQueue<void, ...> with a non-polymorphic base */
 		template <typename QUEUE>
-			static void nonblocking_heterogeneous_queue_basic_void_tests()
+			static void lf_heterogeneous_queue_basic_void_tests()
 		{
 			static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -102,7 +102,7 @@ namespace density_tests
 		}
 
 		/** Test LfHeterQueue with a non-polymorphic base */
-		static void nonblocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
+		static void lf_heterogeneous_queue_basic_nonpolymorphic_base_tests()
 		{
 			using namespace density::type_features;
 			using density::runtime_type;
@@ -140,7 +140,7 @@ namespace density_tests
 		}
 
 		/** Test LfHeterQueue with a polymorphic base */
-		static void nonblocking_heterogeneous_queue_basic_polymorphic_base_tests()
+		static void lf_heterogeneous_queue_basic_polymorphic_base_tests()
 		{
 			using namespace density::type_features;
 			using density::runtime_type;
@@ -202,17 +202,17 @@ namespace density_tests
 		{			
 			using density::runtime_type;
 
-			nonblocking_heterogeneous_queue_lifetime_tests();
+			lf_heterogeneous_queue_lifetime_tests();
 
-			nonblocking_heterogeneous_queue_basic_nonpolymorphic_base_tests();
+			lf_heterogeneous_queue_basic_nonpolymorphic_base_tests();
 
-			nonblocking_heterogeneous_queue_basic_polymorphic_base_tests();
+			lf_heterogeneous_queue_basic_polymorphic_base_tests();
 		
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<>>();
+			lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+			lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-			nonblocking_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+			lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
 		}
 
 	}; // NbQueueBasicTests
@@ -220,7 +220,7 @@ namespace density_tests
 
 
 	/** Basic tests for lf_heter_queue<...> */
-	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
+	void lf_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
 

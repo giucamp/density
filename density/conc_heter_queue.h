@@ -23,7 +23,7 @@ namespace density
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
 
-        \n <b>Thread safeness</b>: Put and consumes can be execute concurrently. Lifetime function can't.
+        \n <b>Thread safeness</b>: Put and consumes can be executed concurrently. Lifetime function can't.
         \n <b>Exception safeness</b>: Any function of conc_heter_queue is noexcept or provides the strong exception guarantee.
 
 

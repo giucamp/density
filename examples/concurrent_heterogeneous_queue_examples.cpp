@@ -20,7 +20,7 @@ namespace density_tests
 {
 	uint32_t compute_checksum(const void * i_data, size_t i_lenght);
 
-void concurrent_heterogeneous_queue_put_samples()
+void conc_heterogeneous_queue_put_samples()
 {
 	using namespace density;
 {
@@ -121,7 +121,7 @@ void concurrent_heterogeneous_queue_put_samples()
 }
 }
 
-void concurrent_heterogeneous_queue_put_transaction_samples()
+void conc_heterogeneous_queue_put_transaction_samples()
 {
 	using namespace density;
 	using namespace type_features;
@@ -357,7 +357,7 @@ void concurrent_heterogeneous_queue_put_transaction_samples()
 
 }
 
-void concurrent_heterogeneous_queue_consume_operation_samples()
+void conc_heterogeneous_queue_consume_operation_samples()
 {
 	using namespace density;
 	using namespace type_features;
@@ -539,7 +539,7 @@ void concurrent_heterogeneous_queue_consume_operation_samples()
 }
 }
 
-void concurrent_heterogeneous_queue_reentrant_put_samples()
+void conc_heterogeneous_queue_reentrant_put_samples()
 {
 	using namespace density;
 {
@@ -640,7 +640,7 @@ void concurrent_heterogeneous_queue_reentrant_put_samples()
 }
 }
 
-void concurrent_heterogeneous_queue_reentrant_put_transaction_samples()
+void conc_heterogeneous_queue_reentrant_put_transaction_samples()
 {
 	using namespace density;
 	using namespace type_features;
@@ -887,7 +887,7 @@ void concurrent_heterogeneous_queue_reentrant_put_transaction_samples()
 }
 }
 
-void concurrent_heterogeneous_queue_reentrant_consume_operation_samples()
+void conc_heterogeneous_queue_reentrant_consume_operation_samples()
 {
 	using namespace density;
 	using namespace type_features;
@@ -1084,7 +1084,7 @@ void concurrent_heterogeneous_queue_reentrant_consume_operation_samples()
 }
 }
 
-void concurrent_heterogeneous_queue_samples_1()
+void conc_heterogeneous_queue_samples_1()
 {
 	//! [conc_heter_queue example 3]
 	using namespace density;
@@ -1138,7 +1138,7 @@ void concurrent_heterogeneous_queue_samples_1()
 }
 
 
-void concurrent_heterogeneous_queue_samples(std::ostream & i_ostream)
+void conc_heterogeneous_queue_samples(std::ostream & i_ostream)
 {
 	PrintScopeDuration(i_ostream, "heterogeneous queue samples");
 
@@ -1454,19 +1454,19 @@ void concurrent_heterogeneous_queue_samples(std::ostream & i_ostream)
 }
 
 	// this samples uses std::cout and std::cin
-	// concurrent_heterogeneous_queue_samples_1();
+	// conc_heterogeneous_queue_samples_1();
 
-	concurrent_heterogeneous_queue_put_samples();
+	conc_heterogeneous_queue_put_samples();
 
-	concurrent_heterogeneous_queue_put_transaction_samples();
+	conc_heterogeneous_queue_put_transaction_samples();
 
-	concurrent_heterogeneous_queue_consume_operation_samples();
+	conc_heterogeneous_queue_consume_operation_samples();
 
-	concurrent_heterogeneous_queue_reentrant_put_samples();
+	conc_heterogeneous_queue_reentrant_put_samples();
 
-	concurrent_heterogeneous_queue_reentrant_put_transaction_samples();
+	conc_heterogeneous_queue_reentrant_put_transaction_samples();
 
-	concurrent_heterogeneous_queue_reentrant_consume_operation_samples();
+	conc_heterogeneous_queue_reentrant_consume_operation_samples();
 }
 
 

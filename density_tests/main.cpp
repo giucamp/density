@@ -12,11 +12,11 @@ namespace density_tests
 	void heterogeneous_queue_samples(std::ostream & i_ostream);
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
-	void concurrent_heterogeneous_queue_samples(std::ostream & i_ostream);
-	void concurrent_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
+	void conc_heterogeneous_queue_samples(std::ostream & i_ostream);
+	void conc_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
-	void nonblocking_heterogeneous_queue_samples(std::ostream & i_ostream);
-	void nonblocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
+	void lf_heter_queue_samples(std::ostream & i_ostream);
+	void lf_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
 
     void spinlocking_heterogeneous_queue_samples(std::ostream & i_ostream);
 	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream);
@@ -24,6 +24,9 @@ namespace density_tests
 	void load_unload_tests(std::ostream & i_ostream);
 
     void func_queue_samples(std::ostream &);
+    void conc_func_queue_samples(std::ostream &);
+    void lf_func_queue_samples(std::ostream &);
+    void sp_func_queue_samples(std::ostream &);
 }
 
 DENSITY_NO_INLINE void sandbox()
@@ -99,16 +102,19 @@ void do_tests(std::ostream & i_ostream)
 	heterogeneous_queue_samples(i_ostream);
 	heterogeneous_queue_basic_tests(i_ostream);
 
-	concurrent_heterogeneous_queue_samples(i_ostream);
-	concurrent_heterogeneous_queue_basic_tests(i_ostream);
+	conc_heterogeneous_queue_samples(i_ostream);
+	conc_heterogeneous_queue_basic_tests(i_ostream);
 
-	nonblocking_heterogeneous_queue_samples(i_ostream);
-	nonblocking_heterogeneous_queue_basic_tests(i_ostream);
+	lf_heter_queue_samples(i_ostream);
+	lf_heterogeneous_queue_basic_tests(i_ostream);
 
     spinlocking_heterogeneous_queue_samples(i_ostream);
 	spinlocking_heterogeneous_queue_basic_tests(i_ostream);
 
     func_queue_samples(i_ostream);
+    conc_func_queue_samples(i_ostream);
+    lf_func_queue_samples(i_ostream);
+    sp_func_queue_samples(i_ostream);
 
     size_t const element_count = 10000;
 

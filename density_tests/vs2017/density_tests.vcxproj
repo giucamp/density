@@ -540,9 +540,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\..\examples\conc_func_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\func_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\..\examples\lf_func_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\lf_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\..\examples\sp_func_queue_examples.cpp" />
     <ClCompile Include="..\..\examples\sp_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
@@ -567,7 +570,7 @@
     <ClCompile Include="..\test_framework\threading_extensions.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\concurrent_function_queue.h" />
+    <ClInclude Include="..\..\density\conc_function_queue.h" />
     <ClInclude Include="..\..\density\conc_heter_queue.h" />
     <ClInclude Include="..\..\density\density_common.h" />
     <ClInclude Include="..\..\density\density_config.h" />
@@ -587,11 +590,12 @@
     <ClInclude Include="..\..\density\function_queue.h" />
     <ClInclude Include="..\..\density\heter_queue.h" />
     <ClInclude Include="..\..\density\io_runtimetype_features.h" />
+    <ClInclude Include="..\..\density\lf_function_queue.h" />
     <ClInclude Include="..\..\density\lifo.h" />
-    <ClInclude Include="..\..\density\nonblocking_function_queue.h" />
     <ClInclude Include="..\..\density\lf_heter_queue.h" />
     <ClInclude Include="..\..\density\raw_atomic.h" />
     <ClInclude Include="..\..\density\runtime_type.h" />
+    <ClInclude Include="..\..\density\sp_function_queue.h" />
     <ClInclude Include="..\..\density\sp_heter_queue.h" />
     <ClInclude Include="..\..\density\void_allocator.h" />
     <ClInclude Include="..\tests\complex_polymorphism.h" />

@@ -51,12 +51,13 @@ namespace density
 
         This class template uses lock-free algorithms for both put operations and consume operations. Anyway, for the overall 
         put or consume to be lock-free, if a memory operation is necessary, it must be lock-free too. The default allocator,
-        void_allocator, can manage pages in lock freedom within its current capacity (that is, if the number of allocated, pinned,
-        or thread-owned pages exceeds the previous peek, and all the memory regions are exhausted, it must request a new memory
-        region to the system, so it can't guarantee lock-freedom). void_allocator::reserve_lockfree_page_memory and 
+        density::void_allocator, can manage pages in lock freedom within its current capacity (i.e. the memory it has managed until
+        now). This capacity is composed by all the allocated, pinned, thread-owned and free pages.
+        If the capacity must exceed its previous peek, and all the memory regions are exhausted, void_allocator must request a
+        new memory region to the system. In this case it can't guarantee lock-freedom. 
+        The static functions void_allocator::reserve_lockfree_page_memory and 
         void_allocator::try_reserve_lockfree_page_memory can be used to reserve a capacity in advance.
-
-        The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose 
+        \n void_allocator delegates legacy memory operations to the system. Since the storage of elements whose 
         size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
         can't be lock-free.
 

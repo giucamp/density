@@ -77,11 +77,17 @@
     <ClCompile Include="..\..\examples\func_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\conc_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\examples\lf_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\examples\sp_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\concurrent_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\density_common.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -92,9 +98,6 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\lifo.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\nonblocking_function_queue.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\raw_atomic.h">
@@ -204,6 +207,15 @@
     </ClInclude>
     <ClInclude Include="..\..\density\detail\sp_queue_tail_multiple.h">
       <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\conc_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\lf_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\sp_function_queue.h">
+      <Filter>density</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

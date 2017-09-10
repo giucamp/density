@@ -23,7 +23,7 @@ namespace density_tests
 	template < density::concurrency_cardinality PROD_CARDINALITY,
 			density::concurrency_cardinality CONSUMER_CARDINALITY,
 			density::consistency_model CONSISTENCY_MODEL>
-		struct NbQueueSamples
+		struct LfQueueSamples
 	{	
 		static void nonblocking_heterogeneous_queue_put_samples()
 		{
@@ -2240,9 +2240,9 @@ namespace density_tests
 			nonblocking_heterogeneous_queue_reentrant_consume_operation_samples();
 		}	
 	
-	}; // struct NbQueueSamples<...>
+	}; // struct LfQueueSamples<...>
 
-	void nonblocking_heterogeneous_queue_samples(std::ostream & i_ostream)
+	void lf_heter_queue_samples(std::ostream & i_ostream)
 	{
 		PrintScopeDuration(i_ostream, "heterogeneous queue samples");
 		
@@ -2251,15 +2251,15 @@ namespace density_tests
 		constexpr auto seq_cst = density::consistency_sequential;
 		constexpr auto relaxed = density::consistency_relaxed;
 
-		NbQueueSamples<		mult,		mult,		seq_cst		>::samples(i_ostream);
-		NbQueueSamples<		single,		mult,		seq_cst		>::samples(i_ostream);
-		NbQueueSamples<		mult,		single,		seq_cst		>::samples(i_ostream);
-		NbQueueSamples<		single,		single,		seq_cst		>::samples(i_ostream);
+		LfQueueSamples<		mult,		mult,		seq_cst		>::samples(i_ostream);
+		LfQueueSamples<		single,		mult,		seq_cst		>::samples(i_ostream);
+		LfQueueSamples<		mult,		single,		seq_cst		>::samples(i_ostream);
+		LfQueueSamples<		single,		single,		seq_cst		>::samples(i_ostream);
 
-		NbQueueSamples<		mult,		mult,		relaxed		>::samples(i_ostream);
-		NbQueueSamples<		single,		mult,		relaxed		>::samples(i_ostream);
-		NbQueueSamples<		mult,		single,		relaxed		>::samples(i_ostream);
-		NbQueueSamples<		single,		single,		relaxed		>::samples(i_ostream);
+		LfQueueSamples<		mult,		mult,		relaxed		>::samples(i_ostream);
+		LfQueueSamples<		single,		mult,		relaxed		>::samples(i_ostream);
+		LfQueueSamples<		mult,		single,		relaxed		>::samples(i_ostream);
+		LfQueueSamples<		single,		single,		relaxed		>::samples(i_ostream);
 	}
 
 } // namespace density_tests
