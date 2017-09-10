@@ -223,8 +223,6 @@ namespace density
 
             static void commit_put_impl(const Block & i_put) noexcept
             {
-                DENSITY_TEST_ARTIFICIAL_DELAY;
-
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
                 DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
                 DENSITY_ASSERT_INTERNAL(
@@ -247,8 +245,6 @@ namespace density
 
             static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
             {
-                DENSITY_TEST_ARTIFICIAL_DELAY;
-
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
                 DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
                 DENSITY_ASSERT_INTERNAL(
@@ -347,7 +343,6 @@ namespace density
                 auto tail = m_tail;
                 for (;;)
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
                     DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
                     // allocate space for the control block (and possibly the runtime type)
@@ -428,8 +423,6 @@ namespace density
                 auto tail = m_tail;
                 for (;;)
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
 
                     // allocate space for the control block (and possibly the runtime type)
@@ -569,8 +562,6 @@ namespace density
 
                 if (i_end_control != invalid_control_block())
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     // allocate and setup a new page
                     auto new_page = create_page(i_progress_guarantee);
                     if (new_page == nullptr)
@@ -602,7 +593,6 @@ namespace density
                 m_initial_page.store(initial_page);
 
                 // m_tail = initial_page;
-                DENSITY_TEST_ARTIFICIAL_DELAY;
                 DENSITY_ASSERT_INTERNAL(m_tail == invalid_control_block());
                 m_tail = initial_page;
 
@@ -611,8 +601,6 @@ namespace density
 
             ControlBlock * create_page(LfQueue_ProgressGuarantee i_progress_guarantee)
             {
-                DENSITY_TEST_ARTIFICIAL_DELAY;
-
                 auto const new_page = static_cast<ControlBlock *>(
                     i_progress_guarantee == LfQueue_Throwing ? ALLOCATOR_TYPE::allocate_page() :
                     ALLOCATOR_TYPE::try_allocate_page(ToDenGuarantee(i_progress_guarantee)) );

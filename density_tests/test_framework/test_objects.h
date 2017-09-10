@@ -284,8 +284,8 @@ namespace density_tests
 
 namespace std
 {
-	/** Partial specialization of std::hash to allow the use of TestRuntimeTime as keys
-		of unordered associative containers. */
+	/** Partial specialization of std::hash to allow the use of TestRuntimeTime as key
+		for unordered associative containers. */
 	template <typename COMMON_TYPE>
 		struct hash< density_tests::TestRuntimeTime<COMMON_TYPE> >
 	{

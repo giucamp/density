@@ -775,12 +775,7 @@ namespace density
         runtime_type & operator = (const runtime_type &) noexcept = default;
 
         /** Destructor */
-        #if DENSITY_DEBUG
-        ~runtime_type()
-        {
-            *reinterpret_cast<uintptr_t*>(&m_table) ^= (std::numeric_limits<uintptr_t>::max)();
-        }
-        #endif
+        ~runtime_type() noexcept = default;
 
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }
@@ -846,11 +841,6 @@ namespace density
             \n\b Throws: anything that the default constructor of the target type throws. */
         common_type * default_construct(void * i_dest) const
         {
-            #if DENSITY_DEBUG
-                check_alignment(i_dest, typename std::conditional<
-                    detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >::type() );
-            #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>( get_feature<type_features::default_construct>()(i_dest) );
         }
@@ -875,11 +865,6 @@ namespace density
             \n\b Throws: anything that the copy constructor of the target type throws. */
         common_type * copy_construct(void * i_dest, const common_type * i_source) const
         {
-            #if DENSITY_DEBUG
-                check_alignment(i_dest, typename std::conditional<
-                    detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >::type() );
-            #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
         }
@@ -903,11 +888,6 @@ namespace density
             */
         common_type * move_construct(void * i_dest, common_type * i_source) const
         {
-            #if DENSITY_DEBUG
-                check_alignment(i_dest, typename std::conditional<
-                    detail::IndexOfFeature<0, type_features::alignment, FEATURE_LIST>::value < FEATURE_LIST::size,
-                        std::true_type, std::false_type >::type() );
-            #endif
             DENSITY_ASSERT(!empty());
             return static_cast<common_type*>(get_feature<type_features::move_construct>()(i_dest, i_source));
         }
@@ -1021,20 +1001,6 @@ namespace density
     private:
         runtime_type(void * const * i_table) : m_table(i_table) { }
 
-        #if DENSITY_DEBUG
-
-            // the feature alignment is included in FEATURE_LIST
-            void check_alignment(void * i_buff, std::true_type) const noexcept
-            {
-                DENSITY_ASSERT(address_is_aligned(i_buff, alignment()));
-            }
-
-            // the feature alignment is not included in FEATURE_LIST, the alignment can't be checked
-            void check_alignment(void * , std::false_type) const noexcept
-                { }
-
-        #endif
-
     private:
         void * const * m_table;
     };
@@ -1042,8 +1008,8 @@ namespace density
 
 namespace std
 {
-    /** Partial specialization of std::hash to allow the use of density::runtime_type as keys
-        of unordered associative containers. */
+    /** Partial specialization of std::hash to allow the use of density::runtime_type as key
+        for unordered associative containers. */
     template <typename COMMON_TYPE, typename FEATURE_LIST>
         struct hash< density::runtime_type<COMMON_TYPE, FEATURE_LIST> >
     {

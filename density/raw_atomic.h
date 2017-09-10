@@ -13,8 +13,8 @@
 
 namespace density
 {
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic_load">std::atomic_load</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic_load">std::atomic_load</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>
@@ -42,8 +42,8 @@ namespace density
     template <typename TYPE>
         TYPE raw_atomic_load(TYPE const * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept = delete;
 
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic_store">std::atomic_store</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic_store">std::atomic_store</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>
@@ -71,8 +71,8 @@ namespace density
     template <typename TYPE>
         void raw_atomic_store(TYPE * i_atomic, TYPE i_value, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept = delete;
 
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>
@@ -101,8 +101,8 @@ namespace density
         bool raw_atomic_compare_exchange_strong(TYPE * i_atomic,
             TYPE * i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept = delete;
 
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>
@@ -438,8 +438,8 @@ namespace density
 
     #endif
 
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_strong</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>
@@ -471,8 +471,8 @@ namespace density
         return raw_atomic_compare_exchange_strong(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
     }
 
-    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but acts on primitive types.
-        This function has a limited support: its availability depends on the compiler, the target architecture, and the type of the variable.
+    /** Similar to <a href="http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange">std::atomic_compare_exchange_weak</a> but operates on fundamental types.
+        This function has a limited support: availability depends on the compiler, the target architecture, and the type of the variable.
         \n Overloads not available are declared as deleted.
         <table>
         <caption id="multi_row">Availability</caption>

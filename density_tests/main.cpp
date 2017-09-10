@@ -31,7 +31,9 @@ namespace density_tests
 
 DENSITY_NO_INLINE void sandbox()
 {
-	using namespace density;
+    using namespace density;
+
+    static_assert(std::is_trivially_destructible<runtime_type<>>::value, "");
 
     //void_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
 

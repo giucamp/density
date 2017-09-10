@@ -214,12 +214,9 @@ namespace density
             static void unpin_page(void * const i_address) noexcept
             {
                 auto const footer = get_footer(i_address);
-                #if DENSITY_DEBUG
-                    auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
-                    DENSITY_ASSERT(prev_pins > 0);
-                #else
-                    footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
-                #endif
+                auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
+                DENSITY_ASSERT(prev_pins > 0);
+                (void)prev_pins;
             }
 
             static uintptr_t get_pin_count(const void * const i_address) noexcept

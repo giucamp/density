@@ -106,8 +106,6 @@ namespace density
                     ControlBlock * head = i_queue->m_head.load();
                     DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
 
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     if (head == nullptr)
                     {
                         head = init_head(i_queue);
@@ -123,8 +121,6 @@ namespace density
 
                         i_queue->ALLOCATOR_TYPE::pin_page(head);
 
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
-
                         if (m_control != nullptr)
                         {
                             i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
@@ -134,8 +130,6 @@ namespace density
 
                         head = i_queue->m_head.load();
                         DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
-
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
                     }
 
                     m_control = static_cast<ControlBlock*>(head);
@@ -198,7 +192,6 @@ namespace density
                                 else
                                 {
                                     /* We have found a zeroed ControlBlock */
-                                    DENSITY_TEST_ARTIFICIAL_DELAY;
                                     next = i_queue->m_head.load(mem_relaxed);
                                     bool should_continue = false;
                                     if (Base::same_page(next, control))
@@ -265,7 +258,6 @@ namespace density
 
                             // We do an initial relaxed read. We will do a memory acquire in the CAS
                             auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
                             next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
 
                             /** Check if this element is ready to be consumed */
@@ -279,14 +271,12 @@ namespace density
                                         detail::mem_acquire, detail::mem_relaxed))
                                     {
                                         m_next_ptr = next_uint | NbQueue_Dead;
-                                        DENSITY_TEST_ARTIFICIAL_DELAY;
                                         break;
                                     }
                                 }
                                 else
                                 {
                                     /* We have found a zeroed ControlBlock */
-                                    DENSITY_TEST_ARTIFICIAL_DELAY;
                                     next = i_queue->m_head.load(mem_relaxed);
                                     bool should_continue = false;
                                     if (Base::same_page(next, control))
@@ -321,14 +311,10 @@ namespace density
                 /** If m_head equals to i_control_block advance it, zeroing the memory. No pin\unpin is performed. */
                 bool cleanup_step(ControlBlock * const i_control_block, uintptr_t const i_next_uint, ControlBlock * const i_next)
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     auto expected = i_control_block;
                     if (m_queue->m_head.compare_exchange_strong(expected, i_next,
                         detail::mem_seq_cst, detail::mem_relaxed))
                     {
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
-
                         if (i_next_uint & detail::NbQueue_External)
                         {
                             auto const external_block = static_cast<ExternalBlock*>(
@@ -340,8 +326,6 @@ namespace density
                         {
                             raw_atomic_store(&i_control_block->m_next, 0);
                         }
-
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
 
                         if (Base::same_page(i_control_block, i_next))
                         {
@@ -376,8 +360,6 @@ namespace density
                     {
                         auto const initial_page = i_queue->Base::get_initial_page();
 
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
-
                         /* If this CAS succeeds, we have to update our local variable head. Otherwise
                             after the call we have the value of m_head stored by another concurrent consumer. */
                         if (i_queue->m_head.compare_exchange_strong(head, initial_page))
@@ -391,8 +373,6 @@ namespace density
                 /** Commits a consumed element. After the call the Consume is empty. */
                 void commit_consume_impl() noexcept
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
                     DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 
@@ -415,8 +395,6 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(control != nullptr);
                     for (;;)
                     {
-                        DENSITY_TEST_ARTIFICIAL_DELAY;
-
                         auto const next_uint = raw_atomic_load(&control->m_next);
                         auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
                         if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
@@ -430,7 +408,6 @@ namespace density
                             detail::mem_seq_cst, detail::mem_relaxed))
                         {
                             // another thread is advancing the head, give up
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
                             break;
                         }
 
@@ -452,10 +429,8 @@ namespace density
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                DENSITY_TEST_ARTIFICIAL_DELAY;
                                 raw_atomic_store(&control->m_next, 0);
 
-                                DENSITY_TEST_ARTIFICIAL_DELAY;
                                 auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
                                 DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
@@ -466,7 +441,6 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_TEST_ARTIFICIAL_DELAY;
                             m_queue->ALLOCATOR_TYPE::pin_page(next);
 
                             #if DENSITY_DEBUG_INTERNAL
@@ -495,8 +469,6 @@ namespace density
 
                 void cancel_consume_impl() noexcept
                 {
-                    DENSITY_TEST_ARTIFICIAL_DELAY;
-
                     DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
                     DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
 

@@ -68,32 +68,4 @@ namespace density_tests
 
 		}
 	};
-
-	class EasyRandom;
-
-	class ThreadArtificialDelay
-	{
-	public:
-
-		ThreadArtificialDelay(size_t i_initial_progressive, size_t i_max_period, std::chrono::microseconds i_max_delay, EasyRandom * i_random);
-
-		ThreadArtificialDelay(const ThreadArtificialDelay &) = delete;
-		ThreadArtificialDelay(ThreadArtificialDelay &&) = delete;
-		ThreadArtificialDelay & operator = (const ThreadArtificialDelay &) = delete;
-		ThreadArtificialDelay & operator = (ThreadArtificialDelay &&) = delete;
-
-		~ThreadArtificialDelay();
-
-		static void step();
-
-	private:
-		void step_impl();
-
-	private:
-		size_t m_progressive = 0;
-		size_t const m_max_period = 0;
-		std::chrono::microseconds const m_max_delay;
-		EasyRandom * const m_random;
-		static thread_local ThreadArtificialDelay * t_artificial_delay;
-	};
 }

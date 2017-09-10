@@ -12,11 +12,9 @@
 #include <atomic> // for std::memory_order
 #include <new>
 
-#define DENSITY_VERSION            0x0010
-
+#define DENSITY_VERSION            0x00100000
 
 #include <density/density_config.h>
-
 
 /** namespace density */
 namespace density
@@ -530,12 +528,6 @@ namespace density
         }
     }
 
-    #if DENSITY_TEST_ENABLE_ARTIFICIAL_DELAY
-        void test_artificial_delay();
-        #define DENSITY_TEST_ARTIFICIAL_DELAY        ::density::test_artificial_delay()
-    #else
-        #define DENSITY_TEST_ARTIFICIAL_DELAY
-    #endif
 
     /*! 
 

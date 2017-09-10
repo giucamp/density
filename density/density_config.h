@@ -36,10 +36,10 @@
     #endif
 #endif
 
-#define DENSITY_ASSERT_ALIGNED(address, alignment)        DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
+#define DENSITY_ASSERT_ALIGNED(address, alignment)      DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
 #define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
-#define DENSITY_ASSERT_INTERNAL(bool_expr)                DENSITY_ASSERT((bool_expr))
+#define DENSITY_ASSERT_INTERNAL(bool_expr)              DENSITY_ASSERT((bool_expr))
 
 #define DENSITY_LIKELY(bool_expr)                    (bool_expr)
 #define DENSITY_UNLIKELY(bool_expr)                  (bool_expr)
@@ -56,28 +56,23 @@
     #define DENSITY_STRONG_INLINE
 #endif
 
-#if defined(__GNUC__) && defined(__MINGW32__)
-    #define DENSITY_ENV_HAS_THREADING                   0
-#else
-    #define DENSITY_ENV_HAS_THREADING                   1
-#endif
-
 namespace density
 {
+    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines. 
+        This constant must be a power of 2. */
     constexpr size_t concurrent_alignment = 64;
 
-    constexpr size_t default_page_capacity = 1024 * 16;
+    /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller. 
+        This constant must be a power of 2. */
+    constexpr size_t default_page_capacity = 1024 * 64;
 
-    /* concurrent data structures has been tested on x86-x64, but not on architectures with weak
+    /** In this version of the library relaxed atomic operations are disabled.
+        Concurrent data structures has been tested on x86-x64, but not on architectures with weak
         memory ordering. If you are willing to contribute to density, running the tests on other
         architectures, you can change this constant. */
-    #if defined(_M_IX86) || defined(_M_X64)
-        constexpr bool enable_relaxed_atomics = false;
-    #else
-        constexpr bool enable_relaxed_atomics = false;
-    #endif
+    constexpr bool enable_relaxed_atomics = false;
 
-    // very minimal implementation of std::optional
+    // very minimal implementation of std::optional. You may replace it with an alias to your own implementation, if you have one 
     template <typename TYPE>
         class optional
     {
