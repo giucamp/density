@@ -4,8 +4,8 @@ Density Overview
 ----------------
 Density is a C++11 header-only library providing page based memory management, lifo memory management, and a rich set of highly configurable heterogeneous queues based on paged memory management.
 
-concurrency strategy       | function queue      | heterogeneous queue|Consumers cardinality|Producers cardinality
---------------- | ------------------ | --------------------
+concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
+--------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1function__queue.html)      |[heter_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue.html)| - | -
 locking         |[conc_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1conc__function__queue.html) |[conc_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1conc__heter__queue.html)|multiple|multiple
 lock-free       |[lf_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__heter__queue.html)|configurable|configurable
