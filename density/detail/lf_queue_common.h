@@ -33,8 +33,8 @@ namespace density
         {
             LfQueue_Throwing, /**< maps to progress_blocking, allows exceptions */
             LfQueue_Blocking, /**< maps to progress_blocking, noexcept */
-            LfQueue_LockFree, /**< maps to progress_lock_free and progress_obstruction_free */
-            LfQueue_WaitFree /**< maps to progress_lock_free and progress_wait_free  */
+            LfQueue_LockFree, /**< maps to progress_lock_free and progress_obstruction_free, noexcept */
+            LfQueue_WaitFree /**< maps to progress_lock_free and progress_wait_free, noexcept */
         };
 
         constexpr LfQueue_ProgressGuarantee ToLfGuarantee(progress_guarantee i_progress_guarantee, bool i_can_throw)

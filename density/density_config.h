@@ -58,27 +58,39 @@
 
 namespace density
 {
-    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines. 
-        This constant must be a power of 2. */
+    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines.  It must be a power of 2. 
+    
+        This is a configuration variable, intended to be customized by the user of the library. The default value is 64. 
+        
+        If a C++17 compiler is available, this constant may be defined as std::hardware_destructive_interference_size. */
     constexpr size_t concurrent_alignment = 64;
 
     /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller. 
-        This constant must be a power of 2. */
+        This constant must be a power of 2. 
+        
+        This is a configuration variable, intended to be customized by the user of the library. The default value is 64. */
     constexpr size_t default_page_capacity = 1024 * 64;
 
     /** In this version of the library relaxed atomic operations are disabled.
-        Concurrent data structures has been tested on x86-x64, but not on architectures with weak
-        memory ordering. If you are willing to contribute to density, running the tests on other
+        Concurrently data structures has been tested on x86-x64, but not on architectures with weak
+        memory ordering. If you want to contribute to density, running the tests on other
         architectures, you can change this constant. */
     constexpr bool enable_relaxed_atomics = false;
 
-    // very minimal implementation of std::builtin_optional. You may replace it with an alias to your own implementation, if you have one 
+    /* Very minimal implementation of std::optional, that can be used as target for density::optional. */
     template <typename TYPE>
         class builtin_optional
     {
     public:
 
         builtin_optional() noexcept = default;
+
+        template <typename OTHER_TYPE>
+            builtin_optional(OTHER_TYPE && i_value)
+               : m_has_value(true)
+        {
+            new(&m_storage) TYPE(std::forward<OTHER_TYPE>(i_value));
+        }
 
         builtin_optional(const builtin_optional & i_source)
             : m_has_value(i_source.m_has_value)
@@ -148,17 +160,9 @@ namespace density
         bool m_has_value = false;
     };
 
-    /** Alias to an implementation of optional */
+    /** Alias to an implementation of optional. By default a minimal implementation of optional is used, but
+        it can be replaced by the C++17 standard one, if available. */
     template <typename TYPE>
         using optional = builtin_optional<TYPE>;
-
-    template <typename TYPE, typename... PARAMS>
-        inline builtin_optional<TYPE> make_optional(PARAMS && ... i_construction_params)
-    {
-        builtin_optional<TYPE> res;
-        res.m_has_value = true;
-        new(&res.m_storage) TYPE(std::forward<PARAMS>(i_construction_params)...);
-        return res;
-    }
 }
 

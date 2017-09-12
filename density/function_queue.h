@@ -281,7 +281,7 @@ namespace density
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
-                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
+                return optional<RET_VAL>(std::move(result));
             }
             else
             {
@@ -313,7 +313,7 @@ namespace density
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
-                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
+                return optional<RET_VAL>(std::move(result));
             }
             else
             {

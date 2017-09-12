@@ -346,8 +346,8 @@ namespace density
 
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an optional that contains the value returned by the callable object, or 
-                an empty optional in case the queue was empty.
+                Otherwise the return value is an density::optional that contains the value returned by the callable object, or 
+                an empty density::optional in case the queue was empty.
 
             This function is not reentrant: if the callable object accesses in any way this queue, the behavior
             is undefined. Use sp_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
@@ -356,7 +356,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
             
             \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type 
             try_consume(PARAMS... i_params)
         {
             return try_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
@@ -367,8 +367,8 @@ namespace density
 
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an optional that contains the value returned by the callable object, or 
-                an empty optional in case the queue was empty.
+                Otherwise the return value is an density::optional that contains the value returned by the callable object, or 
+                an empty density::optional in case the queue was empty.
 
             This function is reentrant: the callable object may access in any way this queue.
 
@@ -376,7 +376,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             
             \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type 
             try_reentrant_consume(PARAMS... i_params)
         {
             return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
@@ -413,7 +413,7 @@ namespace density
 
     private:
 
-        optional<RET_VAL> try_consume_impl(std::false_type, PARAMS... i_params)
+        density::optional<RET_VAL> try_consume_impl(std::false_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_consume();
             if (cons)
@@ -421,11 +421,11 @@ namespace density
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
-                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
+                return density::optional<RET_VAL>(std::move(result));
             }
             else
             {
-                return optional<RET_VAL>();
+                return density::optional<RET_VAL>();
             }
         }
 
@@ -445,7 +445,7 @@ namespace density
             }
         }
 
-        optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS... i_params)
+        density::optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS... i_params)
         {
             auto cons = m_queue.try_start_reentrant_consume();
             if (cons)
@@ -453,11 +453,11 @@ namespace density
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
-                return make_optional<RET_VAL>(std::forward<RET_VAL>(result));
+                return density::optional<RET_VAL>(std::move(result));
             }
             else
             {
-                return optional<RET_VAL>();
+                return density::optional<RET_VAL>();
             }
         }
 
