@@ -212,8 +212,8 @@ Concepts
 Concept     | Modeled in density by
 ------------|--------------
 [RuntimeType](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html) | [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html)
-[UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) | [void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1void__allocator.html)
-[PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html) | [void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1void__allocator.html)
+[UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html) | [void_allocator](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1basic__void__allocator.html)
+[PagedAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html) | [void_allocator](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](http://peggysansonetti.it/tech/density/html/classdensity_1_1basic__void__allocator.html)
 
 Samples
 -------
