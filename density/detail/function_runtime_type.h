@@ -5,12 +5,33 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/heter_queue.h>
+#include <density/density_common.h>
+#include <type_traits>
 
 namespace density
 {
     namespace detail
     {
+        /** \internal - implementation of invoke for functions */
+        template < typename FUNCTION, typename... PARAMS >
+            inline typename std::enable_if< !std::is_member_pointer<typename std::decay<FUNCTION>::type>::value,
+                    typename std::result_of<FUNCTION&&(PARAMS&&...) >::type >::type
+                invoke(FUNCTION && i_functor, PARAMS &&... i_params )
+                    noexcept(noexcept((std::forward<FUNCTION>)(i_functor)(std::forward<PARAMS>(i_params)...)))
+        {
+            return std::forward<FUNCTION>(i_functor)(std::forward<PARAMS>(i_params)...);
+        }
+
+        /** \internal - implementation of invoke for pointers to members */
+        template < typename FUNCTION, typename... PARAMS >
+            inline typename std::enable_if< std::is_member_pointer<typename std::decay<FUNCTION>::type>::value,
+                    typename std::result_of<FUNCTION&&(PARAMS&&...) >::type >::type
+                invoke(FUNCTION && i_functor, PARAMS &&... i_params )
+                    noexcept(noexcept(std::mem_fn(i_functor)(std::forward<PARAMS>(i_params)...)))
+        {
+            return std::mem_fn(i_functor)(std::forward<PARAMS>(i_params)...);
+        }
+
         /** \internal Private class template used as runtime type for function queues */
         template < function_type_erasure MODE, typename CALLABLE >
             class FunctionRuntimeType;
@@ -72,7 +93,7 @@ namespace density
                 static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
-                    auto && ret = (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    auto && ret = density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
                     return ret;
                 }
@@ -80,7 +101,7 @@ namespace density
                 static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
-                    (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
                 }
             };
@@ -144,7 +165,7 @@ namespace density
                 static RET_VAL align_invoke_destroy_impl(std::false_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
-                    auto && ret = (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    auto && ret = density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);;
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
                     return ret;
                 }
@@ -152,7 +173,7 @@ namespace density
                 static void align_invoke_destroy_impl(std::true_type, void * i_dest, PARAMS... i_params)
                 {
                     auto const aligned_dest = static_cast<ACTUAL_TYPE*>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
-                    (*aligned_dest)(std::forward<PARAMS>(i_params)...);
+                    density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
                 }
             };

@@ -112,9 +112,6 @@
     <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\function_queue_impl.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\detail\system_page_manager.h">
       <Filter>density\detail</Filter>
     </ClInclude>
@@ -219,6 +216,9 @@
     </ClInclude>
     <ClInclude Include="..\..\density\sp_function_queue.h">
       <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\function_runtime_type.h">
+      <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

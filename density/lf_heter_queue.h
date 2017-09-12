@@ -2646,7 +2646,7 @@ namespace density
         };
 
         /** Same to lf_heter_queue::push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_push example 1 */
@@ -2657,7 +2657,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_emplace example 1 */
@@ -2668,7 +2668,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_dyn_push example 1 */
@@ -2678,7 +2678,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_dyn_push_copy example 1 */
@@ -2688,7 +2688,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_dyn_push_move example 1 */
@@ -2698,7 +2698,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::start_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_push example 1 */
@@ -2709,7 +2709,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_emplace example 1 */
@@ -2745,7 +2745,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push example 1 */
@@ -2778,7 +2778,7 @@ namespace density
 
 
         /** Same to lf_heter_queue::start_dyn_push_copy, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_copy example 1 */
@@ -2810,7 +2810,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. The effects of the call are not observable until the function returns.
+            the transaction gets destroyed, the queue is in a valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_move example 1 */
@@ -2842,7 +2842,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_push example 1 */
@@ -2854,7 +2854,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_emplace example 1 */
@@ -2872,7 +2872,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push example 1 */
@@ -2886,7 +2886,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push_copy example 1 */
@@ -2900,7 +2900,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push_move example 1 */
@@ -2914,7 +2914,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_start_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_push example 1 */
@@ -2926,7 +2926,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_start_emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_emplace example 1 */
@@ -2992,7 +2992,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push example 1 */
@@ -3028,7 +3028,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_copy example 1 */
@@ -3063,7 +3063,7 @@ namespace density
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. The effects of the call are not observable until the function returns.
+            valid state. 
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_move example 1 */

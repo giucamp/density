@@ -6,7 +6,7 @@
 
 #pragma once
 #include <density/lf_heter_queue.h>
-#include <density/detail/function_queue_impl.h>
+#include <density/detail/function_runtime_type.h>
 
 namespace density
 {
@@ -143,7 +143,8 @@ namespace density
         See lf_heter_queue::push for a detailed description.
             
         \snippet lf_func_queue_examples.cpp lf_function_queue push example 1
-        \snippet lf_func_queue_examples.cpp lf_function_queue push example 2 */
+        \snippet lf_func_queue_examples.cpp lf_function_queue push example 2
+        \snippet lf_func_queue_examples.cpp lf_function_queue push example 3 */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {

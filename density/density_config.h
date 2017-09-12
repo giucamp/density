@@ -72,15 +72,15 @@ namespace density
         architectures, you can change this constant. */
     constexpr bool enable_relaxed_atomics = false;
 
-    // very minimal implementation of std::optional. You may replace it with an alias to your own implementation, if you have one 
+    // very minimal implementation of std::builtin_optional. You may replace it with an alias to your own implementation, if you have one 
     template <typename TYPE>
-        class optional
+        class builtin_optional
     {
     public:
 
-        optional() noexcept = default;
+        builtin_optional() noexcept = default;
 
-        optional(const optional & i_source)
+        builtin_optional(const builtin_optional & i_source)
             : m_has_value(i_source.m_has_value)
         {
             if (m_has_value)
@@ -89,19 +89,19 @@ namespace density
             }
         }
 
-        optional(optional && i_source)
+        builtin_optional(builtin_optional && i_source)
             : m_has_value(i_source.m_has_value)
         {
             if (m_has_value)
                 new (&m_storage) TYPE(std::move(*i_source.ptr()));
         }
 
-        optional & operator = (const optional & i_source)
+        builtin_optional & operator = (const builtin_optional & i_source)
         {
-            swap(*this, optional(i_source));
+            swap(*this, builtin_optional(i_source));
         }
 
-        optional & operator = (optional && i_source)
+        builtin_optional & operator = (builtin_optional && i_source)
         {
             swap(*this, i_source);
         }
@@ -112,16 +112,16 @@ namespace density
 
         explicit operator bool() const                  { return m_has_value; }
 
-        ~optional()
+        ~builtin_optional()
         {
             if (m_has_value)
                 ptr()->TYPE::~TYPE();
         }
 
         template <typename TYPE_1, typename... PARAMS>
-            friend optional<TYPE_1> make_optional(PARAMS && ... i_construction_params);
+            friend builtin_optional<TYPE_1> make_optional(PARAMS && ... i_construction_params);
 
-        friend void swap(optional & i_first, optional & i_second) noexcept
+        friend void swap(builtin_optional & i_first, builtin_optional & i_second) noexcept
         {
             using std::swap;
             swap(i_first.m_has_value, i_second.m_has_value);
@@ -148,10 +148,14 @@ namespace density
         bool m_has_value = false;
     };
 
+    /** Alias to an implementation of optional */
+    template <typename TYPE>
+        using optional = builtin_optional<TYPE>;
+
     template <typename TYPE, typename... PARAMS>
-        inline optional<TYPE> make_optional(PARAMS && ... i_construction_params)
+        inline builtin_optional<TYPE> make_optional(PARAMS && ... i_construction_params)
     {
-        optional<TYPE> res;
+        builtin_optional<TYPE> res;
         res.m_has_value = true;
         new(&res.m_storage) TYPE(std::forward<PARAMS>(i_construction_params)...);
         return res;

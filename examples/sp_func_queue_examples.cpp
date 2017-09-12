@@ -40,6 +40,45 @@ namespace density_tests
         //! [sp_function_queue push example 1]
     }
     {
+        //! [sp_function_queue push example 3]
+    #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of 
+        the alignment, but in the microsoft's compiler, on 64-bit targets, pointers to data
+        member are 4 bytes big, but are aligned to 8 bytes. 
+            
+        Test code:
+            using T = int Struct::*;
+            std::cout << sizeof(T) << std::endl;
+            std::cout << alignof(T) << std::endl;
+        */
+
+        struct Struct
+        {
+            int func_1() { return 1; }
+            int func_2() { return 2; }
+            int var_1 = 3;
+            int var_2 = 4;
+        };
+
+        sp_function_queue<int(Struct*)> queue;
+        queue.push(&Struct::func_1);
+        queue.push(&Struct::func_2);
+        queue.push(&Struct::var_1);
+        queue.push(&Struct::var_2);
+
+        Struct struct_instance;
+
+        int sum = 0;
+        while (auto const return_value = queue.try_consume(&struct_instance))
+            sum += *return_value;
+        assert(sum == 10);
+
+    #endif
+        //! [sp_function_queue push example 3]
+        #if !defined(_MSC_VER) || !defined(_M_X64)
+            (void)sum;
+        #endif
+    }
+    {
         //! [sp_function_queue push example 2]
     double last_val = 1.;
 

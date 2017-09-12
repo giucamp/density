@@ -6,7 +6,7 @@
 
 #pragma once
 #include <density/heter_queue.h>
-#include <density/detail/function_queue_impl.h>
+#include <density/detail/function_runtime_type.h>
 
 namespace density
 {
@@ -102,7 +102,8 @@ namespace density
         See heter_queue::push for a detailed description.
             
         \snippet func_queue_examples.cpp function_queue push example 1
-        \snippet func_queue_examples.cpp function_queue push example 2 */
+        \snippet func_queue_examples.cpp function_queue push example 2
+        \snippet func_queue_examples.cpp function_queue push example 3 */
         template <typename ELEMENT_COMPLETE_TYPE>
             void push(ELEMENT_COMPLETE_TYPE && i_source)
         {

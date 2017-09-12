@@ -1,6 +1,7 @@
 
 #include <density/function_queue.h>
 #include <density/conc_function_queue.h>
+#include <density/lf_function_queue.h>
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -107,6 +108,17 @@ thread consumer( [&]{
 producer.join();
 consumer.join();
             //! [conc_function_queue example 1]
+        }
+
+        {
+// single producer, multiple consumers:
+using Lf_SpMc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_single, concurrency_multiple>;
+            
+// multiple consumers, single producer:
+using Lf_MpSc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_multiple, concurrency_single>;
+
+// multiple producer, multiple consumers (the default):
+using Lf_MpMc_FuncQueue = lf_function_queue<void()>;
         }
     }
  
