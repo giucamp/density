@@ -111,6 +111,7 @@ consumer.join();
         }
 
         {
+            //! [lf_function_queue cardinality example]
 // single producer, multiple consumers:
 using Lf_SpMc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_single, concurrency_multiple>;
             
@@ -119,6 +120,10 @@ using Lf_MpSc_FuncQueue = lf_function_queue<void(), void_allocator, function_sta
 
 // multiple producer, multiple consumers (the default):
 using Lf_MpMc_FuncQueue = lf_function_queue<void()>;
+            //! [lf_function_queue cardinality example]
+            Lf_SpMc_FuncQueue q1;
+            Lf_MpSc_FuncQueue q2;
+            Lf_MpMc_FuncQueue q3;
         }
     }
  

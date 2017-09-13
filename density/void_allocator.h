@@ -151,7 +151,7 @@ namespace density
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
         class basic_void_allocator;
 
-    /** Specialization of basic_void_allocator that uses the default page capacity. */
+    /** Specialization of basic_void_allocator that uses density::default_page_capacity as page capacity. */
     using void_allocator = basic_void_allocator<default_page_capacity>;
 
     /** Class template providing paged and legacy memory allocation. It models both the \ref UntypedAllocator_concept "UntypedAllocator"

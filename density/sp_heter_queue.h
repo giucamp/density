@@ -50,7 +50,7 @@ namespace density
     /** Concurrent heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version 
         of heter_queue that uses a mix of lock free algorithms and spin locking.
         This class is very similar to lf_heter_queue, with the difference that if multiple producers are supported, they
-        use a spin-locking mutex to synchronize the write to the tail.
+        use a spin-locking mutex to synchronize the write to the tail pointer.
 
         @tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is
             implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue.
@@ -1956,7 +1956,7 @@ namespace density
             return consume_operation(PrivateType(), this);
         }
 
-        /** Tries to start a consume operation using an existing consume_operation.
+        /** Tries to start a consume operation using an existing consume_operation object.
             @param i_consume reference to a consume_operation to be used. If it is non-empty
                 it gets canceled before trying to start the new consume.
             @return whether i_consume is non-empty after the call, that is whether the queue was
@@ -1964,9 +1964,9 @@ namespace density
 
             A non-empty consume must be committed for the consume to have effect.
 
-            This overload is similar to the one taking no arguments and returning a consume_operation.
-            For an sp_heter_queue there is no performance difference between the two overloads. Anyway
-            for lock-free concurrent queue this overload may be faster.
+            This overload is similar to the one taking no arguments and returning a consume_operation,
+            but it's more efficient if the next consumable element is in the same page of the last
+            element i_consume has visited because in this case it doesn't perform page pinning.
 
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_consume_ example 1 */
         bool try_start_consume(consume_operation & i_consume) noexcept
@@ -3145,7 +3145,7 @@ namespace density
              return reentrant_consume_operation(PrivateType(), this);
         }
 
-        /** Tries to start a consume operation using an existing consume_operation.
+        /** Tries to start a consume operation using an existing consume_operation object.
             This is the reentrant version of try_start_consume.
 
             @param i_consume reference to a consume_operation to be used. If it is non-empty

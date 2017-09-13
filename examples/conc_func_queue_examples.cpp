@@ -339,6 +339,40 @@ namespace density_tests
             }
 
             {
+                //! [conc_function_queue try_consume example 2]
+    using Queue = conc_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE>;
+    Queue queue;
+
+    queue.push( [](std::vector<std::string> & vect) { 
+        vect.push_back("Hello");
+        return 2;
+    });
+
+    queue.push( [](std::vector<std::string> & vect) { 
+        vect.push_back(" world!");
+        return 3;
+    });
+
+    std::vector<std::string> strings;
+
+    // providing a cached consume_operation gives better performances
+    typename Queue::consume_operation consume;
+
+    int sum = 0;
+    while (auto const return_value = queue.try_consume(consume, strings))
+    {
+        sum += *return_value;
+    }
+
+    assert(sum == 5);
+
+    for (auto const & str : strings)
+        std::cout << str;
+    std::cout << std::endl;
+                //! [conc_function_queue try_consume example 2]
+            }
+
+            {
                 //! [conc_function_queue try_reentrant_consume example 1]
     conc_function_queue<void(), void_allocator, ERASURE> queue;
 
@@ -362,6 +396,34 @@ namespace density_tests
     // The queue is not empty
     // The queue is empty
                 //! [conc_function_queue try_reentrant_consume example 1]
+            }
+            {
+                //! [conc_function_queue try_reentrant_consume example 2]
+    conc_function_queue<void(), void_allocator, ERASURE> queue;
+
+    auto func1 = [&queue] { 
+        std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
+    };
+
+    auto func2 = [&queue, func1] { 
+        queue.push(func1);
+    };
+
+    queue.push(func1);
+    queue.push(func2);
+
+    // providing a cached consume_operation gives much better performances
+    typename decltype(queue)::reentrant_consume_operation consume;
+
+    /* The callable objects we are going to invoke will access the queue, so we
+        must use a reentrant consume. Note: during the invoke of the last function
+        the queue is empty to any observer. */
+    while (queue.try_reentrant_consume(consume));
+    
+    // Output:
+    // The queue is not empty
+    // The queue is empty
+                //! [conc_function_queue try_reentrant_consume example 2]
             }
         }
 

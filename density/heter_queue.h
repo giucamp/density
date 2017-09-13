@@ -1495,7 +1495,7 @@ namespace density
             return consume_operation(PrivateType(), this, start_consume_impl());
         }
 
-        /** Tries to start a consume operation using an existing consume_operation.
+        /** Tries to start a consume operation using an existing consume_operation object.
             @param i_consume reference to a consume_operation to be used. If it is non-empty
                 it gets canceled before trying to start the new consume.
             @return whether i_consume is non-empty after the call, that is whether the queue was
@@ -2353,7 +2353,7 @@ namespace density
              return reentrant_consume_operation(PrivateType(), this, start_consume_impl());
         }
 
-        /** Tries to start a consume operation using an existing consume_operation.
+        /** Tries to start a consume operation using an existing consume_operation object.
             This is the reentrant version of try_start_consume.
 
             @param i_consume reference to a consume_operation to be used. If it is non-empty

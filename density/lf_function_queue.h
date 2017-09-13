@@ -138,6 +138,12 @@ namespace density
         template <typename ELEMENT_COMPLETE_TYPE>
             using reentrant_put_transaction = typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>; 
 
+        /** Alias to lf_heter_queue::consume_operation. */
+        using consume_operation = typename UnderlyingQueue::consume_operation;
+
+        /** Alias to lf_heter_queue::reentrant_consume_operation. */
+        using reentrant_consume_operation = typename UnderlyingQueue::reentrant_consume_operation;
+
         /** Adds at the end of the queue a callable object.
             
         See lf_heter_queue::push for a detailed description.
@@ -376,12 +382,38 @@ namespace density
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
             from the queue. Otherwise no operation is performed.
 
+            The consume operation is performed using the provided consume_operation object. If the element to consume
+            is in the same page of the last element visited by the provided consume operation, the implementation
+            does not need to pin page. For this reason this overload of try_consume is much faster than the other.
+
+            @param i_consume object to use for the consume operation
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
                 Otherwise the return value is an optional that contains the value returned by the callable object, or 
                 an empty optional in case the queue was empty.
 
-            This function is reentrant: the callable object may access in any way this queue.
+            This function is not reentrant: if the callable object accesses in any way this queue, the behavior
+            is undefined. Use lf_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
+
+            \b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
+            
+            \snippet lf_func_queue_examples.cpp lf_function_queue try_consume example 2 */
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+            try_consume(consume_operation & i_consume, PARAMS... i_params)
+        {
+            return try_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
+        }
+
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+            from the queue. Otherwise no operation is performed.
+
+            @param i_params... parameters to be forwarded to the function object
+            @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
+                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                an empty optional in case the queue was empty.
+
+            This function is reentrant: the callable object can access in any way this queue.
 
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
@@ -391,6 +423,31 @@ namespace density
             try_reentrant_consume(PARAMS... i_params)
         {
             return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+        }
+
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+            from the queue. Otherwise no operation is performed.
+
+            The consume operation is performed using the provided consume_operation object. If the element to consume
+            is in the same page of the last element visited by the provided consume operation, the implementation
+            does not need to pin page. For this reason this overload of try_reentrant_consume is much faster than the other.
+
+            @param i_consume object to use for the consume operation
+            @param i_params... parameters to be forwarded to the function object
+            @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
+                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                an empty optional in case the queue was empty.
+
+            This function is reentrant: the callable object can access in any way this queue.
+
+            \b Throws: unspecified
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            
+            \snippet lf_func_queue_examples.cpp lf_function_queue try_reentrant_consume example 2 */
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+            try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
+        {
+            return try_reentrant_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes all the callable objects in the queue.
@@ -424,10 +481,10 @@ namespace density
 
     private:
 
+        /** \internal - try_consume_impl - non-void return type, temporary consume_operation */
         optional<RET_VAL> try_consume_impl(std::false_type, PARAMS... i_params)
         {
-            auto cons = m_queue.try_start_consume();
-            if (cons)
+            if (auto cons = m_queue.try_start_consume())
             {
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
@@ -440,10 +497,10 @@ namespace density
             }
         }
 
+        /** \internal - try_consume_impl - void return type, temporary consume_operation */
         bool try_consume_impl(std::true_type, PARAMS... i_params)
         {
-            auto cons = m_queue.try_start_consume();
-            if (cons)
+            if (auto cons = m_queue.try_start_consume())
             {
                 cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
@@ -456,10 +513,42 @@ namespace density
             }
         }
 
+        /** \internal - try_consume_impl_cached - non-void return type, cached consume_operation */
+        optional<RET_VAL> try_consume_impl_cached(std::false_type, consume_operation & i_consume, PARAMS... i_params)
+        {
+            if (m_queue.try_start_consume(i_consume))
+            {
+                auto && result = i_consume.complete_type().align_invoke_destroy(
+                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                i_consume.commit_nodestroy();
+                return optional<RET_VAL>(std::move(result));
+            }
+            else
+            {
+                return optional<RET_VAL>();
+            }
+        }
+
+        /** \internal - try_consume_impl_cached - void return type, cached consume_operation */
+        bool try_consume_impl_cached(std::true_type, consume_operation & i_consume, PARAMS... i_params)
+        {
+            if (m_queue.try_start_consume(i_consume))
+            {
+                i_consume.complete_type().align_invoke_destroy(
+                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                i_consume.commit_nodestroy();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /** \internal - try_reentrant_consume_impl - non-void return type, temporary consume_operation */
         optional<RET_VAL> try_reentrant_consume_impl(std::false_type, PARAMS... i_params)
         {
-            auto cons = m_queue.try_start_reentrant_consume();
-            if (cons)
+            if (auto cons = m_queue.try_start_reentrant_consume())
             {
                 auto && result = cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
@@ -472,14 +561,46 @@ namespace density
             }
         }
 
+        /** \internal - try_reentrant_consume_impl - void return type, temporary consume_operation */
         bool try_reentrant_consume_impl(std::true_type, PARAMS... i_params)
         {
-            auto cons = m_queue.try_start_reentrant_consume();
-            if (cons)
+            if (auto cons = m_queue.try_start_reentrant_consume())
             {
                 cons.complete_type().align_invoke_destroy(
                     cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /** \internal - try_reentrant_consume_impl_cached - non-void return type, cached consume_operation */
+        optional<RET_VAL> try_reentrant_consume_impl_cached(std::false_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
+        {
+            if (m_queue.try_start_reentrant_consume(i_consume))
+            {
+                auto && result = i_consume.complete_type().align_invoke_destroy(
+                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                i_consume.commit_nodestroy();
+                return optional<RET_VAL>(std::move(result));
+            }
+            else
+            {
+                return optional<RET_VAL>();
+            }
+        }
+
+        /** \internal - try_reentrant_consume_impl_cached - void return type, cached consume_operation */
+        bool try_reentrant_consume_impl_cached(std::true_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
+        {
+            if (m_queue.try_start_reentrant_consume(i_consume))
+            {
+                i_consume.complete_type().align_invoke_destroy(
+                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                i_consume.commit_nodestroy();
                 return true;
             }
             else
