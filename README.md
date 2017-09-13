@@ -241,14 +241,6 @@ Density is known to compile with:
  
 Anyway it should compile with any C++11 compliant compiler. If you compile density with any other compiler, please let me know.
 
-Important note: density has an extensive test suite, that includes an exhaustive test of the exception safeness. Anyway some functions may be still uncovered by the tests.
-
-Future development
-------------------
-- Future version of density may provide an anti-slicing mechanism, to detect at compile-time copy-constructions or copy-assignments using as source a partial-type reference to an element of an heterogeneous containers. This feature will probably require a C++17 compiler.
-- Density currently lacks an heterogeneous_stack and a function_stack.
-- An undocumented lifo_any exists, but is not yet tested enough, and its usage is not recommended.
-- As reported in the reference documentation, currently heterogeneous_array reallocates its memory block on every change (it does not handle an unused space, unlike std::vector). Any modifying operation on the array has linear complexity, so it is suitable for immutable or almost immutable containers. A major review is planned to make the complexity of most modifying operations constant amortized (like std::vector::push_back).
 
 [Reference Documentation](http://peggysansonetti.it/tech/density/html/index.html)
 
