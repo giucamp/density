@@ -28,3 +28,5 @@ density_tests/code_lite/Release
 density_tests/code_lite/.codelite
 doc/doxygen/doxygen_out.txt
 
+density_tests/vs2017/x64/
+density_tests/vs2017/.vs/density_tests/v15/

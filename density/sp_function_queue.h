@@ -387,7 +387,7 @@ namespace density
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
             
-            \snippet lf_func_queue_examples.cpp sp_function_queue try_consume example 2 */
+            \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
             try_consume(consume_operation & i_consume, PARAMS... i_params)
         {
@@ -432,7 +432,7 @@ namespace density
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             
-            \snippet lf_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 2 */
+            \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
             try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
