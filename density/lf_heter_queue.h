@@ -687,7 +687,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
-                    noexcept(noexcept(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
+                    noexcept(noexcept(std::declval<put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
                         -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
                 return try_raw_allocate_copy(i_progress_guarantee,
@@ -1450,7 +1450,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_push example 1 */
         template <typename ELEMENT_TYPE>
             bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
         {
             return try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -1485,7 +1485,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             bool try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee,
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee,
                     std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
         {
             auto tranasction = try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee,
@@ -1637,7 +1637,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_push example 1 */
         template <typename ELEMENT_TYPE>
             put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
         {
             return try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -2268,7 +2268,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
-                    noexcept(noexcept(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
+                    noexcept(noexcept(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
                         -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
                 return try_raw_allocate_copy(i_progress_guarantee,
@@ -2848,7 +2848,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             bool try_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
         {
             return try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -2860,7 +2860,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
             bool try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee,
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee,
                     std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
         {
             auto tranasction = try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee,
@@ -2920,7 +2920,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
             reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
         {
             return try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
