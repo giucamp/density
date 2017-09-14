@@ -47,7 +47,10 @@ namespace density
             template <typename TYPE>
                 static FunctionRuntimeType make() noexcept
             {
-                return FunctionRuntimeType{ &Impl<TYPE>::align_invoke_destroy, &Impl<TYPE>::align_destroy };
+                FunctionRuntimeType result;
+                result.m_align_invoke_destroy = &Impl<TYPE>::align_invoke_destroy;
+                result.m_align_destroy = &Impl<TYPE>::align_destroy;
+                return result;
             }
 
             bool empty() const noexcept
@@ -124,7 +127,9 @@ namespace density
             template <typename TYPE>
                 static FunctionRuntimeType make() noexcept
             {
-                return FunctionRuntimeType{ &Impl<TYPE>::align_invoke_destroy };
+                FunctionRuntimeType result;
+                result.m_align_invoke_destroy = &Impl<TYPE>::align_invoke_destroy;
+                return result;
             }
 
             bool empty() const noexcept

@@ -172,6 +172,7 @@ namespace density_tests
                 successful = queue.template try_emplace<std::string>(progress_wait_free, 12, '-');
             }
 			//! [lf_heter_queue try_emplace example 1]
+            (void)successful;
         }
 		{
 			//! [lf_heter_queue try_start_push example 1]

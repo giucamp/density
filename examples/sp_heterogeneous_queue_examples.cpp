@@ -171,6 +171,7 @@ namespace density_tests
                 successful = queue.template try_emplace<std::string>(progress_wait_free, 12, '-');
             }
 			//! [sp_heter_queue try_emplace example 1]
+            (void)successful;
         }
 		{
 			//! [sp_heter_queue try_start_push example 1]
@@ -2089,6 +2090,7 @@ namespace density_tests
 			assert(consume.template element<int>() == 2);
 			consume.commit();
 			//! [sp_heter_queue try_pop example 1]
+            (void)pop_result;
 		}
 		{
 			//! [sp_heter_queue try_start_consume example 1]
