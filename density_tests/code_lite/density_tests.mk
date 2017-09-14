@@ -2,12 +2,12 @@
 ## Auto Generated makefile by CodeLite IDE
 ## any manual changes will be erased      
 ##
-## Debug
+## Release
 ProjectName            :=density_tests
-ConfigurationName      :=Debug
+ConfigurationName      :=Release
 WorkspacePath          :=/home/giuseppe/Projects/density/density_tests/code_lite
 ProjectPath            :=/home/giuseppe/Projects/density/density_tests/code_lite
-IntermediateDirectory  :=./Debug
+IntermediateDirectory  :=./Release
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
 CurrentFilePath        :=
@@ -28,7 +28,7 @@ LibraryPathSwitch      :=-L
 PreprocessorSwitch     :=-D
 SourceSwitch           :=-c 
 OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
-Preprocessors          :=
+Preprocessors          :=$(PreprocessorSwitch)NDEBUG 
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
 PreprocessOnlySwitch   :=-E
@@ -50,8 +50,8 @@ LibPath                := $(LibraryPathSwitch).
 AR       := /usr/bin/ar rcu
 CXX      := /usr/bin/g++
 CC       := /usr/bin/gcc
-CXXFLAGS :=  -g -O0 -std=c++11 -Wall $(Preprocessors)
-CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
+CXXFLAGS :=  -O3 -std=c++11 -Wall $(Preprocessors)
+CFLAGS   :=  -O2 -Wall $(Preprocessors)
 ASFLAGS  := 
 AS       := /usr/bin/as
 
@@ -60,9 +60,10 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_misc_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_sp_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_sp_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_concurrent_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_lf_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_conc_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_progress.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/up_test_framework_histogram.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_line_updater_stream_adapter.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_dynamic_type.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_test_objects.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_threading_extensions.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_density_test_common.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_shared_block_registry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_exception_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_sp_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_concurrent_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/up_tests_lf_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_load_unload_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_lf_heter_queue_generic_tests_seqcst.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_lf_heter_queue_generic_tests_relaxed.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_heter_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_conc_heter_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_sp_heter_queue_generic_tests_seqcst.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/up_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_misc_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_sp_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_sp_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_concurrent_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_lf_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_conc_func_queue_examples.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_examples_func_queue_examples.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/up_test_framework_progress.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_histogram.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_line_updater_stream_adapter.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_dynamic_type.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_test_objects.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_threading_extensions.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_density_test_common.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_shared_block_registry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_test_framework_exception_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_sp_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/up_tests_concurrent_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_lf_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_load_unload_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_heterogeneous_queue_basic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_lf_heter_queue_generic_tests_seqcst.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_lf_heter_queue_generic_tests_relaxed.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_heter_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_conc_heter_queue_generic_tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_tests_generic_tests_sp_heter_queue_generic_tests_seqcst.cpp$(ObjectSuffix) \
+	
 
 
 
@@ -81,11 +82,11 @@ $(OutputFile): $(IntermediateDirectory)/.d $(Objects)
 	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
 
 MakeIntermediateDirs:
-	@test -d ./Debug || $(MakeDirCommand) ./Debug
+	@test -d ./Release || $(MakeDirCommand) ./Release
 
 
 $(IntermediateDirectory)/.d:
-	@test -d ./Debug || $(MakeDirCommand) ./Debug
+	@test -d ./Release || $(MakeDirCommand) ./Release
 
 PreBuild:
 
@@ -93,6 +94,14 @@ PreBuild:
 ##
 ## Objects
 ##
+$(IntermediateDirectory)/up_main.cpp$(ObjectSuffix): ../main.cpp $(IntermediateDirectory)/up_main.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/giuseppe/Projects/density/density_tests/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_main.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/up_main.cpp$(DependSuffix): ../main.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/up_main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/up_main.cpp$(DependSuffix) -MM ../main.cpp
+
+$(IntermediateDirectory)/up_main.cpp$(PreprocessSuffix): ../main.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_main.cpp$(PreprocessSuffix) ../main.cpp
+
 $(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(ObjectSuffix): ../../examples/lf_heterogeneous_queue_examples.cpp $(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/giuseppe/Projects/density/examples/lf_heterogeneous_queue_examples.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/up_up_examples_lf_heterogeneous_queue_examples.cpp$(DependSuffix): ../../examples/lf_heterogeneous_queue_examples.cpp
@@ -331,6 +340,6 @@ $(IntermediateDirectory)/up_tests_generic_tests_sp_heter_queue_generic_tests_seq
 ## Clean
 ##
 clean:
-	$(RM) -r ./Debug/
+	$(RM) -r ./Release/
 
 

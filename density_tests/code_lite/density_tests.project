@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="density_tests" Version="10.0.0" InternalType="Console">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>
+    </Plugin>
+  </Plugins>
   <VirtualDirectory Name="density_tests">
     <VirtualDirectory Name="test_framework">
       <File Name="../test_framework/progress.h"/>
@@ -42,12 +47,8 @@
         <File Name="../tests/generic_tests/sp_heter_queue_generic_tests_seqcst.cpp"/>
       </VirtualDirectory>
     </VirtualDirectory>
+    <File Name="../main.cpp"/>
   </VirtualDirectory>
-  <Plugins>
-    <Plugin Name="qmake">
-      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>
-    </Plugin>
-  </Plugins>
   <Description/>
   <Dependencies/>
   <Settings Type="Executable">
