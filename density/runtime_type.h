@@ -10,6 +10,7 @@
 #include <utility>
 #include <typeinfo>
 #include <functional> // for std::hash
+#include <stdexcept>
 #include <density/density_common.h>
 
 namespace density
@@ -183,7 +184,7 @@ namespace density
         {
             static void * invoke(void *, void *)
             {
-                throw std::exception("copy-construction not supported");
+                throw std::logic_error("copy-construction not supported");
             }
         };
 
@@ -201,7 +202,7 @@ namespace density
         {
             static void * invoke(void *, void *)
             {
-                throw std::exception("move-construction not supported");
+                throw std::logic_error("move-construction not supported");
             }
         };
 

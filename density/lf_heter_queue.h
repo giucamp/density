@@ -1724,14 +1724,14 @@ namespace density
                     #ifdef _MSC_VER
                         #pragma warning(push)
                         #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__)
+                    #elif defined(__GNUG__) && !defined(__clang__)
                         #pragma GCC diagnostic push
                         #pragma GCC diagnostic ignored "-Wterminate"
                     #endif
                     throw;
                     #ifdef _MSC_VER
                         #pragma warning(pop)
-                    #elif defined(__GNUG__)
+                    #elif defined(__GNUG__) && !defined(__clang__)
                         #pragma GCC diagnostic pop
                     #endif
                 }
@@ -2984,14 +2984,14 @@ namespace density
                     #ifdef _MSC_VER
                         #pragma warning(push)
                         #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__)
+                    #elif defined(__GNUG__) && !defined(__clang__)
                         #pragma GCC diagnostic push
                         #pragma GCC diagnostic ignored "-Wterminate"
                     #endif
                     throw;
                     #ifdef _MSC_VER
                         #pragma warning(pop)
-                    #elif defined(__GNUG__)
+                    #elif defined(__GNUG__) && !defined(__clang__)
                         #pragma GCC diagnostic pop
                     #endif
                 }
