@@ -10,7 +10,7 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, 
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator,
             function_type_erasure ERASURE = function_standard_erasure,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
@@ -18,7 +18,7 @@ namespace density
         class sp_function_queue;
 
     /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. sp_function_queue is an adaptor for sp_heter_queue.
-        
+
         sp_function_queue is a concurrent version of function_queue that uses a mix of lock free algorithms and spin locking.
         This class is very similar to lf_function_queue, with the difference that if multiple producers are supported, they
         use a spin-locking mutex to synchronize the write to the tail pointer.
@@ -26,12 +26,12 @@ namespace density
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
-        @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure. 
+        @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
-        @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock. 
+        @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock.
             The default is density::default_busy_wait, that calls std::this_thread::yield.
-        
+
         If ERASURE == function_manual_clear, sp_function_queue is not able to destroy the callable objects without invoking them.
             This produces a performance benefit, but:
             - The function sp_function_queue::clear can't be used (calling it causes undefined behavior)
@@ -43,14 +43,14 @@ namespace density
         \n <b>Exception safeness</b>: Any function of sp_heter_queue is noexcept or provides the strong exception guarantee.
 
         This class template provides all the put functions provided by function_queue, and furthermore it adds the try_ variants, that:
-        - Don't throw in case of failure allocating memory. Anyway they pass through any exception thrown by the constructor of the 
+        - Don't throw in case of failure allocating memory. Anyway they pass through any exception thrown by the constructor of the
             element and the constructor of the runtime type.
-        - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is 
+        - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is
             requested, but it requires a memory operation that the allocator is not able to complete in lock-freedom, the put fails.
             In the current implementation, wait-free put operation may fail even in isolation, because page pinning is lock-free but not wait-free.
     */
     #ifndef DOXYGEN_DOC_GENERATION
-        template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE, 
+        template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE,
                 function_type_erasure ERASURE,
                 concurrency_cardinality PROD_CARDINALITY,
                 concurrency_cardinality CONSUMER_CARDINALITY,
@@ -64,7 +64,7 @@ namespace density
             typename BUSY_WAIT_FUNC = default_busy_wait>
                 class sp_function_queue
     #endif
-    {    
+    {
     private:
         using UnderlyingQueue = sp_heter_queue<void, detail::FunctionRuntimeType<ERASURE, RET_VAL (PARAMS...)>,
             ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC>;
@@ -86,22 +86,22 @@ namespace density
         static constexpr bool is_seq_cst = true;
 
         /** Default constructor.
-        
+
         \snippet sp_func_queue_examples.cpp sp_function_queue default construct example 1 */
         sp_function_queue() noexcept = default;
 
         /** Move constructor.
-        
+
         \snippet sp_func_queue_examples.cpp sp_function_queue move construct example 1 */
         sp_function_queue(sp_function_queue && i_source) noexcept = default;
 
         /** Move assignment.
-        
+
         \snippet sp_func_queue_examples.cpp sp_function_queue move assign example 1 */
         sp_function_queue & operator = (sp_function_queue && i_source) noexcept = default;
 
-        /** Swaps two function queues. 
-        
+        /** Swaps two function queues.
+
         \snippet sp_func_queue_examples.cpp sp_function_queue swap example 1 */
         friend void swap(sp_function_queue & i_first, sp_function_queue & i_second) noexcept
         {
@@ -118,14 +118,14 @@ namespace density
                 DENSITY_ASSERT(empty());
             }
         }
-        
+
         /** Alias to sp_heter_queue::put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
-            using put_transaction = typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>; 
+            using put_transaction = typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>;
 
         /** Alias to sp_heter_queue::reentrant_put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
-            using reentrant_put_transaction = typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>; 
+            using reentrant_put_transaction = typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>;
 
         /** Alias to lf_heter_queue::consume_operation. */
         using consume_operation = typename UnderlyingQueue::consume_operation;
@@ -134,9 +134,9 @@ namespace density
         using reentrant_consume_operation = typename UnderlyingQueue::reentrant_consume_operation;
 
         /** Adds at the end of the queue a callable object.
-            
+
         See sp_heter_queue::push for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 1
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 2
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 3 */
@@ -151,7 +151,7 @@ namespace density
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
             See sp_heter_queue::emplace for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
             void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
@@ -187,9 +187,9 @@ namespace density
         }
 
         /** Adds at the end of the queue a callable object.
-            
+
         See sp_heter_queue::reentrant_push for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue reentrant_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
             void reentrant_push(ELEMENT_COMPLETE_TYPE && i_source)
@@ -202,7 +202,7 @@ namespace density
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
             See sp_heter_queue::reentrant_emplace for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue reentrant_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
             void reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
@@ -238,9 +238,9 @@ namespace density
         }
 
         /** Tries to add at the end of the queue a callable object respecting a progress guarantee.
-            
+
         See sp_heter_queue::try_push for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue try_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
             bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_COMPLETE_TYPE && i_source)
@@ -254,7 +254,7 @@ namespace density
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
             See sp_heter_queue::try_emplace for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue try_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
             bool try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
@@ -293,9 +293,9 @@ namespace density
         }
 
         /** Tries to add at the end of the queue a callable object.
-            
+
         See sp_heter_queue::try_reentrant_push for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
             bool try_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_COMPLETE_TYPE && i_source)
@@ -309,7 +309,7 @@ namespace density
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
             See sp_heter_queue::try_reentrant_emplace for a detailed description.
-            
+
         \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
             bool try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
@@ -347,28 +347,28 @@ namespace density
             return m_queue.template try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...);
         }
 
-        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it
             from the queue. Otherwise no operation is performed.
 
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an density::optional that contains the value returned by the callable object, or 
+                Otherwise the return value is an density::optional that contains the value returned by the callable object, or
                 an empty density::optional in case the queue was empty.
 
             This function is not reentrant: if the callable object accesses in any way this queue, the behavior
             is undefined. Use sp_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
 
             \b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
-            
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+
             \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type
             try_consume(PARAMS... i_params)
         {
             return try_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
-        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it
             from the queue. Otherwise no operation is performed.
 
             The consume operation is performed using the provided consume_operation object. If the element to consume
@@ -378,43 +378,43 @@ namespace density
             @param i_consume object to use for the consume operation
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                Otherwise the return value is an optional that contains the value returned by the callable object, or
                 an empty optional in case the queue was empty.
 
             This function is not reentrant: if the callable object accesses in any way this queue, the behavior
             is undefined. Use sp_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
 
             \b Throws: unspecified
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). 
-            
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+
             \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 2 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
             try_consume(consume_operation & i_consume, PARAMS... i_params)
         {
             return try_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
-        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it
             from the queue. Otherwise no operation is performed.
 
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an density::optional that contains the value returned by the callable object, or 
+                Otherwise the return value is an density::optional that contains the value returned by the callable object, or
                 an empty density::optional in case the queue was empty.
 
             This function is reentrant: the callable object can access in any way this queue.
 
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            
+
             \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type
             try_reentrant_consume(PARAMS... i_params)
         {
             return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
-        /** If the queue is not empty, invokes the first function object of the queue and then deletes it 
+        /** If the queue is not empty, invokes the first function object of the queue and then deletes it
             from the queue. Otherwise no operation is performed.
 
             The consume operation is performed using the provided consume_operation object. If the element to consume
@@ -424,30 +424,30 @@ namespace density
             @param i_consume object to use for the consume operation
             @param i_params... parameters to be forwarded to the function object
             @return If RET_VAL is void, the return value is a boolean indicating whether a callable object was consumed.
-                Otherwise the return value is an optional that contains the value returned by the callable object, or 
+                Otherwise the return value is an optional that contains the value returned by the callable object, or
                 an empty optional in case the queue was empty.
 
             This function is reentrant: the callable object can access in any way this queue.
 
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
-            
+
             \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 2 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type 
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
             try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
             return try_reentrant_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes all the callable objects in the queue.
-            
+
             \pre The behavior is undefined if either:
                 - ERASURE is function_manual_clear
-            
+
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
-            \n\b Complexity: linear. 
-            
+            \n\b Complexity: linear.
+
         \snippet sp_func_queue_examples.cpp sp_function_queue clear example 1 */
         void clear() noexcept
         {

@@ -163,7 +163,7 @@ namespace density
                     return try_inplace_allocate_impl<LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
                 }
             }
-            
+
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Block try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept

@@ -151,7 +151,7 @@ namespace density
                     {
                         return true;
                     }
-                    
+
                     bool is_empty = true;
                     auto control = m_control;
                     auto next = control;
@@ -227,7 +227,7 @@ namespace density
                 void start_consume_impl(LFQueue_Head * i_queue) noexcept
                 {
                     DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
-                    
+
                     if (!assign_queue(i_queue))
                     {
                         return;

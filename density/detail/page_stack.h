@@ -32,7 +32,7 @@ namespace density
             PageFooter * m_first{ nullptr }; /**< root of the null-terminated linked list. */
             PageFooter * m_cached_last{ nullptr }; /**< pointer to the last page, if known, or nullptr. This variable is redundant, and
                                                     is used just to optimize the function find_last. */
-        
+
         public:
 
             /** Constructs a stack from a null-terminated linked-list of pages. If the argument is nullptr the stack is empty */
@@ -43,7 +43,7 @@ namespace density
 
             /** Copy construction not allowed */
             PageStack(const PageStack &) = delete;
-            
+
             /** Copy assignment not allowed */
             PageStack & operator = (const PageStack &) = delete;
 
@@ -89,8 +89,8 @@ namespace density
                 return m_first == nullptr;
             }
 
-            /** Returns the page at the bottom of the stack. This function uses a cache pointer to avoid the linear scan from the 2nd invocation on. 
-                
+            /** Returns the page at the bottom of the stack. This function uses a cache pointer to avoid the linear scan from the 2nd invocation on.
+
                 \pre The behavior is undefined if either:
                     - this stack is empty */
             PageFooter * find_last() noexcept

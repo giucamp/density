@@ -1,4 +1,9 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -12,23 +17,23 @@
 
 // if assert expands to nothing, some local variable becomes unused
 #if defined(_MSC_VER) && defined(NDEBUG)
-	#pragma warning(push)
-	#pragma warning(disable:4189) // local variable is initialized but not referenced
+    #pragma warning(push)
+    #pragma warning(disable:4189) // local variable is initialized but not referenced
 #endif
 
 namespace density_tests
 {
-    template <density::function_type_erasure ERASURE, 
+    template <density::function_type_erasure ERASURE,
             density::concurrency_cardinality PROD_CARDINALITY,
-			density::concurrency_cardinality CONSUMER_CARDINALITY,
-			density::consistency_model CONSISTENCY_MODEL>
+            density::concurrency_cardinality CONSUMER_CARDINALITY,
+            density::consistency_model CONSISTENCY_MODEL>
         struct LfFunctionQueueSamples
     {
         static void func_queue_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
+            PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [lf_function_queue push example 1]
@@ -42,10 +47,10 @@ namespace density_tests
     }
     {
         //! [lf_function_queue push example 3]
-    #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of 
+    #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of
         the alignment, but in the microsoft's compiler, on 64-bit targets, pointers to data
-        member are 4 bytes big, but are aligned to 8 bytes. 
-            
+        member are 4 bytes big, but are aligned to 8 bytes.
+
         Test code:
             using T = int Struct::*;
             std::cout << sizeof(T) << std::endl;
@@ -83,8 +88,8 @@ namespace density_tests
         //! [lf_function_queue push example 2]
     double last_val = 1.;
 
-    auto func = [&last_val] { 
-        return last_val /= 2.; 
+    auto func = [&last_val] {
+        return last_val /= 2.;
     };
 
     lf_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
@@ -99,7 +104,7 @@ namespace density_tests
                 //! [lf_function_queue emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -111,7 +116,7 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
@@ -131,7 +136,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -159,7 +164,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -185,14 +190,14 @@ namespace density_tests
 
         static void func_queue_try_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
+            PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [lf_function_queue try_push example 1]
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
-    
+
     bool const ok = queue.try_push(progress_lock_free, []{ std::cout << "Hello world!"; } );
 
     while( queue.try_consume() )
@@ -204,7 +209,7 @@ namespace density_tests
                 //! [lf_function_queue try_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -216,7 +221,7 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
@@ -238,7 +243,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -247,7 +252,7 @@ namespace density_tests
     };
 
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
-    
+
     bool invoked = false;
     if (auto transaction = queue.try_start_push(progress_lock_free, Func{}))
     {
@@ -269,7 +274,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -297,9 +302,9 @@ namespace density_tests
 
         static void func_queue_reentrant_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
+            PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [lf_function_queue reentrant_push example 1]
@@ -315,8 +320,8 @@ namespace density_tests
                 //! [lf_function_queue reentrant_push example 2]
     double last_val = 1.;
 
-    auto func = [&last_val] { 
-        return last_val /= 2.; 
+    auto func = [&last_val] {
+        return last_val /= 2.;
     };
 
     lf_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
@@ -331,7 +336,7 @@ namespace density_tests
                 //! [lf_function_queue reentrant_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -343,7 +348,7 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
@@ -363,7 +368,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -374,11 +379,11 @@ namespace density_tests
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
 
     auto transaction = queue.start_reentrant_push(Func{});
-    
+
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
     transaction.element().m_string_1 = transaction.raw_allocate_copy("Hello world");
     transaction.element().m_string_2 = transaction.raw_allocate_copy("\t(I'm so happy)!!");
-    
+
     transaction.commit();
 
     // now transaction is empty
@@ -394,7 +399,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -421,9 +426,9 @@ namespace density_tests
 
         static void func_queue_try_reentrant_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
+            PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [lf_function_queue try_reentrant_push example 1]
@@ -438,7 +443,7 @@ namespace density_tests
                 //! [lf_function_queue try_reentrant_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -450,14 +455,14 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
     };
 
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
-    
+
     bool invoked = false;
     if (queue.template try_reentrant_emplace<Func>(progress_lock_free, 7))
     {
@@ -473,7 +478,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -506,7 +511,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -541,12 +546,12 @@ namespace density_tests
                 //! [lf_function_queue try_consume example 1]
     lf_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
         return 2;
     });
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back(" world!");
         return 3;
     });
@@ -571,12 +576,12 @@ namespace density_tests
     using Queue = lf_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
     Queue queue;
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
         return 2;
     });
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back(" world!");
         return 3;
     });
@@ -603,11 +608,11 @@ namespace density_tests
                 //! [lf_function_queue try_reentrant_consume example 1]
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
 
-    auto func1 = [&queue] { 
+    auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
     };
 
-    auto func2 = [&queue, func1] { 
+    auto func2 = [&queue, func1] {
         queue.push(func1);
     };
 
@@ -618,7 +623,7 @@ namespace density_tests
         must use a reentrant consume. Note: during the invoke of the last function
         the queue is empty to any observer. */
     while (queue.try_reentrant_consume());
-    
+
     // Output:
     // The queue is not empty
     // The queue is empty
@@ -628,11 +633,11 @@ namespace density_tests
                 //! [lf_function_queue try_reentrant_consume example 2]
     lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
 
-    auto func1 = [&queue] { 
+    auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
     };
 
-    auto func2 = [&queue, func1] { 
+    auto func2 = [&queue, func1] {
         queue.push(func1);
     };
 
@@ -646,7 +651,7 @@ namespace density_tests
         must use a reentrant consume. Note: during the invoke of the last function
         the queue is empty to any observer. */
     while (queue.try_reentrant_consume(consume));
-    
+
     // Output:
     // The queue is not empty
     // The queue is empty
@@ -672,7 +677,7 @@ namespace density_tests
 
     auto queue_1(std::move(queue));
     assert(queue.empty());
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [lf_function_queue move construct example 1]
@@ -683,7 +688,7 @@ namespace density_tests
     queue.push([] { return 6; });
 
     queue_1 = std::move(queue);
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [lf_function_queue move assign example 1]
@@ -696,7 +701,7 @@ namespace density_tests
 
     std::swap(queue, queue_1);
     assert(queue.empty());
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [lf_function_queue swap example 1]
@@ -719,7 +724,7 @@ namespace density_tests
         static void func_queue_samples(std::ostream & i_ostream)
         {
             func_queue_reentrant_misc_samples(i_ostream);
-            
+
             func_queue_put_samples(i_ostream);
             func_queue_reentrant_put_samples(i_ostream);
             func_queue_try_put_samples(i_ostream);
@@ -736,10 +741,10 @@ namespace density_tests
         constexpr auto manual_clear = density::function_manual_clear;
 
         constexpr auto mult = density::concurrency_multiple;
-		constexpr auto single = density::concurrency_single;
-		
+        constexpr auto single = density::concurrency_single;
+
         constexpr auto seq_cst = density::consistency_sequential;
-		constexpr auto relaxed = density::consistency_relaxed;
+        constexpr auto relaxed = density::consistency_relaxed;
 
         LfFunctionQueueSamples< standard_erasure,   mult,   mult,  seq_cst    >::func_queue_samples(i_ostream);
         LfFunctionQueueSamples< manual_clear,       mult,   mult,  seq_cst    >::func_queue_samples(i_ostream);
@@ -769,6 +774,6 @@ namespace density_tests
 
 } // namespace density_tests
 
-#if defined(_MSC_VER) && defined(NDEBUG)		
-	#pragma warning(pop)
+#if defined(_MSC_VER) && defined(NDEBUG)
+    #pragma warning(pop)
 #endif

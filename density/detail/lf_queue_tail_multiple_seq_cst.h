@@ -153,7 +153,7 @@ namespace density
                     return try_inplace_allocate_impl<LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
                 }
             }
-            
+
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Block try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
@@ -333,7 +333,7 @@ namespace density
                             else
                             {
                                 tail = page_overflow(guarantee, tail);
-                                
+
                                 if (guarantee != LfQueue_Throwing)
                                 {
                                     if (tail == 0)
@@ -373,7 +373,7 @@ namespace density
                             // Note: NEEDS ZEROED-PAGES
                             uintptr_t expected_next = 0;
                             raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-                                next + detail::NbQueue_Busy, mem_relaxed);  
+                                next + detail::NbQueue_Busy, mem_relaxed);
                             if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
                             {
                                 tail = next;
@@ -442,7 +442,7 @@ namespace density
                             else
                             {
                                 tail = page_overflow(guarantee, tail);
-                                
+
                                 if (guarantee != LfQueue_Throwing)
                                 {
                                     if (tail == 0)
@@ -655,7 +655,7 @@ namespace density
                     return nullptr;
                 }
 
-                /* note: in case of failure of the following CAS we do not give in even if we are wait-free, 
+                /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
                     because this is a oneshot operation, so we can't possibly stick in a loop. */
                 ControlBlock * initial_page = nullptr;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))

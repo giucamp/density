@@ -1,4 +1,9 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #include <density/function_queue.h>
 #include <density/conc_function_queue.h>
 #include <density/lf_function_queue.h>
@@ -17,7 +22,7 @@ namespace density_tests
         {
             //! [function_queue example 1]
 // put a lambda
-function_queue<void()> queue;            
+function_queue<void()> queue;
 queue.push([] { std::cout << "Printing..." << std::endl; });
 
 // we can have a capture of any size
@@ -70,7 +75,7 @@ struct Message
 };
 
 function_queue<void()> queue;
-    
+
 auto transaction = queue.start_emplace<Message>();
 transaction.element().m_text = transaction.raw_allocate_copy("Hello world");
 transaction.commit();
@@ -90,9 +95,9 @@ atomic<bool> finished(false);
 thread producer( [&]{
     for (int i = 0; i < 10; i++)
     {
-        commands.push([] { cout << "Hi there..." << endl; }); 
+        commands.push([] { cout << "Hi there..." << endl; });
         this_thread::sleep_for(chrono::milliseconds(10));
-    }                
+    }
     finished.store(true);
 });
 
@@ -114,7 +119,7 @@ consumer.join();
             //! [lf_function_queue cardinality example]
 // single producer, multiple consumers:
 using Lf_SpMc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_single, concurrency_multiple>;
-            
+
 // multiple consumers, single producer:
 using Lf_MpSc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_multiple, concurrency_single>;
 
@@ -126,5 +131,5 @@ using Lf_MpMc_FuncQueue = lf_function_queue<void()>;
             Lf_MpMc_FuncQueue q3;
         }
     }
- 
+
 } // namespace density_tests

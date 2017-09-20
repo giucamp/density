@@ -1,4 +1,9 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -12,8 +17,8 @@
 
 // if assert expands to nothing, some local variable becomes unused
 #if defined(_MSC_VER) && defined(NDEBUG)
-	#pragma warning(push)
-	#pragma warning(disable:4189) // local variable is initialized but not referenced
+    #pragma warning(push)
+    #pragma warning(disable:4189) // local variable is initialized but not referenced
 #endif
 
 namespace density_tests
@@ -23,9 +28,9 @@ namespace density_tests
     {
         static void func_queue_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "function queue put samples");
+            PrintScopeDuration dur(i_ostream, "function queue put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [function_queue push example 1]
@@ -41,8 +46,8 @@ namespace density_tests
         //! [function_queue push example 2]
     double last_val = 1.;
 
-    auto func = [&last_val] { 
-        return last_val /= 2.; 
+    auto func = [&last_val] {
+        return last_val /= 2.;
     };
 
     function_queue<double(), void_allocator, ERASURE> queue;
@@ -55,10 +60,10 @@ namespace density_tests
             }
     {
         //! [function_queue push example 3]
-    #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of 
+    #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of
         the alignment, but in the microsoft's compiler, on 64-bit targets, pointers to data
-        member are 4 bytes big, but are aligned to 8 bytes. 
-            
+        member are 4 bytes big, but are aligned to 8 bytes.
+
         Test code:
             using T = int Struct::*;
             std::cout << sizeof(T) << std::endl;
@@ -96,7 +101,7 @@ namespace density_tests
                 //! [function_queue emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -108,7 +113,7 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
@@ -128,7 +133,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -156,7 +161,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -182,9 +187,9 @@ namespace density_tests
 
         static void func_queue_reentrant_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration dur(i_ostream, "function queue reentrant put samples");
+            PrintScopeDuration dur(i_ostream, "function queue reentrant put samples");
 
-	        using namespace density;
+            using namespace density;
 
             {
                 //! [function_queue reentrant_push example 1]
@@ -200,8 +205,8 @@ namespace density_tests
                 //! [function_queue reentrant_push example 2]
     double last_val = 1.;
 
-    auto func = [&last_val] { 
-        return last_val /= 2.; 
+    auto func = [&last_val] {
+        return last_val /= 2.;
     };
 
     function_queue<double(), void_allocator, ERASURE> queue;
@@ -216,7 +221,7 @@ namespace density_tests
                 //! [function_queue reentrant_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
-        but we add it to a void() function queue. This is ok, as we are just 
+        but we add it to a void() function queue. This is ok, as we are just
         discarding the return value. */
     struct Func
     {
@@ -228,7 +233,7 @@ namespace density_tests
         Func & operator = (const Func &) = delete;
 
         int operator () () const
-        { 
+        {
             std::cout << m_value << std::endl;
             return m_value;
         }
@@ -248,7 +253,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -259,11 +264,11 @@ namespace density_tests
     function_queue<void(), void_allocator, ERASURE> queue;
 
     auto transaction = queue.start_reentrant_push(Func{});
-    
+
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
     transaction.element().m_string_1 = transaction.raw_allocate_copy("Hello world");
     transaction.element().m_string_2 = transaction.raw_allocate_copy("\t(I'm so happy)!!");
-    
+
     transaction.commit();
 
     // now transaction is empty
@@ -279,7 +284,7 @@ namespace density_tests
     {
         const char * m_string_1;
         const char * m_string_2;
-        
+
         void operator () ()
         {
             std::cout << m_string_1 << std::endl;
@@ -312,12 +317,12 @@ namespace density_tests
                 //! [function_queue try_consume example 1]
     function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE> queue;
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
         return 2;
     });
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back(" world!");
         return 3;
     });
@@ -342,12 +347,12 @@ namespace density_tests
     using Queue = function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE>;
     Queue queue;
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
         return 2;
     });
 
-    queue.push( [](std::vector<std::string> & vect) { 
+    queue.push( [](std::vector<std::string> & vect) {
         vect.push_back(" world!");
         return 3;
     });
@@ -374,11 +379,11 @@ namespace density_tests
                 //! [function_queue try_reentrant_consume example 1]
     function_queue<void(), void_allocator, ERASURE> queue;
 
-    auto func1 = [&queue] { 
+    auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
     };
 
-    auto func2 = [&queue, func1] { 
+    auto func2 = [&queue, func1] {
         queue.push(func1);
     };
 
@@ -389,7 +394,7 @@ namespace density_tests
         must use a reentrant consume. Note: during the invoke of the last function
         the queue is empty to any observer. */
     while (queue.try_reentrant_consume());
-    
+
     // Output:
     // The queue is not empty
     // The queue is empty
@@ -399,11 +404,11 @@ namespace density_tests
                 //! [function_queue try_reentrant_consume example 2]
     function_queue<void(), void_allocator, ERASURE> queue;
 
-    auto func1 = [&queue] { 
+    auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
     };
 
-    auto func2 = [&queue, func1] { 
+    auto func2 = [&queue, func1] {
         queue.push(func1);
     };
 
@@ -417,7 +422,7 @@ namespace density_tests
         must use a reentrant consume. Note: during the invoke of the last function
         the queue is empty to any observer. */
     while (queue.try_reentrant_consume(consume));
-    
+
     // Output:
     // The queue is not empty
     // The queue is empty
@@ -443,7 +448,7 @@ namespace density_tests
 
     auto queue_1(std::move(queue));
     assert(queue.empty());
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [function_queue move construct example 1]
@@ -455,7 +460,7 @@ namespace density_tests
     queue.push([] { return 6; });
 
     queue_1 = std::move(queue);
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [function_queue move assign example 1]
@@ -469,7 +474,7 @@ namespace density_tests
 
     std::swap(queue, queue_1);
     assert(queue.empty());
-    
+
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
                 //! [function_queue swap example 1]
@@ -508,6 +513,6 @@ namespace density_tests
 
 } // namespace density_tests
 
-#if defined(_MSC_VER) && defined(NDEBUG)		
-	#pragma warning(pop)
+#if defined(_MSC_VER) && defined(NDEBUG)
+    #pragma warning(pop)
 #endif

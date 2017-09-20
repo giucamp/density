@@ -1569,7 +1569,7 @@ namespace density
             bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
             {
                 DENSITY_ASSERT_INTERNAL(i_queue != nullptr);
-                   
+
                 // first we take the locks, because they may throw
                 std::unique_lock<std::mutex> lock;
                 if (m_queue != nullptr)
@@ -1596,7 +1596,7 @@ namespace density
         };
 
         /** Same to conc_heter_queue::push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_push example 1 */
@@ -1607,7 +1607,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_emplace example 1 */
@@ -1618,7 +1618,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push example 1 */
@@ -1628,7 +1628,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push_copy example 1 */
@@ -1638,7 +1638,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_dyn_push_move example 1 */
@@ -1648,7 +1648,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::start_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_push example 1 */
@@ -1659,7 +1659,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_emplace example 1 */
@@ -1673,7 +1673,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push example 1 */
@@ -1687,7 +1687,7 @@ namespace density
 
 
         /** Same to conc_heter_queue::start_dyn_push_copy, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push_copy example 1 */
@@ -1700,7 +1700,7 @@ namespace density
         }
 
         /** Same to conc_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue start_reentrant_dyn_push_move example 1 */

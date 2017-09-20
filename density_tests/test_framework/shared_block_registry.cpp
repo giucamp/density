@@ -1,9 +1,8 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
-
 
 #include "shared_block_registry.h"
 #include <unordered_map>
@@ -15,7 +14,7 @@ namespace density_tests
 {
     struct SharedBlockRegistry::AllocationEntry
     {
-		int m_category = 0;
+        int m_category = 0;
         size_t m_progressive = 0;
         size_t m_size = 0;
         size_t m_alignment = 0;
@@ -39,7 +38,7 @@ namespace density_tests
         }
     };
 
-	std::atomic<size_t> SharedBlockRegistry::Data::s_last_progressive(0);
+    std::atomic<size_t> SharedBlockRegistry::Data::s_last_progressive(0);
 
     SharedBlockRegistry::SharedBlockRegistry() : m_data(std::make_shared<Data>()) {}
 
@@ -64,7 +63,7 @@ namespace density_tests
 
     void SharedBlockRegistry::register_block(int i_category, void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset)
     {
-		DENSITY_TEST_ASSERT(i_alignment == 0 || ((i_alignment & (i_alignment - 1))) == 0);
+        DENSITY_TEST_ASSERT(i_alignment == 0 || ((i_alignment & (i_alignment - 1))) == 0);
         DENSITY_TEST_ASSERT( m_data != nullptr ); // this registry can't be used to add blocks. Maybe it was used as source for a move.
 
         if (m_data != nullptr) // avoid a crash, but
@@ -72,7 +71,7 @@ namespace density_tests
             auto & data = *m_data;
 
             AllocationEntry entry;
-			entry.m_category = i_category;
+            entry.m_category = i_category;
             entry.m_size = i_size;
             entry.m_alignment = i_alignment;
             entry.m_progressive = Data::s_last_progressive++;
@@ -88,24 +87,24 @@ namespace density_tests
 
     void SharedBlockRegistry::unregister_block(int i_category, void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset)
     {
-		if (i_block != nullptr)
-		{
-			DENSITY_TEST_ASSERT(m_data != nullptr); // this registry can't be used to remove blocks. Maybe it was used as source for a move.
+        if (i_block != nullptr)
+        {
+            DENSITY_TEST_ASSERT(m_data != nullptr); // this registry can't be used to remove blocks. Maybe it was used as source for a move.
 
-			if (m_data != nullptr) // avoid a crash, but
-			{
-				auto & data = *m_data;
-				std::lock_guard<std::mutex> lock(data.m_mutex);
+            if (m_data != nullptr) // avoid a crash, but
+            {
+                auto & data = *m_data;
+                std::lock_guard<std::mutex> lock(data.m_mutex);
 
-				auto it = data.m_allocations.find(i_block);
-				DENSITY_TEST_ASSERT(it != data.m_allocations.end());
-				DENSITY_TEST_ASSERT(it->second.m_category == i_category);
-				DENSITY_TEST_ASSERT(it->second.m_size == i_size);
-				DENSITY_TEST_ASSERT(it->second.m_alignment == i_alignment);
-				DENSITY_TEST_ASSERT(it->second.m_alignment_offset == i_alignment_offset);
-				data.m_allocations.erase(it);
-			}
-		}
+                auto it = data.m_allocations.find(i_block);
+                DENSITY_TEST_ASSERT(it != data.m_allocations.end());
+                DENSITY_TEST_ASSERT(it->second.m_category == i_category);
+                DENSITY_TEST_ASSERT(it->second.m_size == i_size);
+                DENSITY_TEST_ASSERT(it->second.m_alignment == i_alignment);
+                DENSITY_TEST_ASSERT(it->second.m_alignment_offset == i_alignment_offset);
+                data.m_allocations.erase(it);
+            }
+        }
     }
 
 } // namespace density_tests

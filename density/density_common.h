@@ -34,36 +34,36 @@ namespace density
         consistency_relaxed, /**< The order in which actions happens (or are observable) is not defined and
                                   may vary from one thread to another. A single thread may observe its own
                                   actions out of order. */
-        consistency_sequential, /**< A total ordering exists of all actions on a data structure. Given 
+        consistency_sequential, /**< A total ordering exists of all actions on a data structure. Given
                                     three actions A, B and C, if A happens before B, and B happens before
                                     C, the A happens before C. */
     };
 
     /** Specifies which guarantee an algorithm on a concurrent data struct provides about the progress and
-        the completion of the work. 
+        the completion of the work.
 
         Members are sorted so that lower values specifies weaker guarantee. Progress guarantees are cumulative:
         the guarantee G provides all the guarantees less than G.
-        
+
         Dead locks and priority inversion may happen only in blocking algorithms.
 
         See https://en.wikipedia.org/wiki/Non-blocking_algorithm. */
     enum progress_guarantee
     {
-        progress_blocking, /**< The calling thread may wait for other threads to finish their work. Blocking 
+        progress_blocking, /**< The calling thread may wait for other threads to finish their work. Blocking
                                 algorithms usually protects shared data with a mutex. */
-        progress_obstruction_free, /**< If all other threads are suspended, the calling thread is guaranteed 
+        progress_obstruction_free, /**< If all other threads are suspended, the calling thread is guaranteed
                                         to finish its work in a finite number of steps. */
         progress_lock_free, /**< In case of contention, in a finite number of steps at least one thread
                                  finishes the work. */
-        progress_wait_free /**<  The calling thread completes the work in a finite number of steps, 
+        progress_wait_free /**<  The calling thread completes the work in a finite number of steps,
                                  independently from the other threads. */
     };
 
     /** Specifies a set of features provided by the built-in type erasure system for callable objects */
     enum function_type_erasure
     {
-        function_standard_erasure, /**< Callable objects can be invoked-destroyed (i.e. consumed), and just 
+        function_standard_erasure, /**< Callable objects can be invoked-destroyed (i.e. consumed), and just
                                         destroyed (i.e. discarded). No copy or move is supported. */
         function_manual_clear /**< Callable objects only support invoke-destroy (i.e. consume). Destruction
                                     without invocation is not supported.*/
@@ -535,7 +535,7 @@ namespace density
     }
 
 
-    /*! 
+    /*!
 
     \page func_queue_bench Function queue benchmarks
 

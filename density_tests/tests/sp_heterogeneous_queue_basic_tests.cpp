@@ -1,4 +1,9 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #include "../test_framework/density_test_common.h"
 #include "../test_framework/test_objects.h"
 #include "../test_framework/test_allocators.h"
@@ -10,225 +15,225 @@
 
 namespace density_tests
 {
-	template < density::concurrency_cardinality PROD_CARDINALITY,
-		density::concurrency_cardinality CONSUMER_CARDINALITY>
-		    struct SpQueueBasicTests
-	{
-		template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
-			using SpHeterQueue = density::sp_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
+    template < density::concurrency_cardinality PROD_CARDINALITY,
+        density::concurrency_cardinality CONSUMER_CARDINALITY>
+            struct SpQueueBasicTests
+    {
+        template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
+            using SpHeterQueue = density::sp_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
-		static void spinlocking_heterogeneous_queue_lifetime_tests()
-		{
-			using density::void_allocator;
-			using density::runtime_type;
+        static void spinlocking_heterogeneous_queue_lifetime_tests()
+        {
+            using density::void_allocator;
+            using density::runtime_type;
 
-			{
-				void_allocator allocator;
-				SpHeterQueue<> queue(allocator); // copy construct allocator
-				queue.push(1);
-				queue.push(2);
+            {
+                void_allocator allocator;
+                SpHeterQueue<> queue(allocator); // copy construct allocator
+                queue.push(1);
+                queue.push(2);
 
-				auto other_queue(std::move(queue)); // move construct queue - the source becomes empty
-				DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
-			
-				// test swaps
-				swap(queue, other_queue);
-				DENSITY_TEST_ASSERT(!queue.empty() && other_queue.empty());
-				swap(queue, other_queue);
-				DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
-				auto cons = other_queue.try_start_consume();
-				DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 1);
-				cons.commit();
-				cons = other_queue.try_start_consume();
-				DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 2);
-				cons.commit();
-				DENSITY_TEST_ASSERT(other_queue.empty());
+                auto other_queue(std::move(queue)); // move construct queue - the source becomes empty
+                DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
 
-				// test allocator getters
-				move_only_void_allocator movable_alloc(5);
-				SpHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+                // test swaps
+                swap(queue, other_queue);
+                DENSITY_TEST_ASSERT(!queue.empty() && other_queue.empty());
+                swap(queue, other_queue);
+                DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
+                auto cons = other_queue.try_start_consume();
+                DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 1);
+                cons.commit();
+                cons = other_queue.try_start_consume();
+                DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 2);
+                cons.commit();
+                DENSITY_TEST_ASSERT(other_queue.empty());
 
-				auto allocator_copy = other_queue.get_allocator();
-				(void)allocator_copy;
+                // test allocator getters
+                move_only_void_allocator movable_alloc(5);
+                SpHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
 
-				move_only_queue.push(1);
-				move_only_queue.push(2);
+                auto allocator_copy = other_queue.get_allocator();
+                (void)allocator_copy;
 
-				move_only_queue.get_allocator_ref().dummy_func();
+                move_only_queue.push(1);
+                move_only_queue.push(2);
 
-				auto const & const_move_only_queue(move_only_queue);
-				const_move_only_queue.get_allocator_ref().const_dummy_func();
-			}
-		}
+                move_only_queue.get_allocator_ref().dummy_func();
 
-		/** Basic tests SpHeterQueue<void, ...> with a non-polymorphic base */
-		template <typename QUEUE>
-			static void spinlocking_heterogeneous_queue_basic_void_tests()
-		{
-			static_assert(std::is_void<typename QUEUE::common_type>::value, "");
+                auto const & const_move_only_queue(move_only_queue);
+                const_move_only_queue.get_allocator_ref().const_dummy_func();
+            }
+        }
 
-			{
-				QUEUE queue;
-				DENSITY_TEST_ASSERT(queue.empty());
-			}
+        /** Basic tests SpHeterQueue<void, ...> with a non-polymorphic base */
+        template <typename QUEUE>
+            static void spinlocking_heterogeneous_queue_basic_void_tests()
+        {
+            static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
-			{
-				QUEUE queue;
-				queue.clear();
+            {
+                QUEUE queue;
+                DENSITY_TEST_ASSERT(queue.empty());
+            }
 
-				queue.push(1);
-				DENSITY_TEST_ASSERT(!queue.empty());
+            {
+                QUEUE queue;
+                queue.clear();
 
-				queue.clear();
-				DENSITY_TEST_ASSERT(queue.empty());
-				queue.clear();
-			}
-		}
+                queue.push(1);
+                DENSITY_TEST_ASSERT(!queue.empty());
 
-		template<typename ELEMENT, typename QUEUE>
-			static void dynamic_pushes(QUEUE & i_queue)
-		{
-			auto const type = QUEUE::runtime_type::template make<ELEMENT>();
-		
-			i_queue.dyn_push(type);
-		
-			ELEMENT copy_source;
-			i_queue.dyn_push_copy(type, &copy_source);
+                queue.clear();
+                DENSITY_TEST_ASSERT(queue.empty());
+                queue.clear();
+            }
+        }
 
-			ELEMENT move_source;
-			i_queue.dyn_push_move(type, &move_source);
-		}
+        template<typename ELEMENT, typename QUEUE>
+            static void dynamic_pushes(QUEUE & i_queue)
+        {
+            auto const type = QUEUE::runtime_type::template make<ELEMENT>();
 
-		/** Test SpHeterQueue with a non-polymorphic base */
-		static void spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
-		{
-			using namespace density::type_features;
-			using density::runtime_type;
-			using density::void_allocator;
+            i_queue.dyn_push(type);
 
-			using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
-				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			SpHeterQueue<NonPolymorphicBase, RunTimeType> queue;
+            ELEMENT copy_source;
+            i_queue.dyn_push_copy(type, &copy_source);
 
-			queue.push(NonPolymorphicBase());
-			queue.template emplace<SingleDerivedNonPoly>();
+            ELEMENT move_source;
+            i_queue.dyn_push_move(type, &move_source);
+        }
 
-			dynamic_pushes<NonPolymorphicBase>(queue);
-			dynamic_pushes<SingleDerivedNonPoly>(queue);
+        /** Test SpHeterQueue with a non-polymorphic base */
+        static void spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
+        {
+            using namespace density::type_features;
+            using density::runtime_type;
+            using density::void_allocator;
 
-			for (;;)
-			{
-				auto consume = queue.try_start_consume();
-				if (!consume)
-					break;
+            using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
+                default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+            SpHeterQueue<NonPolymorphicBase, RunTimeType> queue;
 
-				if (consume.complete_type().template is<NonPolymorphicBase>())
-				{
-					consume.template element<NonPolymorphicBase>().check();
-				}
-				else
-				{
-					DENSITY_TEST_ASSERT(consume.complete_type().template is<SingleDerivedNonPoly>());
-					consume.template element<SingleDerivedNonPoly>().check();
-				}
-				consume.commit();
-			}
+            queue.push(NonPolymorphicBase());
+            queue.template emplace<SingleDerivedNonPoly>();
 
-			DENSITY_TEST_ASSERT(queue.empty());
-		}
+            dynamic_pushes<NonPolymorphicBase>(queue);
+            dynamic_pushes<SingleDerivedNonPoly>(queue);
 
-		/** Test SpHeterQueue with a polymorphic base */
-		static void spinlocking_heterogeneous_queue_basic_polymorphic_base_tests()
-		{
-			using namespace density::type_features;
-			using density::runtime_type;
-			using density::void_allocator;
+            for (;;)
+            {
+                auto consume = queue.try_start_consume();
+                if (!consume)
+                    break;
 
-			using RunTimeType = runtime_type<PolymorphicBase, feature_list<
-				default_construct, move_construct, copy_construct, destroy, size, alignment>>;
-			SpHeterQueue<PolymorphicBase, RunTimeType> queue;
+                if (consume.complete_type().template is<NonPolymorphicBase>())
+                {
+                    consume.template element<NonPolymorphicBase>().check();
+                }
+                else
+                {
+                    DENSITY_TEST_ASSERT(consume.complete_type().template is<SingleDerivedNonPoly>());
+                    consume.template element<SingleDerivedNonPoly>().check();
+                }
+                consume.commit();
+            }
 
-			queue.push(PolymorphicBase());
-			queue.template emplace<SingleDerived>();
-			queue.template emplace<Derived1>();
-			queue.template emplace<Derived2>();
-			queue.template emplace<MultipleDerived>();
+            DENSITY_TEST_ASSERT(queue.empty());
+        }
 
-			dynamic_pushes<PolymorphicBase>(queue);
-			dynamic_pushes<SingleDerived>(queue);
-			dynamic_pushes<Derived1>(queue);
-			dynamic_pushes<Derived2>(queue);
-			dynamic_pushes<MultipleDerived>(queue);
+        /** Test SpHeterQueue with a polymorphic base */
+        static void spinlocking_heterogeneous_queue_basic_polymorphic_base_tests()
+        {
+            using namespace density::type_features;
+            using density::runtime_type;
+            using density::void_allocator;
 
-			int const put_count = 5 * 4;
+            using RunTimeType = runtime_type<PolymorphicBase, feature_list<
+                default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+            SpHeterQueue<PolymorphicBase, RunTimeType> queue;
 
-			int consumed = 0;
-			for (;;)
-			{
-				auto consume = queue.try_start_consume();
-				if (!consume)
-					break;
-				consumed++;
-				if (consume.complete_type().template is<PolymorphicBase>())
-				{
-					DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == PolymorphicBase::s_class_id);
-				}
-				else if (consume.complete_type().template is<SingleDerived>())
-				{
-					DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == SingleDerived::s_class_id);
-				}
-				else if (consume.complete_type().template is<Derived1>())
-				{
-					DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived1::s_class_id);
-				}
-				else if (consume.complete_type().template is<Derived2>())
-				{
-					DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived2::s_class_id);
-				}
-				else if (consume.complete_type().template is<MultipleDerived>())
-				{
-					DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == MultipleDerived::s_class_id);
-				}
-				consume.commit();
-			}
+            queue.push(PolymorphicBase());
+            queue.template emplace<SingleDerived>();
+            queue.template emplace<Derived1>();
+            queue.template emplace<Derived2>();
+            queue.template emplace<MultipleDerived>();
 
-			DENSITY_TEST_ASSERT(consumed == put_count);
-			DENSITY_TEST_ASSERT(queue.empty());
-		}
+            dynamic_pushes<PolymorphicBase>(queue);
+            dynamic_pushes<SingleDerived>(queue);
+            dynamic_pushes<Derived1>(queue);
+            dynamic_pushes<Derived2>(queue);
+            dynamic_pushes<MultipleDerived>(queue);
 
-		static void tests(std::ostream & /*i_ostream*/)
-		{			
-			using density::runtime_type;
+            int const put_count = 5 * 4;
 
-			spinlocking_heterogeneous_queue_lifetime_tests();
+            int consumed = 0;
+            for (;;)
+            {
+                auto consume = queue.try_start_consume();
+                if (!consume)
+                    break;
+                consumed++;
+                if (consume.complete_type().template is<PolymorphicBase>())
+                {
+                    DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == PolymorphicBase::s_class_id);
+                }
+                else if (consume.complete_type().template is<SingleDerived>())
+                {
+                    DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == SingleDerived::s_class_id);
+                }
+                else if (consume.complete_type().template is<Derived1>())
+                {
+                    DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived1::s_class_id);
+                }
+                else if (consume.complete_type().template is<Derived2>())
+                {
+                    DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived2::s_class_id);
+                }
+                else if (consume.complete_type().template is<MultipleDerived>())
+                {
+                    DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == MultipleDerived::s_class_id);
+                }
+                consume.commit();
+            }
 
-			spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests();
+            DENSITY_TEST_ASSERT(consumed == put_count);
+            DENSITY_TEST_ASSERT(queue.empty());
+        }
 
-			spinlocking_heterogeneous_queue_basic_polymorphic_base_tests();
-		
-			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<>>();
+        static void tests(std::ostream & /*i_ostream*/)
+        {
+            using density::runtime_type;
 
-			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+            spinlocking_heterogeneous_queue_lifetime_tests();
 
-			spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
-		}
+            spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests();
 
-	}; // SpQueueBasicTests
+            spinlocking_heterogeneous_queue_basic_polymorphic_base_tests();
+
+            spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<>>();
+
+            spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+
+            spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+        }
+
+    }; // SpQueueBasicTests
 
 
 
-	/** Basic tests for sp_heter_queue<...> */
-	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
-	{
-		PrintScopeDuration dur(i_ostream, "spin-locking heterogeneous queue basic tests");
+    /** Basic tests for sp_heter_queue<...> */
+    void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
+    {
+        PrintScopeDuration dur(i_ostream, "spin-locking heterogeneous queue basic tests");
 
-		constexpr auto mult = density::concurrency_multiple;
-		constexpr auto single = density::concurrency_single;
+        constexpr auto mult = density::concurrency_multiple;
+        constexpr auto single = density::concurrency_single;
 
-		SpQueueBasicTests<		mult,		mult	    >::tests(i_ostream);
-		SpQueueBasicTests<		single,		mult	    >::tests(i_ostream);
-		SpQueueBasicTests<		mult,		single	    >::tests(i_ostream);
-		SpQueueBasicTests<		single,		single	    >::tests(i_ostream);
-	}
+        SpQueueBasicTests<        mult,        mult        >::tests(i_ostream);
+        SpQueueBasicTests<        single,        mult        >::tests(i_ostream);
+        SpQueueBasicTests<        mult,        single        >::tests(i_ostream);
+        SpQueueBasicTests<        single,        single        >::tests(i_ostream);
+    }
 }

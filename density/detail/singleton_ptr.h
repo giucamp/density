@@ -21,14 +21,14 @@ namespace density
             The access to the singleton (operators * and ->, function get) is basically a no-op, as it returns the address
             of the static storage: no initialization guard is necessary. All the cost of handling the lifetime of the singleton
             is paid in the constructor and destructor. \n
-            Internally SingletonPtr declares a global instance of itself, to guarantee that the singleton is constructed during 
+            Internally SingletonPtr declares a global instance of itself, to guarantee that the singleton is constructed during
             the initialization of global objects, and destroyed during the destruction of global objects. Anyway instances of
             SingletonPtr can be safely created and destroyed during the construction or destruction of globals.
             Anyway, in case of global object with asymmetric lifetimes, the singleton may be created and destroyed more than once,
             with at most one instance existing in any moment. In case of instances constructed and destroyed concurrently during
             the construction or destruction of global objects, a thread may wait in a busy loop while another thread is constructing
             or destroying the singleton.\n
-            
+
             The singleton class should be uncopyable, unmovable, and should have private constructor and destructor. SingletonPtr<T>
             should be declared friend of t. */
         template <typename SINGLETON>
@@ -55,7 +55,7 @@ namespace density
             {
                 return *this;
             }
-            
+
             /** Destroys the SingletonPt, possibly destroying the singleton. */
             ~SingletonPtr()
             {
@@ -168,7 +168,7 @@ namespace density
 
         template <typename SINGLETON>
             typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type SingletonPtr<SINGLETON>::s_singleton_storage;
-        
+
         template <typename SINGLETON>
             uintptr_t SingletonPtr<SINGLETON>::s_ref_count;
 

@@ -60,8 +60,8 @@ namespace density
 
             /* Pushes a stack of (possibly still pinned) pages on this stack. This function is wait-free and may fail in case of contention.
                 @param i_stack stack of page to prepend to this stack
-                @return whether the push was successful                 
-                
+                @return whether the push was successful
+
                 \pre The behavior is undefined if either:
                     - the argument is empty
                     - any page in the argument is already present in any stack */

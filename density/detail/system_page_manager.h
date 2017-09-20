@@ -114,7 +114,7 @@ namespace density
             uintptr_t try_reserve_region_memory(progress_guarantee const i_progress_guarantee, uintptr_t const i_size) noexcept
             {
                 Region * new_region = nullptr;
-                
+
                 auto curr_region = m_curr_region.load(std::memory_order_acquire);
 
                 while (i_size > curr_region->m_cumulative_available_memory)
@@ -154,8 +154,8 @@ namespace density
                 uintptr_t m_cumulative_available_memory{ 0 };
             };
 
-            /** Returns the region after a given one, possibly creating it.            
-                @param i_progress_guarantee progress guarantee. If it is progress_blocking, a 
+            /** Returns the region after a given one, possibly creating it.
+                @param i_progress_guarantee progress guarantee. If it is progress_blocking, a
                     failure indicates an out of memory.
                 @param i_curr_region region whose next is requested
                 @param io_new_region contains a new region provided by the caller, or is nullptr. After the call it

@@ -99,7 +99,7 @@ namespace density
         </td></tr>
 
         <tr><td>Non-static noexcept member function: @code void * try_allocate_page(progress_guarantee i_progress_guarantee); @endcode </td></tr>
-            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the 
+            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the
             page is aligned at least to \em page_alignment. The return value is a pointer to the first byte of the memory page. The content of the
             page is undefined. Returns null on failure.
         </td></tr>
@@ -112,7 +112,7 @@ namespace density
         </td></tr>
 
         <tr><td>Non-static noexcept member function: @code void * try_allocate_page_zeroed(progress_guarantee i_progress_guarantee); @endcode </td></tr>
-            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the 
+            <td>Tries to allocate a memory page large at least \em page_size bytes with the specified progression guarantee. The first byte of the
             page is aligned at least to \em page_alignment. The return value is a pointer to the first byte of the memory page. The content of the
             page is zeroed. Returns null on failure.
         </td></tr>
@@ -174,16 +174,16 @@ namespace density
 
         /** Trivial default constructor */
         basic_void_allocator() noexcept = default;
-        
+
         /** Trivial copy constructor */
         basic_void_allocator(const basic_void_allocator&) noexcept = default;
-        
+
         /** Trivial move constructor */
         basic_void_allocator(basic_void_allocator&&) noexcept = default;
-        
+
         /** Trivial copy assignment */
         basic_void_allocator & operator = (const basic_void_allocator&) noexcept = default;
-        
+
         /** Trivial move assignment */
         basic_void_allocator & operator = (basic_void_allocator&&) noexcept = default;
 
@@ -353,9 +353,9 @@ namespace density
                 allocated from the system, always greater or equal to i_size. This parameter can be null, in which case
                 the actual reserved size is not returned.
 
-            The internal page allocator requests memory regions from the system and uses them to allocate pages with a 
+            The internal page allocator requests memory regions from the system and uses them to allocate pages with a
             lock-free algorithm. Regions are returned to the system only during the destruction of global objects. \n
-            This function ensures that the sum of the capacity available in the all the regions is at least the specified 
+            This function ensures that the sum of the capacity available in the all the regions is at least the specified
             size. If a new region is necessary in order to reach the specified capacity, but the allocation from the system
             fails, this function throw a std::bad_alloc. \n
             Note: some of this space may be already allocated as pages.
@@ -379,7 +379,7 @@ namespace density
                 the actual reserved size is not returned
             @return whether the requested size is less than or equal to the actual reserved space
 
-            The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions 
+            The internal page allocator requests memory regions from the system and uses them to allocate pages. Regions
             are returned to the system only during the destruction of global objects. \n
             This function verifies that the sum of memory available in the regions is at least the specified size.
             Note: some of this space may be already allocated as pages.
@@ -399,7 +399,7 @@ namespace density
             @param i_page pointer to a byte within the page to deallocate. Can't be nullptr.
 
             If the page has been already deallocated no undefined behavior occurs: the caller should detect this case
-            and unpin the page immediately. Using a deallocated-then-pinned page in any other way other than unpinning 
+            and unpin the page immediately. Using a deallocated-then-pinned page in any other way other than unpinning
             (including accessing its content) causes undefined behavior. \n
             If the page is still allocated then the pin ensures that, while the page is pinned:
                 - the content of the page is not altered by the allocator
@@ -422,11 +422,11 @@ namespace density
         }
 
         /** Removes a pin from the page, decrementing the internal ref-count.
-        
+
             \pre The behavior is undefined if either:
                 - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
-                - the page was not previously pinned by this thread        
-        
+                - the page was not previously pinned by this thread
+
             \n <b>Progress guarantee</b>: lock-free
             \n <b>Throws</b>: nothing. */
         void unpin_page(void * i_address) noexcept
@@ -435,10 +435,10 @@ namespace density
         }
 
         /** Returns the number of times the specified page has been pinned by any thread. This function is useful only for diagnostic or debugging.
-        
+
             \pre The behavior is undefined if either:
-                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed 
-        
+                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
+
             \n <b>Progress guarantee</b>: wait-free
             \n <b>Throws</b>: nothing. */
         uintptr_t get_pin_count(const void * i_address) noexcept

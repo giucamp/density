@@ -1,3 +1,9 @@
+
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
 #pragma once
 #include "../test_framework/density_test_common.h"
 #include "../test_framework/test_objects.h"
@@ -8,155 +14,155 @@
 
 namespace density_tests
 {
-	struct NonPolymorphicBase
-	{
-		int m_int = 35;
+    struct NonPolymorphicBase
+    {
+        int m_int = 35;
 
-		InstanceCounted m_inst_counted_1;
-		
-		void check()
-		{
-			DENSITY_TEST_ASSERT(m_int == 35);
-		}
+        InstanceCounted m_inst_counted_1;
 
-		~NonPolymorphicBase()
-		{
-			check();
-		}
-	};
+        void check()
+        {
+            DENSITY_TEST_ASSERT(m_int == 35);
+        }
 
-	struct SingleDerivedNonPoly : public NonPolymorphicBase
-	{
-		std::string m_str1 = "Hello ";
-		std::string m_str2 = "world!!";
+        ~NonPolymorphicBase()
+        {
+            check();
+        }
+    };
 
-		InstanceCounted m_inst_counted_2;
+    struct SingleDerivedNonPoly : public NonPolymorphicBase
+    {
+        std::string m_str1 = "Hello ";
+        std::string m_str2 = "world!!";
 
-		void check()
-		{
-			NonPolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_str1 + m_str2 == "Hello world!!");
-		}
+        InstanceCounted m_inst_counted_2;
 
-		~SingleDerivedNonPoly()
-		{
-			void check();
-		}
-	};
+        void check()
+        {
+            NonPolymorphicBase::check();
+            DENSITY_TEST_ASSERT(m_str1 + m_str2 == "Hello world!!");
+        }
 
-	struct PolymorphicBase : public NonPolymorphicBase
-	{
-		constexpr static int s_class_id = 10;
+        ~SingleDerivedNonPoly()
+        {
+            void check();
+        }
+    };
 
-		virtual int class_id() const { return s_class_id; }
+    struct PolymorphicBase : public NonPolymorphicBase
+    {
+        constexpr static int s_class_id = 10;
 
-		double m_double = 22.;
+        virtual int class_id() const { return s_class_id; }
 
-		InstanceCounted m_inst_counted_3;
+        double m_double = 22.;
 
-		void check()
-		{
-			NonPolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_double == 22.);
-		}
-		
-		virtual ~PolymorphicBase()
-		{
-			check();
-		}
-	};
+        InstanceCounted m_inst_counted_3;
 
-	struct SingleDerived : public PolymorphicBase
-	{
-		constexpr static int s_class_id = 15;
+        void check()
+        {
+            NonPolymorphicBase::check();
+            DENSITY_TEST_ASSERT(m_double == 22.);
+        }
 
-		virtual int class_id() const { return s_class_id; }
+        virtual ~PolymorphicBase()
+        {
+            check();
+        }
+    };
 
-		std::string m_str = "Hi!!";
+    struct SingleDerived : public PolymorphicBase
+    {
+        constexpr static int s_class_id = 15;
 
-		InstanceCounted m_inst_counted_4;
+        virtual int class_id() const { return s_class_id; }
 
-		void check()
-		{
-			PolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_str == "Hi!!");
-		}
+        std::string m_str = "Hi!!";
 
-		~SingleDerived()
-		{
-			check();
-		}
-	};
+        InstanceCounted m_inst_counted_4;
+
+        void check()
+        {
+            PolymorphicBase::check();
+            DENSITY_TEST_ASSERT(m_str == "Hi!!");
+        }
+
+        ~SingleDerived()
+        {
+            check();
+        }
+    };
 
 
-	struct Derived1 : public virtual PolymorphicBase
-	{
-		constexpr static int s_class_id = 20;
+    struct Derived1 : public virtual PolymorphicBase
+    {
+        constexpr static int s_class_id = 20;
 
-		virtual int class_id() const { return s_class_id; }
+        virtual int class_id() const { return s_class_id; }
 
-		int64_t m_int64 = 999;
+        int64_t m_int64 = 999;
 
-		InstanceCounted m_inst_counted_5;
+        InstanceCounted m_inst_counted_5;
 
-		void check()
-		{
-			PolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_int64 == 999);
-		}
+        void check()
+        {
+            PolymorphicBase::check();
+            DENSITY_TEST_ASSERT(m_int64 == 999);
+        }
 
-		~Derived1()
-		{
-			check();
-		}
-	};
+        ~Derived1()
+        {
+            check();
+        }
+    };
 
-	struct Derived2 : public virtual PolymorphicBase
-	{
-		constexpr static int s_class_id = 25;
+    struct Derived2 : public virtual PolymorphicBase
+    {
+        constexpr static int s_class_id = 25;
 
-		virtual int class_id() const { return s_class_id; }
+        virtual int class_id() const { return s_class_id; }
 
-		int8_t m_int8 = 22;
+        int8_t m_int8 = 22;
 
-		InstanceCounted m_inst_counted_6;
+        InstanceCounted m_inst_counted_6;
 
-		void check()
-		{
-			PolymorphicBase::check();
-			DENSITY_TEST_ASSERT(m_int8 == 22);
-		}
+        void check()
+        {
+            PolymorphicBase::check();
+            DENSITY_TEST_ASSERT(m_int8 == 22);
+        }
 
-		~Derived2()
-		{
-			check();
-		}
-	};
+        ~Derived2()
+        {
+            check();
+        }
+    };
 
-	struct MultipleDerived : public Derived1, public Derived2
-	{
-		constexpr static int s_class_id = 30;
+    struct MultipleDerived : public Derived1, public Derived2
+    {
+        constexpr static int s_class_id = 30;
 
-		virtual int class_id() const { return s_class_id; }
+        virtual int class_id() const { return s_class_id; }
 
-		using Complex = std::complex<double>;
+        using Complex = std::complex<double>;
 
-		Complex m_complex{ 2., -4. };
+        Complex m_complex{ 2., -4. };
 
-		InstanceCounted m_inst_counted_7;
+        InstanceCounted m_inst_counted_7;
 
-		void check()
-		{
-			Derived1::check();
-			Derived2::check();
-			DENSITY_TEST_ASSERT((m_complex == Complex{ 2., -4. }));
-		}
+        void check()
+        {
+            Derived1::check();
+            Derived2::check();
+            DENSITY_TEST_ASSERT((m_complex == Complex{ 2., -4. }));
+        }
 
-		~MultipleDerived()
-		{
-			check();
-		}
-	};
-	
-	
+        ~MultipleDerived()
+        {
+            check();
+        }
+    };
+
+
 } // namespace density_tests

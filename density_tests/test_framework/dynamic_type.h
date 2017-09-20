@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -20,7 +20,7 @@ namespace density_tests
 
         static DynamicType make_random(EasyRandom & i_random)
         {
-			auto const id = i_random.get_int<size_t>();
+            auto const id = i_random.get_int<size_t>();
             auto const alignment = size_t(1) << i_random.get_int<size_t>(0, 16);
             auto const size = alignment * i_random.get_int<size_t>(1, 32);
             return DynamicType(id, size, alignment);
@@ -30,7 +30,7 @@ namespace density_tests
             : m_id(i_id), m_size(i_size), m_alignment(i_alignment)
         {
             DENSITY_TEST_ASSERT(i_alignment > 0 && density::is_power_of_2(i_alignment) &&
-				i_size >= i_alignment && (i_size % i_alignment) == 0);
+                i_size >= i_alignment && (i_size % i_alignment) == 0);
         }
 
         size_t size() const noexcept { return m_size; }

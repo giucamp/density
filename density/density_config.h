@@ -58,16 +58,16 @@
 
 namespace density
 {
-    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines.  It must be a power of 2. 
-    
-        This is a configuration variable, intended to be customized by the user of the library. The default value is 64. 
-        
+    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines.  It must be a power of 2.
+
+        This is a configuration variable, intended to be customized by the user of the library. The default value is 64.
+
         If a C++17 compiler is available, this constant may be defined as std::hardware_destructive_interference_size. */
     constexpr size_t concurrent_alignment = 64;
 
-    /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller. 
-        This constant must be a power of 2. 
-        
+    /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller.
+        This constant must be a power of 2.
+
         This is a configuration variable, intended to be customized by the user of the library. The default value is 64. */
     constexpr size_t default_page_capacity = 1024 * 64;
 

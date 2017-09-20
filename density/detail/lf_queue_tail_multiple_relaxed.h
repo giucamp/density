@@ -168,7 +168,7 @@ namespace density
                     return try_inplace_allocate_impl<LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
                 }
             }
-            
+
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Block try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
@@ -286,7 +286,7 @@ namespace density
                 Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
-                
+
                 DENSITY_ASSERT_INTERNAL((i_control_bits & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0);
                 DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
 
@@ -604,7 +604,7 @@ namespace density
                     return nullptr;
                 }
 
-                /* note: in case of failure of the following CAS we do not give in even if we are wait-free, 
+                /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
                     because this is a oneshot operation, so we can't possibly stick in a loop. */
                 ControlBlock * initial_page = nullptr;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))

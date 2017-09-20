@@ -47,7 +47,7 @@ namespace density
         }
     };
 
-    /** Concurrent heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version 
+    /** Concurrent heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version
         of heter_queue that uses a mix of lock free algorithms and spin locking.
         This class is very similar to lf_heter_queue, with the difference that if multiple producers are supported, they
         use a spin-locking mutex to synchronize the write to the tail pointer.
@@ -61,23 +61,23 @@ namespace density
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
-        @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock. 
+        @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock.
             The default is density::default_busy_wait, that calls std::this_thread::yield.
-            
+
 
         \n <b>Thread safeness</b>: A thread doing put operations and another thread doing consumes don't need to be synchronized.
                 If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.
                 If CONSUMER_CARDINALITY is concurrency_multiple, multiple threads are allowed to consume without any synchronization.
         \n <b>Exception safeness</b>: Any function of sp_heter_queue is noexcept or provides the strong exception guarantee.
 
-        The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose 
+        The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose
         size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
         can't be lock-free.
 
         This class template provides all the put functions provided by heter_queue, and furthermore it adds the try_ variants, that:
-        - Don't throw in case of failure allocating memory. Anyway they pass through any exception thrown by the constructor of the 
+        - Don't throw in case of failure allocating memory. Anyway they pass through any exception thrown by the constructor of the
             element and the constructor of the runtime type.
-        - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is 
+        - Allow to specify a progress guarantee to be respected by the overall operation. For example, if the lock-free guarantee is
             requested, but it requires a memory operation that the allocator is not able to complete in lock-freedom, the put fails.
             In the current implementation, wait-free put operation may fail even in isolation, because page pinning is lock-free but not wait-free.
 
@@ -582,10 +582,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -603,7 +603,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: nothing.
-                
+
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate example 1*/
             void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
@@ -619,10 +619,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -674,10 +674,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1434,10 +1434,10 @@ namespace density
 
         /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
             it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1470,10 +1470,10 @@ namespace density
 
         /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
             a perfect forwarded parameter pack.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1510,10 +1510,10 @@ namespace density
         }
 
         /** Tries to add at the end of the queue an element of a type known at runtime, default-constructing it.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1543,10 +1543,10 @@ namespace density
         }
 
         /** Tries to add at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1578,10 +1578,10 @@ namespace density
         }
 
         /** Tries add at the end of the queue an element of a type known at runtime, move-constructing it from the source.
-            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate 
+            \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1613,12 +1613,12 @@ namespace density
             return true;
         }
 
-        /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it 
+        /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing it
             from the source.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1660,7 +1660,7 @@ namespace density
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1758,7 +1758,7 @@ namespace density
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -1816,10 +1816,10 @@ namespace density
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
-            
+
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
@@ -1875,10 +1875,10 @@ namespace density
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                the blocking progress guarantee indicates an out of memory, but no exception is thrown.
             - there is a contention between threads, and the wait-free progress guarantee is requested
             - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
-            
+
             \n This function allocates space for and constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
@@ -2168,10 +2168,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -2189,7 +2189,7 @@ namespace density
                 <b>Complexity</b>: Unspecified.
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: nothing.
-                
+
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate example 1*/
             void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
@@ -2205,10 +2205,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -2260,10 +2260,10 @@ namespace density
                 \n The block doesn't need to be deallocated, and is guaranteed to be valid until the associated element is destroyed. The initial
                     content of the block is undefined.
 
-                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate 
+                \n If the operation can't be completed with the specified progress guarantee, this function returns nullptr to indicate
                 a failure, and has no observable effects. This function fails if:
                 - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
-                    the blocking progress guarantee indicates an out of memory, but no exception is thrown. 
+                    the blocking progress guarantee indicates an out of memory, but no exception is thrown.
                 - there is a contention between threads, and the wait-free progress guarantee is requested
                 - the algorithm would perform some non wait-free operations (like page pinning), and the wait-free progress guarantee is requested
 
@@ -2664,7 +2664,7 @@ namespace density
         };
 
         /** Same to sp_heter_queue::push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_push example 1 */
@@ -2675,7 +2675,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_emplace example 1 */
@@ -2686,7 +2686,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push example 1 */
@@ -2696,7 +2696,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_copy example 1 */
@@ -2706,7 +2706,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_move example 1 */
@@ -2716,7 +2716,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::start_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_push example 1 */
@@ -2727,7 +2727,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_emplace example 1 */
@@ -2763,7 +2763,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push example 1 */
@@ -2796,7 +2796,7 @@ namespace density
 
 
         /** Same to sp_heter_queue::start_dyn_push_copy, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_copy example 1 */
@@ -2828,7 +2828,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
-            the transaction gets destroyed, the queue is in a valid state. 
+            the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_move example 1 */
@@ -2860,7 +2860,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_push example 1 */
@@ -2872,7 +2872,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
@@ -2890,7 +2890,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push example 1 */
@@ -2904,7 +2904,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_copy example 1 */
@@ -2918,7 +2918,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_move example 1 */
@@ -2932,7 +2932,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_start_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_push example 1 */
@@ -2944,7 +2944,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_start_emplace, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
@@ -3015,7 +3015,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push example 1 */
@@ -3051,7 +3051,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_copy example 1 */
@@ -3086,7 +3086,7 @@ namespace density
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
-            valid state. 
+            valid state.
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_move example 1 */

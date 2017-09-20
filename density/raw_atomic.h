@@ -282,9 +282,9 @@ namespace density
             }
 
         #endif
-    
+
     #elif defined(__GNUG__) // gcc and clang
-        
+
         inline uintptr_t raw_atomic_load(uintptr_t const * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
@@ -300,7 +300,7 @@ namespace density
                 default:
                     DENSITY_ASSERT(false);
                     return 0;
-            }            
+            }
         }
 
         inline void raw_atomic_store(uintptr_t * i_atomic, uintptr_t i_value, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
@@ -327,7 +327,7 @@ namespace density
             uintptr_t * i_expected, uintptr_t i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
-            
+
             switch(i_success)
             {
                 case std::memory_order_relaxed:
@@ -339,9 +339,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
-                }                
-                    
+                    }
+                }
+
                 case std::memory_order_consume:
                 {
                     switch(i_failure)
@@ -355,9 +355,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
+                    }
                 }
-                    
+
                 case std::memory_order_acquire:
                 {
                     switch(i_failure)
@@ -371,9 +371,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
+                    }
                 }
-                    
+
                 case std::memory_order_release:
                 {
                     switch(i_failure)
@@ -387,9 +387,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
+                    }
                 }
-                    
+
                 case std::memory_order_acq_rel:
                 {
                     switch(i_failure)
@@ -403,9 +403,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
+                    }
                 }
-                    
+
                 case std::memory_order_seq_cst:
                 {
                     switch(i_failure)
@@ -421,9 +421,9 @@ namespace density
                         default:
                             DENSITY_ASSERT(false);
                             return false;
-                    }                
+                    }
                 }
-                
+
                 default:
                     DENSITY_ASSERT(false);
                     return false;
