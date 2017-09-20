@@ -189,7 +189,7 @@ namespace density_tests
 	/** Basic tests for conc_heter_queue<...> */
 	void conc_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
-		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
+		PrintScopeDuration dur(i_ostream, "concurrent heterogeneous queue basic tests");
 
 		conc_heterogeneous_queue_lifetime_tests();
 

@@ -25,6 +25,8 @@ density_tests/vs2015/density_test.VC.db
 density_tests/code_blocks/.objs/
 density_tests/code_lite/Debug
 density_tests/code_lite/Release
+density_tests/code_lite/DebugClang
+density_tests/code_lite/ReleaseClang
 density_tests/code_lite/.codelite
 doc/doxygen/doxygen_out.txt
 

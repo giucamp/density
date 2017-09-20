@@ -221,7 +221,7 @@ namespace density_tests
 	/** Basic tests for sp_heter_queue<...> */
 	void spinlocking_heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
-		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
+		PrintScopeDuration dur(i_ostream, "spin-locking heterogeneous queue basic tests");
 
 		constexpr auto mult = density::concurrency_multiple;
 		constexpr auto single = density::concurrency_single;

@@ -215,7 +215,7 @@ namespace density_tests
 	/** Basic tests for heter_queue<...> */
 	void heterogeneous_queue_basic_tests(std::ostream & i_ostream)
 	{
-		PrintScopeDuration(i_ostream, "heterogeneous queue basic tests");
+		PrintScopeDuration dur(i_ostream, "heterogeneous queue basic tests");
 
 		heterogeneous_queue_lifetime_tests();
 

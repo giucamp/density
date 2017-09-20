@@ -1177,7 +1177,7 @@ void heterogeneous_queue_samples_1()
 
 void heterogeneous_queue_samples(std::ostream & i_ostream)
 {
-	PrintScopeDuration(i_ostream, "heterogeneous queue samples");
+	PrintScopeDuration dur(i_ostream, "heterogeneous queue samples");
 
 	using namespace density;
 	using namespace type_features;

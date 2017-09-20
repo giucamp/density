@@ -2247,7 +2247,7 @@ namespace density_tests
 
 	void lf_heter_queue_samples(std::ostream & i_ostream)
 	{
-		PrintScopeDuration(i_ostream, "heterogeneous queue samples");
+		PrintScopeDuration dur(i_ostream, "lock-free heterogeneous queue samples");
 		
 		constexpr auto mult = density::concurrency_multiple;
 		constexpr auto single = density::concurrency_single;

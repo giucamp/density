@@ -26,7 +26,7 @@ namespace density_tests
     {
         static void func_queue_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration(i_ostream, "function queue put samples");
+	        PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
 
 	        using namespace density;
 
@@ -185,7 +185,7 @@ namespace density_tests
 
         static void func_queue_try_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration(i_ostream, "function queue put samples");
+	        PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
 
 	        using namespace density;
 
@@ -297,7 +297,7 @@ namespace density_tests
 
         static void func_queue_reentrant_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration(i_ostream, "function queue reentrant put samples");
+	        PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
 
 	        using namespace density;
 
@@ -421,7 +421,7 @@ namespace density_tests
 
         static void func_queue_try_reentrant_put_samples(std::ostream & i_ostream)
         {
-	        PrintScopeDuration(i_ostream, "function queue reentrant put samples");
+	        PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
 
 	        using namespace density;
 

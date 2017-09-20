@@ -2,21 +2,21 @@
 ## Auto Generated makefile by CodeLite IDE
 ## any manual changes will be erased      
 ##
-## Release
+## ReleaseClang
 ProjectName            :=density_tests
-ConfigurationName      :=Release
+ConfigurationName      :=ReleaseClang
 WorkspacePath          :=/home/giuseppe/Projects/density/density_tests/code_lite
 ProjectPath            :=/home/giuseppe/Projects/density/density_tests/code_lite
-IntermediateDirectory  :=./Release
+IntermediateDirectory  :=./ReleaseClang
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Giuseppe
-Date                   :=14/09/17
+Date                   :=20/09/17
 CodeLitePath           :=/home/giuseppe/.codelite
-LinkerName             :=/usr/bin/g++
-SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
+LinkerName             :=/home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/clang++
+SharedObjectLinkerName :=/home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/clang++ -shared -fPIC
 ObjectSuffix           :=.o
 DependSuffix           :=.o.d
 PreprocessSuffix       :=.i
@@ -47,13 +47,13 @@ LibPath                := $(LibraryPathSwitch).
 ## Common variables
 ## AR, CXX, CC, AS, CXXFLAGS and CFLAGS can be overriden using an environment variables
 ##
-AR       := /usr/bin/ar rcu
-CXX      := /usr/bin/g++
-CC       := /usr/bin/gcc
+AR       := /home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/llvm-ar rcu
+CXX      := /home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/clang++
+CC       := /home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/clang
 CXXFLAGS :=  -O3 -std=c++11 -Wall $(Preprocessors)
 CFLAGS   :=  -O2 -Wall $(Preprocessors)
 ASFLAGS  := 
-AS       := /usr/bin/as
+AS       := /home/giuseppe/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/bin/llvm-as
 
 
 ##
@@ -82,11 +82,11 @@ $(OutputFile): $(IntermediateDirectory)/.d $(Objects)
 	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
 
 MakeIntermediateDirs:
-	@test -d ./Release || $(MakeDirCommand) ./Release
+	@test -d ./ReleaseClang || $(MakeDirCommand) ./ReleaseClang
 
 
 $(IntermediateDirectory)/.d:
-	@test -d ./Release || $(MakeDirCommand) ./Release
+	@test -d ./ReleaseClang || $(MakeDirCommand) ./ReleaseClang
 
 PreBuild:
 
@@ -340,6 +340,6 @@ $(IntermediateDirectory)/up_tests_generic_tests_sp_heter_queue_generic_tests_seq
 ## Clean
 ##
 clean:
-	$(RM) -r ./Release/
+	$(RM) -r ./ReleaseClang/
 
 
