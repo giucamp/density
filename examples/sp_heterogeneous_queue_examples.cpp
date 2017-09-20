@@ -2181,6 +2181,7 @@ namespace density_tests
 			assert(consume.template element<int>() == 2);
 			consume.commit();
 			//! [sp_heter_queue try_reentrant_pop example 1]
+            (void)pop_result;
 		}
 		{
 			//! [sp_heter_queue try_start_reentrant_consume example 1]

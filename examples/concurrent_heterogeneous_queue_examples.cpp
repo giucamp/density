@@ -1325,6 +1325,7 @@ void conc_heterogeneous_queue_samples(std::ostream & i_ostream)
 	assert(consume.element<int>() == 2);
 	consume.commit();
 	//! [conc_heter_queue try_pop example 1]
+    (void)pop_result;
 }
 {
 	//! [conc_heter_queue try_start_consume example 1]
@@ -1417,6 +1418,7 @@ void conc_heterogeneous_queue_samples(std::ostream & i_ostream)
 	assert(consume.element<int>() == 2);
 	consume.commit();
 	//! [conc_heter_queue try_reentrant_pop example 1]
+    (void)pop_result;
 }
 {
 	//! [conc_heter_queue try_start_reentrant_consume example 1]
