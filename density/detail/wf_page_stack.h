@@ -105,7 +105,7 @@ namespace density
                 {
                     // try to get a page
                     PageStack range(first);
-                    auto const page = range.empty() ? range.pop_unpinned() : nullptr;
+                    auto const page = range.pop_unpinned();
 
                     // now we have to restore the stack
                     m_first.store(range.first(), detail::mem_release);
