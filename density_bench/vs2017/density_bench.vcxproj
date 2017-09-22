@@ -283,7 +283,8 @@
     <ClCompile Include="..\bench_framework\test_session.cpp" />
     <ClCompile Include="..\bench_framework\test_tree.cpp" />
     <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\single_thread_tests\single_thread_tests.cpp" />
+    <ClCompile Include="..\tests\muilti_thread_tests.cpp" />
+    <ClCompile Include="..\tests\single_thread_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\bench_framework\performance_test.h" />

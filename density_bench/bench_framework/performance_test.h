@@ -79,7 +79,7 @@ namespace density_bench
     private:
         size_t m_cardinality_start = 0;
         size_t m_cardinality_step = 1000;
-        size_t m_cardinality_end = 800000;
+        size_t m_cardinality_end = 80000;
         std::vector<PerformanceTest> m_tests;
         std::string m_name, m_description, m_prolog_code, m_version_label;
     };

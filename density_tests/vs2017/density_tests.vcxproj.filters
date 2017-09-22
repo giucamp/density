@@ -89,6 +89,9 @@
     <ClCompile Include="..\..\examples\misc_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_framework\test_allocators.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">

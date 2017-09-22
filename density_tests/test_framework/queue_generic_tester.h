@@ -12,6 +12,7 @@
 #include "test_objects.h"
 #include "histogram.h"
 #include "threading_extensions.h"
+#include "test_allocators.h"
 #include <density/density_common.h> // for density::concurrent_alignment
 #include <vector>
 #include <thread>
@@ -364,6 +365,8 @@ namespace density_tests
             void thread_procedure(size_t const i_target_put_count, size_t const i_target_consume_count, uint64_t i_affinity_mask)
             {
                 set_thread_affinity(i_affinity_mask);
+
+                ThreadAllocRandomFailures scoped_alloc_failures(m_random, 0.03);
 
                 m_incremental_stats->m_thread_is_active.store(true);
 

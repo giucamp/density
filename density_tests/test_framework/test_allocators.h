@@ -8,11 +8,35 @@
 #include <density/void_allocator.h>
 #include "shared_block_registry.h"
 #include "exception_tests.h"
+#include "easy_random.h"
 #include <atomic>
 #include <iostream>
 
 namespace density_tests
 {
+    /** A thread can instance this class on the automatic storage to cause try_* allocations
+        to randomly fail during its lifetime. */
+    class ThreadAllocRandomFailures
+    {
+    public:
+
+        ThreadAllocRandomFailures(EasyRandom & i_random, double i_fail_probability);
+
+        ThreadAllocRandomFailures(const ThreadAllocRandomFailures &) = delete;
+        ThreadAllocRandomFailures & operator = (const ThreadAllocRandomFailures &) = delete;
+
+        ~ThreadAllocRandomFailures();
+
+        static bool should_fail()
+        {
+            return t_fail_random != nullptr && t_fail_random->get_bool(t_fail_probability);
+        }
+
+    private:
+        static thread_local EasyRandom * t_fail_random;
+        static thread_local double t_fail_probability;
+    };
+
     /* Allocators that meets the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator".
         This class is based on density::basic_void_allocator, and uses a shared registry to detect bugs
@@ -29,7 +53,7 @@ namespace density_tests
 
         static constexpr size_t page_alignment = Base::page_alignment;
 
-        DeepTestAllocator() noexcept {}
+        DeepTestAllocator() noexcept { }
 
         void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
         {
@@ -46,6 +70,8 @@ namespace density_tests
             size_t i_alignment = alignof(std::max_align_t),
             size_t i_alignment_offset = 0) noexcept
         {
+            if (ThreadAllocRandomFailures::should_fail())
+                return nullptr;
             auto const result = Base::try_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
             if (result != nullptr)
             {
@@ -71,6 +97,9 @@ namespace density_tests
 
         void * try_allocate_page(density::progress_guarantee i_progress_guarantee)
         {
+            if (ThreadAllocRandomFailures::should_fail())
+                return nullptr;
+
             auto page = Base::try_allocate_page(i_progress_guarantee);
             if (page != nullptr)
             {
@@ -97,6 +126,9 @@ namespace density_tests
 
         void * try_allocate_page_zeroed(density::progress_guarantee i_progress_guarantee)
         {
+            if (ThreadAllocRandomFailures::should_fail())
+                return nullptr;
+
             auto page = Base::try_allocate_page_zeroed(i_progress_guarantee);
             if (page != nullptr)
             {

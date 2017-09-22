@@ -307,6 +307,7 @@
     <ClCompile Include="..\test_framework\line_updater_stream_adapter.cpp" />
     <ClCompile Include="..\test_framework\progress.cpp" />
     <ClCompile Include="..\test_framework\shared_block_registry.cpp" />
+    <ClCompile Include="..\test_framework\test_allocators.cpp" />
     <ClCompile Include="..\test_framework\test_objects.cpp" />
     <ClCompile Include="..\test_framework\threading_extensions.cpp" />
   </ItemGroup>

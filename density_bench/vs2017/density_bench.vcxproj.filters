@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\single_thread_tests\single_thread_tests.cpp">
-      <Filter>single_thread_tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\bench_framework\test_session.cpp">
       <Filter>bench_framework</Filter>
     </ClCompile>
@@ -14,13 +11,19 @@
     <ClCompile Include="..\bench_framework\performance_test.cpp">
       <Filter>bench_framework</Filter>
     </ClCompile>
+    <ClCompile Include="..\tests\single_thread_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\muilti_thread_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="single_thread_tests">
-      <UniqueIdentifier>{e8e36081-4a77-4672-9e76-08f329765da5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="bench_framework">
       <UniqueIdentifier>{6d0f4681-4696-4ccf-8128-1fa1bbc18ee3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{e8e36081-4a77-4672-9e76-08f329765da5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
