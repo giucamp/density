@@ -39,12 +39,12 @@ add_executable(density_test
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
+	add_compile_options(-std=c++11)
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
+	add_compile_options(-std=c++11)
 	TARGET_LINK_LIBRARIES(density_test pthread)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-	# using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	# using Visual Studio C++
 	add_compile_options(/bigobj)
