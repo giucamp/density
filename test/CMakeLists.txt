@@ -4,6 +4,8 @@ project (density_test)
 include_directories(".")
 include_directories("../")
 
+set (CMAKE_CXX_STANDARD 11)
+
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp
 	examples/conc_func_queue_examples.cpp
@@ -39,11 +41,9 @@ add_executable(density_test
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
-	add_compile_options(-std=c++11)
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
-	add_compile_options(-std=c++11)
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	# using Visual Studio C++
