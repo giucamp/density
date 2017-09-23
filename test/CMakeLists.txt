@@ -5,7 +5,7 @@ include_directories(".")
 include_directories("../")
 
 IF(MSVC)
-    SET(CMAKE_CXX_FLAGS, "${CMAKE_CXX_FLAGS} /bigobj")
+	add_compile_options(/bigobj)
 ENDIF(MSVC)
 
 add_executable(density_test 

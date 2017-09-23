@@ -5,11 +5,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "queue_generic_tests.h"
-#include "density_tests/test_framework/threading_extensions.h"
+#include "test_framework/threading_extensions.h"
 
 namespace density_tests
 {
-    void lf_heter_seq_cst_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
+    void lf_heter_relaxed_queue_generic_tests(QueueTesterFlags i_flags, std::ostream & i_output,
         EasyRandom & i_rand, size_t i_element_count)
     {
         using namespace density;
@@ -23,18 +23,18 @@ namespace density_tests
 
         constexpr auto mult = density::concurrency_multiple;
         constexpr auto single = density::concurrency_single;
-        constexpr auto seq_cst = density::consistency_sequential;
+        constexpr auto relaxed = density::consistency_relaxed;
 
-        detail::lf_queues_generic_tests<mult, mult, seq_cst>
+        detail::lf_queues_generic_tests<mult, mult, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<mult, single, seq_cst>
+        detail::lf_queues_generic_tests<mult, single, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, mult, seq_cst>
+        detail::lf_queues_generic_tests<single, mult, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, single, seq_cst>
+        detail::lf_queues_generic_tests<single, single, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
     }
 }

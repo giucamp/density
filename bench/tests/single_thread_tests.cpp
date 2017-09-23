@@ -7,7 +7,7 @@
 #include <deque>
 #include <queue>
 #include <functional>
-#include "density_bench\bench_framework\test_tree.h"
+#include "bench_framework\test_tree.h"
 
 namespace density_bench
 {

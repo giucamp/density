@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26403.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "density_tests", "density_tests.vcxproj", "{78BC9721-9B56-4B41-A7F5-495945387937}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "density_bench", "..\..\density_bench\vs2017\density_bench.vcxproj", "{1F3F3A39-64B1-4C01-B9C2-0A4927730009}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "density_bench", "..\..\bench\vs2017\density_bench.vcxproj", "{1F3F3A39-64B1-4C01-B9C2-0A4927730009}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
