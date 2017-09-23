@@ -14,9 +14,6 @@
       <Filter>test_framework</Filter>
     </ClCompile>
     <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\..\examples\heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
     <ClCompile Include="..\tests\heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -34,9 +31,6 @@
     </ClCompile>
     <ClCompile Include="..\test_framework\histogram.cpp">
       <Filter>test_framework</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\concurrent_heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
@@ -56,17 +50,11 @@
     <ClCompile Include="..\tests\lf_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\lf_heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
     <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_relaxed.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\generic_tests\lf_heter_queue_generic_tests_seqcst.cpp">
       <Filter>tests\generic_tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\sp_heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\sp_heterogeneous_queue_basic_tests.cpp">
       <Filter>tests</Filter>
@@ -74,23 +62,35 @@
     <ClCompile Include="..\tests\generic_tests\sp_heter_queue_generic_tests_seqcst.cpp">
       <Filter>tests\generic_tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\conc_func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\lf_func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\sp_func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\examples\misc_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_framework\test_allocators.cpp">
       <Filter>test_framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\conc_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\concurrent_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\lf_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\lf_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\misc_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\sp_func_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\sp_heterogeneous_queue_examples.cpp">
+      <Filter>examples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

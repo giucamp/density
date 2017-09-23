@@ -12,8 +12,8 @@
 #include <chrono>
 #include <vector>
 #include <assert.h>
-#include <density/lf_function_queue.h>
-#include "../density_tests/test_framework/progress.h"
+#include <density/sp_function_queue.h>
+#include "test_framework/progress.h"
 
 // if assert expands to nothing, some local variable becomes unused
 #if defined(_MSC_VER) && defined(NDEBUG)
@@ -25,28 +25,27 @@ namespace density_tests
 {
     template <density::function_type_erasure ERASURE,
             density::concurrency_cardinality PROD_CARDINALITY,
-            density::concurrency_cardinality CONSUMER_CARDINALITY,
-            density::consistency_model CONSISTENCY_MODEL>
-        struct LfFunctionQueueSamples
+            density::concurrency_cardinality CONSUMER_CARDINALITY>
+        struct SpFunctionQueueSamples
     {
         static void func_queue_put_samples(std::ostream & i_ostream)
         {
-            PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
+            PrintScopeDuration dur(i_ostream, "spin-locking function queue put samples");
 
             using namespace density;
 
             {
-                //! [lf_function_queue push example 1]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue push example 1]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.push( []{ std::cout << "Hello"; } );
     queue.push( []{ std::cout << " world"; } );
     queue.push( []{ std::cout << "!!!"; } );
     queue.push( []{ std::cout << std::endl; } );
     while( queue.try_consume() );
-        //! [lf_function_queue push example 1]
+        //! [sp_function_queue push example 1]
     }
     {
-        //! [lf_function_queue push example 3]
+        //! [sp_function_queue push example 3]
     #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of
         the alignment, but in the microsoft's compiler, on 64-bit targets, pointers to data
         member are 4 bytes big, but are aligned to 8 bytes.
@@ -65,7 +64,7 @@ namespace density_tests
             int var_2 = 4;
         };
 
-        lf_function_queue<int(Struct*)> queue;
+        sp_function_queue<int(Struct*)> queue;
         queue.push(&Struct::func_1);
         queue.push(&Struct::func_2);
         queue.push(&Struct::var_1);
@@ -79,29 +78,29 @@ namespace density_tests
         assert(sum == 10);
 
     #endif
-        //! [lf_function_queue push example 3]
+        //! [sp_function_queue push example 3]
         #if !defined(_MSC_VER) || !defined(_M_X64)
             (void)sum;
         #endif
     }
     {
-        //! [lf_function_queue push example 2]
+        //! [sp_function_queue push example 2]
     double last_val = 1.;
 
     auto func = [&last_val] {
         return last_val /= 2.;
     };
 
-    lf_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     for(int i = 0; i < 10; i++)
         queue.push(func);
 
     while (auto const return_value = queue.try_consume())
         std::cout << *return_value << std::endl;
-                //! [lf_function_queue push example 2]
+                //! [sp_function_queue push example 2]
             }
             {
-                //! [lf_function_queue emplace example 1]
+                //! [sp_function_queue emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
         but we add it to a void() function queue. This is ok, as we are just
@@ -122,16 +121,16 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.template emplace<Func>(7);
 
     bool const invoked = queue.try_consume();
     assert(invoked);
-                //! [lf_function_queue emplace example 1]
+                //! [sp_function_queue emplace example 1]
                 (void)invoked;
             }
             {
-                //! [lf_function_queue start_push example 1]
+                //! [sp_function_queue start_push example 1]
     struct Func
     {
         const char * m_string_1;
@@ -144,7 +143,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     auto transaction = queue.start_push(Func{});
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -155,11 +154,11 @@ namespace density_tests
 
     bool const invoked = queue.try_consume();
     assert(invoked);
-        //! [lf_function_queue start_push example 1]
+        //! [sp_function_queue start_push example 1]
         (void)invoked;
     }
     {
-        //! [lf_function_queue start_emplace example 1]
+        //! [sp_function_queue start_emplace example 1]
     struct Func
     {
         const char * m_string_1;
@@ -172,7 +171,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     auto transaction = queue.template start_emplace<Func>();
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -183,30 +182,30 @@ namespace density_tests
 
     bool const invoked = queue.try_consume();
     assert(invoked);
-                //! [lf_function_queue start_emplace example 1]
+                //! [sp_function_queue start_emplace example 1]
                 (void)invoked;
             }
         }
 
         static void func_queue_try_put_samples(std::ostream & i_ostream)
         {
-            PrintScopeDuration dur(i_ostream, "lock-free function queue put samples");
+            PrintScopeDuration dur(i_ostream, "spin-locking function queue put samples");
 
             using namespace density;
 
             {
-                //! [lf_function_queue try_push example 1]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue try_push example 1]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool const ok = queue.try_push(progress_lock_free, []{ std::cout << "Hello world!"; } );
 
     while( queue.try_consume() )
         ;
-        //! [lf_function_queue try_push example 1]
+        //! [sp_function_queue try_push example 1]
         (void)ok;
     }
     {
-                //! [lf_function_queue try_emplace example 1]
+                //! [sp_function_queue try_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
         but we add it to a void() function queue. This is ok, as we are just
@@ -227,18 +226,18 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     bool invoked = false;
     if (queue.template try_emplace<Func>(progress_lock_free, 7))
     {
         invoked = queue.try_consume();
         assert(invoked);
     }
-           //! [lf_function_queue try_emplace example 1]
+           //! [sp_function_queue try_emplace example 1]
                 (void)invoked;
             }
             {
-                //! [lf_function_queue try_start_push example 1]
+                //! [sp_function_queue try_start_push example 1]
     struct Func
     {
         const char * m_string_1;
@@ -251,7 +250,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.try_start_push(progress_lock_free, Func{}))
@@ -265,11 +264,11 @@ namespace density_tests
         invoked = queue.try_consume();
         assert(invoked);
     }
-        //! [lf_function_queue try_start_push example 1]
+        //! [sp_function_queue try_start_push example 1]
         (void)invoked;
     }
     {
-        //! [lf_function_queue try_start_emplace example 1]
+        //! [sp_function_queue try_start_emplace example 1]
     struct Func
     {
         const char * m_string_1;
@@ -282,7 +281,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     bool invoked = false;
     if (auto transaction = queue.template try_start_emplace<Func>(progress_lock_free))
     {
@@ -295,45 +294,45 @@ namespace density_tests
         invoked = queue.try_consume();
         assert(invoked);
     }
-                //! [lf_function_queue try_start_emplace example 1]
+                //! [sp_function_queue try_start_emplace example 1]
                 (void)invoked;
             }
         }
 
         static void func_queue_reentrant_put_samples(std::ostream & i_ostream)
         {
-            PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
+            PrintScopeDuration dur(i_ostream, "spin-locking function queue reentrant put samples");
 
             using namespace density;
 
             {
-                //! [lf_function_queue reentrant_push example 1]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue reentrant_push example 1]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.reentrant_push( []{ std::cout << "Hello"; } );
     queue.reentrant_push( []{ std::cout << " world"; } );
     queue.reentrant_push( []{ std::cout << "!!!"; } );
     queue.reentrant_push( []{ std::cout << std::endl; } );
     while( queue.try_reentrant_consume() );
-                //! [lf_function_queue reentrant_push example 1]
+                //! [sp_function_queue reentrant_push example 1]
             }
             {
-                //! [lf_function_queue reentrant_push example 2]
+                //! [sp_function_queue reentrant_push example 2]
     double last_val = 1.;
 
     auto func = [&last_val] {
         return last_val /= 2.;
     };
 
-    lf_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     for(int i = 0; i < 10; i++)
         queue.reentrant_push(func);
 
     while (auto const return_value = queue.try_reentrant_consume())
         std::cout << *return_value << std::endl;
-                //! [lf_function_queue reentrant_push example 2]
+                //! [sp_function_queue reentrant_push example 2]
             }
             {
-                //! [lf_function_queue reentrant_emplace example 1]
+                //! [sp_function_queue reentrant_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
         but we add it to a void() function queue. This is ok, as we are just
@@ -354,16 +353,16 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.template reentrant_emplace<Func>(7);
 
     bool const invoked = queue.try_reentrant_consume();
     assert(invoked);
-                //! [lf_function_queue reentrant_emplace example 1]
+                //! [sp_function_queue reentrant_emplace example 1]
                 (void)invoked;
             }
             {
-                //! [lf_function_queue start_reentrant_push example 1]
+                //! [sp_function_queue start_reentrant_push example 1]
     struct Func
     {
         const char * m_string_1;
@@ -376,7 +375,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto transaction = queue.start_reentrant_push(Func{});
 
@@ -390,11 +389,11 @@ namespace density_tests
 
     bool const invoked = queue.try_reentrant_consume();
     assert(invoked);
-        //! [lf_function_queue start_reentrant_push example 1]
+        //! [sp_function_queue start_reentrant_push example 1]
         (void)invoked;
     }
     {
-        //! [lf_function_queue start_reentrant_emplace example 1]
+        //! [sp_function_queue start_reentrant_emplace example 1]
     struct Func
     {
         const char * m_string_1;
@@ -407,7 +406,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto transaction = queue.template start_reentrant_emplace<Func>();
 
@@ -419,28 +418,28 @@ namespace density_tests
 
     bool const invoked = queue.try_reentrant_consume();
     assert(invoked);
-                //! [lf_function_queue start_reentrant_emplace example 1]
+                //! [sp_function_queue start_reentrant_emplace example 1]
                 (void)invoked;
             }
         }
 
         static void func_queue_try_reentrant_put_samples(std::ostream & i_ostream)
         {
-            PrintScopeDuration dur(i_ostream, "lock-free function queue reentrant put samples");
+            PrintScopeDuration dur(i_ostream, "spin-locking function queue reentrant put samples");
 
             using namespace density;
 
             {
-                //! [lf_function_queue try_reentrant_push example 1]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue try_reentrant_push example 1]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     if (queue.try_reentrant_push(progress_lock_free, [] { std::cout << "Hello world"; }))
     {
         while( queue.try_reentrant_consume() );
     }
-                //! [lf_function_queue try_reentrant_push example 1]
+                //! [sp_function_queue try_reentrant_push example 1]
             }
             {
-                //! [lf_function_queue try_reentrant_emplace example 1]
+                //! [sp_function_queue try_reentrant_emplace example 1]
     /* This local struct is unmovable and uncopyable, so emplace is the only
         option to add it to the queue. Note that operator () returns an int,
         but we add it to a void() function queue. This is ok, as we are just
@@ -461,7 +460,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (queue.template try_reentrant_emplace<Func>(progress_lock_free, 7))
@@ -469,11 +468,11 @@ namespace density_tests
         invoked = queue.try_reentrant_consume();
         assert(invoked);
     }
-                //! [lf_function_queue try_reentrant_emplace example 1]
+                //! [sp_function_queue try_reentrant_emplace example 1]
                 (void)invoked;
             }
             {
-                //! [lf_function_queue try_start_reentrant_push example 1]
+                //! [sp_function_queue try_start_reentrant_push example 1]
     struct Func
     {
         const char * m_string_1;
@@ -486,7 +485,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.try_start_reentrant_push(progress_lock_free, Func{}))
@@ -502,11 +501,11 @@ namespace density_tests
         invoked = queue.try_reentrant_consume();
         assert(invoked);
     }
-        //! [lf_function_queue try_start_reentrant_push example 1]
+        //! [sp_function_queue try_start_reentrant_push example 1]
         (void)invoked;
     }
     {
-        //! [lf_function_queue try_start_reentrant_emplace example 1]
+        //! [sp_function_queue try_start_reentrant_emplace example 1]
     struct Func
     {
         const char * m_string_1;
@@ -519,7 +518,7 @@ namespace density_tests
         }
     };
 
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.template try_start_reentrant_emplace<Func>(progress_lock_free))
@@ -533,7 +532,7 @@ namespace density_tests
         invoked = queue.try_reentrant_consume();
         assert(invoked);
     }
-                //! [lf_function_queue try_start_reentrant_emplace example 1]
+                //! [sp_function_queue try_start_reentrant_emplace example 1]
                 (void)invoked;
             }
         }
@@ -543,8 +542,8 @@ namespace density_tests
             using namespace density;
 
             {
-                //! [lf_function_queue try_consume example 1]
-    lf_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue try_consume example 1]
+    sp_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
@@ -569,11 +568,12 @@ namespace density_tests
     for (auto const & str : strings)
         std::cout << str;
     std::cout << std::endl;
-                //! [lf_function_queue try_consume example 1]
+                //! [sp_function_queue try_consume example 1]
             }
+
             {
-                //! [lf_function_queue try_consume example 2]
-    using Queue = lf_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+                //! [sp_function_queue try_consume example 2]
+    using Queue = sp_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
     Queue queue;
 
     queue.push( [](std::vector<std::string> & vect) {
@@ -602,11 +602,12 @@ namespace density_tests
     for (auto const & str : strings)
         std::cout << str;
     std::cout << std::endl;
-                //! [lf_function_queue try_consume example 2]
+                //! [sp_function_queue try_consume example 2]
             }
+
             {
-                //! [lf_function_queue try_reentrant_consume example 1]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue try_reentrant_consume example 1]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -627,11 +628,11 @@ namespace density_tests
     // Output:
     // The queue is not empty
     // The queue is empty
-                //! [lf_function_queue try_reentrant_consume example 1]
+                //! [sp_function_queue try_reentrant_consume example 1]
             }
             {
-                //! [lf_function_queue try_reentrant_consume example 2]
-    lf_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue try_reentrant_consume example 2]
+    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -655,7 +656,7 @@ namespace density_tests
     // Output:
     // The queue is not empty
     // The queue is empty
-                //! [lf_function_queue try_reentrant_consume example 2]
+                //! [sp_function_queue try_reentrant_consume example 2]
             }
         }
 
@@ -664,15 +665,15 @@ namespace density_tests
             using namespace density;
 
             {
-                //! [lf_function_queue default construct example 1]
-    lf_function_queue<int (float, double), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue default construct example 1]
+    sp_function_queue<int (float, double), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     assert(queue.empty());
-                //! [lf_function_queue default construct example 1]
+                //! [sp_function_queue default construct example 1]
             }
 
             {
-                //! [lf_function_queue move construct example 1]
-    lf_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+                //! [sp_function_queue move construct example 1]
+    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.push([] { return 6; });
 
     auto queue_1(std::move(queue));
@@ -680,23 +681,24 @@ namespace density_tests
 
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
-                //! [lf_function_queue move construct example 1]
+                //! [sp_function_queue move construct example 1]
             }
+
             {
-                //! [lf_function_queue move assign example 1]
-    lf_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue, queue_1;
+                //! [sp_function_queue move assign example 1]
+    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
     queue.push([] { return 6; });
 
     queue_1 = std::move(queue);
 
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
-                //! [lf_function_queue move assign example 1]
+                //! [sp_function_queue move assign example 1]
             }
 
             {
-                //! [lf_function_queue swap example 1]
-    lf_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue, queue_1;
+                //! [sp_function_queue swap example 1]
+    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
     queue.push([] { return 6; });
 
     std::swap(queue, queue_1);
@@ -704,20 +706,20 @@ namespace density_tests
 
     auto result = queue_1.try_consume();
     assert(result && *result == 6);
-                //! [lf_function_queue swap example 1]
+                //! [sp_function_queue swap example 1]
             }
 
             {
-                //! [lf_function_queue clear example 1]
+                //! [sp_function_queue clear example 1]
     bool erasure = ERASURE;
     if (erasure != function_manual_clear)
     {
-        lf_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+        sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());
     }
-                //! [lf_function_queue clear example 1]
+                //! [sp_function_queue clear example 1]
             }
         }
 
@@ -735,7 +737,7 @@ namespace density_tests
     };
 
 
-    void lf_func_queue_samples(std::ostream & i_ostream)
+    void sp_func_queue_samples(std::ostream & i_ostream)
     {
         constexpr auto standard_erasure = density::function_standard_erasure;
         constexpr auto manual_clear = density::function_manual_clear;
@@ -743,32 +745,17 @@ namespace density_tests
         constexpr auto mult = density::concurrency_multiple;
         constexpr auto single = density::concurrency_single;
 
-        constexpr auto seq_cst = density::consistency_sequential;
-        constexpr auto relaxed = density::consistency_relaxed;
+        SpFunctionQueueSamples< standard_erasure,   mult,   mult>::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< manual_clear,       mult,   mult>::func_queue_samples(i_ostream);
 
-        LfFunctionQueueSamples< standard_erasure,   mult,   mult,  seq_cst    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       mult,   mult,  seq_cst    >::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< standard_erasure,   single,   mult>::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< manual_clear,       single,   mult>::func_queue_samples(i_ostream);
 
-        LfFunctionQueueSamples< standard_erasure,   single,   mult,  seq_cst    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       single,   mult,  seq_cst    >::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< standard_erasure,   mult,   single>::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< manual_clear,       mult,   single>::func_queue_samples(i_ostream);
 
-        LfFunctionQueueSamples< standard_erasure,   mult,   single,  seq_cst    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       mult,   single,  seq_cst    >::func_queue_samples(i_ostream);
-
-        LfFunctionQueueSamples< standard_erasure,   single,   single,  seq_cst    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       single,   single,  seq_cst    >::func_queue_samples(i_ostream);
-
-        LfFunctionQueueSamples< standard_erasure,   mult,   mult,  relaxed    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       mult,   mult,  relaxed    >::func_queue_samples(i_ostream);
-
-        LfFunctionQueueSamples< standard_erasure,   single,   mult,  relaxed    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       single,   mult,  relaxed    >::func_queue_samples(i_ostream);
-
-        LfFunctionQueueSamples< standard_erasure,   mult,   single,  relaxed    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       mult,   single,  relaxed    >::func_queue_samples(i_ostream);
-
-        LfFunctionQueueSamples< standard_erasure,   single,   single,  relaxed    >::func_queue_samples(i_ostream);
-        LfFunctionQueueSamples< manual_clear,       single,   single,  relaxed    >::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< standard_erasure,   single,   single>::func_queue_samples(i_ostream);
+        SpFunctionQueueSamples< manual_clear,       single,   single>::func_queue_samples(i_ostream);
     }
 
 

@@ -20,6 +20,8 @@ namespace density
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
 
+        \snippet func_queue_examples.cpp function_queue push example 1
+
         If ERASURE == function_manual_clear, function_queue is not able to destroy the callable objects without invoking them.
             This produces a performance benefit, but:
             - The function function_queue::clear can't be used (calling it causes undefined behavior)

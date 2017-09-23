@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <density/conc_heter_queue.h>
 #include <density/io_runtimetype_features.h>
-#include "../density_tests/test_framework/progress.h"
+#include "test_framework/progress.h"
 
 // if assert expands to nothing, some local variable becomes unused
 #if defined(_MSC_VER) && defined(NDEBUG)
