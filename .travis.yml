@@ -5,11 +5,7 @@ sudo: false
 language: cpp
 
 compiler:
-  - gcc
-
+- gcc
 
 script:
-	- cd test
-	- mkdir build
-	- cd build
-	- cmake .. && make
+- cd test && mkdir build && cd build && cmake .. && make

@@ -1,12 +1,8 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.1)
 project (density_test)
 
 include_directories(".")
 include_directories("../")
-
-IF(MSVC)
-	add_compile_options(/bigobj)
-ENDIF(MSVC)
 
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp
@@ -40,3 +36,16 @@ add_executable(density_test
 	test_framework/test_objects.cpp
 	test_framework/threading_extensions.cpp
 	main.cpp )
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+	# using Clang
+	TARGET_LINK_LIBRARIES(density_test pthread)
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	# using GCC
+	TARGET_LINK_LIBRARIES(density_test pthread)
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+	# using Intel C++
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	# using Visual Studio C++
+	add_compile_options(/bigobj)
+endif()
