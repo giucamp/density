@@ -1,9 +1,8 @@
-
+[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
 
 Density Overview
 ----------------
-Density is a C++11 header-only library providing page based memory management, lifo memory management, and a rich set of highly configurable heterogeneous queues based on paged memory management.
-
+Density is a C++11 header-only library focused on paged memory management. providing a rich set of highly configurable heterogeneous queues.
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1function__queue.html)      |[heter_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue.html)| - | -
@@ -12,11 +11,12 @@ lock-free       |[lf_function_queue](http://peggysansonetti.it/tech/density/html
 spin-locking    |[sp_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
 All function queues have a common interface, and so all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
+A lifo memory management system is provided too, built upon the paged management.
 
 About function queues
 --------------
 A function queue is an heterogeneous FIFO pseudo-container that stores callable objects, each with a different type, but all invokable with the same signature.
-Foundamentaly a funcion queue is a queue of `std::function`-like objects that uses linear allocation for the storage of the captures.
+Foundamentaly a funcion queue is a queue of `std::function`-like objects that uses an in-page linear allocation for the storage of the captures.
 
     // put a lambda in the queue
     function_queue<void()> queue;            
@@ -48,15 +48,15 @@ Transactional puts and raw allocations
 
 The functions `queue::push` and `function_queue::emplace` append a callable at the end of the queue. This is the quick way of doing a *put transaction*. We can have more control breaking it using the **start_*** put functions:
 
-        struct Message
+    struct Message
+    {
+        const char * m_text;
+      
+        void operator () ()
         {
-            const char * m_text;
-        
-            void operator () ()
-            {
-                std::cout << m_text << std::endl;
-            }
-        };
+            std::cout << m_text << std::endl;
+        }
+    };
     
     function_queue<void()> queue;
         
@@ -67,14 +67,14 @@ The functions `queue::push` and `function_queue::emplace` append a callable at t
     bool const invoked = queue.try_consume();
     assert(invoked);
 
-The start_* put functions return a [put_transaction](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html) that:
+The start_* put functions return a [put_transaction](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html) by which the caller can:
 
- - can be used to access or alter the object being pushed before it becomes observable
- - can [commit](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html#a96491d550e91a5918050bfdafe43a72c) the transaction so that the element becomes observable to consumers, and the `put_transaction` becomes empty.
- - can [cancel](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html#a209a4e37e25451c144910d6f6aa4911e) the transaction, in which case the transaction is discarded with no observable side effects, and the `put_transaction` becomes empty.
- - can allocate *raw memory blocks*, that is arrays of a trivially destructible type (`char`s, `float`s) that are linearly allocated in the pages, right after the last allocated value. There is no function to deallocate raw blocks: they are automatically deallocated after the associated element has been canceled or consumed.
+ - access or alter the object being pushed before it becomes observable
+ - [commit](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html#a96491d550e91a5918050bfdafe43a72c) the transaction so that the element becomes observable to consumers (the `put_transaction` becomes empty).
+ - [cancel](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue_1_1put__transaction.html#a209a4e37e25451c144910d6f6aa4911e) the transaction, in which case the transaction is discarded with no observable side effects (the `put_transaction` becomes empty).
+ - allocate *raw memory blocks*, that is uninitialized memory, or arrays of a trivially destructible type (`char`s, `float`s) that are linearly allocated in the pages, right after the last allocated value. There is no function to deallocate raw blocks: they are automatically deallocated after the associated element has been canceled or consumed.
 
-When a non-empty `put_transaction` is destroyed, the bound transaction is canceled. As a consequence, if the `raw_allocate_copy` in the code above throws, the transaction is discarded with no side effects.
+When a non-empty `put_transaction` is destroyed, the bound transaction is canceled. As a consequence, if the `raw_allocate_copy` in the code above throws an exception, the transaction is discarded with no side effects.
 
 Raw memory blocks are handled in the same way of canceled and consumed values (they are referred as *dead* values). Internally the storage of dead values is deallocated when the whole page is returned to the page allocator, but this is an implementation detail. When a consume is committed, the head pointer is advanced, skipping any dead element.
 
@@ -85,13 +85,13 @@ Internally instant puts are implemented in terms of transactional puts, so there
     {
     	start_emplace(...).commit();
     }
-Consume operations have the `start_*` variant only in heterogeneous queues (not in function queues). Anyway this operation is not a transaction, as the element disappears from the queue when the operation starts, and will reappear if the operation is canceled.
+Consume operations have the `start_*` variant in heterogeneous queues (but not in function queues). Anyway this operation is not a transaction, as the element disappears from the queue when the operation starts, and will reappear if the operation is canceled.
 
 Reentrancy
 ----------
-During a put or a consume operation an heterogeneous or function queue is not in a consistent state *for the caller thread*. So accessing the queue in any way, in the between of a start_* function and the cancel/commit, causes undefined behaviour. Also accessing the queue from the constructor of an element, or from the invokation of a callable of a function queue, causes undefined behaviour.
-Anyway in this time span the queue is not in an inconsistent state for the other threads, provided that the queue is concurrency-enabled. This may appear weird, but think to the queues protected by a mutex (`conc_function_queue` and `conc_heter_queue`): reentrancy would mean a double lock by the same thread, which causes undefined behaviour (unless the mutex is recursive, which is not). On the other hand other threads can access the queue: they will eventually block in a lock. Single threaded queues also exploit non-reentrancy to do some minor optimizations.
-Anyway, expecially for consumers, sometimes reentrancy is necessary: a callable object, during the ivokation, may need to push another callable object to the same queue. For every put or consume function, in every queue, there is a reentrant variant.
+During a put or a consume operation an heterogeneous or function queue is not in a consistent state *for the caller thread*. So accessing the queue in any way, in the between of a start_* function and the cancel/commit, causes undefined behavior. Also accessing the queue from the constructor of an element, or from the invocation of a callable of a function queue, causes undefined behavior.
+Anyway in this time span the queue is not in an inconsistent state for the other threads, provided that the queue is concurrency-enabled. This may appear weird, but think to the queues protected by a mutex (`conc_function_queue` and `conc_heter_queue`): reentrancy would mean a double lock by the same thread, which causes undefined behaviour (unless the mutex is recursive, which is not). On the other hand other threads can access the queue: they will eventually block in a lock. Single threaded queues also exploit non-reentrancy to do some minor optimizations (internally they set the transaction as committed when it is started, so that the commit does not write the control bit again).
+Anyway, especially for consumers, reentrancy is sometimes necessary: a callable object, during the invocation, may need to push another callable object to the same queue. For every put or consume function, in every queue, there is a reentrant variant.
 
     lf_function_queue<void()> queue;
 
@@ -121,16 +121,17 @@ When doing reentrant operations,`conc_function_queue` and `conc_heter_queue` loc
 Relaxed guarantees
 ------------
 Function queues use type erasure to handle callable objects of heterogeneous types. By default two operations are captured for each element type: invoke-destroy, and just-destroy.
-Anyway the 3th template parameter of all function queues is an enum of type [function_type_erasure](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) that can be used to exclude the second operation, so that the function queue will not be able to destroy a callable without invoking it. This gives a performance benefit, at the price that the queue can't be cleared, and that the user must ensure that the queue is empty when destroyed.
-In the manual clean mode the layout of a value in the function queue is composed by:
+The third template parameter of all function queues is an enum of type [function_type_erasure](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) that controls the type erasure: the value function_manual_clear excludes the second operation, so that the function queue will not be able to destroy a callable without invoking it. This gives a performance benefit, at the price that the queue can't be cleared, and that the user must ensure that the queue is empty when destroyed.
+Internally, in manual-clean mode, the layout of a value in the function queue is composed by:
 
  - an overhead pointer (that points to the next value, and keeps the state of the value in the least significant bits)
  - the runtime type, actually a pointer to the invoke-destroy function
  - the eventual capture
 
+So if you put a captureless lambda or a pointer to a function, you are advancing the tail pointer by the space required by 2 pointers.
 Anyway lock-free queues and spin-locking queues align their values to [density::concurrent_alignment](http://peggysansonetti.it/tech/density/html/namespacedensity.html#ae8f72b2dd386b61bf0bc4f30478c2941), so they are less dense than the other queues.
 
-All queues but `function_queue` and `heter_queue` are concurrency enabled. 
+All queues but `function_queue` and `heter_queue` are concurrency enabled. By default they allow multiple producers and multiple consumers.
 The class templates [lf_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__function__queue.html), [lf_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__heter__queue.html), [sp_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__function__queue.html) and [sp_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__heter__queue.html) allow to specify, with 2 independent template arguments of type [concurrency_cardinality](http://peggysansonetti.it/tech/density/html/namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb), whether multiple threads are allowed to produce, and whether multiple threads are allowed to consume:
 
     // single producer, multiple consumers:
@@ -147,12 +148,35 @@ When dealing with a multiple consumers, the head pointer is an atomic variable. 
 
 The class templates [lf_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__function__queue.html) and [lf_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__heter__queue.html) allow a further optimization with a template argument of type [consistency_model](http://peggysansonetti.it/tech/density/html/namespacedensity.html#ad5d59321f5f1b9a040c6eb9bc500a051): by default the queue is sequential consistent (that is all threads observe the operations happening in the same order). If `consistency_relaxed`is specified, this guarantee is removed, with a great performance benefit.
 
-Naming convensions
-------------------
+For all queues, the functions `try_consume` and `try_reentrant_consume` have 2 variants:
 
-Functions starting with the try_ prefix provide a progress guarantee specified by a parameter of type progress_guarantee. Try-functions are always noexcept, but they are subject to failure: the return value is a boolean or an object implicitly convertible to a boolean. Non try-functions completes the requesdsted operation or throw an exception (usually because they fail to allocate memory).
-Functions containing "reentrant" in their name allow safe recursion: during the call, the target data structure is in consistent state and other function can be called on it. This may look unusual, but often when invoking an element of a function queue the caller has no idea of what the function will do: the function may push another function on the same queue.
-Functions containing "start" in their name begin an operation that expects to be committed or canceled. The return value is an object.
+- one returning a consume operation. If the queue was empty, an empty consume is returned.
+- one taking a reference to a consume as parameter and returning a boolean, raccomanded if a thread performs many consecutive consumes.
+
+There is no functional difference between the two consumes. Anyway,
+currently only for lock-free and spin-locking queues supporting multi-producers, the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer is reading it.
+When a consumer needs to access a page, it increments a ref-count in the page (it *pins* the page), to notify to the allocator that it is using it. When it has finished, the consumer decrements the ref-count (it *unpins* the page).
+If a thread performs many consecutive consumes, it will ends up doing many atomic increments and decrements of the same page (that is a somewhat expensive operation). Since pin\unpin logic is encapsulated in the consume_operation, if the consumer thread keeps the consume_operation alive, pinning and unpinning will be performed only in case of page switch.
+Note: a forgotten consume_operation which has pinned a page prevents the page from being recycled by the page allocator, even if it was deallocated by other consumers.  
+
+heterogeneous queues
+--------------------
+Every function queue is actually an adaptor for the corresponding heterogeneous pseudo-container.  Heterogeneous queues have pit and consume functions, just like function queues, but elements are not required to be callable objects.
+
+    heter_queue<> queue;
+    queue.push(19); // the parameter can be an l-value or an r-value
+    queue.emplace<std::string>(8, '*'); // pushes "********"
+
+The first 3 template parameters are the same for all the heterogeneous queues.
+
+Template parameter|Type|Meaning|Constraint|Default
+--------|-----------|---------|------
+`COMMON_TYPE`|type|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`
+`RUNTIME_TYPE`|type|Type eraser type|Must model [RuntimeType](http://peggysansonetti.it/tech/density/html/RuntimeType_concept.html)|[runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html)
+`ALLOCATOR_TYPE`|type|Allocator|Must model both [PageAllocator](http://peggysansonetti.it/tech/density/html/PagedAllocator_concept.html) and [UntypedAllocator](http://peggysansonetti.it/tech/density/html/UntypedAllocator_concept.html)|[void_allocator](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)
+
+An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
+The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](http://peggysansonetti.it/tech/density/html/namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](http://peggysansonetti.it/tech/density/html/classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
 
 Lifo data structures
 --------------
