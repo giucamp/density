@@ -51,13 +51,7 @@ namespace density_tests
             m_id_map = new std::atomic<int8_t>[id_map_size];
             for (size_t i = 0; i < id_map_size; i++)
             {
-                #if defined(__GNUC__) && __GNUC__ < 5
-                    // workaround for undefined std::atomic_init (https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg443628.html)
-                    // this is not correct, but it works anyway
-                    m_id_map[i].store(0);
-                #else
-                    std::atomic_init(&m_id_map[i], static_cast<int8_t>(0));
-                #endif                    
+                std::atomic_init(&m_id_map[i], static_cast<int8_t>(0));               
             }                
         }
 

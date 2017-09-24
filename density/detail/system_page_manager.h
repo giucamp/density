@@ -63,15 +63,9 @@ namespace density
             static constexpr size_t region_min_size_bytes = detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
 
             system_page_manager() noexcept
-                #if defined(__GNUC__) && __GNUC__ < 5
-                    // workaround for undefined std::atomic_init (https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg443628.html)
-                    : m_curr_region(&m_first_region)
-                #endif
             {
-                #if !(defined(__GNUC__) && __GNUC__ < 5)
-                    /** The first region is always empty, so it will be skipped soon */
-                    std::atomic_init(&m_curr_region, &m_first_region);
-                #endif
+                /** The first region is always empty, so it will be skipped soon */
+                std::atomic_init(&m_curr_region, &m_first_region);
             }
 
             ~system_page_manager()
