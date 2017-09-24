@@ -557,7 +557,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+                    -> decltype(std::declval<put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
@@ -688,7 +688,7 @@ namespace density
             template <typename INPUT_RANGE>
                 auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
                     noexcept(noexcept(std::declval<put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
-                        -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+                        -> decltype(std::declval<put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
                 return try_raw_allocate_copy(i_progress_guarantee,
                     std::begin(i_source_range), std::end(i_source_range));
@@ -1724,14 +1724,14 @@ namespace density
                     #ifdef _MSC_VER
                         #pragma warning(push)
                         #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__) && !defined(__clang__)
+                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
                         #pragma GCC diagnostic push
                         #pragma GCC diagnostic ignored "-Wterminate"
                     #endif
                     throw;
                     #ifdef _MSC_VER
                         #pragma warning(pop)
-                    #elif defined(__GNUG__) && !defined(__clang__)
+                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
                         #pragma GCC diagnostic pop
                     #endif
                 }
@@ -2143,7 +2143,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+                    -> decltype(std::declval<reentrant_put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
@@ -2274,7 +2274,7 @@ namespace density
             template <typename INPUT_RANGE>
                 auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
                     noexcept(noexcept(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
-                        -> decltype(try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+                        -> decltype(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
                 return try_raw_allocate_copy(i_progress_guarantee,
                     std::begin(i_source_range), std::end(i_source_range));
@@ -2984,14 +2984,14 @@ namespace density
                     #ifdef _MSC_VER
                         #pragma warning(push)
                         #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__) && !defined(__clang__)
+                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
                         #pragma GCC diagnostic push
                         #pragma GCC diagnostic ignored "-Wterminate"
                     #endif
                     throw;
                     #ifdef _MSC_VER
                         #pragma warning(pop)
-                    #elif defined(__GNUG__) && !defined(__clang__)
+                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
                         #pragma GCC diagnostic pop
                     #endif
                 }

@@ -186,7 +186,7 @@ namespace density_tests
 
         static constexpr size_t page_alignment = Base::page_alignment;
 
-        UnmovableFastTestAllocator() noexcept = default;
+        UnmovableFastTestAllocator() noexcept { }
 
         ~UnmovableFastTestAllocator()
         {

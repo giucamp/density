@@ -386,7 +386,7 @@ namespace density
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+                    -> decltype(std::declval<put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 return m_put_transaction.raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
@@ -1229,7 +1229,7 @@ namespace density
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
                 auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+                    -> decltype(std::declval<reentrant_put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
             {
                 DENSITY_ASSERT(!empty());
                 std::lock_guard<std::mutex> lock(m_queue->m_mutex);

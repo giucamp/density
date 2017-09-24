@@ -63,9 +63,15 @@ namespace density
             static constexpr size_t region_min_size_bytes = detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
 
             system_page_manager() noexcept
+                #if defined(__GNUC__) && __GNUC__ < 5
+                    // workaround for undefined std::atomic_init (https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg443628.html)
+                    : m_curr_region(&m_first_region)
+                #endif
             {
-                /** The first region is always empty, so it will be skipped soon */
-                std::atomic_init(&m_curr_region, &m_first_region);
+                #if !(defined(__GNUC__) && __GNUC__ < 5)
+                    /** The first region is always empty, so it will be skipped soon */
+                    std::atomic_init(&m_curr_region, &m_first_region);
+                #endif
             }
 
             ~system_page_manager()
@@ -152,6 +158,10 @@ namespace density
 
                 /** Sum of the sizes (in bytes) of all the memory regions in the list up to this one */
                 uintptr_t m_cumulative_available_memory{ 0 };
+                
+                Region() noexcept { }
+                Region(const Region &) = delete;
+                Region & operator = (const Region &) = delete;
             };
 
             /** Returns the region after a given one, possibly creating it.

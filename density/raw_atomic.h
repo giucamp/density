@@ -284,43 +284,42 @@ namespace density
         #endif
 
     #elif defined(__GNUG__) // gcc and clang
-
+    
+        namespace detail
+        {
+            inline int mem_order_cnv(std::memory_order i_order)
+            {
+                switch(i_order)
+                {
+                    case std::memory_order_acq_rel:
+                        return __ATOMIC_ACQ_REL;
+                    case std::memory_order_acquire:
+                        return __ATOMIC_ACQUIRE;
+                    case std::memory_order_consume:
+                        return __ATOMIC_CONSUME;
+                    case std::memory_order_relaxed:
+                        return __ATOMIC_RELAXED;
+                    case std::memory_order_release:
+                        return __ATOMIC_RELEASE;
+                    case std::memory_order_seq_cst:
+                    default:
+                        return __ATOMIC_SEQ_CST;
+                }                
+            }            
+        }
+        
         inline uintptr_t raw_atomic_load(uintptr_t const * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
 
-            switch(i_memory_order)
-            {
-                case std::memory_order_relaxed:
-                    return __atomic_load_n(i_atomic, __ATOMIC_RELAXED);
-                case std::memory_order_acquire:
-                    return __atomic_load_n(i_atomic, __ATOMIC_ACQUIRE);
-                case std::memory_order_seq_cst:
-                    return __atomic_load_n(i_atomic,  __ATOMIC_SEQ_CST);
-                default:
-                    DENSITY_ASSERT(false);
-                    return 0;
-            }
+            return __atomic_load_n(i_atomic, detail::mem_order_cnv(i_memory_order));
         }
 
         inline void raw_atomic_store(uintptr_t * i_atomic, uintptr_t i_value, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
 
-            switch(i_memory_order)
-            {
-                case std::memory_order_relaxed:
-                    __atomic_store_n(i_atomic, i_value, __ATOMIC_RELAXED);
-                    break;
-                case std::memory_order_release:
-                    __atomic_store_n(i_atomic, i_value, __ATOMIC_RELEASE);
-                    break;
-                case std::memory_order_seq_cst:
-                    __atomic_store_n(i_atomic, i_value, __ATOMIC_SEQ_CST);
-                    break;
-                default:
-                    DENSITY_ASSERT(false);
-            }
+            __atomic_store_n(i_atomic, i_value, detail::mem_order_cnv(i_memory_order));
         }
 
         inline bool raw_atomic_compare_exchange_strong(uintptr_t * i_atomic,
@@ -328,112 +327,15 @@ namespace density
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
 
-            switch(i_success)
-            {
-                case std::memory_order_relaxed:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                case std::memory_order_consume:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_CONSUME, __ATOMIC_ACQUIRE);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                case std::memory_order_acquire:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                case std::memory_order_release:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_RELEASE, __ATOMIC_ACQUIRE);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                case std::memory_order_acq_rel:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                case std::memory_order_seq_cst:
-                {
-                    switch(i_failure)
-                    {
-                        case std::memory_order_relaxed:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_SEQ_CST, __ATOMIC_RELAXED);
-                        case std::memory_order_consume:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_SEQ_CST, __ATOMIC_CONSUME);
-                        case std::memory_order_acquire:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_SEQ_CST, __ATOMIC_ACQUIRE);
-                        case std::memory_order_seq_cst:
-                            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-                        default:
-                            DENSITY_ASSERT(false);
-                            return false;
-                    }
-                }
-
-                default:
-                    DENSITY_ASSERT(false);
-                    return false;
-            }
+            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, 
+                detail::mem_order_cnv(i_success), detail::mem_order_cnv(i_failure));
         }
 
         inline bool raw_atomic_compare_exchange_weak(uintptr_t * i_atomic,
             uintptr_t * i_expected, uintptr_t i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept
         {
-            return raw_atomic_compare_exchange_strong(i_atomic, i_expected, i_desired, i_success, i_failure);
+            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, true, 
+                detail::mem_order_cnv(i_success), detail::mem_order_cnv(i_failure));
         }
 
     #endif

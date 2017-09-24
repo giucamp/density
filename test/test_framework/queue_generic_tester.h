@@ -251,16 +251,17 @@ namespace density_tests
             is m_existing must be 0 and m_spawned must be the total count for the given type).*/
         struct PutTypeCounters
         {
+            PutTypeCounters() noexcept {}
             int64_t m_existing{0}; /**< How many elements of this type currently exist in the queue. */
             int64_t m_spawned{0}; /**< How many elements of this type have been put in the queue. */
         };
 
         struct IncrementalStats
         {
+            IncrementalStats() noexcept {}
             std::atomic<size_t> m_produced{0};
             std::atomic<size_t> m_consumed{0};
             std::atomic<bool> m_thread_is_active{false};
-
         };
 
         struct FinalStats
