@@ -8,6 +8,7 @@ install:
 
 compiler:
 - gcc
+- clang
 
 script:
 - cd test && mkdir build && cd build && cmake .. && make

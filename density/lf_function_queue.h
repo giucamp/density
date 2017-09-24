@@ -39,7 +39,7 @@ namespace density
         \n <b>Thread safeness</b>: A thread doing put operations and another thread doing consumes don't need to be synchronized.
                 If PROD_CARDINALITY is concurrency_multiple, multiple threads are allowed to put without any synchronization.
                 If CONSUMER_CARDINALITY is concurrency_multiple, multiple threads are allowed to consume without any synchronization.
-        \n <b>Exception safeness</b>: Any function of lf_heter_queue is noexcept or provides the strong exception guarantee.
+        \n <b>Exception safeness</b>: Any function of lf_function_queue is noexcept or provides the strong exception guarantee.
 
         This class template uses lock-free algorithms for both put operations and consume operations. Anyway, for the overall
         put or consume to be lock-free, if a memory operation is necessary, it must be lock-free too. The default allocator,
