@@ -42,7 +42,7 @@ add_executable(density_test
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
 	TARGET_LINK_LIBRARIES(density_test pthread)
-	add_compile_options(-lstdc++ -lm)
+	add_compile_options(-libc++ -lm)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
 	TARGET_LINK_LIBRARIES(density_test pthread)
