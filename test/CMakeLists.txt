@@ -39,7 +39,7 @@ add_executable(density_test
 	test_framework/threading_extensions.cpp
 	main.cpp )
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++")
 	# using Clang
 	TARGET_LINK_LIBRARIES(density_test pthread)
 	add_compile_options(-libc++ -lm)
