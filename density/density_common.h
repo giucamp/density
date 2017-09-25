@@ -652,14 +652,25 @@ Every function queue is actually an adaptor for the corresponding heterogeneous 
 
 The first 3 template parameters are the same for all the heterogeneous queues.
 
-Template parameter|Type       |Meaning  |Constraint|Default  |
-------------------|-----------|---------|----------|---------|
-`COMMON_TYPE`|type|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`|
-`RUNTIME_TYPE`|type|Type eraser type|Must model [RuntimeType](RuntimeType_concept.html)|[runtime_type](classdensity_1_1runtime__type.html)|
-`ALLOCATOR_TYPE`|type|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
+Template parameter            |Meaning  |Constraints|Default  |
+------------------------------|---------|-----------|---------|
+typename `COMMON_TYPE`|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`|
+typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_concept.html)|[runtime_type](classdensity_1_1runtime__type.html)|
+typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
 An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
 The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
+
+\snippet misc_examples.cpp runtime_type example 2
+\snippet misc_examples.cpp runtime_type example 3
+
+Output:
+
+~~~~~~~~~~~~~~
+ObjectA::update(0.0166667)
+ObjectB::update(0.0166667)
+ObjectB::update(0.0166667)
+~~~~~~~~~~~~~~
 
 Lifo data structures
 --------------
@@ -679,6 +690,8 @@ The data stack is a thread-local storage managed by a lifo allocator.  By "lifo"
 If you declare a lifo_array locally to a function, you don't have to worry about the lifo-constraint, because C++ is designed so that automatic objects are destroyed in lifo order. Even a lifo_array as non-static member of a struct/class allocated on the callstack is safe.
 
 A [lifo_buffer](classdensity_1_1lifo__buffer.html) is not a container, it's more low-level. It provides a dynamic raw storage. Unlike lifo_array, lifo_buffer allows reallocation (that is changing the size and the alignment of the buffer), but only of the last created lifo_buffer (otherwise the behavior is undefined).
+
+~~~~~~~~~~~~~~
 
     void string_io()
     {
@@ -712,6 +725,8 @@ A [lifo_buffer](classdensity_1_1lifo__buffer.html) is not a container, it's more
 
         fclose(file);
     }
+
+~~~~~~~~~~~~~~
 
 Concepts
 ----------

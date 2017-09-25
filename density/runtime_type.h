@@ -15,6 +15,7 @@
 
 namespace density
 {
+    /** namespace type_features */
     namespace type_features
     {
         /** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
@@ -40,7 +41,7 @@ namespace density
             type_features::alignment). \n
             The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
             casts the value of the feature to this type before returning it.
-            \snippet misc_samples.cpp feature_list example 1 */
+            \snippet misc_examples.cpp feature_list example 1 */
         template <typename... FEATURES> struct feature_list
         {
             /** Constant that gives the number of features */
@@ -63,7 +64,7 @@ namespace density
 
             Example:
 
-            \snippet misc_samples.cpp feature_concat example 1
+            \snippet misc_examples.cpp feature_concat example 1
         */
         #ifndef DOXYGEN_DOC_GENERATION
             template <typename...> struct feature_concat;
@@ -357,7 +358,7 @@ namespace density
                 @tparam CALLABLE signature of the object function
 
             Example:
-            \snippet misc_samples.cpp type_features::invoke example 1
+            \snippet misc_examples.cpp type_features::invoke example 1
         */
         #ifndef DOXYGEN_DOC_GENERATION
             template <typename> struct invoke;
@@ -622,6 +623,8 @@ namespace density
                 using type = default_type_features_t<COMMON_TYPE>;
             };
         #endif
+
+        /** Alias for default_type_features<COMMON_TYPE>::type */
         template <typename COMMON_TYPE>
             using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
 
@@ -720,23 +723,31 @@ namespace density
 
         \n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable, that is a static array of feature
             values: for every feature in FEATURE_LIST there is an entry in this vtable. Most entries are pointer to functions.
-            Anyway, some features (notably type_features::size and type_features::alignment) store a static const value. \n
+            Anyway, some features (notably type_features::size and type_features::alignment) store a static const value.
 
 
-        In this example a std::string is created and destroyed using a runtime_type.
+        In this example an <code>std::string</code> is created and destroyed using a runtime_type.
 
-        \snippet misc_samples.cpp runtime_type example 1
+        \snippet misc_examples.cpp runtime_type example 1
 
         This is an example of user-defined features: it calls a function named 'update', that takes as parameter a float
 
-        \snippet misc_samples.cpp runtime_type example 2
+        \snippet misc_examples.cpp runtime_type example 2
 
         The example below uses feature_call_update. Note that:
             - ObjectA and ObjectB are unrelated types (no common base class)
             - ObjectA::update and ObjectB::update are not virtual functions
             - If a std::string was added to the array, a compile time error would report that std::string has not an update function
 
-        \snippet misc_samples.cpp runtime_type example 3
+        \snippet misc_examples.cpp runtime_type example 3
+
+        Output:
+
+        ~~~~~~~~~~~~~~
+        ObjectA::update(0.0166667)
+        ObjectB::update(0.0166667)
+        ObjectB::update(0.0166667)
+        ~~~~~~~~~~~~~~
     */
     template <typename COMMON_TYPE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<COMMON_TYPE> >
         class runtime_type

@@ -14,10 +14,131 @@
 
 namespace density_tests
 {
+    //! [runtime_type example 2]
+
+    /* This feature calls an update function on any object. The update has not to be virtual, as
+        type erasure already is a kind of virtualization. */
+    struct feature_call_update
+    {
+        using type = void(*)(void * i_dest, float i_elapsed_time);
+
+        template <typename BASE, typename TYPE> struct Impl
+        {
+            static void invoke(void * i_base_dest, float i_elapsed_time) noexcept
+            {
+                const auto base_dest = static_cast<BASE*>(i_base_dest);
+                static_cast<TYPE*>(base_dest)->update(i_elapsed_time);
+            }
+            static const uintptr_t value;
+        };
+    };
+    template <typename TYPE, typename BASE>
+        const uintptr_t feature_call_update::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+
+    //! [runtime_type example 2]
 
     void misc_examples()
     {
         using namespace density;
+
+        {
+            //! [feature_list example 1]
+    using namespace type_features;
+    using MyFeatures = feature_list<default_construct, size, alignment>;
+            //! [feature_list example 1]
+            MyFeatures unused; (void)unused;
+        }
+
+        {
+            //! [feature_concat example 1]
+    using namespace type_features;
+    using MyPartialFeatures = feature_list<default_construct, size>;
+    using MyFeatures = feature_concat_t<MyPartialFeatures, alignment>;
+    using MyFeatures1 = feature_concat_t<MyPartialFeatures, feature_list<alignment> >;
+    static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "");
+            //! [feature_concat example 1]
+        }
+
+        {
+            //! [type_features::invoke example 1]
+
+    using namespace type_features;
+
+    // This feature allows to call a function object passing a std::string
+    using MyInvoke = invoke<void(std::string)>;
+
+    // we need MyInvoke and the standard features (size, alignment, ...)
+    using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke >;
+
+    // create a queue
+    using QueueOfInvokables = heter_queue<void, runtime_type<void, MyFeatures>, void_allocator >;
+    QueueOfInvokables my_queue;
+    my_queue.push([](std::string s) { std::cout << s << std::endl; });
+    
+    // invoke my_queue.begin()
+    my_queue.begin()->first.get_feature<MyInvoke>()(my_queue.begin()->second, "hello!");
+            //! [type_features::invoke example 1]
+        }
+
+        {
+            //! [runtime_type example 1]
+
+    using namespace type_features;
+
+    using MyRTType = runtime_type<void, feature_list<default_construct, destroy, size> >;
+
+    MyRTType type = MyRTType::make<std::string>();
+
+    void * buff = malloc(type.size());
+
+    type.default_construct(buff);
+
+    // now buff points to a valid std::string
+    *static_cast<std::string*>(buff) = "hello world!";
+
+    type.destroy(buff);
+
+    free(buff);
+
+            //! [runtime_type example 1]
+        }
+
+
+        {
+            //! [runtime_type example 3]
+
+    struct ObjectA
+    {
+        void update(float i_elapsed_time)
+            { std::cout << "ObjectA::update(" << i_elapsed_time << ")" << std::endl; }
+    };
+
+    struct ObjectB
+    {
+        void update(float i_elapsed_time)
+            { std::cout << "ObjectB::update(" << i_elapsed_time << ")" << std::endl; }
+    };
+
+    using namespace type_features;
+
+    // concatenates feature_call_update to the default features (destroy, size, alignment)
+    using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
+
+    // create a queue with 3 objects
+    heter_queue<void, runtime_type<void, MyFeatures>, void_allocator > my_queue;
+    my_queue.emplace<ObjectA>();
+    my_queue.emplace<ObjectB>();
+    my_queue.emplace<ObjectB>();
+
+    // call update on all the objects
+    auto const end_it = my_queue.end();
+    for (auto it = my_queue.begin(); it != end_it; ++it)
+    {
+        auto const update_func = it->first.get_feature<feature_call_update>();
+        update_func(it->second, 1.f / 60.f );
+    }
+            //! [runtime_type example 3]
+        }
 
         {
             //! [function_queue example 1]
