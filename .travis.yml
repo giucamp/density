@@ -46,5 +46,8 @@ matrix:
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
+before_install:
+    - eval "${MATRIX_EVAL}"
+
 script:
   - cd test && mkdir build && cd build && cmake .. && make
