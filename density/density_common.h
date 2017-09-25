@@ -631,7 +631,7 @@ The class templates [lf_function_queue](classdensity_1_1lf__function__queue.html
 When dealing with a multiple producers, the tail pointer is an atomic variable. Otherwise it is a plain variable.
 When dealing with a multiple consumers, the head pointer is an atomic variable. Otherwise it is a plain variable.
 
-The class templates [lf_function_queue](classdensity_1_1lf__function__queue.html) and [lf_hetr_queue](classdensity_1_1lf__heter__queue.html) allow a further optimization with a template argument of type [consistency_model](namespacedensity.html#ad5d59321f5f1b9a040c6eb9bc500a051): by default the queue is sequential consistent (that is all threads observe the operations happening in the same order). If `consistency_relaxed`is specified, this guarantee is removed, with a great performance benefit.
+The class templates [lf_function_queue](classdensity_1_1lf__function__queue.html) and [lf_hetr_queue](classdensity_1_1lf__heter__queue.html) allow a further optimization with a template argument of type [consistency_model](namespacedensity.html#ad5d59321f5f1b9a040c6eb9bc500a051): by default the queue is sequential consistent (that is all threads observe the operations happening in the same order). If \ref consistency_relaxed is specified, this guarantee is removed, with a great performance benefit.
 
 For all queues, the functions `try_consume` and `try_reentrant_consume` have 2 variants:
 
@@ -671,6 +671,21 @@ ObjectA::update(0.0166667)
 ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
 ~~~~~~~~~~~~~~
+
+Benchmarks
+--------------------
+All the tests are done on an Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 2808 Mhz, 4 cores, 8 logical processors running Windows 10, and compiled with Visual Studio 2017.
+
+In this singlethreaded test <code>std::vector</code> and <code>std::queue</code> are compared to density function queues. Even unnecessarily paying the cost of multithreading,
+all concurrent function queues are better than a <code>std::queue</code> of <code>std::function</code>.
+
+Note that the vector is being cleared at the end, because otherwise it would be too slow.
+
+\image html bench.png width=8cm
+
+This is the same test as before, but function queues uses \ref function_manual_clear, \ref concurrency_single and \ref consistency_relaxed to speedup.
+
+\image html bench_2.png width=8cm
 
 Lifo data structures
 --------------
