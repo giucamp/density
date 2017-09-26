@@ -277,6 +277,7 @@ namespace density
                 @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -323,7 +324,7 @@ namespace density
                     }
                     else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                     {
-                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -335,6 +336,8 @@ namespace density
                         {
                             DENSITY_ASSERT_INTERNAL(tail != 0);
                         }
+
+                        m_tail = tail;
                     }
                     else
                     {
@@ -347,6 +350,7 @@ namespace density
             /** Overload of try_inplace_allocate_impl that can be used when all parameters are compile time constants */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Block try_inplace_allocate_impl()
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -395,7 +399,7 @@ namespace density
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page
                     {
-                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -407,6 +411,7 @@ namespace density
                         {
                             DENSITY_ASSERT_INTERNAL(tail != 0);
                         }
+                        m_tail = tail;
                     }
                     else
                     {
@@ -419,6 +424,7 @@ namespace density
                /** Used by inplace_allocate when the block can't be allocated in a page. */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 

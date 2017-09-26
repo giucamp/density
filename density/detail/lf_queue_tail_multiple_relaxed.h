@@ -284,6 +284,7 @@ namespace density
                 @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -365,7 +366,8 @@ namespace density
 
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block try_inplace_allocate_impl() noexcept
+                Block try_inplace_allocate_impl()
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -454,6 +456,7 @@ namespace density
             /** Used by inplace_allocate when the block can't be allocated in a page. */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 

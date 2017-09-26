@@ -19,7 +19,7 @@ namespace density_tests
             3000, 1000, i_ostream);
 
         density_tests::queue_load_unload_test<lf_heter_queue<>>(
-            7, 10000000, i_ostream);
+            7, 100000, i_ostream);
 
         /*density_tests::queue_load_unload_test<conc_heter_queue<>>(
             3000, 1000, i_ostream);

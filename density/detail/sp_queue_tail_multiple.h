@@ -11,16 +11,16 @@ namespace density
     namespace detail
     {
         template <typename BUSY_WAIT_FUNC>
-            class spinlock_mutex : private BUSY_WAIT_FUNC
+            class SpinlockMutex : private BUSY_WAIT_FUNC
         {
         public:
 
-            spinlock_mutex() noexcept
+            SpinlockMutex() noexcept
             {
                 m_lock.clear();
             }
 
-            spinlock_mutex(const BUSY_WAIT_FUNC & i_busy_wait)
+            SpinlockMutex(const BUSY_WAIT_FUNC & i_busy_wait)
                 : BUSY_WAIT_FUNC(i_busy_wait)
             {
                 m_lock.clear();
@@ -28,13 +28,13 @@ namespace density
 
             bool try_lock() noexcept
             {
-                return !m_lock.test_and_set(std::memory_order_acquire);
+                return !m_lock.test_and_set(mem_acquire);
             }
 
             void lock() noexcept
             {
                 BUSY_WAIT_FUNC & busy_wait = *this;
-                while (m_lock.test_and_set(std::memory_order_acquire))
+                while (m_lock.test_and_set(mem_acquire))
                 {
                     busy_wait();
                 }
@@ -42,12 +42,16 @@ namespace density
 
             void unlock() noexcept
             {
-                m_lock.clear(std::memory_order_release);
+                m_lock.clear(mem_release);
+            }
+
+            ~SpinlockMutex()
+            {
+                DENSITY_ASSERT_INTERNAL(m_lock.test_and_set() == false);
             }
 
         private:
             std::atomic_flag m_lock;
-            BUSY_WAIT_FUNC m_busy_wait;
         };
 
         /** \internal Class template that implements put operations for spin-locking queues */
@@ -316,6 +320,7 @@ namespace density
                 @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -374,7 +379,7 @@ namespace density
                     }
                     else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                     {
-                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -386,10 +391,12 @@ namespace density
                         {
                             DENSITY_ASSERT_INTERNAL(tail != 0);
                         }
+                        m_tail = tail;
                     }
                     else
                     {
                         // this allocation would never fit in a page, allocate an external block
+                        lock.unlock(); // this avoids recursive locks
                         return external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
                 }
@@ -398,6 +405,7 @@ namespace density
             /** Overload of try_inplace_allocate_impl that can be used when all parameters are compile time constants */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Block try_inplace_allocate_impl()
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -452,12 +460,14 @@ namespace density
                         raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
 
                         DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
+                        DENSITY_ASSERT_INTERNAL(new_tail != nullptr);
                         m_tail = new_tail;
+                        
                         return Block{ control_block, next_ptr, user_storage };
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page
                     {
-                        tail = m_tail = page_overflow(PROGRESS_GUARANTEE, tail);
+                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
                             if (tail == 0)
@@ -469,10 +479,12 @@ namespace density
                         {
                             DENSITY_ASSERT_INTERNAL(tail != 0);
                         }
+                        m_tail = tail;
                     }
                     else
                     {
                         // this allocation would never fit in a page, allocate an external block
+                        lock.unlock(); // this avoids recursive locks
                         return external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
                     }
                 }
@@ -481,6 +493,7 @@ namespace density
                /** Used by inplace_allocate when the block can't be allocated in a page. */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
@@ -615,7 +628,7 @@ namespace density
             }
 
         private: // data members
-            alignas(concurrent_alignment) spinlock_mutex<BUSY_WAIT_FUNC> m_mutex;
+            alignas(concurrent_alignment) SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
             ControlBlock * m_tail;
             std::atomic<ControlBlock*> m_initial_page;
         };

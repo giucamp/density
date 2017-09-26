@@ -127,7 +127,7 @@ void do_tests(std::ostream & i_ostream)
     lf_func_queue_samples(i_ostream);
     sp_func_queue_samples(i_ostream);
 
-    size_t const element_count = 10000;
+    size_t const element_count = 1000;
 
     uint32_t random_seed = 0; // 0 -> non-deterministic
 
