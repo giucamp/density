@@ -17,17 +17,22 @@ namespace density
         @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
+        A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
         Memory is allocated/freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
-        A living block is a block allocated, eventually reallocated, but not yet deallocated. \n
+        A living block is a block allocated, eventually reallocated, but not yet deallocated.
+
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
-        To simpify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed to be like
-        std::max_align_t. \n
+        To simplify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed 
+        to be aligned like std::max_align_t.
+
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
-        The destructor of lifo_allocator calls the member function deallocate_all to deallocate any living block. \n
+        When lifo_allocator is destroyed, all the living blocks are deallocated.
+
         lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and
         there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
-        an untyped block is allocated from the underlying allocator. \n
+        a legacy heap block is allocated from the underlying allocator.
+
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately
         deallocated. \n
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
@@ -40,7 +45,7 @@ namespace density
     public:
 
         /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-        static const size_t s_alignment = alignof(std::max_align_t);
+        static constexpr size_t s_alignment = alignof(std::max_align_t);
 
         /** Default constructor. */
         lifo_allocator() = default;
@@ -49,8 +54,10 @@ namespace density
         lifo_allocator(const VOID_ALLOCATOR & i_underlying_allocator)
             : VOID_ALLOCATOR(i_underlying_allocator) { }
 
-        // disable copying
+        /** Copy construction not allowed */
         lifo_allocator(const lifo_allocator &) = delete;
+        
+        /** Copy assignment not allowed */
         lifo_allocator & operator = (const lifo_allocator &) = delete;
 
         /** Destroys the allocator, deallocating any living bock */
@@ -321,7 +328,7 @@ namespace density
         eventually reallocated, but not yet deallocated. Every thread has its own stack of living blocks.
         ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED BY A THREAD. If a block which is not
         the most recently allocated living block of the calling thread is deallocated or reallocated, the behavior is undefined.
-        For simplicity, thread_lifo_allocator does not support custom alignments : every block is guaranteed to be like
+        For simplicity, thread_lifo_allocator does not support custom alignments: every block is guaranteed to be aligned like
         std::max_align_t.
         Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
         Only the calling thread matters.
@@ -338,10 +345,6 @@ namespace density
 
         /** Default constructor */
         thread_lifo_allocator() = default;
-
-        // disable the copy
-        thread_lifo_allocator(const thread_lifo_allocator & ) = delete;
-        thread_lifo_allocator & operator = (const thread_lifo_allocator &) = delete;
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined.
                 @param i_block i_mem_size The size of the requested block, in bytes.
@@ -707,126 +710,6 @@ namespace density
     private:
         using detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>::m_elements;
         const size_t m_size;
-    };
-
-    template <typename RUNTIME_TYPE = runtime_type<>, typename LIFO_ALLOCATOR = thread_lifo_allocator<> >
-        class lifo_any : private LIFO_ALLOCATOR
-    {
-    public:
-
-        lifo_any() noexcept
-            : m_block(nullptr), m_object(nullptr)
-                { }
-
-        lifo_any(const lifo_any&) = delete;
-        lifo_any & operator = (const lifo_any&) = delete;
-
-        template <typename TARGET_TYPE>
-            lifo_any(TARGET_TYPE && i_source)
-                : m_type(RUNTIME_TYPE::template make<TARGET_TYPE>())
-        {
-            assign_impl(i_source);
-        }
-
-        template <typename TARGET_TYPE>
-            lifo_any & operator = (TARGET_TYPE && i_source)
-        {
-            clear_impl();
-            m_type = RUNTIME_TYPE::template make<TARGET_TYPE>();
-            assign_impl(i_source);
-            return *this;
-        }
-
-        void clear() noexcept
-        {
-            clear_impl();
-            m_type.clear();
-            m_block = nullptr;
-            m_object = nullptr;
-        }
-
-        bool operator == (const lifo_any & i_other) const noexcept
-        {
-            return m_type == i_other.m_type &&
-                m_type.template get_feature<type_features::equals>()(m_object, i_other.m_object);
-        }
-
-        bool operator != (const lifo_any & i_other) const noexcept
-        {
-            return m_type != i_other.m_type ||
-                m_type.template get_feature<type_features::less>()(m_object, i_other.m_object);
-        }
-
-        const RUNTIME_TYPE & type() const noexcept { return m_type; }
-
-        const typename RUNTIME_TYPE::common_type * data() const noexcept
-        {
-            return m_object;
-        }
-
-        typename RUNTIME_TYPE::common_type * data() noexcept
-        {
-            return m_object;
-        }
-
-        LIFO_ALLOCATOR & get_allocator() noexcept
-        {
-            return *this;
-        }
-
-        const LIFO_ALLOCATOR & get_allocator() const noexcept
-        {
-            return *this;
-        }
-
-    private:
-
-        template <typename TARGET_TYPE>
-            typename RUNTIME_TYPE::common_type * construct_impl(void * i_dest, TARGET_TYPE && i_source, std::true_type)
-        {
-            typename RUNTIME_TYPE::common_type * base_ptr = &i_source;
-            return m_type.move_construct(i_dest, base_ptr);
-        }
-
-        template <typename TARGET_TYPE>
-            typename RUNTIME_TYPE::common_type * construct_impl(void * i_dest, const TARGET_TYPE & i_source, std::false_type)
-        {
-            const typename RUNTIME_TYPE::common_type * base_ptr = &i_source;
-            return m_type.copy_construct(i_dest, base_ptr);
-        }
-
-        template <typename TARGET_TYPE>
-            void assign_impl(TARGET_TYPE && i_source)
-        {
-            auto const size = m_type.alignment();
-            auto const alignment = m_type.alignment();
-            void * aligned_block;
-            if (alignment <= alignof(std::max_align_t))
-            {
-                aligned_block = m_block = get_allocator().allocate(size);
-            }
-            else
-            {
-                // the lifo block is already aligned like std::max_align_t
-                const size_t size_overhead = alignment - alignof(std::max_align_t);
-                m_block = get_allocator().allocate(size_overhead + size);
-                aligned_block = address_upper_align(m_block, alignment);
-                DENSITY_ASSERT_INTERNAL(address_diff(aligned_block, m_block) <= size_overhead);
-            }
-            m_object = construct_impl(aligned_block, std::forward<TARGET_TYPE>(i_source),
-                typename std::is_rvalue_reference<TARGET_TYPE&&>::type() );
-        }
-
-        void clear_impl() noexcept
-        {
-            m_type.destroy(m_object);
-            get_allocator().deallocate(m_block);
-        }
-
-    private:
-        RUNTIME_TYPE m_type;
-        void * m_block;
-        typename RUNTIME_TYPE::common_type * m_object;
     };
 
 } // namespace density

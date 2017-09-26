@@ -646,7 +646,7 @@ Note: a forgotten consume_operation which has pinned a page prevents the page fr
 
 Heterogeneous queues
 --------------------
-Every function queue is actually an adaptor for the corresponding heterogeneous pseudo-container.  Heterogeneous queues have pit and consume functions, just like function queues, but elements are not required to be callable objects.
+Every function queue is actually an adaptor for the corresponding heterogeneous pseudo-container.  Heterogeneous queues have put and consume functions, just like function queues, but elements are not required to be callable objects.
 
 \snippet heterogeneous_queue_examples.cpp heter_queue put example 1
 
@@ -672,7 +672,7 @@ ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
 ~~~~~~~~~~~~~~
 
-Benchmarks
+Function queues benchmarks
 --------------------
 All the tests are done on an Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 2808 Mhz, 4 cores, 8 logical processors running Windows 10, and compiled with Visual Studio 2017.
 

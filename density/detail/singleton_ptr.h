@@ -6,7 +6,6 @@
 
 #pragma once
 #include <density/density_common.h>
-#include <atomic>
 #include <thread>
 #include <type_traits>
 #include <density/raw_atomic.h>
@@ -15,22 +14,28 @@ namespace density
 {
     namespace detail
     {
-        /** Class template to safely and efficiently handle a singleton.
-            SingletonPtr is an empty class (no non-static data members) that provides thread-safe ref-counted access to a
-            singleton object allocated in a fixed static storage. \n
+        /** Class template implementing an easy, safe and efficient singleton.
+            
+            SingletonPtr is an empty class template with pointer semantics. Instances are immutable and always non-null.
+            The construction/destruction of the target singleton is thread safe, and happens always during the construction/destruction
+            of globals. The target singleton is allocated in a fixed static (properly aligned) storage.
+            
             The access to the singleton (operators * and ->, function get) is basically a no-op, as it returns the address
-            of the static storage: no initialization guard is necessary. All the cost of handling the lifetime of the singleton
-            is paid in the constructor and destructor. \n
-            Internally SingletonPtr declares a global instance of itself, to guarantee that the singleton is constructed during
-            the initialization of global objects, and destroyed during the destruction of global objects. Anyway instances of
+            of the static storage: no initialization guard is necessary. All the cost of handling the (thread synchronized) lifetime of 
+            the singleton is paid in the constructor and destructor.
+
+            Internally SingletonPtr declares a static instance of itself, to guarantee that the singleton is constructed during
+            the initialization of global objects, and destroyed during the destruction of global objects. Other instances of
             SingletonPtr can be safely created and destroyed during the construction or destruction of globals.
+
             Anyway, in case of global object with asymmetric lifetimes, the singleton may be created and destroyed more than once,
             with at most one instance existing in any moment. In case of instances constructed and destroyed concurrently during
             the construction or destruction of global objects, a thread may wait in a busy loop while another thread is constructing
             or destroying the singleton.\n
 
             The singleton class should be uncopyable, unmovable, and should have private constructor and destructor. SingletonPtr<T>
-            should be declared friend of t. */
+            should be declared friend of the singleton class. To exploit the emptyness of SingletonPtr the user may use the empty
+            base class optimization. */
         template <typename SINGLETON>
             class SingletonPtr
         {
@@ -39,7 +44,7 @@ namespace density
             /** Constructs the SingletonPtr, possibly constructing the singleton. */
             SingletonPtr() noexcept(std::is_nothrow_default_constructible<SINGLETON>::value)
             {
-                volatile void * no_strip = &s_global_ptr_instance;
+                void * volatile no_strip = &s_global_ptr_instance;
                 (void)no_strip;
                 add_ref();
             }
