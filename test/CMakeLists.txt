@@ -6,9 +6,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 include_directories(".")
 include_directories("../")
 
-set (CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED on)
-
 # the compiler used for C++ files 
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
@@ -48,10 +45,11 @@ add_executable(density_test
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	MESSAGE( STATUS "compiling with clang")
-	TARGET_LINK_LIBRARIES(density_test pthread)
-	add_compile_options(-nostdinc++ -I${CMAKE_CXX_COMPILER}/../include/c++/v1 -L${CMAKE_CXX_COMPILER}/../lib)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "compiling with g++")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "compiling with msvc")
