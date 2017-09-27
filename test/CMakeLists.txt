@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 # the compiler used for C++ files 
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
+MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
 
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp
@@ -46,13 +47,13 @@ add_executable(density_test
 	main.cpp )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	# using Clang
+	MESSAGE( STATUS "compiling with clang")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 	add_compile_options(-nostdinc++ -I${CMAKE_CXX_COMPILER}/../include/c++/v1 -L${CMAKE_CXX_COMPILER}/../lib)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	# using GCC
+	MESSAGE( STATUS "compiling with g++")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	# using Visual Studio C++
+	MESSAGE( STATUS "compiling with msvc")
 	add_compile_options(/bigobj)
 endif()
