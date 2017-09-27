@@ -1,10 +1,16 @@
 cmake_minimum_required (VERSION 3.1)
 project (density_test)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 include_directories(".")
 include_directories("../")
 
 set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
+
+# the compiler used for C++ files 
+MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp
@@ -39,14 +45,10 @@ add_executable(density_test
 	test_framework/threading_extensions.cpp
 	main.cpp )
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	# using Clang
 	TARGET_LINK_LIBRARIES(density_test pthread)
-	add_compile_options(-stdlib=libstdc++)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-	# using Clang
-	TARGET_LINK_LIBRARIES(density_test pthread)
-	add_compile_options(-stdlib=libstdc++)
+	add_compile_options(-nostdinc++ -I${CMAKE_CXX_COMPILER}/../include/c++/v1 -L${CMAKE_CXX_COMPILER}/../lib)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
 	TARGET_LINK_LIBRARIES(density_test pthread)
