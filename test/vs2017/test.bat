@@ -2,6 +2,6 @@ REM SET CONFIGURATION=Release
 REM SET PLATFORM=x64
 
 IF "%CONFIGURATION%"=="Release" (
-    ECHO Testing "%PLATFORM% %CONFIGURATION%"
-    %PLATFORM%\%CONFIGURATION%\density_tests.exe
+    ECHO Testing %PLATFORM% %CONFIGURATION%
+    test\vs2017\%PLATFORM%\%CONFIGURATION%\density_tests.exe
 )
