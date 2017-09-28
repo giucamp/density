@@ -1,54 +1,35 @@
-dist: trusty
-sudo: false
-language: cpp
-
-matrix:
-  include:
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-    # works on Trusty
-#    - os: linux
-#      addons:
-#        apt:
-#          sources:
-#            - llvm-toolchain-trusty-4.0
-#          packages:
-#            - clang-4.0
-#      env:
-#        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
-#
-#    # works on Trusty
-#    - os: linux
-#      addons:
-#        apt:
-#          sources:
-#            - llvm-toolchain-trusty-5.0
-#          packages:
-#            - clang-5.0
-#      env:
-#        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
-
-
-before_install:
-    - eval "${MATRIX_EVAL}"
-
-script:
-  - cd test && mkdir build && cd build && cmake .. && make
+{
+  "language": "cpp",
+  "compiler": "clang",
+  "before_install": [
+    "if [ \"$CXX\" == \"g++\" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then sudo add-apt-repository -y ppa:h-rayflood/llvm; fi",
+    "sudo apt-get update -qq"
+  ],
+  "install": [
+    "if [ \"$CXX\" = \"g++\" ]; then sudo apt-get install -qq g++-4.8; fi",
+    "if [ \"$CXX\" = \"g++\" ]; then sudo apt-get install -qq libstdc++6-4.7-dev; fi",
+    "if [ \"$CXX\" = \"g++\" ]; then export CXXFLAGS=\"-std=c++0x\"; fi",
+    "if [ \"$CXX\" = \"g++\" ]; then export CXX=\"g++-4.8\"; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then sudo apt-get install --allow-unauthenticated -qq clang-3.4; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then export CXXFLAGS=\"-std=c++0x -stdlib=libc++\"; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then cd libcxx/lib && bash buildit; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then sudo cp ./libc++.so.1.0 /usr/lib/; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then sudo mkdir /usr/include/c++/v1; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then cd .. && sudo cp -r include/* /usr/include/c++/v1/; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then cd /usr/lib && sudo ln -sf libc++.so.1.0 libc++.so; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then sudo ln -sf libc++.so.1.0 libc++.so.1 && cd $cwd; fi",
+    "if [ \"$CXX\" == \"clang++\" ]; then export CXX=\"clang++-3.4\"; fi"
+  ],
+  "script": [
+    "$CXX --version",
+    "echo $CXXFLAGS",
+    "cd test",
+    "mkdir build",
+    "cd build",
+	"cmake ..",
+	"make"
+  ],
+  "os": "linux"
+}
