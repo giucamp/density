@@ -15,7 +15,76 @@
 
 namespace density_tests
 {
-    using namespace density;
+    void lifo_test_1(std::mt19937 & i_random)
+    {
+        using namespace density;
+
+        // instance a lifo_allocator
+        void_allocator underlying_allocator;
+        lifo_allocator<void_allocator> allocator(underlying_allocator);
+
+        // for a random number of times....
+        while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+        {
+            // allocate a block and fill it with progressive numbers
+            auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            auto block = static_cast<unsigned char*>( allocator.allocate(size) );
+            for (size_t index = 0; index < size; index++)
+            {
+                block[index] = static_cast<unsigned char>(index & 0xFF);
+            }
+
+            // reallocate the block with reallocate_preserve, and check the content
+            auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+            for (size_t index = 0; index < std::min(size, new_size); index++)
+            {
+                DENSITY_TEST_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
+            }
+
+            // reallocate the block with reallocate
+            new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+
+            // done
+            allocator.deallocate(block);
+        }
+    }
+
+    void lifo_test_2(std::mt19937 & i_random)
+    {
+        using namespace density;
+
+        // instance a lifo_allocator
+        thread_lifo_allocator<> allocator;
+
+        // for a random number of times....
+        while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
+        {
+            // allocate a block and fill it with progressive numbers
+            auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            auto block = static_cast<unsigned char*>(allocator.allocate(size));
+            for (size_t index = 0; index < size; index++)
+            {
+                block[index] = static_cast<unsigned char>(index & 0xFF);
+            }
+
+            // reallocate the block with reallocate_preserve, and check the content
+            auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
+            for (size_t index = 0; index < std::min(size, new_size); index++)
+            {
+                DENSITY_TEST_ASSERT(block[index] == static_cast<unsigned char>(index & 0xFF));
+            }
+
+            // reallocate the block with reallocate
+            new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
+
+            // done
+            allocator.deallocate(block);
+        }
+    }
 
     size_t random_alignment(std::mt19937 & i_random)
     {
@@ -39,10 +108,10 @@ namespace density_tests
         class LifoTestArray : public LifoTestItem
     {
     public:
-        LifoTestArray(const lifo_array<TYPE> & i_array)
+        LifoTestArray(const density::lifo_array<TYPE> & i_array)
             : m_array(i_array)
         {
-            DENSITY_TEST_ASSERT( address_is_aligned( i_array.data(), alignof(TYPE) ) );
+            DENSITY_TEST_ASSERT( density::address_is_aligned( i_array.data(), alignof(TYPE) ) );
             m_vector.insert(m_vector.end(), i_array.begin(), i_array.end());
         }
 
@@ -57,14 +126,14 @@ namespace density_tests
         }
 
     private:
-        const lifo_array<TYPE> & m_array;
+        const density::lifo_array<TYPE> & m_array;
         std::vector<TYPE> m_vector;
     };
 
     class LifoTestBuffer : public LifoTestItem
     {
     public:
-        LifoTestBuffer(lifo_buffer<> & i_buffer)
+        LifoTestBuffer(density::lifo_buffer<> & i_buffer)
             : m_buffer(i_buffer)
         {
             m_vector.insert(m_vector.end(),
@@ -153,12 +222,12 @@ namespace density_tests
         std::mt19937 & random() { return m_random; }
 
         template <typename TYPE>
-            void push_test(const lifo_array<TYPE> & i_array)
+            void push_test(const density::lifo_array<TYPE> & i_array)
         {
             m_tests.emplace_back( new LifoTestArray<TYPE>(i_array) );
         }
 
-        void push_test(lifo_buffer<> & i_buffer)
+        void push_test(density::lifo_buffer<> & i_buffer)
         {
             m_tests.emplace_back( new LifoTestBuffer(i_buffer) );
         }
@@ -186,6 +255,8 @@ namespace density_tests
 
         void lifo_test_push_buffer()
         {
+            using namespace density;
+
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random));
             DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), alignof(std::max_align_t)));
@@ -200,6 +271,8 @@ namespace density_tests
 
         void lifo_test_push_buffer_aligned()
         {
+            using namespace density;
+
             const auto alignment = random_alignment(m_random);
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer<> buffer(std::uniform_int_distribution<size_t>(0, 32)(m_random), alignment);
@@ -215,6 +288,8 @@ namespace density_tests
 
         void lifo_test_push_char()
         {
+            using namespace density;
+
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_array<unsigned char> arr(std::uniform_int_distribution<size_t>(0, 20)(m_random));
             std::generate(arr.begin(), arr.end(), [this, &rnd] { return static_cast<unsigned char>(rnd(m_random)); });
@@ -225,6 +300,8 @@ namespace density_tests
 
         void lifo_test_push_int()
         {
+            using namespace density;
+
             std::uniform_int_distribution<int> rnd(-1000, 1000);
             lifo_array<int> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
             std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
@@ -236,6 +313,8 @@ namespace density_tests
 
         void lifo_test_push_wide_alignment()
         {
+            using namespace density;
+
             union alignas(alignof(std::max_align_t) * 2) AlignedType
             {
                 int m_value;
@@ -257,6 +336,8 @@ namespace density_tests
 
         void lifo_test_push_double()
         {
+            using namespace density;
+
             std::uniform_real_distribution<double> rnd(-1000., 1000.);
             lifo_array<double> arr(std::uniform_int_distribution<size_t>(0, 7)(m_random));
             std::generate(arr.begin(), arr.end(), [this, &rnd] { return rnd(m_random); });
@@ -295,73 +376,6 @@ namespace density_tests
         }
 
     }; // LifoTestContext
-
-    void lifo_test_1(std::mt19937 & i_random)
-    {
-        // instance a lifo_allocator
-        void_allocator underlying_allocator;
-        lifo_allocator<void_allocator> allocator(underlying_allocator);
-
-        // for a random number of times....
-        while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
-        {
-            // allocate a block and fill it with progressive numbers
-            auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            auto block = static_cast<unsigned char*>( allocator.allocate(size) );
-            for (size_t index = 0; index < size; index++)
-            {
-                block[index] = static_cast<unsigned char>(index & 0xFF);
-            }
-
-            // reallocate the block with reallocate_preserve, and check the content
-            auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
-            for (size_t index = 0; index < std::min(size, new_size); index++)
-            {
-                DENSITY_TEST_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
-            }
-
-            // reallocate the block with reallocate
-            new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
-
-            // done
-            allocator.deallocate(block);
-        }
-    }
-
-    void lifo_test_2(std::mt19937 & i_random)
-    {
-        // instance a lifo_allocator
-        thread_lifo_allocator<> allocator;
-
-        // for a random number of times....
-        while (std::uniform_int_distribution<size_t>(0, 100)(i_random) > 10)
-        {
-            // allocate a block and fill it with progressive numbers
-            auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            auto block = static_cast<unsigned char*>(allocator.allocate(size));
-            for (size_t index = 0; index < size; index++)
-            {
-                block[index] = static_cast<unsigned char>(index & 0xFF);
-            }
-
-            // reallocate the block with reallocate_preserve, and check the content
-            auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, new_size));
-            for (size_t index = 0; index < std::min(size, new_size); index++)
-            {
-                DENSITY_TEST_ASSERT(block[index] == static_cast<unsigned char>(index & 0xFF));
-            }
-
-            // reallocate the block with reallocate
-            new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate(block, new_size));
-
-            // done
-            allocator.deallocate(block);
-        }
-    }
 
     void lifo_test_3(std::mt19937 & i_random)
     {
