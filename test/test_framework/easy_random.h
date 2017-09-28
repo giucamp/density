@@ -85,6 +85,8 @@ namespace density_tests
             return std::uniform_real_distribution<double>(0.0, 1.0)(m_rand) < i_true_probability;
         }
 
+        std::mt19937 & underlying_rand() { return m_rand; }
+
     private:
         EasyRandom(const std::mt19937 & i_rand)
             : m_rand(i_rand)

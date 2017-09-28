@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
 
+[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density)
+
 Density Overview
 ----------------
 Density is a C++11 header-only library focused on paged memory management. providing a rich set of highly configurable heterogeneous queues.
