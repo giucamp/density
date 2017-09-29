@@ -51,4 +51,4 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - cd test && mkdir build && cd build && cmake .. && make
+  - cd test && mkdir build && cd build && cmake .. && make && make install && density_test
