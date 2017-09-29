@@ -56,3 +56,5 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "compiling with msvc")
 	add_compile_options(/bigobj)
 endif()
+
+install (TARGETS density_test DESTINATION bin)

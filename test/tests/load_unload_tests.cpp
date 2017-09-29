@@ -16,10 +16,10 @@ namespace density_tests
         using namespace density;
 
         density_tests::queue_load_unload_test<lf_heter_queue<>>(
-            3000, 1000, i_ostream);
+            300, 100, i_ostream);
 
         density_tests::queue_load_unload_test<lf_heter_queue<>>(
-            7, 100000, i_ostream);
+            7, 4000, i_ostream);
 
         /*density_tests::queue_load_unload_test<conc_heter_queue<>>(
             3000, 1000, i_ostream);
