@@ -12,7 +12,7 @@
 
 namespace density
 {
-    /** Class template that provides a typeless LIFO memory management.
+    /** Class template that provides LIFO memory management.
 
         @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
@@ -21,10 +21,10 @@ namespace density
         Memory is allocated/freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
 
-        ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED. If a block which is not
+        Only the most recently allocated living block can be deallocated or reallocated. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
         To simplify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed 
-        to be aligned like std::max_align_t.
+        to be aligned like lifo_allocator::alignment.
 
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
         When lifo_allocator is destroyed, all the living blocks are deallocated.
@@ -85,8 +85,6 @@ namespace density
 
             // allocate
             auto const new_top = address_add(m_top, actual_size);
-
-            // check for page overflow
             if (same_page(m_top, new_top))
             {
                 auto const new_block = m_top;
@@ -145,18 +143,58 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            DENSITY_ASSERT(false);
-            deallocate(i_block, i_old_size);
-            return allocate(i_new_size);
+            // align the sizes
+            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
+            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
+
+            if (same_page(i_block, m_top))
+            {
+                // deallocate
+                m_top = i_block;
+
+                auto const new_block = allocate(new_actual_size);
+                
+                copy(i_block, old_actual_size, new_block, new_actual_size);
+                return new_block;
+            }
+            else
+            {
+                if (old_actual_size < VOID_ALLOCATOR::page_size)
+                {
+                    // deallocate procrastinating the deallocation of the page
+                    DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
+                    auto const old_top = m_top;
+                    m_top = i_block;
+
+                    auto const new_block = allocate(new_actual_size);
+                    copy(i_block, old_actual_size, new_block, new_actual_size);
+                    
+                    VOID_ALLOCATOR::deallocate_page(old_top);
+                    return new_block;
+                }
+                else
+                {
+                    // deallocate procrastinating the deallocation of the external block
+                    auto const new_block = allocate(new_actual_size);
+                    copy(i_block, old_actual_size, new_block, new_actual_size);
+                    
+                    VOID_ALLOCATOR::deallocate(i_block, old_actual_size, alignment);
+                    return new_block;
+                }
+            }
         }
 
     private:
 
-        /** This struct is allocated at the beginning of every page */
-        struct alignas(alignment) PageHeader
+        void copy(void * i_old_block, size_t i_old_actual_size, void * i_new_block, size_t i_new_actual_size) noexcept
         {
-            void * m_prev_block; /**< end of the last block of the previous page */
-        };
+            if (i_old_block != i_new_block)
+            {
+                auto const size_to_copy = detail::size_min(i_new_actual_size, i_old_actual_size);
+                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0); // this may help the optimizer
+                memcpy(i_new_block, i_old_block, size_to_copy);
+            }
+        }
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
         static bool same_page(const void * i_first, const void * i_second) noexcept

@@ -111,7 +111,7 @@ namespace density_tests
         virtual bool resize(std::mt19937 & /*i_random*/) { return false; }
         virtual ~LifoTestItem() {}
     };
-
+    
     template <typename TYPE>
         class LifoTestArray : public LifoTestItem
     {
@@ -390,7 +390,7 @@ namespace density_tests
     {
         PrintScopeDuration duration(i_output, "lifo_test_3");
 
-        LifoTestContext context(i_random, 20);
+        LifoTestContext context(i_random, 7);
         context.lifo_test_push();
     }
 
@@ -401,9 +401,12 @@ namespace density_tests
         EasyRandom easy_random = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
         auto & rand = easy_random.underlying_rand();
 
-        lifo_test_1(i_output, rand);
-        lifo_test_2(i_output, rand);
-        lifo_test_3(i_output, rand);
+        for (int i = 0; i < 10; i++)
+        {
+            lifo_test_1(i_output, rand);
+            lifo_test_2(i_output, rand);
+            lifo_test_3(i_output, rand);
+        }
     }
 
 } // namespace density_tests
