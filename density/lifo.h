@@ -71,6 +71,7 @@ namespace density
         /** Copy assignment not allowed */
         lifo_allocator & operator = (const lifo_allocator &) = delete;
 
+
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
             is aligned at least like lifo_allocator::alignment.
                 @param i_size The size of the requested block, in bytes.
@@ -83,14 +84,14 @@ namespace density
             auto const actual_size = uint_upper_align(i_size, alignment);
 
             // allocate
-            auto const top = m_top;
             auto const new_top = address_add(m_top, actual_size);
-            
+
             // check for page overflow
             if (same_page(m_top, new_top))
             {
+                auto const new_block = m_top;
                 m_top = new_top;
-                return top;
+                return new_block;
             }
             else
             {
@@ -109,11 +110,14 @@ namespace density
             \n\b Throws: nothing. */
         void deallocate(void * i_block, size_t i_size) noexcept
         {
-            if (!same_page(i_block, m_top))
+            if (same_page(i_block, m_top))
+            {
+                m_top = i_block;
+            }
+            else
             {
                 slow_deallocate(i_block, i_size);
             }
-            m_top = i_block;
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -126,34 +130,8 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
-            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
-            auto const prev_top = m_top;
-
-            // deallocate the block - we procrastinate the page or external block deallocation to allow the copy of the content
-            m_top = i_block;
-            
-            // allocate
-            auto const new_top = address_add(prev_top, new_actual_size);
-            
-            // check for page overflow
-            void * new_block;
-            if (same_page(m_top, new_top))
-            {
-                m_top = new_top;
-                new_block = prev_top;
-            }
-            else
-            {
-                new_block = slow_allocate(new_actual_size);
-            }
-
-            if (!same_page(i_block, prev_top))
-            {
-                slow_deallocate(i_block, old_actual_size);
-            }
-
-            return new_block;
+            deallocate(i_block, i_old_size);
+            return allocate(i_new_size);
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -167,42 +145,9 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
-            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
-            auto const prev_top = m_top;
-
-            // deallocate the block - we procrastinate the page or external block deallocation to allow the copy of the content
-            m_top = i_block;
-            
-            // allocate
-            auto const new_top = address_add(prev_top, new_actual_size);
-            
-            // check for page overflow
-            void * new_block;
-            if (same_page(m_top, new_top))
-            {
-                m_top = new_top;
-                new_block = prev_top;
-            }
-            else
-            {
-                new_block = slow_allocate(new_actual_size);
-            }
-            
-            // preserve
-            if (new_block != i_block)
-            {
-                auto const size_to_copy = detail::size_min(old_actual_size, new_actual_size);
-                DENSITY_ASSERT_INTERNAL(size_to_copy% alignment == 0); // this may help the optimizer
-                memcpy(new_block, i_block, size_to_copy);
-            }
-
-            if (!same_page(i_block, prev_top))
-            {
-                slow_deallocate(i_block, old_actual_size);
-            }
-
-            return new_block;
+            DENSITY_ASSERT(false);
+            deallocate(i_block, i_old_size);
+            return allocate(i_new_size);
         }
 
     private:
@@ -222,12 +167,12 @@ namespace density
 
         DENSITY_NO_INLINE void * slow_allocate(size_t actual_size)
         {
-            if (actual_size < VOID_ALLOCATOR::page_size - sizeof(PageHeader))
+            if (actual_size < VOID_ALLOCATOR::page_size)
             {
                 // allocate a new page
                 auto const new_page = VOID_ALLOCATOR::allocate_page();
-                new(new_page) PageHeader{ m_top };
-                return m_top = address_add(new_page, sizeof(PageHeader));
+                m_top = address_add(new_page, actual_size);
+                return new_page;
             }
             else
             {
@@ -240,9 +185,11 @@ namespace density
         {
             // align the size
             auto const actual_size = uint_upper_align(i_size, alignment);
-            if (actual_size < VOID_ALLOCATOR::page_size - sizeof(PageHeader))
+            if (actual_size < VOID_ALLOCATOR::page_size)
             {
+                DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
                 VOID_ALLOCATOR::deallocate_page(m_top);
+                m_top = i_block;
             }
             else
             {
@@ -251,7 +198,7 @@ namespace density
         }
 
     private:
-        void * m_top = reinterpret_cast<void*>(VOID_ALLOCATOR::page_size - 1);
+        void * m_top = reinterpret_cast<void*>(VOID_ALLOCATOR::page_alignment - 1);
     };
 
 
@@ -272,7 +219,7 @@ namespace density
     {
     public:
 
-        /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
+        /** alignment of the memory blocks. */
         static constexpr size_t page_alignment = VOID_ALLOCATOR::page_alignment;
 
         /** Default constructor */
@@ -487,23 +434,23 @@ namespace density
 
             void alloc(size_t i_size)
             {
-                m_size = i_size;
-
                 // the lifo block is already aligned like std::max_align_t
                 const size_t size_overhead = alignof(TYPE) - alignof(std::max_align_t);
-                m_block = get_allocator().allocate(size_overhead + i_size * sizeof(TYPE));
+                m_actual_mem_size = size_overhead + i_size * sizeof(TYPE);
+                m_block = get_allocator().allocate(m_actual_mem_size);
+
                 m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
                 DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
             }
 
             void free() noexcept
             {
-                get_allocator().deallocate(m_block, m_size);
+                get_allocator().deallocate(m_block, m_actual_mem_size);
             }
 
             void * m_block;
             TYPE * m_elements;
-            size_t m_size;
+            size_t m_actual_mem_size;
         };
     }
 
