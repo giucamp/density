@@ -44,15 +44,26 @@ namespace density
     {
     public:
 
-        /** alignment of the memory blocks. It is guaranteed to be at least alignof(std::max_align_t). */
-        static constexpr size_t s_alignment = alignof(std::max_align_t);
+        /** Alignment of the memory blocks.  */
+        static constexpr size_t alignment = alignof(std::max_align_t);
+
+        /** Max size of a single block. This size is the maximum value of a pointer, minus an implementation defined value in 
+            the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */
+        static constexpr size_t max_size = (std::numeric_limits<uintptr_t>::max() - VOID_ALLOCATOR::page_size);
+
+        // compile time checks
+        static_assert(alignment <= VOID_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
 
         /** Default constructor. */
-        lifo_allocator() = default;
+        constexpr lifo_allocator() noexcept = default;
 
-        /** Constructor from an allocator */
+        /** Constructs passing the underlying allocator as l-value */
         lifo_allocator(const VOID_ALLOCATOR & i_underlying_allocator)
             : VOID_ALLOCATOR(i_underlying_allocator) { }
+
+        /** Constructs passing the underlying allocator as r-value */
+        lifo_allocator(VOID_ALLOCATOR && i_underlying_allocator)
+            : VOID_ALLOCATOR(std::move(i_underlying_allocator)) { }
 
         /** Copy construction not allowed */
         lifo_allocator(const lifo_allocator &) = delete;
@@ -60,28 +71,49 @@ namespace density
         /** Copy assignment not allowed */
         lifo_allocator & operator = (const lifo_allocator &) = delete;
 
-        /** Destroys the allocator, deallocating any living bock */
-        ~lifo_allocator()
-        {
-            deallocate_all();
-        }
-
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
-            is aligned at least like std::max_align_t.
-                @param i_mem_size The size of the requested block, in bytes.
+            is aligned at least like lifo_allocator::alignment.
+                @param i_size The size of the requested block, in bytes.
                 @return address of the allocated block
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * allocate(size_t i_mem_size)
+        void * allocate(size_t i_size)
         {
-            auto const actual_size = (i_mem_size + s_alignment_mask) & ~s_alignment_mask;
-            auto result = m_last_page->allocate(actual_size);
-            if (result == nullptr)
+            // align the size
+            auto const actual_size = uint_upper_align(i_size, alignment);
+
+            // allocate
+            auto const top = m_top;
+            auto const new_top = address_add(m_top, actual_size);
+            
+            // check for page overflow
+            if (same_page(m_top, new_top))
             {
-                // allocate a new page, and then allocate the requested block on it. This may throw
-                result = alloc_new_page(actual_size);
+                m_top = new_top;
+                return top;
             }
-            return result;
+            else
+            {
+                return slow_allocate(actual_size);
+            }
+        }
+
+        /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
+                @param i_block The memory block to deallocate
+                @param i_size Size of the block.
+
+            \pre The behavior is undefined if either:
+                - the specified block is null or it is not the most recently allocated
+                - the specified size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
+
+            \n\b Throws: nothing. */
+        void deallocate(void * i_block, size_t i_size) noexcept
+        {
+            if (!same_page(i_block, m_top))
+            {
+                slow_deallocate(i_block, i_size);
+            }
+            m_top = i_block;
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -92,20 +124,36 @@ namespace density
                 @return address of the resized block.
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate(void * i_block, size_t i_new_mem_size)
+        void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
-            if (m_last_page->reallocate(i_block, new_actual_size))
+            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
+            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
+            auto const prev_top = m_top;
+
+            // deallocate the block - we procrastinate the page or external block deallocation to allow the copy of the content
+            m_top = i_block;
+            
+            // allocate
+            auto const new_top = address_add(prev_top, new_actual_size);
+            
+            // check for page overflow
+            void * new_block;
+            if (same_page(m_top, new_top))
             {
-                return i_block;
+                m_top = new_top;
+                new_block = prev_top;
             }
             else
             {
-                auto prev_last_page = m_last_page;
-                auto const new_block = alloc_new_page(new_actual_size); // <- this line may throw
-                prev_last_page->free(i_block);
-                return new_block;
+                new_block = slow_allocate(new_actual_size);
             }
+
+            if (!same_page(i_block, prev_top))
+            {
+                slow_deallocate(i_block, old_actual_size);
+            }
+
+            return new_block;
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -117,211 +165,95 @@ namespace density
                 @return address of the resized block.
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate_preserve(void * i_block, size_t i_new_mem_size)
+        void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            auto const new_actual_size = (i_new_mem_size + s_alignment_mask) & ~s_alignment_mask;
-            if (m_last_page->reallocate(i_block, new_actual_size))
+            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
+            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
+            auto const prev_top = m_top;
+
+            // deallocate the block - we procrastinate the page or external block deallocation to allow the copy of the content
+            m_top = i_block;
+            
+            // allocate
+            auto const new_top = address_add(prev_top, new_actual_size);
+            
+            // check for page overflow
+            void * new_block;
+            if (same_page(m_top, new_top))
             {
-                return i_block;
+                m_top = new_top;
+                new_block = prev_top;
             }
             else
             {
-                auto prev_last_page = m_last_page;
-                auto size_to_copy = m_last_page->size_of_most_recent_block(i_block);
-                if (size_to_copy >= new_actual_size)
-                {
-                    size_to_copy = new_actual_size;
-                }
-                // the following line may throw
-                auto const new_block = alloc_new_page(new_actual_size);
-                std::memcpy(new_block, i_block, size_to_copy);
-                prev_last_page->free(i_block);
-                return new_block;
+                new_block = slow_allocate(new_actual_size);
             }
-        }
-
-        /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
-                @param i_block The memory block to deallocate
-            \pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
-            \n\b Throws: nothing. */
-        void deallocate(void * i_block) noexcept
-        {
-            auto const last_page = m_last_page;
-            last_page->free(i_block);
-            if (last_page->is_empty())
+            
+            // preserve
+            if (new_block != i_block)
             {
-                pop_page();
+                auto const size_to_copy = detail::size_min(old_actual_size, new_actual_size);
+                DENSITY_ASSERT_INTERNAL(size_to_copy% alignment == 0); // this may help the optimizer
+                memcpy(new_block, i_block, size_to_copy);
             }
-        }
 
-        /** Deallocates any living block.
-            \n\b Throws: nothing. */
-        void deallocate_all() noexcept
-        {
-            auto const empty_page = get_empty_page();
-            while (m_last_page != empty_page)
+            if (!same_page(i_block, prev_top))
             {
-                pop_page();
+                slow_deallocate(i_block, old_actual_size);
             }
-        }
 
-        /** Returns a reference to the underlying allocator. */
-        VOID_ALLOCATOR & get_underlying_allocator() noexcept
-        {
-            return *this;
-        }
-
-        /** Returns a const reference to the underlying allocator. */
-        const VOID_ALLOCATOR & get_underlying_allocator() const noexcept
-        {
-            return *this;
+            return new_block;
         }
 
     private:
 
-        static constexpr size_t granularity = alignof(std::max_align_t);
-        static constexpr size_t s_alignment_mask = s_alignment - 1;
-        static constexpr size_t s_min_page_size = 2048;
-
-        DENSITY_NO_INLINE void * alloc_new_page(size_t i_needed_size)
+        /** This struct is allocated at the beginning of every page */
+        struct alignas(alignment) PageHeader
         {
-            auto needed_page_size = i_needed_size + sizeof(PageHeader);
-            void * page_address;
-            if (needed_page_size <= VOID_ALLOCATOR::page_size)
-            {
-                page_address = get_underlying_allocator().allocate_page();
-                needed_page_size = VOID_ALLOCATOR::page_size;
-            }
-            else
-            {
-                page_address = get_underlying_allocator().allocate(needed_page_size);
-            }
-
-            m_last_page = new(page_address) PageHeader(m_last_page,
-                address_add(page_address, sizeof(PageHeader)), address_add(page_address, needed_page_size));
-
-            /* note: the size of the first block of a page cannot be zero, otherwise is_empty() would
-                return true even if this block is living. */
-            void * const new_block = m_last_page->allocate(i_needed_size > 0 ? i_needed_size : granularity);
-            DENSITY_ASSERT_INTERNAL(new_block != nullptr);
-            return new_block;
-        }
-
-        void pop_page() noexcept
-        {
-            auto const last_page = m_last_page;
-            auto const prev_page = last_page->prev_page();
-            auto const last_page_size = last_page->capacity() + sizeof(PageHeader);
-            last_page->PageHeader::~PageHeader();
-            if (last_page_size <= VOID_ALLOCATOR::page_size)
-            {
-                get_underlying_allocator().deallocate_page(last_page);
-            }
-            else
-            {
-                get_underlying_allocator().deallocate(last_page, last_page_size);
-            }
-            m_last_page = prev_page;
-        }
-
-        class PageHeader
-        {
-        public:
-
-            PageHeader(PageHeader * const i_prev_page, void * i_start_address, void * i_end_address) noexcept
-                : m_end_address(i_end_address), m_curr_address(i_start_address),
-                  m_prev_page(i_prev_page), m_start_address(i_start_address)
-            {
-            }
-
-            void * allocate(size_t i_size) noexcept
-            {
-                // zero-size blocks can cause problems (empty living pages are not allowed)
-                const auto size = i_size > 0 ? i_size : granularity;
-
-                const auto start_of_block = m_curr_address;
-                const auto end_of_block = address_add(start_of_block, size);
-                // check for arithmetic overflow or insufficient space
-                if (end_of_block >= start_of_block && end_of_block <= m_end_address)
-                {
-                    m_curr_address = end_of_block;
-                    return start_of_block;
-                }
-                else
-                {
-                    return nullptr;
-                }
-            }
-
-            bool reallocate(void * i_block, size_t i_new_size) noexcept
-            {
-                // zero-size blocks can cause problems (empty living pages are not allowed)
-                const auto new_size = i_new_size > 0 ? i_new_size : granularity;
-
-                const auto start_of_block = i_block;
-                const auto end_of_block = address_add(i_block, new_size);
-                // check for arithmetic overflow or insufficient space
-                if (end_of_block >= start_of_block && end_of_block <= m_end_address)
-                {
-                    m_curr_address = end_of_block;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            size_t size_of_most_recent_block(void * i_block) const noexcept
-            {
-                return address_diff(m_curr_address, i_block);
-            }
-
-            void free(void * i_block) noexcept
-            {
-                m_curr_address = i_block;
-            }
-
-            bool owns(void * i_address) const noexcept
-            {
-                return i_address >= m_start_address && i_address < m_end_address;
-            }
-
-            bool is_empty() const noexcept
-            {
-                return m_curr_address == m_start_address;
-            }
-
-            PageHeader * prev_page() const noexcept { return m_prev_page; }
-
-            size_t capacity() const noexcept { return address_diff(m_end_address, m_start_address); }
-
-        private:
-            void * const m_end_address;
-            void * m_curr_address;
-            PageHeader * const m_prev_page;
-            void * const m_start_address;
+            void * m_prev_block; /**< end of the last block of the previous page */
         };
 
-        static PageHeader * get_empty_page()
+        /** Returns whether the input addresses belong to the same page or they are both nullptr */
+        static bool same_page(const void * i_first, const void * i_second) noexcept
         {
-            static PageHeader s_empty(nullptr, nullptr, nullptr);
-            return &s_empty;
+            auto const page_mask = VOID_ALLOCATOR::page_alignment - 1;
+            return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
         }
 
-        bool operator == (const lifo_allocator & i_other) const noexcept
+        DENSITY_NO_INLINE void * slow_allocate(size_t actual_size)
         {
-            return this == &i_other;
+            if (actual_size < VOID_ALLOCATOR::page_size - sizeof(PageHeader))
+            {
+                // allocate a new page
+                auto const new_page = VOID_ALLOCATOR::allocate_page();
+                new(new_page) PageHeader{ m_top };
+                return m_top = address_add(new_page, sizeof(PageHeader));
+            }
+            else
+            {
+                // external block
+                return VOID_ALLOCATOR::allocate(actual_size, alignment);
+            }
         }
 
-        bool operator != (const lifo_allocator & i_other) const noexcept
+        DENSITY_NO_INLINE void slow_deallocate(void * i_block, size_t i_size) noexcept
         {
-            return this != &i_other;
+            // align the size
+            auto const actual_size = uint_upper_align(i_size, alignment);
+            if (actual_size < VOID_ALLOCATOR::page_size - sizeof(PageHeader))
+            {
+                VOID_ALLOCATOR::deallocate_page(m_top);
+            }
+            else
+            {
+                VOID_ALLOCATOR::deallocate(i_block, actual_size, alignment);
+            }
         }
 
-    private: // data members
-        PageHeader * m_last_page = get_empty_page();
+    private:
+        void * m_top = reinterpret_cast<void*>(VOID_ALLOCATOR::page_size - 1);
     };
+
 
     /** Stateless class template that provides a thread local LIFO memory management.
         Memory is allocated/freed with the member function allocate and deallocate. A living block is a block allocated,
@@ -363,9 +295,9 @@ namespace density
                 @return address of the resized block.
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate(void * i_block, size_t i_new_mem_size)
+        void * reallocate(void * i_block, size_t i_old_size, size_t i_new_mem_size)
         {
-            return get_allocator().reallocate(i_block, i_new_mem_size);
+            return get_allocator().reallocate(i_block, i_old_size, i_new_mem_size);
         }
 
         /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
@@ -377,18 +309,18 @@ namespace density
                 @return address of the resized block.
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate_preserve(void * i_block, size_t i_new_mem_size)
+        void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_mem_size)
         {
-            return get_allocator().reallocate_preserve(i_block, i_new_mem_size);
+            return get_allocator().reallocate_preserve(i_block, i_old_size, i_new_mem_size);
         }
 
         /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
                 @param i_block The memory block to deallocate
             \pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
             \n\b Throws: nothing. */
-        void deallocate(void * i_block) noexcept
+        void deallocate(void * i_block, size_t i_size) noexcept
         {
-            get_allocator().deallocate(i_block);
+            get_allocator().deallocate(i_block, i_size);
         }
 
     private:
@@ -469,12 +401,12 @@ namespace density
 
         ~lifo_buffer()
         {
-            get_allocator().deallocate(m_buffer);
+            get_allocator().deallocate(m_buffer, m_mem_size);
         }
 
         void resize(size_t i_new_size)
         {
-            m_buffer = m_block = get_allocator().reallocate(m_block, i_new_size);
+            m_buffer = m_block = get_allocator().reallocate(m_block, m_mem_size, i_new_size);
             m_mem_size = i_new_size;
         }
 
@@ -486,7 +418,7 @@ namespace density
             {
                 actual_block_size += i_alignment - alignof(std::max_align_t);
             }
-            m_block = get_allocator().reallocate(m_block, actual_block_size);
+            m_block = get_allocator().reallocate(m_block, m_mem_size, actual_block_size);
             m_buffer = address_upper_align(m_block, i_alignment);
             m_mem_size = i_new_mem_size;
         }
@@ -532,15 +464,17 @@ namespace density
 
             void alloc(size_t i_size)
             {
-                m_elements = static_cast<TYPE*>(get_allocator().allocate(i_size * sizeof(TYPE)));
+                m_size = i_size * sizeof(TYPE);
+                m_elements = static_cast<TYPE*>(get_allocator().allocate(m_size));
             }
 
             void free() noexcept
             {
-                get_allocator().deallocate(m_elements);
+                get_allocator().deallocate(m_elements, m_size);
             }
 
             TYPE * m_elements;
+            size_t m_size;
         };
 
         template <typename TYPE, typename LIFO_ALLOCATOR>
@@ -553,6 +487,8 @@ namespace density
 
             void alloc(size_t i_size)
             {
+                m_size = i_size;
+
                 // the lifo block is already aligned like std::max_align_t
                 const size_t size_overhead = alignof(TYPE) - alignof(std::max_align_t);
                 m_block = get_allocator().allocate(size_overhead + i_size * sizeof(TYPE));
@@ -562,11 +498,12 @@ namespace density
 
             void free() noexcept
             {
-                get_allocator().deallocate(m_block);
+                get_allocator().deallocate(m_block, m_size);
             }
 
             void * m_block;
             TYPE * m_elements;
+            size_t m_size;
         };
     }
 
