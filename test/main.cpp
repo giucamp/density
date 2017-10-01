@@ -6,9 +6,11 @@
 
 #include "test_framework/density_test_common.h"
 #include "test_framework/progress.h"
+#include "test_framework/threading_extensions.h"
 #include "tests/generic_tests/queue_generic_tests.h"
 #include <iostream>
 #include <cstdlib>
+#include <random>
 #include <density/heter_queue.h>
 #include <density/lf_heter_queue.h>
 
@@ -104,6 +106,16 @@ DENSITY_NO_INLINE void sandbox()
 
 void do_tests(std::ostream & i_ostream)
 {
+    uint32_t random_seed = 0; // 0 -> non-deterministic
+
+    while (random_seed == 0)
+    {
+        random_seed = std::random_device()();
+    }
+
+    std::cout << "Number of processors: " << density_tests::get_num_of_processors() << "\n";
+    std::cout << "Random seed: " << random_seed << "\n" << std::endl;
+
     auto const prev_stream_flags = i_ostream.setf(std::ios_base::boolalpha);
 
     using namespace density_tests;
@@ -131,8 +143,6 @@ void do_tests(std::ostream & i_ostream)
 
     size_t const element_count = 1000;
 
-    uint32_t random_seed = 0; // 0 -> non-deterministic
-
     lifo_tests(i_ostream, random_seed);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
@@ -155,7 +165,7 @@ void do_tests(std::ostream & i_ostream)
 
 int main()
 {
-    sandbox();
+    //sandbox();
 
     do_tests(std::cout);
     return 0;

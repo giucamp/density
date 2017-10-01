@@ -87,21 +87,21 @@ namespace density
                 @return the allocated page, or nullptr in case of failure. */
             void * try_allocate_page(progress_guarantee const i_progress_guarantee) noexcept
             {
-                Region * new_region = nullptr;
+                Region * unused_region = nullptr;
                 auto curr_region = m_curr_region.load(std::memory_order_acquire);
 
                 // Regions that enter the list are destroyed only at destruction time, so the following iteration is always safe
                 void * new_page;
                 while ( (new_page = allocate_page_from_region(i_progress_guarantee, curr_region)) == nullptr)
                 {
-                    curr_region = get_next_region(i_progress_guarantee, curr_region, &new_region);
+                    curr_region = get_next_region(i_progress_guarantee, curr_region, &unused_region);
                     if (curr_region == nullptr)
                         break;
                 }
 
-                if (new_region != nullptr)
+                if (unused_region != nullptr)
                 {
-                    delete_region(new_region);
+                    delete_region(unused_region);
                 }
 
                 return new_page;
@@ -113,22 +113,22 @@ namespace density
                 @return actual size reserved, that can be less (in case of failure), equal or greater than i_size */
             uintptr_t try_reserve_region_memory(progress_guarantee const i_progress_guarantee, uintptr_t const i_size) noexcept
             {
-                Region * new_region = nullptr;
+                Region * unused_region = nullptr;
 
                 auto curr_region = m_curr_region.load(std::memory_order_acquire);
 
                 while (i_size > curr_region->m_cumulative_available_memory)
                 {
-                    auto next_region = get_next_region(i_progress_guarantee, curr_region, &new_region);
+                    auto next_region = get_next_region(i_progress_guarantee, curr_region, &unused_region);
                     if (next_region == nullptr)
                         break;
 
                     curr_region = next_region;
                 }
 
-                if (new_region != nullptr)
+                if (unused_region != nullptr)
                 {
-                    delete_region(new_region);
+                    delete_region(unused_region);
                 }
 
                 return curr_region->m_cumulative_available_memory;

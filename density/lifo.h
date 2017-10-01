@@ -85,8 +85,10 @@ namespace density
 
             // allocate
             auto const new_top = address_add(m_top, actual_size);
-            if (same_page(m_top, new_top))
+            auto const new_offset = address_diff(new_top, address_lower_align(m_top, VOID_ALLOCATOR::page_alignment));
+            if (new_offset < VOID_ALLOCATOR::page_size)
             {
+                DENSITY_ASSERT_INTERNAL(actual_size <= VOID_ALLOCATOR::page_size);
                 auto const new_block = m_top;
                 m_top = new_top;
                 return new_block;
