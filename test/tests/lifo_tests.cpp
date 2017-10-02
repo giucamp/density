@@ -119,8 +119,6 @@ namespace density_tests
             const auto old_size = m_buffer.size();
             const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
 
-            const bool custom_alignment = std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
-            
             m_vector.resize(new_size);
 
             m_buffer.resize(new_size);

@@ -77,6 +77,13 @@ namespace density
         architectures, you can change this constant. */
     constexpr bool enable_relaxed_atomics = false;
 
+    template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
+        class basic_void_allocator;
+
+    /** Allocator type the data stack is built upon. It must meet the requirements of both \ref UntypedAllocator_concept "UntypedAllocator" 
+        and \ref PagedAllocator_concept "PagedAllocator" */
+    using data_stack_underlying_allocator = basic_void_allocator<default_page_capacity>;
+
     /* Very minimal implementation of std::optional, that can be used as target for density::optional. */
     template <typename TYPE>
         class builtin_optional

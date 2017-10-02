@@ -54,7 +54,7 @@ namespace density
     public:
 
         /** Alias for the template argument UNDERLYING_ALLOCATOR */
-        using allocator_type = UNDERLYING_ALLOCATOR;
+        using underlying_allocator = UNDERLYING_ALLOCATOR;
 
         /** Alignment of the memory blocks */
         static constexpr size_t alignment = alignof(std::max_align_t);
@@ -300,9 +300,9 @@ namespace density
             }
 
         private:
-            static lifo_allocator<> & get_allocator()
+            static lifo_allocator<data_stack_underlying_allocator> & get_allocator()
             {
-                static thread_local lifo_allocator<> s_allocator;
+                static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
                 return s_allocator;
             }
         };
@@ -477,7 +477,7 @@ namespace density
                 : detail::LifoArrayImpl<TYPE>(i_size)
         {
             // workaround for old versions of libstdc++ not defining std::is_trivially_default_constructible (https://github.com/QuantStack/xtensor/issues/367)
-            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))
+            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1))) && !defined(_MSC_VER)
                 default_construct(std::has_trivial_default_constructor<TYPE>());
             #else
                 default_construct(std::is_trivially_default_constructible<TYPE>());
@@ -519,7 +519,7 @@ namespace density
         template <typename INPUT_ITERATOR>
             lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
                     typename std::iterator_traits<INPUT_ITERATOR>::iterator_category = typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
-                : detail::LifoArrayImpl<TYPE>(i_size)
+                : detail::LifoArrayImpl<TYPE>(std::distance(i_begin, i_end))
         {
             auto dest_element = m_elements;
             try
@@ -547,10 +547,10 @@ namespace density
         ~lifo_array()
         {
             // workaround for old versions of libstdc++ not defining std::is_trivially_destructible
-            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))
-                destroy_elements(std::has_trivial_destructor<TYPE>());
+            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))  && !defined(_MSC_VER)
+                destroy_elements(typename std::has_trivial_destructor<TYPE>());
             #else
-                destroy_elements(std::is_trivially_destructible<TYPE>());
+                destroy_elements(typename std::is_trivially_destructible<TYPE>());
             #endif
         }
 
