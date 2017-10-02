@@ -33,7 +33,7 @@ namespace density
         to be aligned to \ref alignment.
 
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
-        The user must deallocate all the living blocks before the allocator is destroyed, otherwise the behvaiour is 
+        The user must deallocate all the living blocks before the allocator is destroyed, otherwise the behavior is 
         undefined.
 
         lifo_allocator allocates a new page from the underlying allocator when a block is requested by the user and
@@ -48,7 +48,7 @@ namespace density
         slow path, that is taken whenever a page switch occurs. The internal state of the allocator is composed by a pointer,
         that points to the next block \ref allocate would return.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
-    template <typename UNDERLYING_ALLOCATOR = void_allocator >
+    template <typename UNDERLYING_ALLOCATOR = void_allocator>
         class lifo_allocator : private UNDERLYING_ALLOCATOR
     {
     public:
@@ -138,8 +138,8 @@ namespace density
         }
 
         /** Reallocates the most recently allocated living memory block, changing its size.
-            The address of the block may change. The content of the memory block is preserved up to the existing extend.
-            If the memory block is moved to another address, its content is copied with memcopy.
+            The address of the block may change. The content of the memory block is preserved up to the existing extend:
+            if the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
                 @param i_new_size the previous size of the block, in bytes.
@@ -162,7 +162,7 @@ namespace density
             // branch depending on the old block: this check detects page switches and external blocks
             if (same_page(i_block, m_top))
             {
-                // the following call sets the top only when it is sure to no throw
+                // the following call sets the top only when it is sure to not throw
                 auto const new_block = set_top_and_allocate(i_block, new_actual_size);
                 
                 copy(i_block, old_actual_size, new_block, new_actual_size);
@@ -175,7 +175,7 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
                     auto const old_top = m_top;
                 
-                    // the following call sets the top only when it is sure to no throw
+                    // the following call sets the top only when it is sure to not throw
                     auto const new_block = set_top_and_allocate(i_block, new_actual_size);
                                 
                     copy(i_block, old_actual_size, new_block, new_actual_size);
@@ -311,7 +311,16 @@ namespace density
 
     /** Class that allocates and owns a block from a thread-specific lifo allocator, called the 'data stack'. The block
         is deallocated by the destructor. 
-        
+
+        @tparam UNDERLYING_ALLOCATOR Allocator type to use for the data stack. It must meet the requirements of both 
+            \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". Furthermore 
+            it must be default constructible.
+
+        lifo_buffer provides a low-level service, as it allocates untyped raw memory. It allows resizing preserving 
+        the content, but it does so memcpy'ng the content when the address of the block changes.
+
+
+
         \snippet lifo_examples.cpp lifo_buffer example 1 */
     class lifo_buffer
     {
@@ -383,56 +392,61 @@ namespace density
     namespace detail
     {
         template <typename TYPE, bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator::alignment) >
-            struct LifoArrayImpl;
+            class LifoArrayImpl;
 
         template <typename TYPE>
-            struct LifoArrayImpl<TYPE, false >
+            class LifoArrayImpl<TYPE, false >
         {
         public:
 
-            void alloc(size_t i_size)
+            LifoArrayImpl(size_t i_size)
+                : m_size(i_size)
             {
-                m_size = i_size * sizeof(TYPE);
-                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator::allocate(m_size));
+                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator::allocate(m_size * sizeof(TYPE)));
             }
 
-            void free() noexcept
+            ~LifoArrayImpl()
             {
-                detail::ThreadLifoAllocator::deallocate(m_elements, m_size);
+                detail::ThreadLifoAllocator::deallocate(m_elements, m_size * sizeof(TYPE));
             }
 
+        protected:
             TYPE * m_elements;
-            size_t m_size;
+            size_t const m_size;
         };
 
         template <typename TYPE>
-            struct LifoArrayImpl<TYPE, true >
+            class LifoArrayImpl<TYPE, true >
         {
         public:
 
-            void alloc(size_t i_size)
+            LifoArrayImpl(size_t i_size)
+                : m_size(i_size)
             {
-                // the lifo block is already aligned to ThreadLifoAllocator::alignment
-                const size_t size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
-                m_actual_size = size_overhead + i_size * sizeof(TYPE);
-                m_block = detail::ThreadLifoAllocator::allocate(m_actual_size);
+                // add a size overhead equal to the alignment difference
+                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
+                auto const actual_size = size_overhead + i_size * sizeof(TYPE);
+                m_block = detail::ThreadLifoAllocator::allocate(actual_size);
 
                 m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
                 DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
             }
 
-            void free() noexcept
+            ~LifoArrayImpl()
             {
-                detail::ThreadLifoAllocator::deallocate(m_block, m_actual_size);
+                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
+                auto const actual_size = size_overhead + m_size * sizeof(TYPE);
+                detail::ThreadLifoAllocator::deallocate(m_block, actual_size);
             }
 
+        protected:
             void * m_block;
             TYPE * m_elements;
-            size_t m_actual_size;
+            size_t const m_size;
         };
     }
 
-    /** Simple array-like container class template suitable for LIFO memory management.
+    /** Array container class template that uses LIFO memory management
         A lifo_array contains N elements of type TYPE, where N is the size of the array, and it
         is given at construction time. Once the array has been constructed, no elements can be
         added or removed.
@@ -460,10 +474,14 @@ namespace density
         /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
             @param i_size number of element of the array */
         lifo_array(size_t i_size)
-                : m_size(i_size)
+                : detail::LifoArrayImpl<TYPE>(i_size)
         {
-            this->alloc(i_size);
-            default_construct(std::is_trivially_default_constructible<TYPE>());
+            // workaround for old versions of libstdc++ not defining std::is_trivially_default_constructible (https://github.com/QuantStack/xtensor/issues/367)
+            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))
+                default_construct(std::has_trivial_default_constructor<TYPE>());
+            #else
+                default_construct(std::is_trivially_default_constructible<TYPE>());
+            #endif
         }
 
         /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
@@ -471,9 +489,8 @@ namespace density
             @param i_construction_params construction parameters to use for every element of the array */
         template <typename... CONSTRUCTION_PARAMS>
             lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
-                : m_size(i_size)
+                : detail::LifoArrayImpl<TYPE>(i_size)
         {
-            this->alloc(i_size);
             size_t element_index = 0;
             try
             {
@@ -491,7 +508,6 @@ namespace density
                 {
                     it->TYPE::~TYPE();
                 }
-                this->free();
                 throw;
             }
         }
@@ -503,9 +519,8 @@ namespace density
         template <typename INPUT_ITERATOR>
             lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
                     typename std::iterator_traits<INPUT_ITERATOR>::iterator_category = typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
-                : m_size(std::distance(i_begin, i_end))
+                : detail::LifoArrayImpl<TYPE>(i_size)
         {
-            this->alloc(m_size);
             auto dest_element = m_elements;
             try
             {
@@ -524,7 +539,6 @@ namespace density
                 {
                     it->TYPE::~TYPE();
                 }
-                this->free();
                 throw;
             }
         }
@@ -532,13 +546,12 @@ namespace density
         /** Destroys a lifo_array and all its elements. Elements are destroyed in reverse positional order. */
         ~lifo_array()
         {
-            auto it = m_elements + m_size;
-            it--;
-            for (; it >= m_elements; it--)
-            {
-                it->TYPE::~TYPE();
-            }
-            this->free();
+            // workaround for old versions of libstdc++ not defining std::is_trivially_destructible
+            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))
+                destroy_elements(std::has_trivial_destructor<TYPE>());
+            #else
+                destroy_elements(std::is_trivially_destructible<TYPE>());
+            #endif
         }
 
         size_t size() const noexcept
@@ -601,14 +614,28 @@ namespace density
                 {
                     it->TYPE::~TYPE();
                 }
-                this->free();
                 throw;
+            }
+        }
+
+        void destroy_elements(std::true_type) noexcept
+        {
+
+        }
+
+        void destroy_elements(std::false_type) noexcept
+        {
+            auto it = m_elements + m_size;
+            it--;
+            for (; it >= m_elements; it--)
+            {
+                it->TYPE::~TYPE();
             }
         }
 
     private:
         using detail::LifoArrayImpl<TYPE>::m_elements;
-        const size_t m_size;
+        using detail::LifoArrayImpl<TYPE>::m_size;
     };
 
 } // namespace density
