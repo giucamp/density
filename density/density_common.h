@@ -730,7 +730,7 @@ A [lifo_buffer](classdensity_1_1lifo__buffer.html) is not a container, it's more
 
 		// now we read what we have written
         rewind(file);
-        lifo_buffer<> buff;
+        lifo_buffer buff;
         while (fread(&len, sizeof(len), 1, file) == 1)
         {
             buff.resize(len);

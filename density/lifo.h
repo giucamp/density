@@ -18,38 +18,44 @@ namespace density
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
+        It is designed to be efficient, so it does not provide an high-level service to be used directly. 
+            - deallocation and reallocation require the caller to specify the size of the block
+            - all blocks has the same fixed guaranteed alignment
+            - all blocks must be deallocated before the allocator is destroyed
+        lifo_allocator handles block sizes bigger than the size of a page with legacy heap allocations.
+
         Memory is allocated/freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
-
         Only the most recently allocated living block can be deallocated or reallocated. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
         To simplify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed 
-        to be aligned like lifo_allocator::alignment.
+        to be aligned to lifo_allocator::alignment.
 
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
-        When lifo_allocator is destroyed, all the living blocks are deallocated.
+        The user must deallocate all the living blocks before the allocator is destroyed, otherwise the behvaiour is 
+        undefined.
 
-        lifo_allocator allocates a page from the underlying allocator when a block is requested by the user and
+        lifo_allocator allocates a new page from the underlying allocator when a block is requested by the user and
         there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
         a legacy heap block is allocated from the underlying allocator.
 
-        lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately
-        deallocated. \n
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
-        See thread_lifo_allocator for a stateless LIFO allocator. \n
 
-        Note: using a lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
+        Implementation notes: A block allocation or deallocation requires only a few ALU instructions and a branch to a 
+        slow path, that is taken whenever a page switch occurs. The internal state of the allocator is composed by a pointer,
+        that points to the next block lifo_allocator::allocate would return.
+        lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
     template <typename VOID_ALLOCATOR = void_allocator >
         class lifo_allocator : private VOID_ALLOCATOR
     {
     public:
 
-        /** Alignment of the memory blocks.  */
+        /** Alignment of the memory blocks */
         static constexpr size_t alignment = alignof(std::max_align_t);
 
         /** Max size of a single block. This size is the maximum value of a pointer, minus an implementation defined value in 
             the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */
-        static constexpr size_t max_size = (std::numeric_limits<uintptr_t>::max() - VOID_ALLOCATOR::page_size);
+        static constexpr size_t max_block_size = (std::numeric_limits<uintptr_t>::max() - VOID_ALLOCATOR::page_size);
 
         // compile time checks
         static_assert(alignment <= VOID_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
@@ -73,9 +79,13 @@ namespace density
 
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
-            is aligned at least like lifo_allocator::alignment.
+            is aligned at least to lifo_allocator::alignment.
                 @param i_size The size of the requested block, in bytes.
                 @return address of the allocated block
+
+            \pre The behavior is undefined if either:
+                - i_size > max_block_size
+
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * allocate(size_t i_size)
@@ -99,7 +109,7 @@ namespace density
             }
         }
 
-        /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
+        /** Deallocates the most recently allocated living memory block.
                 @param i_block The memory block to deallocate
                 @param i_size Size of the block.
 
@@ -110,6 +120,7 @@ namespace density
             \n\b Throws: nothing. */
         void deallocate(void * i_block, size_t i_size) noexcept
         {
+            // this check detects page switches and external blocks
             if (same_page(i_block, m_top))
             {
                 m_top = i_block;
@@ -120,12 +131,19 @@ namespace density
             }
         }
 
-        /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
+        /** Reallocates the most recently allocated living memory block, changing its size.
             The address of the block may change. The content of the memory block is not preserved.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
-                @param i_new_mem_size the new size requested for the block, in bytes.
-                @return address of the resized block.
+                @param i_new_size the previous size of the block, in bytes.
+                @param i_new_size the new size requested for the block, in bytes.
+                @return the new address of the resized block.
+
+            \pre The behavior is undefined if either:
+                - the specified block is null or it is not the most recently allocated
+                - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
+                - i_new_size > max_block_size
+
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
@@ -139,8 +157,15 @@ namespace density
             If the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
-                @param i_new_mem_size the new size requested for the block, in bytes.
-                @return address of the resized block.
+                @param i_new_size the previous size of the block, in bytes.
+                @param i_new_size the new size requested for the block, in bytes.
+                @return the new address of the resized block.
+
+            \pre The behavior is undefined if either:
+                - the specified block is null or it is not the most recently allocated
+                - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
+                - i_new_size > max_block_size
+
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
@@ -233,6 +258,7 @@ namespace density
             }
             else
             {
+                // external block
                 VOID_ALLOCATOR::deallocate(i_block, actual_size, alignment);
             }
         }
@@ -241,173 +267,106 @@ namespace density
         void * m_top = reinterpret_cast<void*>(VOID_ALLOCATOR::page_alignment - 1);
     };
 
-
-    /** Stateless class template that provides a thread local LIFO memory management.
-        Memory is allocated/freed with the member function allocate and deallocate. A living block is a block allocated,
-        eventually reallocated, but not yet deallocated. Every thread has its own stack of living blocks.
-        ONLY THE MOST RECENTLY ALLOCATED LIVING BLOCK CAN BE DEALLOCATED OR REALLOCATED BY A THREAD. If a block which is not
-        the most recently allocated living block of the calling thread is deallocated or reallocated, the behavior is undefined.
-        For simplicity, thread_lifo_allocator does not support custom alignments: every block is guaranteed to be aligned like
-        std::max_align_t.
-        Blocks allocated with an instance of thread_lifo_allocator can be deallocated with another instance of thread_lifo_allocator.
-        Only the calling thread matters.
-        When a thread exits all its living block are deallocated. \n
-
-        Note: using thread_lifo_allocator directly is not recommended: using a lifo_buffer or lifo_array is easier and safer. */
-    template <typename VOID_ALLOCATOR = void_allocator >
-        class thread_lifo_allocator
+    namespace detail
     {
-    public:
-
-        /** alignment of the memory blocks. */
-        static constexpr size_t page_alignment = VOID_ALLOCATOR::page_alignment;
-
-        /** Default constructor */
-        thread_lifo_allocator() = default;
-
-        /** Allocates a memory block. The content of the newly allocated memory is undefined.
-                @param i_block i_mem_size The size of the requested block, in bytes.
-            \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * allocate(size_t i_mem_size)
+        /** \internal Stateless class template that provides a thread local LIFO memory management */
+        class ThreadLifoAllocator
         {
-            return get_allocator().allocate(i_mem_size);
-        }
+        public:
 
-        /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
-            The address of the block may change. The content of the memory block is not preserved.
-                @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
-                    because it may point to invalid memory.
-                @param i_new_mem_size the new size requested for the block, in bytes.
-                @return address of the resized block.
-            \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate(void * i_block, size_t i_old_size, size_t i_new_mem_size)
-        {
-            return get_allocator().reallocate(i_block, i_old_size, i_new_mem_size);
-        }
+            static constexpr size_t alignment = lifo_allocator<>::alignment;
 
-        /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
-            The address of the block may change. The content of the memory block is preserved up to the exiting extend.
-            If the memory block is moved to another address, its content is copied with memcopy.
-                @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
-                    because it may point to invalid memory.
-                @param i_new_mem_size the new size requested for the block, in bytes.
-                @return address of the resized block.
-            \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_mem_size)
-        {
-            return get_allocator().reallocate_preserve(i_block, i_old_size, i_new_mem_size);
-        }
+            static void * allocate(size_t i_size)
+            {
+                return get_allocator().allocate(i_size);
+            }
+            
+            static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+            {
+                return get_allocator().reallocate(i_block, i_old_size, i_new_size);
+            }
 
-        /** Deallocates a memory block. Important: only the most recently allocated living block can be allocated.
-                @param i_block The memory block to deallocate
-            \pre i_block must be the most recently allocated living block, otherwise the behavior is undefined.
-            \n\b Throws: nothing. */
-        void deallocate(void * i_block, size_t i_size) noexcept
-        {
-            get_allocator().deallocate(i_block, i_size);
-        }
+            static void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
+            {
+                return get_allocator().reallocate_preserve(i_block, i_old_size, i_new_size);
+            }
 
-    private:
-        static lifo_allocator<VOID_ALLOCATOR> & get_allocator()
-        {
-            static thread_local lifo_allocator<VOID_ALLOCATOR> s_allocator;
-            return s_allocator;
-        }
-    };
+            static void deallocate(void * i_block, size_t i_size) noexcept
+            {
+                get_allocator().deallocate(i_block, i_size);
+            }
+
+        private:
+            static lifo_allocator<> & get_allocator()
+            {
+                static thread_local lifo_allocator<> s_allocator;
+                return s_allocator;
+            }
+        };
+
+    } // namespace detail
 
     /** A lifo buffer is a block of raw memory allocated from a lifo allocator. */
-    template <typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
-        class lifo_buffer : LIFO_ALLOCATOR
+    class lifo_buffer
     {
     public:
 
         /** Constructs a lifo_buffer.
-            @param i_mem_size size in bytes of the memory block.
-        The block is aligned at least like std::max_align_t. */
-        lifo_buffer(size_t i_mem_size = 0)
+            @param i_size size in bytes of the memory block.  */
+        lifo_buffer(size_t i_size = 0)
+            : m_size(i_size)
         {
-            m_buffer = m_block = get_allocator().allocate(i_mem_size);
-            m_mem_size = i_mem_size;
+            m_buffer = m_block = detail::ThreadLifoAllocator::allocate(i_size);
         }
 
         /** Constructs a lifo_buffer.
-            @param i_mem_size size in bytes of the memory block.
+            @param i_size size in bytes of the memory block.
             @param i_alignment alignment of the block. It must be > 0 and an integer power of 2
         */
-        lifo_buffer(size_t i_mem_size, size_t i_alignment)
+        lifo_buffer(size_t i_size, size_t i_alignment)
         {
             DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-            // the lifo block is already aligned like std::max_align_t
-            auto actual_block_size = i_mem_size;
-            if (i_alignment > alignof(std::max_align_t))
+            // the lifo block is already aligned to ThreadLifoAllocator::alignment
+            auto actual_block_size = i_size;
+            if (i_alignment > detail::ThreadLifoAllocator::alignment)
             {
-                actual_block_size += i_alignment - alignof(std::max_align_t);
+                actual_block_size += i_alignment - detail::ThreadLifoAllocator::alignment;
             }
-            m_block = get_allocator().allocate(actual_block_size);
+            m_block = detail::ThreadLifoAllocator::allocate(actual_block_size);
             m_buffer = address_upper_align(m_block, i_alignment);
-            m_mem_size = i_mem_size;
+            m_size = i_size;
         }
 
-        /** Constructs a lifo_buffer.
-            @param i_allocator source to use to copy-construct the allocator
-            @param i_mem_size size in bytes of the memory block.
-        The block is aligned at least like std::max_align_t. */
-        lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size)
-            : LIFO_ALLOCATOR(i_allocator)
-        {
-            m_buffer = m_block = get_allocator().allocate(i_mem_size);
-            m_mem_size = i_mem_size;
-        }
-
-        /** Constructs a lifo_buffer.
-            @param i_allocator source to use to copy-construct the allocator
-            @param i_mem_size size in bytes of the memory block.
-            @param i_alignment alignment of the block. It must be > 0 and an integer power of 2
-        */
-        lifo_buffer(const LIFO_ALLOCATOR & i_allocator, size_t i_mem_size, size_t i_alignment)
-            : LIFO_ALLOCATOR(i_allocator)
-        {
-            // the lifo block is already aligned like std::max_align_t
-            auto actual_block_size = i_mem_size;
-            if (i_alignment > alignof(std::max_align_t))
-            {
-                actual_block_size += i_alignment - alignof(std::max_align_t);
-            }
-            m_block = get_allocator().allocate(actual_block_size);
-            m_buffer = address_upper_align(m_block, i_alignment);
-            m_mem_size = i_mem_size;
-        }
-
-        // disable the copy
+        /** Copy construction not allowed */
         lifo_buffer(const lifo_buffer &) = delete;
+
+        /** Copy assignment not allowed */
         lifo_buffer & operator = (const lifo_buffer &) = delete;
 
+        /** Deallocates the buffer */
         ~lifo_buffer()
         {
-            get_allocator().deallocate(m_buffer, m_mem_size);
+            detail::ThreadLifoAllocator::deallocate(m_buffer, m_size);
         }
 
         void resize(size_t i_new_size)
         {
-            m_buffer = m_block = get_allocator().reallocate(m_block, m_mem_size, i_new_size);
-            m_mem_size = i_new_size;
+            m_buffer = m_block = detail::ThreadLifoAllocator::reallocate(m_block, m_size, i_new_size);
+            m_size = i_new_size;
         }
 
-        void resize(size_t i_new_mem_size, size_t i_alignment)
+        void resize(size_t i_new_size, size_t i_alignment)
         {
-            // the lifo block is already aligned like std::max_align_t
-            auto actual_block_size = i_new_mem_size;
-            if (i_alignment > alignof(std::max_align_t))
+            // the lifo block is already aligned to detail::ThreadLifoAllocator::alignment
+            auto actual_block_size = i_new_size;
+            if (i_alignment > detail::ThreadLifoAllocator::alignment)
             {
-                actual_block_size += i_alignment - alignof(std::max_align_t);
+                actual_block_size += i_alignment - detail::ThreadLifoAllocator::alignment;
             }
-            m_block = get_allocator().reallocate(m_block, m_mem_size, actual_block_size);
+            m_block = detail::ThreadLifoAllocator::reallocate(m_block, m_size, actual_block_size);
             m_buffer = address_upper_align(m_block, i_alignment);
-            m_mem_size = i_new_mem_size;
+            m_size = i_new_size;
         }
 
         void * data() const noexcept
@@ -415,69 +374,53 @@ namespace density
             return m_buffer;
         }
 
-        size_t mem_size() const noexcept
+        size_t size() const noexcept
         {
-            return m_mem_size;
-        }
-
-        LIFO_ALLOCATOR & get_allocator() noexcept
-        {
-            return *this;
-        }
-
-        const LIFO_ALLOCATOR & get_allocator() const noexcept
-        {
-            return *this;
+            return m_size;
         }
 
     private:
         void * m_buffer;
-        size_t m_mem_size;
+        size_t m_size;
         void * m_block;
     };
 
     namespace detail
     {
-        template <typename TYPE, typename LIFO_ALLOCATOR, bool WIDE_ALIGNMENT = (alignof(TYPE) > alignof(std::max_align_t)) >
+        template <typename TYPE, bool WIDE_ALIGNMENT = (alignof(TYPE) > detail::ThreadLifoAllocator::alignment) >
             struct LifoArrayImpl;
 
-        template <typename TYPE, typename LIFO_ALLOCATOR>
-            struct LifoArrayImpl<TYPE, LIFO_ALLOCATOR, false > : public LIFO_ALLOCATOR
+        template <typename TYPE>
+            struct LifoArrayImpl<TYPE, false >
         {
         public:
-
-            LIFO_ALLOCATOR & get_allocator() noexcept
-                { return *this; }
 
             void alloc(size_t i_size)
             {
                 m_size = i_size * sizeof(TYPE);
-                m_elements = static_cast<TYPE*>(get_allocator().allocate(m_size));
+                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator::allocate(m_size));
             }
 
             void free() noexcept
             {
-                get_allocator().deallocate(m_elements, m_size);
+                detail::ThreadLifoAllocator::deallocate(m_elements, m_size);
             }
 
             TYPE * m_elements;
             size_t m_size;
         };
 
-        template <typename TYPE, typename LIFO_ALLOCATOR>
-            struct LifoArrayImpl<TYPE, LIFO_ALLOCATOR, true > : public LIFO_ALLOCATOR
+        template <typename TYPE>
+            struct LifoArrayImpl<TYPE, true >
         {
         public:
 
-            LIFO_ALLOCATOR & get_allocator() noexcept
-                { return *this; }
-
             void alloc(size_t i_size)
             {
-                // the lifo block is already aligned like std::max_align_t
-                const size_t size_overhead = alignof(TYPE) - alignof(std::max_align_t);
-                m_actual_mem_size = size_overhead + i_size * sizeof(TYPE);
-                m_block = get_allocator().allocate(m_actual_mem_size);
+                // the lifo block is already aligned to ThreadLifoAllocator::alignment
+                const size_t size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
+                m_actual_size = size_overhead + i_size * sizeof(TYPE);
+                m_block = detail::ThreadLifoAllocator::allocate(m_actual_size);
 
                 m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
                 DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
@@ -485,12 +428,12 @@ namespace density
 
             void free() noexcept
             {
-                get_allocator().deallocate(m_block, m_actual_mem_size);
+                detail::ThreadLifoAllocator::deallocate(m_block, m_actual_size);
             }
 
             void * m_block;
             TYPE * m_elements;
-            size_t m_actual_mem_size;
+            size_t m_actual_size;
         };
     }
 
@@ -500,8 +443,8 @@ namespace density
         added or removed.
         Elements in a lifo_array are constructed in positional order by the constructor and destroyed
         in positional backward order by the destructor. */
-    template <typename TYPE, typename LIFO_ALLOCATOR = thread_lifo_allocator<>>
-        class lifo_array final : detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>
+    template <typename TYPE>
+        class lifo_array final : detail::LifoArrayImpl<TYPE>
     {
     public:
 
@@ -621,18 +564,9 @@ namespace density
 
         const_iterator end() const noexcept        { return m_elements + m_size; }
 
-        LIFO_ALLOCATOR & get_allocator() noexcept
-        {
-            return *this;
-        }
-
-        const LIFO_ALLOCATOR & get_allocator() const noexcept
-        {
-            return *this;
-        }
 
     private:
-        using detail::LifoArrayImpl<TYPE, LIFO_ALLOCATOR>::m_elements;
+        using detail::LifoArrayImpl<TYPE>::m_elements;
         const size_t m_size;
     };
 
