@@ -7,6 +7,9 @@
 #include <density/lifo.h>
 #include <iostream>
 #include <cstring>
+#include <string>
+#include <algorithm>
+#include <numeric>
 
 namespace density_tests
 {
@@ -26,6 +29,40 @@ namespace density_tests
         std::cout << string.data() << std::endl;
     }
     //! [lifo_array example 1]
+
+    
+    void lifo_array_example_2()
+    {
+        using namespace density;
+
+        //! [lifo_array example 2]
+        // uninitialized array of doubles
+        lifo_array<double> numbers(7);
+
+        // initialize the array
+        for (auto & num : numbers)
+            num = 1.;
+        
+        // compute the sum
+        auto const sum = std::accumulate(numbers.begin(), numbers.end(), 0.);
+        assert(sum == 7.);
+
+        // initialized array
+        lifo_array<double> other_numbers(7, 1.);
+        auto const other_sum = std::accumulate(other_numbers.begin(), other_numbers.end(), 0.);
+        assert(other_sum == 7.);
+
+        // array of class objects - they are initialized by the default constructor
+        lifo_array<std::string> strings(10);
+        bool all_empty = std::all_of(strings.begin(), strings.end(), [](const std::string & i_str) {
+            return i_str.empty(); 
+        });
+        assert(all_empty);
+        //! [lifo_array example 2]
+        (void)sum;
+        (void)other_sum;
+        (void)all_empty;
+    }    
 
     //! [lifo_buffer example 1]
     // concatenate and print a null terminated array of strings
@@ -52,6 +89,8 @@ namespace density_tests
     void lifo_examples()
     {
         concat_and_print("Hello", " world!");
+
+        lifo_array_example_2();
 
         const char * strings[] = {"Oh, ", "Hello ", "world: ", "this ", "is ", "an ", "array ", "of ", "strings!!", nullptr};
         concat_and_print(strings);

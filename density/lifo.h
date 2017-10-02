@@ -9,6 +9,7 @@
 #include <density/runtime_type.h>
 #include <density/void_allocator.h>
 #include <cstring> // for memcpy
+#include <type_traits>
 
 namespace density
 {
@@ -179,6 +180,8 @@ namespace density
                     m_top = i_block;
 
                     auto const new_block = allocate(new_actual_size);
+                    
+                    
                     copy(i_block, old_actual_size, new_block, new_actual_size);
                     
                     UNDERLYING_ALLOCATOR::deallocate_page(old_top);
@@ -416,7 +419,11 @@ namespace density
         Elements in a lifo_array are constructed in positional order by the constructor and destroyed
         in positional backward order by the destructor. 
         
-        \snippet lifo_examples.cpp lifo_array example 1 */
+        \snippet lifo_examples.cpp lifo_array example 1
+
+
+        Trivially constructive types must be explicitly initialized when used as elements of lifo_array:
+        \snippet lifo_examples.cpp lifo_array example 2 */
     template <typename TYPE>
         class lifo_array final : detail::LifoArrayImpl<TYPE>
     {
@@ -429,6 +436,15 @@ namespace density
         using const_pointer = const TYPE *;
         using iterator = TYPE *;
         using const_iterator = const TYPE *;
+
+        /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
+            @param i_size number of element of the array */
+        lifo_array(size_t i_size)
+                : m_size(i_size)
+        {
+            this->alloc(i_size);
+            default_construct(std::is_trivially_default_constructible<TYPE>());
+        }
 
         /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
             @param i_size number of element of the array
@@ -538,6 +554,37 @@ namespace density
 
         const_iterator end() const noexcept        { return m_elements + m_size; }
 
+    private:
+
+        // trivially default constructible types
+        void default_construct(std::true_type)
+        {
+        }
+
+        // non-trivially default constructible types
+        void default_construct(std::false_type)
+        {
+            size_t element_index = 0;
+            try
+            {
+                for (; element_index < m_size; element_index++)
+                {
+                    new(m_elements + element_index) TYPE();
+                }
+            }
+            catch (...)
+            {
+                // destroy all the elements constructed till now, and then deallocate
+                auto it = m_elements + element_index;
+                it--;
+                for (; it >= m_elements; it--)
+                {
+                    it->TYPE::~TYPE();
+                }
+                this->free();
+                throw;
+            }
+        }
 
     private:
         using detail::LifoArrayImpl<TYPE>::m_elements;
