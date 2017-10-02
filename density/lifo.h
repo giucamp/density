@@ -162,10 +162,8 @@ namespace density
             // branch depending on the old block: this check detects page switches and external blocks
             if (same_page(i_block, m_top))
             {
-                // deallocate
-                m_top = i_block;
-
-                auto const new_block = allocate(new_actual_size);
+                // the following call sets the top only when it is sure to no throw
+                auto const new_block = set_top_and_allocate(i_block, new_actual_size);
                 
                 copy(i_block, old_actual_size, new_block, new_actual_size);
                 return new_block;
@@ -174,14 +172,12 @@ namespace density
             {
                 if (old_actual_size < UNDERLYING_ALLOCATOR::page_size)
                 {
-                    // deallocate (assigning i_block to m_top), procrastinating the deallocation of the page
                     DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
                     auto const old_top = m_top;
-                    m_top = i_block;
-
-                    auto const new_block = allocate(new_actual_size);
-                    
-                    
+                
+                    // the following call sets the top only when it is sure to no throw
+                    auto const new_block = set_top_and_allocate(i_block, new_actual_size);
+                                
                     copy(i_block, old_actual_size, new_block, new_actual_size);
                     
                     UNDERLYING_ALLOCATOR::deallocate_page(old_top);
@@ -200,16 +196,6 @@ namespace density
 
     private:
 
-        void copy(void * i_old_block, size_t i_old_actual_size, void * i_new_block, size_t i_new_actual_size) noexcept
-        {
-            if (i_old_block != i_new_block)
-            {
-                auto const size_to_copy = detail::size_min(i_new_actual_size, i_old_actual_size);
-                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0); // this may help the optimizer
-                memcpy(i_new_block, i_old_block, size_to_copy);
-            }
-        }
-
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
         static bool same_page(const void * i_first, const void * i_second) noexcept
         {
@@ -217,19 +203,20 @@ namespace density
             return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
         }
 
-        DENSITY_NO_INLINE void * allocate_slow_path(size_t actual_size)
+        DENSITY_NO_INLINE void * allocate_slow_path(size_t i_actual_size)
         {
-            if (actual_size < UNDERLYING_ALLOCATOR::page_size)
+            DENSITY_ASSERT_INTERNAL(i_actual_size % alignment == 0);
+            if (i_actual_size < UNDERLYING_ALLOCATOR::page_size)
             {
                 // allocate a new page
                 auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                m_top = address_add(new_page, actual_size);
+                m_top = address_add(new_page, i_actual_size);
                 return new_page;
             }
             else
             {
                 // external block
-                return UNDERLYING_ALLOCATOR::allocate(actual_size, alignment);
+                return UNDERLYING_ALLOCATOR::allocate(i_actual_size, alignment);
             }
         }
 
@@ -247,6 +234,39 @@ namespace density
             {
                 // external block
                 UNDERLYING_ALLOCATOR::deallocate(i_block, actual_size, alignment);
+            }
+        }
+
+        /** Sets has the same effect of setting m_top to i_current_top and then allocating a block.
+            This function provides the strong exception guarantee. */
+        void * set_top_and_allocate(void * const i_current_top, size_t const i_actual_size)
+        {
+            DENSITY_ASSERT_INTERNAL(i_actual_size % alignment == 0);
+
+            // we have to procrastinate the assignment of m_top until we have allocated the page or the external block
+            auto const new_top = address_add(i_current_top, i_actual_size);
+            auto const new_offset = address_diff(new_top, address_lower_align(i_current_top, UNDERLYING_ALLOCATOR::page_alignment));
+            if (new_offset < UNDERLYING_ALLOCATOR::page_size)
+            {
+                DENSITY_ASSERT_INTERNAL(i_actual_size <= UNDERLYING_ALLOCATOR::page_size);
+                auto const new_block = i_current_top;
+                m_top = new_top;
+                return new_block;
+            }
+            else
+            {
+                // this branch does not use the value of m_top
+                return allocate_slow_path(i_actual_size);
+            }
+        }
+
+        void copy(void * i_old_block, size_t i_old_actual_size, void * i_new_block, size_t i_new_actual_size) noexcept
+        {
+            if (i_old_block != i_new_block)
+            {
+                auto const size_to_copy = detail::size_min(i_new_actual_size, i_old_actual_size);
+                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0); // this may help the optimizer
+                memcpy(i_new_block, i_old_block, size_to_copy);
             }
         }
 
