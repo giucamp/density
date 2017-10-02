@@ -93,7 +93,10 @@
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\lifo_tests.cpp">
-      <Filter>tests\generic_tests</Filter>
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\lifo_examples.cpp">
+      <Filter>examples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

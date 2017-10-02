@@ -38,16 +38,11 @@ namespace density_tests
 
             // reallocate the block with reallocate_preserve, and check the content
             auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate_preserve(block, size, new_size));
+            block = static_cast<unsigned char*>(allocator.reallocate(block, size, new_size));
             for (size_t index = 0; index < std::min(size, new_size); index++)
             {
                 DENSITY_TEST_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
             }
-            size = new_size;
-
-            // reallocate the block with reallocate
-            new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
-            block = static_cast<unsigned char*>(allocator.reallocate(block, size, new_size));
             size = new_size;
 
             // done
@@ -125,44 +120,22 @@ namespace density_tests
             const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
 
             const bool custom_alignment = std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
-            const bool preserve = false; // preserve is currently not supported ---- std::uniform_int_distribution<int>(0, 100)(i_random) > 50;
-
+            
             m_vector.resize(new_size);
 
-            if (custom_alignment)
-            {
-                const auto alignment = random_alignment(i_random);
-                m_buffer.resize(new_size, alignment);
-                DENSITY_TEST_ASSERT(address_is_aligned(m_buffer.data(), alignment));
-            }
-            else
-            {
-                m_buffer.resize(new_size);
-            }
+            m_buffer.resize(new_size);
 
-            if (preserve)
-            {
-                if (old_size < new_size)
-                {
-                    std::uniform_int_distribution<unsigned> rnd(0, 100);
-                    std::generate(static_cast<unsigned char*>(m_buffer.data()) + old_size,
-                        static_cast<unsigned char*>(m_buffer.data()) + new_size,
-                        [&i_random, &rnd] { return static_cast<unsigned char>(rnd(i_random)); });
-                    memcpy(m_vector.data() + old_size,
-                        static_cast<unsigned char*>(m_buffer.data()) + old_size,
-                        new_size - old_size);
-                }
-            }
-            else
+            if (old_size < new_size)
             {
                 std::uniform_int_distribution<unsigned> rnd(0, 100);
-                std::generate(static_cast<unsigned char*>(m_buffer.data()),
+                std::generate(static_cast<unsigned char*>(m_buffer.data()) + old_size,
                     static_cast<unsigned char*>(m_buffer.data()) + new_size,
                     [&i_random, &rnd] { return static_cast<unsigned char>(rnd(i_random)); });
-                memcpy(m_vector.data(),
-                    static_cast<unsigned char*>(m_buffer.data()),
-                    new_size);
+                memcpy(m_vector.data() + old_size,
+                    static_cast<unsigned char*>(m_buffer.data()) + old_size,
+                    new_size - old_size);
             }
+
             check();
             return true;
         }
@@ -229,24 +202,6 @@ namespace density_tests
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer buffer(std::uniform_int_distribution<size_t>(0, void_allocator::page_size * 2)(m_random));
             DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), alignof(std::max_align_t)));
-            std::generate(
-                static_cast<unsigned char*>(buffer.data()),
-                static_cast<unsigned char*>(buffer.data()) + buffer.size(),
-                [this, &rnd] { return static_cast<unsigned char>(rnd(m_random) % 128); });
-            push_test(buffer);
-            lifo_test_push();
-            pop_test();
-        }
-
-        void lifo_test_push_buffer_aligned()
-        {
-            using namespace density;
-
-            const auto alignment = random_alignment(m_random);
-            lifo_buffer buffer(std::uniform_int_distribution<size_t>(0, void_allocator::page_size * 2)(m_random), alignment);
-            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), alignment));
-            
-            std::uniform_int_distribution<unsigned> rnd(0, 100);
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.size(),

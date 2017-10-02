@@ -14,7 +14,7 @@ namespace density
 {
     /** Class template that provides LIFO memory management.
 
-        @tparam VOID_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
+        @tparam UNDERLYING_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
@@ -24,12 +24,12 @@ namespace density
             - all blocks must be deallocated before the allocator is destroyed
         lifo_allocator handles block sizes bigger than the size of a page with legacy heap allocations.
 
-        Memory is allocated/freed with the member function lifo_allocator::allocate and lifo_allocator::deallocate.
+        Memory is allocated/freed with the member functions \ref allocate and \ref deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
         Only the most recently allocated living block can be deallocated or reallocated. If a block which is not
         the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
         To simplify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed 
-        to be aligned to lifo_allocator::alignment.
+        to be aligned to \ref alignment.
 
         Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
         The user must deallocate all the living blocks before the allocator is destroyed, otherwise the behvaiour is 
@@ -41,35 +41,40 @@ namespace density
 
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
 
-        Implementation notes: A block allocation or deallocation requires only a few ALU instructions and a branch to a 
+        Implementation notes
+        --------------------------
+        A block allocation or deallocation requires only a few ALU instructions and a branch to a 
         slow path, that is taken whenever a page switch occurs. The internal state of the allocator is composed by a pointer,
-        that points to the next block lifo_allocator::allocate would return.
+        that points to the next block \ref allocate would return.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
-    template <typename VOID_ALLOCATOR = void_allocator >
-        class lifo_allocator : private VOID_ALLOCATOR
+    template <typename UNDERLYING_ALLOCATOR = void_allocator >
+        class lifo_allocator : private UNDERLYING_ALLOCATOR
     {
     public:
+
+        /** Alias for the template argument UNDERLYING_ALLOCATOR */
+        using allocator_type = UNDERLYING_ALLOCATOR;
 
         /** Alignment of the memory blocks */
         static constexpr size_t alignment = alignof(std::max_align_t);
 
-        /** Max size of a single block. This size is the maximum value of a pointer, minus an implementation defined value in 
+        /** Max size of a single block. This size is equal to the size of the address space, minus an implementation defined value in 
             the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */
-        static constexpr size_t max_block_size = (std::numeric_limits<uintptr_t>::max() - VOID_ALLOCATOR::page_size);
+        static constexpr size_t max_block_size = (std::numeric_limits<uintptr_t>::max() - UNDERLYING_ALLOCATOR::page_size);
 
         // compile time checks
-        static_assert(alignment <= VOID_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
+        static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
 
         /** Default constructor. */
         constexpr lifo_allocator() noexcept = default;
 
         /** Constructs passing the underlying allocator as l-value */
-        lifo_allocator(const VOID_ALLOCATOR & i_underlying_allocator)
-            : VOID_ALLOCATOR(i_underlying_allocator) { }
+        lifo_allocator(const UNDERLYING_ALLOCATOR & i_underlying_allocator)
+            : UNDERLYING_ALLOCATOR(i_underlying_allocator) { }
 
         /** Constructs passing the underlying allocator as r-value */
-        lifo_allocator(VOID_ALLOCATOR && i_underlying_allocator)
-            : VOID_ALLOCATOR(std::move(i_underlying_allocator)) { }
+        lifo_allocator(UNDERLYING_ALLOCATOR && i_underlying_allocator)
+            : UNDERLYING_ALLOCATOR(std::move(i_underlying_allocator)) { }
 
         /** Copy construction not allowed */
         lifo_allocator(const lifo_allocator &) = delete;
@@ -79,12 +84,12 @@ namespace density
 
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
-            is aligned at least to lifo_allocator::alignment.
+            is aligned at least to \ref alignment.
                 @param i_size The size of the requested block, in bytes.
                 @return address of the allocated block
 
             \pre The behavior is undefined if either:
-                - i_size > max_block_size
+                - i_size > \ref max_block_size
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
@@ -95,17 +100,17 @@ namespace density
 
             // allocate
             auto const new_top = address_add(m_top, actual_size);
-            auto const new_offset = address_diff(new_top, address_lower_align(m_top, VOID_ALLOCATOR::page_alignment));
-            if (new_offset < VOID_ALLOCATOR::page_size)
+            auto const new_offset = address_diff(new_top, address_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment));
+            if (new_offset < UNDERLYING_ALLOCATOR::page_size)
             {
-                DENSITY_ASSERT_INTERNAL(actual_size <= VOID_ALLOCATOR::page_size);
+                DENSITY_ASSERT_INTERNAL(actual_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = m_top;
                 m_top = new_top;
                 return new_block;
             }
             else
             {
-                return slow_allocate(actual_size);
+                return allocate_slow_path(actual_size);
             }
         }
 
@@ -127,12 +132,13 @@ namespace density
             }
             else
             {
-                slow_deallocate(i_block, i_size);
+                deallocate_slow_path(i_block, i_size);
             }
         }
 
         /** Reallocates the most recently allocated living memory block, changing its size.
-            The address of the block may change. The content of the memory block is not preserved.
+            The address of the block may change. The content of the memory block is preserved up to the existing extend.
+            If the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
                 @param i_new_size the previous size of the block, in bytes.
@@ -148,32 +154,11 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            deallocate(i_block, i_old_size);
-            return allocate(i_new_size);
-        }
-
-        /** Reallocates a memory block. Important: only the most recently allocated living block can be reallocated.
-            The address of the block may change. The content of the memory block is preserved up to the exiting extend.
-            If the memory block is moved to another address, its content is copied with memcopy.
-                @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
-                    because it may point to invalid memory.
-                @param i_new_size the previous size of the block, in bytes.
-                @param i_new_size the new size requested for the block, in bytes.
-                @return the new address of the resized block.
-
-            \pre The behavior is undefined if either:
-                - the specified block is null or it is not the most recently allocated
-                - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
-                - i_new_size > max_block_size
-
-            \n\b Throws: unspecified.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
-        {
             // align the sizes
             auto const new_actual_size = uint_upper_align(i_new_size, alignment);
             auto const old_actual_size = uint_upper_align(i_old_size, alignment);
 
+            // branch depending on the old block: this check detects page switches and external blocks
             if (same_page(i_block, m_top))
             {
                 // deallocate
@@ -186,9 +171,9 @@ namespace density
             }
             else
             {
-                if (old_actual_size < VOID_ALLOCATOR::page_size)
+                if (old_actual_size < UNDERLYING_ALLOCATOR::page_size)
                 {
-                    // deallocate procrastinating the deallocation of the page
+                    // deallocate (assigning i_block to m_top), procrastinating the deallocation of the page
                     DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
                     auto const old_top = m_top;
                     m_top = i_block;
@@ -196,16 +181,15 @@ namespace density
                     auto const new_block = allocate(new_actual_size);
                     copy(i_block, old_actual_size, new_block, new_actual_size);
                     
-                    VOID_ALLOCATOR::deallocate_page(old_top);
+                    UNDERLYING_ALLOCATOR::deallocate_page(old_top);
                     return new_block;
                 }
                 else
                 {
-                    // deallocate procrastinating the deallocation of the external block
+                    // the old block is external
                     auto const new_block = allocate(new_actual_size);
                     copy(i_block, old_actual_size, new_block, new_actual_size);
-                    
-                    VOID_ALLOCATOR::deallocate(i_block, old_actual_size, alignment);
+                    UNDERLYING_ALLOCATOR::deallocate(i_block, old_actual_size, alignment);
                     return new_block;
                 }
             }
@@ -226,45 +210,45 @@ namespace density
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
         static bool same_page(const void * i_first, const void * i_second) noexcept
         {
-            auto const page_mask = VOID_ALLOCATOR::page_alignment - 1;
+            auto const page_mask = UNDERLYING_ALLOCATOR::page_alignment - 1;
             return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
         }
 
-        DENSITY_NO_INLINE void * slow_allocate(size_t actual_size)
+        DENSITY_NO_INLINE void * allocate_slow_path(size_t actual_size)
         {
-            if (actual_size < VOID_ALLOCATOR::page_size)
+            if (actual_size < UNDERLYING_ALLOCATOR::page_size)
             {
                 // allocate a new page
-                auto const new_page = VOID_ALLOCATOR::allocate_page();
+                auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
                 m_top = address_add(new_page, actual_size);
                 return new_page;
             }
             else
             {
                 // external block
-                return VOID_ALLOCATOR::allocate(actual_size, alignment);
+                return UNDERLYING_ALLOCATOR::allocate(actual_size, alignment);
             }
         }
 
-        DENSITY_NO_INLINE void slow_deallocate(void * i_block, size_t i_size) noexcept
+        DENSITY_NO_INLINE void deallocate_slow_path(void * i_block, size_t i_size) noexcept
         {
             // align the size
             auto const actual_size = uint_upper_align(i_size, alignment);
-            if (actual_size < VOID_ALLOCATOR::page_size)
+            if (actual_size < UNDERLYING_ALLOCATOR::page_size)
             {
                 DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
-                VOID_ALLOCATOR::deallocate_page(m_top);
+                UNDERLYING_ALLOCATOR::deallocate_page(m_top);
                 m_top = i_block;
             }
             else
             {
                 // external block
-                VOID_ALLOCATOR::deallocate(i_block, actual_size, alignment);
+                UNDERLYING_ALLOCATOR::deallocate(i_block, actual_size, alignment);
             }
         }
 
     private:
-        void * m_top = reinterpret_cast<void*>(VOID_ALLOCATOR::page_alignment - 1);
+        void * m_top = reinterpret_cast<void*>(UNDERLYING_ALLOCATOR::page_alignment - 1);
     };
 
     namespace detail
@@ -275,6 +259,7 @@ namespace density
         public:
 
             static constexpr size_t alignment = lifo_allocator<>::alignment;
+            static constexpr size_t max_block_size = lifo_allocator<>::max_block_size;
 
             static void * allocate(size_t i_size)
             {
@@ -284,11 +269,6 @@ namespace density
             static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
             {
                 return get_allocator().reallocate(i_block, i_old_size, i_new_size);
-            }
-
-            static void * reallocate_preserve(void * i_block, size_t i_old_size, size_t i_new_size)
-            {
-                return get_allocator().reallocate_preserve(i_block, i_old_size, i_new_size);
             }
 
             static void deallocate(void * i_block, size_t i_size) noexcept
@@ -306,36 +286,29 @@ namespace density
 
     } // namespace detail
 
-    /** A lifo buffer is a block of raw memory allocated from a lifo allocator. */
+    /** Class that allocates and owns a block from a thread-specific lifo allocator, called the 'data stack'. The block
+        is deallocated by the destructor. 
+        
+        \snippet lifo_examples.cpp lifo_buffer example 1 */
     class lifo_buffer
     {
     public:
 
-        /** Constructs a lifo_buffer.
-            @param i_size size in bytes of the memory block.  */
-        lifo_buffer(size_t i_size = 0)
-            : m_size(i_size)
-        {
-            m_buffer = m_block = detail::ThreadLifoAllocator::allocate(i_size);
-        }
+        /** Alignment guaranteed for the block */
+        static constexpr size_t alignment = detail::ThreadLifoAllocator::alignment;
+        
+        /** Max size of a block. This size is equal to the size of the address space, minus an implementation defined value in 
+            the order of the size of a page. Requesting a bigger block size causes undefined behavior. */
+        static constexpr size_t max_block_size = detail::ThreadLifoAllocator::max_block_size;
 
-        /** Constructs a lifo_buffer.
+        /** Allocates the block
             @param i_size size in bytes of the memory block.
-            @param i_alignment alignment of the block. It must be > 0 and an integer power of 2
-        */
-        lifo_buffer(size_t i_size, size_t i_alignment)
+            
+            \pre The behavior is undefined if either:
+                - i_size > \ref max_block_size */
+        lifo_buffer(size_t i_size = 0)
+            : m_data(detail::ThreadLifoAllocator::allocate(i_size)), m_size(i_size)
         {
-            DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-
-            // the lifo block is already aligned to ThreadLifoAllocator::alignment
-            auto actual_block_size = i_size;
-            if (i_alignment > detail::ThreadLifoAllocator::alignment)
-            {
-                actual_block_size += i_alignment - detail::ThreadLifoAllocator::alignment;
-            }
-            m_block = detail::ThreadLifoAllocator::allocate(actual_block_size);
-            m_buffer = address_upper_align(m_block, i_alignment);
-            m_size = i_size;
         }
 
         /** Copy construction not allowed */
@@ -344,50 +317,49 @@ namespace density
         /** Copy assignment not allowed */
         lifo_buffer & operator = (const lifo_buffer &) = delete;
 
-        /** Deallocates the buffer */
+        /** Deallocates the block */
         ~lifo_buffer()
         {
-            detail::ThreadLifoAllocator::deallocate(m_buffer, m_size);
+            detail::ThreadLifoAllocator::deallocate(m_data, m_size);
         }
 
+        /** Changes the size of the block, preserving its existing content. 
+            If the buffer grows (the new size is bigger than the previous one) the new content has undefined content.
+        
+            This function may reallocate the block, so its address may change.
+
+            \pre The behavior is undefined if either:
+                - i_new_size > \ref max_block_size
+                - this block was not the most recently allocated one on the data stack of the calling thread
+
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void resize(size_t i_new_size)
         {
-            m_buffer = m_block = detail::ThreadLifoAllocator::reallocate(m_block, m_size, i_new_size);
+            /* we must allocate before updating any data member, so that in case of exception no change remains */
+            m_data = detail::ThreadLifoAllocator::reallocate(m_data, m_size, i_new_size);
             m_size = i_new_size;
         }
 
-        void resize(size_t i_new_size, size_t i_alignment)
-        {
-            // the lifo block is already aligned to detail::ThreadLifoAllocator::alignment
-            auto actual_block_size = i_new_size;
-            if (i_alignment > detail::ThreadLifoAllocator::alignment)
-            {
-                actual_block_size += i_alignment - detail::ThreadLifoAllocator::alignment;
-            }
-            m_block = detail::ThreadLifoAllocator::reallocate(m_block, m_size, actual_block_size);
-            m_buffer = address_upper_align(m_block, i_alignment);
-            m_size = i_new_size;
-        }
-
+        /** Returns the associated memory block. */
         void * data() const noexcept
         {
-            return m_buffer;
+            return m_data;
         }
 
+        /** Returns the size of the associated memory block. */
         size_t size() const noexcept
         {
             return m_size;
         }
 
     private:
-        void * m_buffer;
+        void * m_data;
         size_t m_size;
-        void * m_block;
     };
 
     namespace detail
     {
-        template <typename TYPE, bool WIDE_ALIGNMENT = (alignof(TYPE) > detail::ThreadLifoAllocator::alignment) >
+        template <typename TYPE, bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator::alignment) >
             struct LifoArrayImpl;
 
         template <typename TYPE>
@@ -442,7 +414,9 @@ namespace density
         is given at construction time. Once the array has been constructed, no elements can be
         added or removed.
         Elements in a lifo_array are constructed in positional order by the constructor and destroyed
-        in positional backward order by the destructor. */
+        in positional backward order by the destructor. 
+        
+        \snippet lifo_examples.cpp lifo_array example 1 */
     template <typename TYPE>
         class lifo_array final : detail::LifoArrayImpl<TYPE>
     {

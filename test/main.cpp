@@ -37,6 +37,7 @@ namespace density_tests
     void lf_func_queue_samples(std::ostream &);
     void sp_func_queue_samples(std::ostream &);
 
+    void lifo_examples();
     void lifo_tests(std::ostream & i_output, uint32_t i_random_seed);
 }
 
@@ -143,6 +144,7 @@ void do_tests(std::ostream & i_ostream)
 
     size_t const element_count = 1000;
 
+    lifo_examples();
     lifo_tests(i_ostream, random_seed);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
