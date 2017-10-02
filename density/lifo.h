@@ -546,12 +546,7 @@ namespace density
         /** Destroys a lifo_array and all its elements. Elements are destroyed in reverse positional order. */
         ~lifo_array()
         {
-            // workaround for old versions of libstdc++ not defining std::is_trivially_destructible
-            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)))  && !defined(_MSC_VER)
-                destroy_elements(typename std::has_trivial_destructor<TYPE>());
-            #else
-                destroy_elements(typename std::is_trivially_destructible<TYPE>());
-            #endif
+            destroy_elements(std::is_trivially_destructible<TYPE>());
         }
 
         size_t size() const noexcept
