@@ -309,17 +309,18 @@ namespace density
 
     } // namespace detail
 
-    /** Class that allocates and owns a block from a thread-specific lifo allocator, called the 'data stack'. The block
-        is deallocated by the destructor. 
+    /** Class that allocates a memory block from the thread-local data stack, and owns it. The block
+        is deallocated by the destructor. This class should be used only on the automatic storage.
 
-        @tparam UNDERLYING_ALLOCATOR Allocator type to use for the data stack. It must meet the requirements of both 
-            \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". Furthermore 
-            it must be default constructible.
+        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
+        internal lifo allocator, which in turn in built upon an \ref instance of data_stack_underlying_allocator.
+        \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
+        the most recently allocated block can be deallocated or reallocated.
+        Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
+        as the language guarantees destruction in reverse order, even inside arrays or aggregate types.
 
         lifo_buffer provides a low-level service, as it allocates untyped raw memory. It allows resizing preserving 
         the content, but it does so memcpy'ng the content when the address of the block changes.
-
-
 
         \snippet lifo_examples.cpp lifo_buffer example 1 */
     class lifo_buffer
@@ -446,18 +447,26 @@ namespace density
         };
     }
 
-    /** Array container class template that uses LIFO memory management
-        A lifo_array contains N elements of type TYPE, where N is the size of the array, and it
-        is given at construction time. Once the array has been constructed, no elements can be
-        added or removed.
-        Elements in a lifo_array are constructed in positional order by the constructor and destroyed
-        in positional backward order by the destructor. 
+    /** Array container that allocates its elements from the thread-local data stack, and owns it. The block
+        is deallocated by the destructor. This class should be used only on the automatic storage.
+
+        @tparam TYPE Element type.
         
-        \snippet lifo_examples.cpp lifo_array example 1
+        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
+        internal lifo allocator, which in turn in built upon an \ref instance of data_stack_underlying_allocator.
+        \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
+        the most recently allocated block can be deallocated or reallocated.
+        Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
+        as the language guarantees destruction in reverse order, even inside arrays or aggregate types.
 
+        If elements are POD types, they are not initialized by the default constructor:
 
-        Trivially constructive types must be explicitly initialized when used as elements of lifo_array:
-        \snippet lifo_examples.cpp lifo_array example 2 */
+        \snippet lifo_examples.cpp lifo_array example 2
+
+        The size of a \ref lifo_array is fixed at construction time, with no resize function provided.
+        Elements are constructed in positional order and destroyed in reverse order.
+
+        \snippet lifo_examples.cpp lifo_array example 1 */
     template <typename TYPE>
         class lifo_array final : detail::LifoArrayImpl<TYPE>
     {
@@ -471,22 +480,19 @@ namespace density
         using iterator = TYPE *;
         using const_iterator = const TYPE *;
 
-        /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
-            @param i_size number of element of the array */
+        /** Constructs a lifo_array and all its elements. If elements are POD types, they are not initialized.
+            @param i_size number of elements of the array */
         lifo_array(size_t i_size)
                 : detail::LifoArrayImpl<TYPE>(i_size)
         {
-            // workaround for old versions of libstdc++ not defining std::is_trivially_default_constructible (https://github.com/QuantStack/xtensor/issues/367)
-            #if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1))) && !defined(_MSC_VER)
-                default_construct(std::has_trivial_default_constructor<TYPE>());
-            #else
-                default_construct(std::is_trivially_default_constructible<TYPE>());
-            #endif
+            default_construct(std::is_pod<TYPE>());
         }
 
-        /** Constructs a lifo_array and all its elements. Elements are constructed in positional order.
-            @param i_size number of element of the array
-            @param i_construction_params construction parameters to use for every element of the array */
+        /** Constructs all the elements with the provided parameter pack.
+            @param i_size number of elements of the array
+            @param i_construction_params construction parameters to use for every element of the array
+            
+            \snippet lifo_examples.cpp lifo_array constructor 3 */
         template <typename... CONSTRUCTION_PARAMS>
             lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
                 : detail::LifoArrayImpl<TYPE>(i_size)
@@ -512,10 +518,11 @@ namespace density
             }
         }
 
-        /** Constructs a lifo_array and all its elements, given an iterator range to use as source for copy-construction. Elements are constructed in positional order.
-            The size of the array is computed with std::distance(i_begin, i_end)
-            @param i_begin points to the first source value
-            @param i_end points to the first value that is not copied in the array. */
+        /** Initializes the array from an input range. The size of the array is computed with <code>std::distance(i_begin, i_end)</code>.
+            @param i_begin iterator pointing to the first source value
+            @param i_end iterator pointing to the first value that is not copied in the array. 
+            
+            \snippet lifo_examples.cpp lifo_array constructor 2 */
         template <typename INPUT_ITERATOR>
             lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
                     typename std::iterator_traits<INPUT_ITERATOR>::iterator_category = typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
@@ -549,38 +556,51 @@ namespace density
             destroy_elements(std::is_trivially_destructible<TYPE>());
         }
 
+        /** Returns the number of elements */
         size_t size() const noexcept
         {
             return m_size;
         }
 
+        /** Returns a reference to the i-th element.
+        
+            \pre The behavior is undefined if either:
+                - i_index >= \ref size
+        */
         TYPE & operator [] (size_t i_index) noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
         }
 
+        /** Returns a const reference to the i-th element.
+        
+            \pre The behavior is undefined if either:
+                - i_index >= \ref size
+        */
         const TYPE & operator [] (size_t i_index) const noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
         }
 
-        pointer data() noexcept                    { return m_elements; }
+        /** Returns a pointer to the first element. */
+        pointer data() noexcept                     { return m_elements; }
 
-        const_pointer data() const noexcept        { return m_elements; }
+        /** Returns a pointer to the first element. */
+        const_pointer data() const noexcept         { return m_elements; }
 
-        iterator begin() noexcept                { return m_elements; }
+        iterator begin() noexcept                   { return m_elements; }
 
-        iterator end() noexcept                    { return m_elements + m_size; }
+        iterator end() noexcept                     { return m_elements + m_size; }
 
-        const_iterator cbegin() const noexcept    { return m_elements; }
+        const_iterator cbegin() const noexcept      { return m_elements; }
 
-        const_iterator cend() const noexcept    { return m_elements + m_size; }
+        const_iterator cend() const noexcept        { return m_elements + m_size; }
 
-        const_iterator begin() const noexcept    { return m_elements; }
+        const_iterator begin() const noexcept       { return m_elements; }
 
-        const_iterator end() const noexcept        { return m_elements + m_size; }
+        const_iterator end() const noexcept         { return m_elements + m_size; }
 
     private:
 
