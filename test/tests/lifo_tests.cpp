@@ -20,6 +20,8 @@ namespace density_tests
 
     void lifo_test_1(std::ostream & i_output, std::mt19937 & i_random)
     {
+        (void)constexpr_lifo_allocator;
+
         PrintScopeDuration duration(i_output, "lifo_test_1");
 
         using namespace density;

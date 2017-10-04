@@ -69,7 +69,7 @@ namespace density
         static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
 
         /** Default constructor, suitable for constant initialization. */
-        constexpr lifo_allocator() noexcept = default;
+        constexpr lifo_allocator() noexcept {}
 
         /** Constructs passing the underlying allocator as l-value */
         lifo_allocator(const UNDERLYING_ALLOCATOR & i_underlying_allocator)
