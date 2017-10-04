@@ -32,6 +32,15 @@ namespace density_bench
             chars[0] = c;
         }, __LINE__);
 
+        #ifdef _MSC_VER
+        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+            auto chars = static_cast<char*>(_malloca(i_cardinality));
+            volatile char c = 0;
+            chars[0] = c;
+            _freea(chars);
+        }, __LINE__);
+        #endif
+
         i_tree["lifo_tests_1"].add_performance_test(group);
     }
 
