@@ -46,15 +46,15 @@ add_executable(density_test
 	main.cpp )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	MESSAGE( STATUS "compiling with clang")
+	MESSAGE( STATUS "will compile with clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	MESSAGE( STATUS "compiling with g++")
+	MESSAGE( STATUS "will compile with g++")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	MESSAGE( STATUS "compiling with msvc")
+	MESSAGE( STATUS "will compile with msvc")
 	add_compile_options(/bigobj)
 endif()
 

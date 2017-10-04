@@ -7,6 +7,7 @@
 namespace density_bench
 {
     void single_thread_tests(TestTree & i_tree);
+    void lifo_tests(TestTree & i_tree);
 }
 
 
@@ -15,6 +16,7 @@ int main()
     using namespace density_bench;
     TestTree root("density");
     single_thread_tests(root);
+    lifo_tests(root);
 
     auto progression = [](const Progression & i_progression) {
         auto const millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(i_progression.m_remaining_time_extimate);

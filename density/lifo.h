@@ -102,16 +102,16 @@ namespace density
             // allocate
             auto const new_top = address_add(m_top, actual_size);
             auto const new_offset = address_diff(new_top, address_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment));
-            if (new_offset < UNDERLYING_ALLOCATOR::page_size)
+            if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
+            {
+                return allocate_slow_path(actual_size);
+            }
+            else
             {
                 DENSITY_ASSERT_INTERNAL(actual_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = m_top;
                 m_top = new_top;
-                return new_block;
-            }
-            else
-            {
-                return allocate_slow_path(actual_size);
+                return new_block;                
             }
         }
 
@@ -127,13 +127,13 @@ namespace density
         void deallocate(void * i_block, size_t i_size) noexcept
         {
             // this check detects page switches and external blocks
-            if (same_page(i_block, m_top))
+            if (!same_page(i_block, m_top))
             {
-                m_top = i_block;
+                deallocate_slow_path(i_block, i_size);
             }
             else
             {
-                deallocate_slow_path(i_block, i_size);
+                m_top = i_block;
             }
         }
 
@@ -277,7 +277,7 @@ namespace density
     namespace detail
     {
         /** \internal Stateless class template that provides a thread local LIFO memory management */
-        class ThreadLifoAllocator
+        template <int=0> class ThreadLifoAllocator
         {
         public:
 
@@ -286,26 +286,25 @@ namespace density
 
             static void * allocate(size_t i_size)
             {
-                return get_allocator().allocate(i_size);
+                return s_allocator.allocate(i_size);
             }
             
             static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
             {
-                return get_allocator().reallocate(i_block, i_old_size, i_new_size);
+                return s_allocator.reallocate(i_block, i_old_size, i_new_size);
             }
 
             static void deallocate(void * i_block, size_t i_size) noexcept
             {
-                get_allocator().deallocate(i_block, i_size);
+                s_allocator.deallocate(i_block, i_size);
             }
 
         private:
-            static lifo_allocator<data_stack_underlying_allocator> & get_allocator()
-            {
-                static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
-                return s_allocator;
-            }
+            static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
         };
+
+        template <int DUMMY=0>
+            thread_local lifo_allocator<data_stack_underlying_allocator> ThreadLifoAllocator<DUMMY>::s_allocator;
 
     } // namespace detail
 
@@ -328,11 +327,11 @@ namespace density
     public:
 
         /** Alignment guaranteed for the block */
-        static constexpr size_t alignment = detail::ThreadLifoAllocator::alignment;
+        static constexpr size_t alignment = detail::ThreadLifoAllocator<>::alignment;
         
         /** Max size of a block. This size is equal to the size of the address space, minus an implementation defined value in 
             the order of the size of a page. Requesting a bigger block size causes undefined behavior. */
-        static constexpr size_t max_block_size = detail::ThreadLifoAllocator::max_block_size;
+        static constexpr size_t max_block_size = detail::ThreadLifoAllocator<>::max_block_size;
 
         /** Allocates the block
             @param i_size size in bytes of the memory block.
@@ -340,7 +339,7 @@ namespace density
             \pre The behavior is undefined if either:
                 - i_size > \ref max_block_size */
         lifo_buffer(size_t i_size = 0)
-            : m_data(detail::ThreadLifoAllocator::allocate(i_size)), m_size(i_size)
+            : m_data(detail::ThreadLifoAllocator<>::allocate(i_size)), m_size(i_size)
         {
         }
 
@@ -353,7 +352,7 @@ namespace density
         /** Deallocates the block */
         ~lifo_buffer()
         {
-            detail::ThreadLifoAllocator::deallocate(m_data, m_size);
+            detail::ThreadLifoAllocator<>::deallocate(m_data, m_size);
         }
 
         /** Changes the size of the block, preserving its existing content. 
@@ -369,7 +368,7 @@ namespace density
         void resize(size_t i_new_size)
         {
             /* we must allocate before updating any data member, so that in case of exception no change remains */
-            m_data = detail::ThreadLifoAllocator::reallocate(m_data, m_size, i_new_size);
+            m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, m_size, i_new_size);
             m_size = i_new_size;
         }
 
@@ -392,7 +391,7 @@ namespace density
 
     namespace detail
     {
-        template <typename TYPE, bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator::alignment) >
+        template <typename TYPE, bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator<>::alignment) >
             class LifoArrayImpl;
 
         template <typename TYPE>
@@ -403,12 +402,12 @@ namespace density
             LifoArrayImpl(size_t i_size)
                 : m_size(i_size)
             {
-                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator::allocate(m_size * sizeof(TYPE)));
+                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator<>::allocate(m_size * sizeof(TYPE)));
             }
 
             ~LifoArrayImpl()
             {
-                detail::ThreadLifoAllocator::deallocate(m_elements, m_size * sizeof(TYPE));
+                detail::ThreadLifoAllocator<>::deallocate(m_elements, m_size * sizeof(TYPE));
             }
 
         protected:
@@ -425,9 +424,9 @@ namespace density
                 : m_size(i_size)
             {
                 // add a size overhead equal to the alignment difference
-                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
+                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
                 auto const actual_size = size_overhead + i_size * sizeof(TYPE);
-                m_block = detail::ThreadLifoAllocator::allocate(actual_size);
+                m_block = detail::ThreadLifoAllocator<>::allocate(actual_size);
 
                 m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
                 DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
@@ -435,9 +434,9 @@ namespace density
 
             ~LifoArrayImpl()
             {
-                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator::alignment;
+                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
                 auto const actual_size = size_overhead + m_size * sizeof(TYPE);
-                detail::ThreadLifoAllocator::deallocate(m_block, actual_size);
+                detail::ThreadLifoAllocator<>::deallocate(m_block, actual_size);
             }
 
         protected:
