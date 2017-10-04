@@ -65,7 +65,12 @@ namespace density
             system_page_manager() noexcept
             {
                 /** The first region is always empty, so it will be skipped soon */
-                std::atomic_init(&m_curr_region, &m_first_region);
+                #if defined(__GLIBCXX__)
+                    // some versions of libstdc++ lack std::atomic_init
+                    m_curr_region.store(&m_first_region);
+                #else
+                    std::atomic_init(&m_curr_region, &m_first_region);
+                #endif
             }
 
             ~system_page_manager()
@@ -320,7 +325,7 @@ namespace density
         private:
             std::atomic<Region *> m_curr_region; /**< Usually this is a pointer to the last memory region,
                 but in case of contention between threads it may be left behind. */
-            Region m_first_region; /**< First memory region, statically allocated and always empty */
+            Region m_first_region; /**< First memory region, always empty */
         };
 
     } // namespace detail
