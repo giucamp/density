@@ -53,7 +53,7 @@ namespace density_tests
     size_t random_alignment(std::mt19937 & i_random)
     {
         size_t log2_max = 0;
-        while ((static_cast<size_t>(1) << log2_max) < alignof(std::max_align_t))
+        while ((static_cast<size_t>(1) << log2_max) < max_align)
         {
             log2_max++;
         }
@@ -199,7 +199,7 @@ namespace density_tests
 
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer buffer(std::uniform_int_distribution<size_t>(0, void_allocator::page_size * 2)(m_random));
-            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), alignof(std::max_align_t)));
+            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), max_align));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.size(),
@@ -238,10 +238,10 @@ namespace density_tests
         {
             using namespace density;
 
-            union alignas(alignof(std::max_align_t) * 2) AlignedType
+            union alignas(max_align * 2) AlignedType
             {
                 int m_value;
-                std::max_align_t m_unused[2];
+                max_align_t m_unused[2];
                 bool operator == (const AlignedType & i_other) const
                 {
                     return m_value == i_other.m_value;

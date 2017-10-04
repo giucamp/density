@@ -5,7 +5,6 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <cstdlib> // for std::max_align_t
 #include <density/density_common.h>
 #include <density/detail/system_page_manager.h>
 #include <density/detail/page_allocator.h>
@@ -24,7 +23,7 @@ namespace density
         <tr><th style="width:500px">Requirement                      </th><th>Semantic</th></tr>
         <tr><td>Non-static member function: @code void * allocate(
                 size_t i_size,
-                size_t i_alignment = alignof(std::max_align_t),
+                size_t i_alignment,
                 size_t i_alignment_offset = 0); @endcode </td></tr>
             <td>Allocates a memory block large at least \em i_size bytes. The address at the offset \em i_alignment_offset
         from the beginning of the block is aligned at least to \em i_alignment. On failure this function should throw a
@@ -45,7 +44,7 @@ namespace density
         <tr><td>Non-static member function: @code void deallocate(
                 void * i_block,
                 size_t i_size,
-                size_t i_alignment = alignof(std::max_align_t),
+                size_t i_alignment,
                 size_t i_alignment_offset = 0) noexcept; @endcode </td></tr>
         <td>Deallocates a memory block. \n
 
@@ -204,7 +203,7 @@ namespace density
 
             The content of the newly allocated block is undefined. */
         void * allocate(size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0)
         {
             return density::aligned_allocate(i_size, i_alignment, i_alignment_offset);
@@ -232,7 +231,7 @@ namespace density
         void * try_allocate(
             progress_guarantee i_progress_guarantee,
             size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
             return density::try_aligned_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
@@ -255,7 +254,7 @@ namespace density
             If i_block is nullptr, the call has no effect. */
         void deallocate(void * i_block,
             size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
             density::aligned_deallocate(i_block, i_size, i_alignment, i_alignment_offset);

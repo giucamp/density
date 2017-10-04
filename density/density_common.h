@@ -69,6 +69,13 @@ namespace density
                                     without invocation is not supported.*/
     };
 
+    #if defined(__GLIBCXX__)
+        constexpr size_t max_align = alignof(max_align_t);
+    #else
+        /** Value of alignof(std::max_align_t) */
+        constexpr size_t max_align = alignof(std::max_align_t);
+    #endif
+
                 // address functions
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
@@ -405,14 +412,14 @@ namespace density
         \exception std::bad_alloc if the allocation fails
 
         The content of the newly allocated block is undefined. */
-    inline void * aligned_allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
+    inline void * aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         DENSITY_ASSERT(i_alignment_offset <= i_size);
 
         // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
-        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        if (i_alignment <= max_align && i_alignment_offset == 0)
         {
             user_block = operator new (i_size);
         }
@@ -452,7 +459,7 @@ namespace density
 
         The content of the newly allocated block is undefined. */
     inline void * try_aligned_allocate(progress_guarantee i_progress_guarantee,
-        size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
+        size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         DENSITY_ASSERT(i_alignment_offset <= i_size);
@@ -464,7 +471,7 @@ namespace density
 
         // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
-        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        if (i_alignment <= max_align && i_alignment_offset == 0)
         {
             user_block = operator new (i_size, std::nothrow);
         }
@@ -504,11 +511,11 @@ namespace density
         \n <b>Throws</b>: nothing
 
         If i_block is nullptr, the call has no effect. */
-    inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
+    inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        if (i_alignment <= alignof(std::max_align_t) && i_alignment_offset == 0)
+        if (i_alignment <= max_align && i_alignment_offset == 0)
         {
             #if __cplusplus >= 201402L
                 operator delete (i_block, i_size); // since C++14

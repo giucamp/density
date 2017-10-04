@@ -57,7 +57,7 @@ namespace density
         using underlying_allocator = UNDERLYING_ALLOCATOR;
 
         /** Alignment of the memory blocks */
-        static constexpr size_t alignment = alignof(std::max_align_t);
+        static constexpr size_t alignment = max_align;
 
         /** Max size of a single block. This size is equal to the size of the address space, minus an implementation defined value in 
             the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */

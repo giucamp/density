@@ -55,7 +55,7 @@ namespace density_tests
 
         DeepTestAllocator() noexcept { }
 
-        void * allocate(size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0)
+        void * allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
         {
             exception_checkpoint();
 
@@ -67,7 +67,7 @@ namespace density_tests
         void * try_allocate(
             density::progress_guarantee i_progress_guarantee,
             size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
             if (ThreadAllocRandomFailures::should_fail())
@@ -80,7 +80,7 @@ namespace density_tests
             return result;
         }
 
-        void deallocate(void * i_block, size_t i_size, size_t i_alignment = alignof(std::max_align_t), size_t i_alignment_offset = 0) noexcept
+        void deallocate(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
         {
             m_registry.unregister_block(s_default_category, i_block, i_size, i_alignment, i_alignment_offset);
             Base::deallocate(i_block, i_size, i_alignment, i_alignment_offset);
@@ -213,7 +213,7 @@ namespace density_tests
         UnmovableFastTestAllocator & operator = (const UnmovableFastTestAllocator&) noexcept = delete;
 
         void * allocate(size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0)
         {
             m_living_allocations.fetch_add(1, std::memory_order_relaxed);
@@ -226,7 +226,7 @@ namespace density_tests
         void * try_allocate(
             density::progress_guarantee i_progress_guarantee,
             size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
             auto const result = Base::try_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
@@ -241,7 +241,7 @@ namespace density_tests
 
         void deallocate(void * i_block,
             size_t i_size,
-            size_t i_alignment = alignof(std::max_align_t),
+            size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
             Base::deallocate(i_block, i_size, i_alignment, i_alignment_offset);

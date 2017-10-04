@@ -69,7 +69,7 @@ namespace density_tests
         {
     //! [lifo_array constructor 2]
     std::vector<int> vect{ 1, 2, 3 };
-    lifo_array<int> array(vect.begin(), vect.end());
+    lifo_array<int> array(vect.cbegin(), vect.cend());
     auto int_sum = std::accumulate(array.begin(), array.end(), 0);
     assert(int_sum == 6);
     //! [lifo_array constructor 2]

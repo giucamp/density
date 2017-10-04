@@ -14,6 +14,8 @@
 
 namespace density_tests
 {
+    using density::max_align;
+
     template <typename TYPE>
         std::string truncated_type_name(size_t i_max_size = 80)
     {
