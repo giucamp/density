@@ -27,7 +27,7 @@ namespace density_bench
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<char*>(alloca(i_cardinality));
+            auto chars = static_cast<char*>(_alloca(i_cardinality));
             volatile char c = 0;
             chars[0] = c;
         }, __LINE__);

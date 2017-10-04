@@ -303,7 +303,7 @@ namespace density
             static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
         };
 
-        template <int DUMMY=0>
+        template <int DUMMY>
             thread_local lifo_allocator<data_stack_underlying_allocator> ThreadLifoAllocator<DUMMY>::s_allocator;
 
     } // namespace detail
