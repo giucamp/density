@@ -42,6 +42,8 @@ namespace density
 
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
 
+        The constructor of lifo_allocator is constexpr and guarantees constant initialization.
+
         Implementation notes
         --------------------------
         A block allocation or deallocation requires only a few ALU instructions and a branch to a 
@@ -66,7 +68,7 @@ namespace density
         // compile time checks
         static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
 
-        /** Default constructor. */
+        /** Default constructor, suitable for constant initialization. */
         constexpr lifo_allocator() noexcept = default;
 
         /** Constructs passing the underlying allocator as l-value */
@@ -82,7 +84,6 @@ namespace density
         
         /** Copy assignment not allowed */
         lifo_allocator & operator = (const lifo_allocator &) = delete;
-
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
             is aligned at least to \ref alignment.
@@ -100,8 +101,8 @@ namespace density
             auto const actual_size = uint_upper_align(i_size, alignment);
 
             // allocate
-            auto const new_top = address_add(m_top, actual_size);
-            auto const new_offset = address_diff(new_top, address_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment));
+            auto const new_top = m_top + actual_size;
+            auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
             {
                 return allocate_slow_path(actual_size);
@@ -109,7 +110,7 @@ namespace density
             else
             {
                 DENSITY_ASSERT_INTERNAL(actual_size <= UNDERLYING_ALLOCATOR::page_size);
-                auto const new_block = m_top;
+                auto const new_block = reinterpret_cast<void*>(m_top);
                 m_top = new_top;
                 return new_block;                
             }
@@ -127,13 +128,13 @@ namespace density
         void deallocate(void * i_block, size_t i_size) noexcept
         {
             // this check detects page switches and external blocks
-            if (!same_page(i_block, m_top))
+            if (!same_page(i_block, reinterpret_cast<void*>(m_top)))
             {
                 deallocate_slow_path(i_block, i_size);
             }
             else
             {
-                m_top = i_block;
+                m_top = reinterpret_cast<uintptr_t>(i_block);
             }
         }
 
@@ -160,7 +161,7 @@ namespace density
             auto const old_actual_size = uint_upper_align(i_old_size, alignment);
 
             // branch depending on the old block: this check detects page switches and external blocks
-            if (same_page(i_block, m_top))
+            if (same_page(i_block, reinterpret_cast<void*>(m_top)))
             {
                 // the following call sets the top only when it is sure to not throw
                 auto const new_block = set_top_and_allocate(i_block, new_actual_size);
@@ -172,15 +173,15 @@ namespace density
             {
                 if (old_actual_size < UNDERLYING_ALLOCATOR::page_size)
                 {
-                    DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
-                    auto const old_top = m_top;
-                
+                    auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
+                    DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
+
                     // the following call sets the top only when it is sure to not throw
                     auto const new_block = set_top_and_allocate(i_block, new_actual_size);
                                 
                     copy(i_block, old_actual_size, new_block, new_actual_size);
                     
-                    UNDERLYING_ALLOCATOR::deallocate_page(old_top);
+                    UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
                     return new_block;
                 }
                 else
@@ -210,7 +211,7 @@ namespace density
             {
                 // allocate a new page
                 auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                m_top = address_add(new_page, i_actual_size);
+                m_top = reinterpret_cast<uintptr_t>(new_page) + i_actual_size;
                 return new_page;
             }
             else
@@ -226,9 +227,10 @@ namespace density
             auto const actual_size = uint_upper_align(i_size, alignment);
             if (actual_size < UNDERLYING_ALLOCATOR::page_size)
             {
-                DENSITY_ASSERT_INTERNAL(!same_page(m_top, i_block));
-                UNDERLYING_ALLOCATOR::deallocate_page(m_top);
-                m_top = i_block;
+                auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
+                DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
+                UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
+                m_top = reinterpret_cast<uintptr_t>(i_block);
             }
             else
             {
@@ -243,9 +245,11 @@ namespace density
         {
             DENSITY_ASSERT_INTERNAL(i_actual_size % alignment == 0);
 
+            auto const current_top = reinterpret_cast<uintptr_t>(i_current_top);
+
             // we have to procrastinate the assignment of m_top until we have allocated the page or the external block
-            auto const new_top = address_add(i_current_top, i_actual_size);
-            auto const new_offset = address_diff(new_top, address_lower_align(i_current_top, UNDERLYING_ALLOCATOR::page_alignment));
+            auto const new_top = current_top + i_actual_size;
+            auto const new_offset = new_top - uint_lower_align(current_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset < UNDERLYING_ALLOCATOR::page_size)
             {
                 DENSITY_ASSERT_INTERNAL(i_actual_size <= UNDERLYING_ALLOCATOR::page_size);
@@ -271,7 +275,9 @@ namespace density
         }
 
     private:
-        void * m_top = reinterpret_cast<void*>(UNDERLYING_ALLOCATOR::page_alignment - 1);
+        uintptr_t m_top = UNDERLYING_ALLOCATOR::page_alignment - 1; /**< pointer to the top of the stack. This variable is an integer
+                                                                    to allow constant initialization (reinterpret_cast can't be used in
+                                                                    compile time evaluations). */
     };
 
     namespace detail

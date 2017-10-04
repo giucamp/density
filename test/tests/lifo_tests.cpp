@@ -15,6 +15,9 @@
 
 namespace density_tests
 {
+    // verify that lifo_allocator can have constant initialization
+    constexpr density::lifo_allocator<> constexpr_lifo_allocator;
+
     void lifo_test_1(std::ostream & i_output, std::mt19937 & i_random)
     {
         PrintScopeDuration duration(i_output, "lifo_test_1");
