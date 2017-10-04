@@ -33,12 +33,12 @@ namespace density_bench
 
         // find the longest white-char prefix common to all the lines
         size_t white_prefix_length = 0;
-        bool match = true;
+        bool match = lines.size() > 0;
         while (match)
         {
             bool first = true;
             char target_char = 0;
-            for (auto & line : lines)
+            for (const auto & line : lines)
             {
                 if (match && white_prefix_length < line.length())
                 {
