@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <thread>
 
 namespace density_tests
 {
@@ -87,6 +88,52 @@ namespace density_tests
     //! [lifo_array constructor 3]
     (void)all_stars;
         }
+
+        auto lifo_allocator_example_1 = [] {
+            for (int i = 0; i < 2; i++)
+            {
+                //! [lifo_allocator allocate_empty 1]
+                lifo_allocator<> allocator;
+
+                auto const block = allocator.allocate_empty();                
+                assert(address_is_aligned(block, decltype(allocator)::alignment));
+
+                allocator.deallocate(block, 0);
+                //! [lifo_allocator allocate_empty 1]
+            }
+        };
+
+        auto lifo_allocator_example_2 = [] {
+            for (int i = 0; i < 2; i++)
+            {
+                //! [lifo_allocator allocate_empty 2]
+                lifo_allocator<> allocator;
+                constexpr auto alignment = decltype(allocator)::alignment;
+
+                auto block = allocator.allocate_empty();
+                assert(address_is_aligned(block, alignment));
+
+                block = allocator.reallocate(block, 0, alignment * 2);
+                assert(address_is_aligned(block, alignment));
+
+                allocator.deallocate(block, alignment * 2);
+                //! [lifo_allocator allocate_empty 2]
+            }
+        };
+
+        // test on this thread (with a non-empty data stack) and on a separate thread (with an empty data stack)
+        {
+            lifo_array<int> arr(4, 4);
+            lifo_allocator_example_1();
+        }
+        
+
+        {
+            lifo_array<int> arr(4, 4);
+            lifo_allocator_example_2();
+        }        
+        std::thread(lifo_allocator_example_2).join();
+        std::thread(lifo_allocator_example_1).join();
     }    
 
     //! [lifo_buffer example 1]

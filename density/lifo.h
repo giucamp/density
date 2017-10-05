@@ -70,7 +70,7 @@ namespace density
         // compile time checks
         static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
 
-        /** Default constructor, suitable for constant initialization. */
+        /** Default constructor, non-throwing and suitable for constant initialization. */
         constexpr lifo_allocator() noexcept {}
 
         /** Constructs passing the underlying allocator as l-value */
@@ -115,6 +115,21 @@ namespace density
                 m_top = new_top;
                 return new_block;                
             }
+        }
+
+        /** Allocates a block with size 0.
+        
+            This function is equivalent to allocate(0), but it is much faster and never throws.
+            The returned block can be reallocated and deallocated. 
+            
+            This function is useful to initialize block pointers efficiently, without the risk
+            of exceptions, at the same time avoiding the nullptr special case. The implementation
+            of the default constructor of \ref lifo_buffer uses this function. 
+            
+            \snippet lifo_examples.cpp lifo_allocator allocate_empty 2 */
+        void * allocate_empty() noexcept
+        {
+            return reinterpret_cast<void*>(m_top);
         }
 
         /** Deallocates the most recently allocated living memory block.
@@ -275,9 +290,9 @@ namespace density
         }
 
     private:
-        uintptr_t m_top = UNDERLYING_ALLOCATOR::page_alignment - 1; /**< pointer to the top of the stack. This variable is an integer
-                                                                    to allow constant initialization (reinterpret_cast can't be used in
-                                                                    compile time evaluations). */
+        uintptr_t m_top = uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment); /**< pointer to the top of the stack. 
+                                                                    This variable is an integer to allow constant initialization 
+                                                                    (reinterpret_cast can't be used in compile time evaluations). */
     };
 
     namespace detail
@@ -293,6 +308,11 @@ namespace density
             static void * allocate(size_t i_size)
             {
                 return s_allocator.allocate(i_size);
+            }
+
+            static void * allocate_empty() noexcept
+            {
+                return s_allocator.allocate_empty();
             }
             
             static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
@@ -339,12 +359,22 @@ namespace density
             the order of the size of a page. Requesting a bigger block size causes undefined behavior. */
         static constexpr size_t max_block_size = detail::ThreadLifoAllocator<>::max_block_size;
 
+        /** Allocates an empty block.
+            @param i_size size in bytes of the memory block.
+            
+            \pre The behavior is undefined if either:
+                - i_size > \ref max_block_size */
+        lifo_buffer() noexcept
+            : m_data(detail::ThreadLifoAllocator<>::allocate_empty()), m_size(0)
+        {
+        }
+
         /** Allocates the block
             @param i_size size in bytes of the memory block.
             
             \pre The behavior is undefined if either:
                 - i_size > \ref max_block_size */
-        lifo_buffer(size_t i_size = 0)
+        lifo_buffer(size_t i_size)
             : m_data(detail::ThreadLifoAllocator<>::allocate(uint_upper_align(i_size, alignment))), m_size(i_size)
         {
         }
@@ -364,6 +394,9 @@ namespace density
         /** Changes the size of the block, preserving its existing content. 
             If the buffer grows (the new size is bigger than the previous one) the new content has undefined content.
         
+            @param i_new_size size in bytes of the memory block.
+            @return the new address of the block
+
             This function may reallocate the block, so its address may change.
 
             \pre The behavior is undefined if either:
@@ -371,13 +404,14 @@ namespace density
                 - this block was not the most recently allocated one on the data stack of the calling thread
 
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
-        void resize(size_t i_new_size)
+        void * resize(size_t i_new_size)
         {
             /* we must allocate before updating any data member, so that in case of exception no change remains */
-            m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, 
+            auto const block = m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, 
                 uint_upper_align(m_size, alignment), 
                 uint_upper_align(i_new_size, alignment));
             m_size = i_new_size;
+            return block;
         }
 
         /** Returns the associated memory block. */
