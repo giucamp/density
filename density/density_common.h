@@ -547,7 +547,9 @@ namespace density
     
 Density Overview
 ----------------
-Density is a C++11 header-only library focused on paged memory management, providing a rich set of highly configurable heterogeneous queues.
+Density is a C++11 header-only library focused on paged and lifo memory management, concurrency, and exception safeness.
+
+density provides a rich set of highly configurable heterogeneous queues:
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](classdensity_1_1function__queue.html)      |[heter_queue](classdensity_1_1heter__queue.html)| - | -
@@ -555,7 +557,7 @@ locking         |[conc_function_queue](classdensity_1_1conc__function__queue.htm
 lock-free       |[lf_function_queue](classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](classdensity_1_1lf__heter__queue.html)|configurable|configurable
 spin-locking    |[sp_function_queue](classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
-All function queues have a common interface, and so all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, 
+All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, 
 or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
 
 density provides a lifo_allocator built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly 
@@ -688,8 +690,11 @@ ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
 ~~~~~~~~~~~~~~
 
-Lifo data structures
+The data stack
 --------------
+The data stack is a thread-local paged memory pool dedicated to lifo allocations. The thread must ensure that deallocations are performed in the reverse
+order. 
+
 Density provides two lifo data structures: lifo_array and lifo_buffer.
 
 [lifo_array](classdensity_1_1lifo__array.html) is a modern C++ version of the variable length automatic arrays of C99. It is is an alternative to the non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html) function, much more C++ish.
