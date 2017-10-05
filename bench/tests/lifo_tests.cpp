@@ -55,14 +55,14 @@ namespace density_bench
         group.set_cardinality_step(1);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            lifo_array<double> chars(i_cardinality);
-            volatile double c = 0;
+            lifo_array<float> chars(i_cardinality);
+            volatile float c = 0;
             chars[0] = c;
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<double*>(_alloca(i_cardinality * sizeof(double)));
-            volatile double c = 0;
+            auto chars = static_cast<float*>(_alloca(i_cardinality * sizeof(float)));
+            volatile float c = 0;
             chars[0] = c;
         }, __LINE__);
 

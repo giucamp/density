@@ -204,7 +204,7 @@ namespace density_tests
 
             std::uniform_int_distribution<unsigned> rnd(0, 100);
             lifo_buffer buffer(std::uniform_int_distribution<size_t>(0, void_allocator::page_size * 2)(m_random));
-            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), max_align));
+            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), lifo_buffer::alignment));
             std::generate(
                 static_cast<unsigned char*>(buffer.data()),
                 static_cast<unsigned char*>(buffer.data()) + buffer.size(),
