@@ -7,7 +7,7 @@ namespace density_bench
 {
     void lifo_tests_1(TestTree & i_tree)
     {
-        PerformanceTestGroup group("bench", "");
+        PerformanceTestGroup group("lifo_array_b1", "");
        
         using namespace density;
 
@@ -46,7 +46,7 @@ namespace density_bench
 
     void lifo_tests_2(TestTree & i_tree)
     {
-        PerformanceTestGroup group("bench", "");
+        PerformanceTestGroup group("lifo_array_b2", "");
        
         using namespace density;
 
@@ -55,14 +55,14 @@ namespace density_bench
         group.set_cardinality_step(1);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            lifo_array<float> chars(i_cardinality);
-            volatile float c = 0;
+            lifo_array<double> chars(i_cardinality);
+            volatile double c = 0;
             chars[0] = c;
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<float*>(_alloca(i_cardinality * sizeof(float)));
-            volatile float c = 0;
+            auto chars = static_cast<double*>(_alloca(i_cardinality * sizeof(double)));
+            volatile double c = 0;
             chars[0] = c;
         }, __LINE__);
 

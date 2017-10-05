@@ -679,4 +679,176 @@ namespace density
         using detail::LifoArrayImpl<TYPE>::m_size;
     };
 
+    /*! \page lifo_array_benchmarks
+
+        Benchmarks of %lifo_array
+        ----------
+        ----------
+
+        In this tests \ref lifo_array is compared with a legacy heap array, the function 
+        [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and the function 
+        [_malloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/malloca) (a Microsoft-specific safer version).
+        A comparison with <code>std::vector</code> wouldn't be fair because <code>std::vector</code> value-initializes the elements 
+        even if they are pod types, while %lifo_array doesn't.
+
+        The benchmark is composed by two tests:
+
+        - An array of <code>float</code>s is allocated, the first element is zeroed, and then the array is deallocated.
+        - An array of <code>double</code>s is allocated, the first element is zeroed, and then the array is deallocated. This test is an head-to-head
+            between <code>alloca</code> and <code>%lifo_array</code>.
+
+        Summary of the results
+        ----------
+        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 
+        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation 
+        with a given cardinality, and every invocation occurs 8 times. 
+        
+        The results are quite noisy: there are two separate classes of players, but no clear winner in each of them.
+
+        - <code>_malloca</code> is roughly the same to the array on the heap (actually many times it's slower). The reason is that this 
+            function allocates on the heap sizes bigger than 1024 bytes, and the tests allocate up to 30-40 kibibytes. Note that <code>_malloca</code> 
+            needs a deallocation function to be called ([_freea](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/freea)), and that it 
+            can still possibly cause a stack overflow, though much more rarely than <code>alloca</code>.
+
+        - <code>alloca</code> and <code>%lifo_array</code> are very close, with the first being ~80% of times slightly faster if the size an element is
+            not a multiple of lifo_allocator::alignment (currently = <code>alignof(void*)</code>). Otherwise <code>%lifo_array</code> can skip some
+            ALU instructions that align the size of the block. I'm not sure that this is the reason, but this case it's often slightly faster than 
+            <code>alloca</code>. Anyway both <code>alloca</code> and <code>%lifo_array</code> are very fast.
+
+
+        Generated code for %lifo_array
+        ----------
+
+        Visual Stdio 2017 translates the source code of first test:
+
+        ~~~~~~~~~~~~~~
+        lifo_array<char> chars(i_cardinality);
+        volatile char c = 0;
+        chars[0] = c;
+        ~~~~~~~~~~~~~~
+
+        to this machine code:
+
+        ~~~~~~~~~~~~~~
+                    lifo_array<char> chars(i_cardinality);
+         mov         rax,qword ptr gs:[58h]  
+                    lifo_array<char> chars(i_cardinality);
+         lea         rdi,[rdx+7]  
+         and         rdi,0FFFFFFFFFFFFFFF8h  
+         mov         ebx,128h  
+         add         rbx,qword ptr [rax]  
+         mov         rdx,qword ptr [rbx]  
+         mov         rcx,rdx  
+         and         rcx,0FFFFFFFFFFFF0000h  
+         lea         r8,[rdi+rdx]  
+         mov         rax,r8  
+         sub         rax,rcx  
+         cmp         rax,0FFF0h  
+         jb          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+57h (07FF72B438037h)  
+         mov         rdx,rdi  
+         mov         rcx,rbx  
+         call        density::lifo_allocator<density::basic_void_allocator<65536> >::allocate_slow_path (07FF72B4385B0h)  
+         mov         rdx,rax  
+         jmp         <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+5Ah (07FF72B43803Ah)  
+         mov         qword ptr [rbx],r8  
+                    volatile char c = 0;
+         mov         byte ptr [rsp+30h],0  
+                    chars[0] = c;
+         movzx       eax,byte ptr [c]  
+         mov         byte ptr [rdx],al  
+                }
+         mov         rax,qword ptr [rbx]  
+         xor         rax,rdx  
+         test        rax,0FFFFFFFFFFFF0000h  
+         je          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+89h (07FF72B438069h)  
+         mov         r8,rdi  
+         mov         rcx,rbx  
+         mov         rbx,qword ptr [rsp+38h]  
+         add         rsp,20h  
+         pop         rdi  
+         jmp         density::lifo_allocator<density::basic_void_allocator<65536> >::deallocate_slow_path (07FF72B438520h)  
+         mov         qword ptr [rbx],rdx  
+         mov         rbx,qword ptr [rsp+38h]  
+        ~~~~~~~~~~~~~~
+
+        The branch after <code>cmp</code> and the one after <code>test</code> skip the slow paths. They are always taken unless 
+        a page switch is required, or the requested block does not fit in a page (in which case the block is allocated in the 
+        heap). The branch predictor of the cpu should do a good job here.
+
+        Note that the first instructions align the size of the block to 8 bytes.
+
+        The source code of second test:
+
+        ~~~~~~~~~~~~~~
+        lifo_array<double> chars(i_cardinality);
+        volatile double c = 0;
+        chars[0] = c;
+        ~~~~~~~~~~~~~~
+
+        is translated to:
+
+        ~~~~~~~~~~~~~~
+                    lifo_array<double> chars(i_cardinality);
+         mov         rax,qword ptr gs:[58h]  
+                    lifo_array<double> chars(i_cardinality);
+         lea         rdi,[rdx*8]  
+         mov         ebx,128h  
+         add         rbx,qword ptr [rax]  
+         mov         rdx,qword ptr [rbx]  
+         mov         rcx,rdx  
+         and         rcx,0FFFFFFFFFFFF0000h  
+         lea         r8,[rdx+rdi]  
+         mov         rax,r8  
+         sub         rax,rcx  
+         cmp         rax,0FFF0h  
+         jb          <lambda_c7840347498da9fa856125956fe6e478>::operator()+57h (07FF74CD28457h)  
+         mov         rdx,rdi  
+         mov         rcx,rbx  
+         call        density::lifo_allocator<density::basic_void_allocator<65536> >::allocate_slow_path (07FF74CD285B0h)  
+         mov         rdx,rax  
+         jmp         <lambda_c7840347498da9fa856125956fe6e478>::operator()+5Ah (07FF74CD2845Ah)  
+         mov         qword ptr [rbx],r8  
+         xorps       xmm0,xmm0  
+                    volatile double c = 0;
+         movsd       mmword ptr [rsp+30h],xmm0  
+                    chars[0] = c;
+         movsd       xmm1,mmword ptr [c]  
+                }
+         mov         rax,qword ptr [rbx]  
+         xor         rax,rdx  
+                    chars[0] = c;
+         movsd       mmword ptr [rdx],xmm1  
+                }
+         test        rax,0FFFFFFFFFFFF0000h  
+         je          <lambda_c7840347498da9fa856125956fe6e478>::operator()+90h (07FF74CD28490h)  
+         mov         r8,rdi  
+         mov         rcx,rbx  
+         mov         rbx,qword ptr [rsp+38h]  
+         add         rsp,20h  
+                }
+         pop         rdi  
+         jmp         density::lifo_allocator<density::basic_void_allocator<65536> >::deallocate_slow_path (07FF74CD28520h)  
+         mov         qword ptr [rbx],rdx  
+         mov         rbx,qword ptr [rsp+38h]  
+
+        ~~~~~~~~~~~~~~
+
+        In this case the size of the array is always aligned to 8 bytes, so there is some less ALU instructions.
+
+        Results of the first test
+        ----------
+
+        \image html lifo_array_b1_1.png
+        \image html lifo_array_b1_2.png
+        \image html lifo_array_b1_3.png
+
+        
+        Results of the second test
+        ----------
+
+        \image html lifo_array_b2_1.png
+        \image html lifo_array_b2_2.png
+        \image html lifo_array_b2_3.png
+    */
+
 } // namespace density

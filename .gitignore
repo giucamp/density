@@ -19,7 +19,6 @@
 *.iobj
 *.ipdb
 doc/html
-doc/images
 doc/latex
 test/vs2015/density_test.VC.db
 test/code_blocks/.objs/

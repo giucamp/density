@@ -544,10 +544,10 @@ namespace density
     /*!
 
     \page intro Intro
-
+    
 Density Overview
 ----------------
-Density is a C++11 header-only library focused on paged memory management. providing a rich set of highly configurable heterogeneous queues.
+Density is a C++11 header-only library focused on paged memory management, providing a rich set of highly configurable heterogeneous queues.
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](classdensity_1_1function__queue.html)      |[heter_queue](classdensity_1_1heter__queue.html)| - | -
@@ -555,10 +555,19 @@ locking         |[conc_function_queue](classdensity_1_1conc__function__queue.htm
 lock-free       |[lf_function_queue](classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](classdensity_1_1lf__heter__queue.html)|configurable|configurable
 spin-locking    |[sp_function_queue](classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
-All function queues have a common interface, and so all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
-A lifo memory management system is provided too, built upon the paged management.
+All function queues have a common interface, and so all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, 
+or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
 
-[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
+density provides a lifo_allocator built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly 
+the [same performance](\ref lifo_array_benchmarks) of the unsafe, C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html).
+The data stack can only be used indirectly with lifo_array and lifo_buffer.
+
+This library is tested against these compilers:
+    - Msc (Visual Studio 2017)
+    - g++-4.9 and g++-7
+    - clang++-4.0 and clang++-5.0
+
+[Github Repository](https://github.com/giucamp/density)
 
 About function queues
 --------------
@@ -679,21 +688,6 @@ ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
 ~~~~~~~~~~~~~~
 
-Function queues benchmarks
---------------------
-All the tests are done on an Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 2808 Mhz, 4 cores, 8 logical processors running Windows 10, and compiled with Visual Studio 2017.
-
-In this singlethreaded test <code>std::vector</code> and <code>std::queue</code> are compared to density function queues. Even unnecessarily paying the cost of multithreading,
-all concurrent function queues are better than a <code>std::queue</code> of <code>std::function</code>.
-
-Note that the vector is being cleared at the end, because otherwise it would be too slow.
-
-\image html bench.png width=8cm
-
-This is the same test as before, but function queues uses \ref function_manual_clear, \ref concurrency_single and \ref consistency_relaxed to speedup.
-
-\image html bench_2.png width=8cm
-
 Lifo data structures
 --------------
 Density provides two lifo data structures: lifo_array and lifo_buffer.
@@ -758,55 +752,55 @@ Concept     | Modeled in density by
 [RuntimeType](RuntimeType_concept.html) | [runtime_type](classdensity_1_1runtime__type.html)
 [UntypedAllocator](UntypedAllocator_concept.html) | [void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](classdensity_1_1basic__void__allocator.html)
 [PagedAllocator](PagedAllocator_concept.html) | [void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](classdensity_1_1basic__void__allocator.html)
- 
-[Github Repository](https://github.com/giucamp/density)
+
+Benchmarks
+----------
+
+\ref function_queue_benchmarks
+
+\ref lifo_array_benchmarks
 
     */
 
+    /*! \page function_queue_benchmarks
 
-    /*!
+        Benchmarks of the function queues
+        ----------
+        ----------
 
-    \page func_queue_bench Function queue benchmarks
+        In this single-thread tests all the function queues of density are compared to a <code>std::vector</code> and a <code>std::queue</code>
+        of <code>std::function</code>s.
+        In every test a function queue is created, filled by many trivial functions, and then all the functions are consumed on-by-one. Only
+        in the case of <code>std::vector</code> the queue is cleared in one time, rather than removing the functions one by one while they
+        are invoked. This is because there is no constant-time function to remove the first element of a <code>std::vector</code>.
 
-    These tests create a queue, fill it with many lambda functions, and then call and remove every function. These tests have been performed on a program built with Visual Studio 2015 (update 2).
-    5 snippets doing that are compared:
-    - using a std::vector of std::function's
-    - using a std::vector of std::function's with an initial reserve. In general one does not know the maximum size of the queue, so this may be considered a 'cheat'
-    - using a std::queue (which uses a std::deque)
-    - using a \ref density::small_function_queue< RET_VAL(PARAMS...)> "small_function_queue"
-    - using a \ref density::function_queue< RET_VAL(PARAMS...)> "function_queue"
+        In the first test the function queues of density are instantiated with the default template parameters.
+        In the second test they exploit all the available optimizations, that is:
 
-    \section func_queue_bench_sec1 No capture
-    In the first test there is no captured state (function object are small).
-    \image html push___consume__no_capture.png width=10cm
+        - \ref function_manual_clear, so that every element is actually a single pointer (plus an internal overhead pointer). 
+        - \ref concurrency_single, when it's applicable
+        - \ref consistency_relaxed, when it's applicable
 
-    \section func_queue_bench_sec2 Capture of 46 bytes
-    In the second test the capture state has the biggest size possible with std::function still not allocating heap memory.
-    \image html push___consume__middle_capture__46_bytes_.png width=10cm
+        Summary of the results
+        ----------
+        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 
+        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation 
+        with a given cardinality, and every invocation occurs 8 times. 
 
-    \section func_queue_bench_sec3 Capture of 64 bytes
-    In the third test the capture state is bigger than the inline storage of std::function.
-    \image html push___consume__big_capture__64_bytes_.png width=10cm
 
-    \page lifo_array_bench Automatic variable-length array benchmarks
+        Even unnecessarily paying the cost of multithreading, concurrent function queues are in general better than <code>std::queue</code> of <code>std::function</code>.
+        lf_function_queue is much faster in the case of single consumer and single producers, as it can reduce considerably the number of
+        atomic memory operations.
 
-    This test just creates an automatic dynamic sized array. The class virtual is defined by this code:
-    \code{.cpp}
-    struct Virtual
-    {
-        virtual ~Virtual() {}
-    };
-    \endcode
-    \image html create_array.png width=10cm
-    */
-    /*! \page runtime_type_sample A sample with runtime_type
-    \include runtime_type_sample.cpp
-    */
-    /*! \page lifo_sample A lifo sample
-    \include lifo_sample.cpp
-    */
-    /*! \page function_queue_sample A sample with function queues
-    \include function_queue_sample.cpp
+        Results of the first test
+        ----------
+
+        \image html func_queue_st_b1.png
+        
+        Results of the second test
+        ----------
+
+        \image html func_queue_st_b2.png
     */
 
 } // namespace density

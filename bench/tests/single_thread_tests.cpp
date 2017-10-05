@@ -13,7 +13,7 @@ namespace density_bench
 {
     void single_thread_tests_1(TestTree & i_tree)
     {
-        PerformanceTestGroup group("bench", "");
+        PerformanceTestGroup group("func_queue_st_b1", "");
        
         using namespace density;
 
@@ -92,7 +92,7 @@ namespace density_bench
 
     void single_thread_tests_2(TestTree & i_tree)
     {
-        PerformanceTestGroup group("bench", "");
+        PerformanceTestGroup group("func_queue_st_b2", "");
        
         using namespace density;
 
