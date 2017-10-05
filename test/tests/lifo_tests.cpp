@@ -28,13 +28,13 @@ namespace density_tests
 
         // instance a lifo_allocator
         void_allocator underlying_allocator;
-        lifo_allocator<void_allocator> allocator(underlying_allocator);
+        lifo_allocator<> allocator(underlying_allocator);
 
         // for a random number of times....
         while (std::uniform_int_distribution<size_t>(0, 10000)(i_random) > 10)
         {
             // allocate a block and fill it with progressive numbers
-            auto size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            auto size = uint_upper_align(std::uniform_int_distribution<size_t>(0, 1000)(i_random), decltype(allocator)::alignment);
             auto block = static_cast<unsigned char*>( allocator.allocate(size) );
             for (size_t index = 0; index < size; index++)
             {
@@ -42,7 +42,7 @@ namespace density_tests
             }
 
             // reallocate the block with reallocate_preserve, and check the content
-            auto new_size = std::uniform_int_distribution<size_t>(0, 8000)(i_random);
+            auto new_size = uint_upper_align(std::uniform_int_distribution<size_t>(0, 8000)(i_random), decltype(allocator)::alignment);
             block = static_cast<unsigned char*>(allocator.reallocate(block, size, new_size));
             for (size_t index = 0; index < std::min(size, new_size); index++)
             {

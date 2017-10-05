@@ -19,11 +19,13 @@ namespace density
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
-        It is designed to be efficient, so it does not provide an high-level service to be used directly. 
-            - deallocation and reallocation require the caller to specify the size of the block
-            - all blocks has the same fixed guaranteed alignment
-            - all blocks must be deallocated before the allocator is destroyed
+        It is designed to be efficient, so it does not provide an high-level service to be used directly. All blocks has the 
+        same fixed guaranteed alignment, and the size of the requested blocks must be a multiple of the alignment.
+        Deallocation and reallocation functions require the caller to specify the size of the block.
+        
         lifo_allocator handles block sizes bigger than the size of a page with legacy heap allocations.
+
+        All blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.        
 
         Memory is allocated/freed with the member functions \ref allocate and \ref deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
@@ -58,8 +60,8 @@ namespace density
         /** Alias for the template argument UNDERLYING_ALLOCATOR */
         using underlying_allocator = UNDERLYING_ALLOCATOR;
 
-        /** Alignment of the memory blocks */
-        static constexpr size_t alignment = max_align;
+        /** Alignment of the memory blocks. The value is implementation defined */
+        static constexpr size_t alignment = alignof(void*);
 
         /** Max size of a single block. This size is equal to the size of the address space, minus an implementation defined value in 
             the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */
@@ -91,25 +93,24 @@ namespace density
                 @return address of the allocated block
 
             \pre The behavior is undefined if either:
+                - i_size is not a multiple of \ref alignment
                 - i_size > \ref max_block_size
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * allocate(size_t i_size)
         {
-            // align the size
-            auto const actual_size = uint_upper_align(i_size, alignment);
+            DENSITY_ASSERT(i_size % alignment == 0);
 
-            // allocate
-            auto const new_top = m_top + actual_size;
+            auto const new_top = m_top + i_size;
             auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
             {
-                return allocate_slow_path(actual_size);
+                return allocate_slow_path(i_size);
             }
             else
             {
-                DENSITY_ASSERT_INTERNAL(actual_size <= UNDERLYING_ALLOCATOR::page_size);
+                DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = reinterpret_cast<void*>(m_top);
                 m_top = new_top;
                 return new_block;                
@@ -127,6 +128,8 @@ namespace density
             \n\b Throws: nothing. */
         void deallocate(void * i_block, size_t i_size) noexcept
         {
+            DENSITY_ASSERT(i_block != nullptr && i_size % alignment == 0);
+
             // this check detects page switches and external blocks
             if (!same_page(i_block, reinterpret_cast<void*>(m_top)))
             {
@@ -143,43 +146,40 @@ namespace density
             if the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
-                @param i_new_size the previous size of the block, in bytes.
+                @param i_old_size the previous size of the block, in bytes.
                 @param i_new_size the new size requested for the block, in bytes.
                 @return the new address of the resized block.
 
             \pre The behavior is undefined if either:
                 - the specified block is null or it is not the most recently allocated
                 - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
-                - i_new_size > max_block_size
+                - i_new_size is not a multiple of \ref alignment
+                - i_new_size > \ref max_block_size
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
-            // align the sizes
-            auto const new_actual_size = uint_upper_align(i_new_size, alignment);
-            auto const old_actual_size = uint_upper_align(i_old_size, alignment);
-
             // branch depending on the old block: this check detects page switches and external blocks
             if (same_page(i_block, reinterpret_cast<void*>(m_top)))
             {
                 // the following call sets the top only when it is sure to not throw
-                auto const new_block = set_top_and_allocate(i_block, new_actual_size);
+                auto const new_block = set_top_and_allocate(i_block, i_new_size);
                 
-                copy(i_block, old_actual_size, new_block, new_actual_size);
+                copy(i_block, i_old_size, new_block, i_new_size);
                 return new_block;
             }
             else
             {
-                if (old_actual_size < UNDERLYING_ALLOCATOR::page_size)
+                if (i_old_size < UNDERLYING_ALLOCATOR::page_size)
                 {
                     auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
                     DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
 
                     // the following call sets the top only when it is sure to not throw
-                    auto const new_block = set_top_and_allocate(i_block, new_actual_size);
+                    auto const new_block = set_top_and_allocate(i_block, i_new_size);
                                 
-                    copy(i_block, old_actual_size, new_block, new_actual_size);
+                    copy(i_block, i_old_size, new_block, i_new_size);
                     
                     UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
                     return new_block;
@@ -187,9 +187,9 @@ namespace density
                 else
                 {
                     // the old block is external
-                    auto const new_block = allocate(new_actual_size);
-                    copy(i_block, old_actual_size, new_block, new_actual_size);
-                    UNDERLYING_ALLOCATOR::deallocate(i_block, old_actual_size, alignment);
+                    auto const new_block = allocate(i_new_size);
+                    copy(i_block, i_old_size, new_block, i_new_size);
+                    UNDERLYING_ALLOCATOR::deallocate(i_block, i_old_size, alignment);
                     return new_block;
                 }
             }
@@ -204,20 +204,20 @@ namespace density
             return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
         }
 
-        DENSITY_NO_INLINE void * allocate_slow_path(size_t i_actual_size)
+        DENSITY_NO_INLINE void * allocate_slow_path(size_t i_size)
         {
-            DENSITY_ASSERT_INTERNAL(i_actual_size % alignment == 0);
-            if (i_actual_size < UNDERLYING_ALLOCATOR::page_size)
+            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
+            if (i_size < UNDERLYING_ALLOCATOR::page_size)
             {
                 // allocate a new page
                 auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                m_top = reinterpret_cast<uintptr_t>(new_page) + i_actual_size;
+                m_top = reinterpret_cast<uintptr_t>(new_page) + i_size;
                 return new_page;
             }
             else
             {
                 // external block
-                return UNDERLYING_ALLOCATOR::allocate(i_actual_size, alignment);
+                return UNDERLYING_ALLOCATOR::allocate(i_size, alignment);
             }
         }
 
@@ -241,18 +241,18 @@ namespace density
 
         /** Sets has the same effect of setting m_top to i_current_top and then allocating a block.
             This function provides the strong exception guarantee. */
-        void * set_top_and_allocate(void * const i_current_top, size_t const i_actual_size)
+        void * set_top_and_allocate(void * const i_current_top, size_t const i_size)
         {
-            DENSITY_ASSERT_INTERNAL(i_actual_size % alignment == 0);
+            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
 
             auto const current_top = reinterpret_cast<uintptr_t>(i_current_top);
 
             // we have to procrastinate the assignment of m_top until we have allocated the page or the external block
-            auto const new_top = current_top + i_actual_size;
+            auto const new_top = current_top + i_size;
             auto const new_offset = new_top - uint_lower_align(current_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset < UNDERLYING_ALLOCATOR::page_size)
             {
-                DENSITY_ASSERT_INTERNAL(i_actual_size <= UNDERLYING_ALLOCATOR::page_size);
+                DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = i_current_top;
                 m_top = new_top;
                 return new_block;
@@ -260,15 +260,15 @@ namespace density
             else
             {
                 // this branch does not use the value of m_top
-                return allocate_slow_path(i_actual_size);
+                return allocate_slow_path(i_size);
             }
         }
 
-        void copy(void * i_old_block, size_t i_old_actual_size, void * i_new_block, size_t i_new_actual_size) noexcept
+        void copy(void * i_old_block, size_t i_old_size, void * i_new_block, size_t i_new_size) noexcept
         {
             if (i_old_block != i_new_block)
             {
-                auto const size_to_copy = detail::size_min(i_new_actual_size, i_old_actual_size);
+                auto const size_to_copy = detail::size_min(i_new_size, i_old_size);
                 DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0); // this may help the optimizer
                 memcpy(i_new_block, i_old_block, size_to_copy);
             }
@@ -287,8 +287,8 @@ namespace density
         {
         public:
 
-            static constexpr size_t alignment = lifo_allocator<>::alignment;
-            static constexpr size_t max_block_size = lifo_allocator<>::max_block_size;
+            static constexpr size_t alignment = lifo_allocator<data_stack_underlying_allocator>::alignment;
+            static constexpr size_t max_block_size = lifo_allocator<data_stack_underlying_allocator>::max_block_size;
 
             static void * allocate(size_t i_size)
             {
@@ -345,7 +345,7 @@ namespace density
             \pre The behavior is undefined if either:
                 - i_size > \ref max_block_size */
         lifo_buffer(size_t i_size = 0)
-            : m_data(detail::ThreadLifoAllocator<>::allocate(i_size)), m_size(i_size)
+            : m_data(detail::ThreadLifoAllocator<>::allocate(uint_upper_align(i_size, alignment))), m_size(i_size)
         {
         }
 
@@ -358,7 +358,7 @@ namespace density
         /** Deallocates the block */
         ~lifo_buffer()
         {
-            detail::ThreadLifoAllocator<>::deallocate(m_data, m_size);
+            detail::ThreadLifoAllocator<>::deallocate(m_data, uint_upper_align(m_size, alignment));
         }
 
         /** Changes the size of the block, preserving its existing content. 
@@ -374,7 +374,9 @@ namespace density
         void resize(size_t i_new_size)
         {
             /* we must allocate before updating any data member, so that in case of exception no change remains */
-            m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, m_size, i_new_size);
+            m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, 
+                uint_upper_align(m_size, alignment), 
+                uint_upper_align(i_new_size, alignment));
             m_size = i_new_size;
         }
 
@@ -405,19 +407,29 @@ namespace density
         {
         public:
 
-            LifoArrayImpl(size_t i_size)
-                : m_size(i_size)
+            static size_t compute_mem_size(size_t i_element_count) noexcept
             {
-                m_elements = static_cast<TYPE*>(detail::ThreadLifoAllocator<>::allocate(m_size * sizeof(TYPE)));
+                auto const mem_size = i_element_count * sizeof(TYPE);
+                bool already_aligned = sizeof(TYPE) % detail::ThreadLifoAllocator<>::alignment == 0;
+                if (already_aligned)
+                    return mem_size;
+                else
+                    return uint_upper_align(mem_size, detail::ThreadLifoAllocator<>::alignment);
+            }
+
+            LifoArrayImpl(size_t i_element_count)
+                : m_elements(static_cast<TYPE*>(  detail::ThreadLifoAllocator<>::allocate(compute_mem_size(i_element_count)) )),
+                  m_size(i_element_count)
+            {
             }
 
             ~LifoArrayImpl()
             {
-                detail::ThreadLifoAllocator<>::deallocate(m_elements, m_size * sizeof(TYPE));
+                detail::ThreadLifoAllocator<>::deallocate(m_elements, compute_mem_size(m_size));
             }
 
         protected:
-            TYPE * m_elements;
+            TYPE * const m_elements;
             size_t const m_size;
         };
 
@@ -426,23 +438,32 @@ namespace density
         {
         public:
 
+            static constexpr size_t size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
+
+            static size_t compute_mem_size(size_t i_element_count) noexcept
+            {
+                auto const mem_size = i_element_count * sizeof(TYPE) + size_overhead;
+                bool already_aligned = sizeof(TYPE) % detail::ThreadLifoAllocator<>::alignment == 0;
+                if (already_aligned)
+                    return mem_size;
+                else
+                    return uint_upper_align(mem_size, detail::ThreadLifoAllocator<>::alignment);
+            }
+
             LifoArrayImpl(size_t i_size)
                 : m_size(i_size)
             {
-                // add a size overhead equal to the alignment difference
-                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
-                auto const actual_size = size_overhead + i_size * sizeof(TYPE);
-                m_block = detail::ThreadLifoAllocator<>::allocate(actual_size);
-
+                auto const mem_size = compute_mem_size(m_size);
+                m_block = detail::ThreadLifoAllocator<>::allocate(mem_size);
                 m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
-                DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead);
+                DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead &&
+                    m_elements + m_size <= address_add(m_block, mem_size));
             }
 
             ~LifoArrayImpl()
             {
-                auto const size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
-                auto const actual_size = size_overhead + m_size * sizeof(TYPE);
-                detail::ThreadLifoAllocator<>::deallocate(m_block, actual_size);
+                auto const mem_size = compute_mem_size(m_size);
+                detail::ThreadLifoAllocator<>::deallocate(m_block, mem_size);
             }
 
         protected:
