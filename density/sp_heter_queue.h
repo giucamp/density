@@ -1734,19 +1734,7 @@ namespace density
                         type->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                     Base::cancel_put_nodestroy_impl(push_data);
-                    #ifdef _MSC_VER
-                        #pragma warning(push)
-                        #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-                        #pragma GCC diagnostic push
-                        #pragma GCC diagnostic ignored "-Wterminate"
-                    #endif
-                    throw;
-                    #ifdef _MSC_VER
-                        #pragma warning(pop)
-                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-                        #pragma GCC diagnostic pop
-                    #endif
+                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT
                 }
             }
 
@@ -2994,19 +2982,7 @@ namespace density
                         type->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                     Base::cancel_put_nodestroy_impl(push_data);
-                    #ifdef _MSC_VER
-                        #pragma warning(push)
-                        #pragma warning(disable:4297) // function assumed not to throw an exception but does
-                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-                        #pragma GCC diagnostic push
-                        #pragma GCC diagnostic ignored "-Wterminate"
-                    #endif
-                    throw;
-                    #ifdef _MSC_VER
-                        #pragma warning(pop)
-                    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-                        #pragma GCC diagnostic pop
-                    #endif
+                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT
                 }
             }
 

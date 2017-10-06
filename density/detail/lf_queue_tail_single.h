@@ -461,7 +461,7 @@ namespace density
                         but we were not able to put the struct ExternalBlock in the page (because a new page was
                         necessary, but we could not allocate it). */
                     ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                    throw;
+                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT;
                 }
             }
 
