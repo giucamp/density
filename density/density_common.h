@@ -108,6 +108,11 @@ namespace density
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
         return reinterpret_cast< void * >( uint_pointer + i_offset );
     }
+
+    /** Adds an offset to a pointer.
+        @param i_address source address
+        @param i_offset number to add to the address
+        @return i_address plus i_offset */
     inline const void * address_add( const void * i_address, size_t i_offset ) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
@@ -124,6 +129,11 @@ namespace density
         DENSITY_ASSERT( uint_pointer >= i_offset );
         return reinterpret_cast< void * >( uint_pointer - i_offset );
     }
+
+    /** Subtracts an offset from a pointer
+        @param i_address source address
+        @param i_offset number to subtract from the address
+        @return i_address minus i_offset */
     inline const void * address_sub( const void * i_address, size_t i_offset ) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
@@ -159,6 +169,11 @@ namespace density
 
         return reinterpret_cast< void * >( uint_pointer & ~mask );
     }
+
+    /** Returns the biggest aligned address lesser than or equal to a given address
+        @param i_address address to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2.
+        @return the aligned address */
     inline const void * address_lower_align( const void * i_address, size_t i_alignment ) noexcept
     {
         DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
@@ -170,7 +185,7 @@ namespace density
         return reinterpret_cast< void * >( uint_pointer & ~mask );
     }
 
-    /** Returns    the biggest address lesser than the first parameter, such that i_address + i_alignment_offset is aligned
+    /** Returns the biggest address lesser than the first parameter, such that i_address + i_alignment_offset is aligned
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
@@ -185,6 +200,12 @@ namespace density
 
         return address;
     }
+
+    /** Returns the biggest address lesser than the first parameter, such that i_address + i_alignment_offset is aligned
+        @param i_address address to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2
+        @param i_alignment_offset alignment offset
+        @return the result address */
     inline const void * address_lower_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
     {
         const void * address = address_add( i_address, i_alignment_offset );
@@ -210,6 +231,11 @@ namespace density
 
         return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
     }
+
+    /** Returns the smallest aligned address greater than or equal to a given address
+        @param i_address address to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2.
+        @return the aligned address */
     inline const void * address_upper_align( const void * i_address, size_t i_alignment ) noexcept
     {
         DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
@@ -221,6 +247,10 @@ namespace density
         return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
     }
 
+    /** Returns the smallest aligned integer greater than or equal to a given address
+        @param i_uint integer to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2.
+        @return the aligned address */
     template <typename UINT>
         constexpr UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
     {
@@ -228,6 +258,11 @@ namespace density
         return (i_uint + (i_alignment - 1)) & ~(i_alignment - 1);
     }
 
+
+    /** Returns the biggest aligned address lesser than or equal to a given address
+        @param i_uint integer to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2.
+        @return the aligned address */
     template <typename UINT>
         constexpr UINT uint_lower_align(UINT i_uint, size_t i_alignment) noexcept
     {
@@ -250,6 +285,12 @@ namespace density
 
         return address;
     }
+
+    /** Returns the smallest address greater than the first parameter, such that i_address + i_alignment_offset is aligned
+        @param i_address address to be aligned
+        @param i_alignment alignment required from the pointer. It must be an integer power of 2
+        @param i_alignment_offset alignment offset
+        @return the result address */
     inline const void * address_upper_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
     {
         const void * address = address_add( i_address, i_alignment_offset );
@@ -259,15 +300,6 @@ namespace density
         address = address_sub( address, i_alignment_offset );
 
         return address;
-    }
-
-    /** Returns whether two memory ranges overlap */
-    inline bool address_overlap( const void * i_first, size_t i_first_size, const void * i_second, size_t i_second_size ) noexcept
-    {
-        if( i_first < i_second )
-            return address_add( i_first, i_first_size ) > i_second;
-        else
-            return address_add( i_second, i_second_size ) > i_first;
     }
 
     namespace detail
@@ -289,26 +321,13 @@ namespace density
         }
         constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
         {
-            return size_max(size_max(i_first, i_second, i_third), i_fourth);
+            return size_max(size_max(i_first, i_second), size_max(i_third, i_fourth));
         }
 
         struct AlignmentHeader
         {
             void * m_block;
         };
-
-        inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
-        {
-            auto const chars = static_cast<const unsigned char *>(i_start);
-            for (size_t char_index = 0; char_index < i_size; char_index++)
-            {
-                if (chars[char_index] != i_value)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
         constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
@@ -385,11 +404,28 @@ namespace density
             static constexpr size_t value = std::is_empty<TYPE>::value ? 0 : sizeof(TYPE);
         };
 
-        // old versions of libstdc++ don't define std::max_align_t
+        // old versions of libstdc++ define max_align_t only outside std::
         #if defined(__GLIBCXX__)
             constexpr size_t MaxAlignment = alignof(max_align_t);
         #else
             constexpr size_t MaxAlignment = alignof(std::max_align_t);
+        #endif
+
+        // internal macro - rethrows disabling the warning "function assumed not to throw an exception but does"
+        #ifdef _MSC_VER        
+            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
+                __pragma(warning(push)) \
+                __pragma(warning(disable:4297)) \
+                throw; \
+                __pragma(warning(pop))
+        #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
+            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
+                _Pragma("GCC diagnostic push") \
+                _Pragma("GCC diagnostic ignored \"-Wterminate\"") \
+                throw; \
+                _Pragma("GCC diagnostic pop")
+        #else
+            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT throw;
         #endif
     }
 
@@ -415,7 +451,6 @@ namespace density
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         DENSITY_ASSERT(i_alignment_offset <= i_size);
 
-        // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
@@ -467,7 +502,6 @@ namespace density
             return nullptr;
         }
 
-        // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
@@ -538,24 +572,6 @@ namespace density
             }
         }
     }
-
-
-    // rethrow disable the warning "function assumed not to throw an exception but does"
-    #ifdef _MSC_VER        
-        #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
-            __pragma(warning(push)) \
-            __pragma(warning(disable:4297)) \
-            throw; \
-            __pragma(warning(pop))
-    #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-        #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
-            _Pragma("GCC diagnostic push") \
-            _Pragma("GCC diagnostic ignored \"-Wterminate\"") \
-            throw; \
-            _Pragma("GCC diagnostic pop")
-    #else
-        #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT throw;
-    #endif
 
     /*!
 

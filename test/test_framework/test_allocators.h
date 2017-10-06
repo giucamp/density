@@ -14,6 +14,19 @@
 
 namespace density_tests
 {
+    inline bool mem_equal(const void * i_start, size_t i_size, unsigned char i_value) noexcept
+    {
+        auto const chars = static_cast<const unsigned char *>(i_start);
+        for (size_t char_index = 0; char_index < i_size; char_index++)
+        {
+            if (chars[char_index] != i_value)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** A thread can instance this class on the automatic storage to cause try_* allocations
         to randomly fail during its lifetime. */
     class ThreadAllocRandomFailures
@@ -279,7 +292,7 @@ namespace density_tests
             auto const result = Base::allocate_page_zeroed();
             DENSITY_TEST_ASSERT(result != nullptr && density::address_is_aligned(result, page_alignment));
 
-            DENSITY_TEST_ASSERT(density::detail::mem_equal(result, page_size, 0));
+            DENSITY_TEST_ASSERT(mem_equal(result, page_size, 0));
             return result;
         }
 
@@ -291,7 +304,7 @@ namespace density_tests
                 m_living_pages.fetch_add(1, std::memory_order_relaxed);
                 m_total_allocated_pages.fetch_add(1, std::memory_order_relaxed);
                 DENSITY_TEST_ASSERT(density::address_is_aligned(result, page_alignment));
-                DENSITY_TEST_ASSERT(density::detail::mem_equal(result, page_size, 0));
+                DENSITY_TEST_ASSERT(mem_equal(result, page_size, 0));
             }
             return result;
         }
