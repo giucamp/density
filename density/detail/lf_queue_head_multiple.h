@@ -115,7 +115,7 @@ namespace density
                         }
                     }
 
-                    while (!DENSITY_LIKELY(Base::same_page(m_control, head) || m_control == nullptr))
+                    while (!DENSITY_LIKELY(Base::same_page(m_control, head) && m_control != nullptr))
                     {
                         DENSITY_ASSERT_INTERNAL(m_control != head);
 
