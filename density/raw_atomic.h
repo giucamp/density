@@ -24,17 +24,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>
@@ -53,17 +53,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>
@@ -82,17 +82,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>
@@ -112,17 +112,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>
@@ -351,17 +351,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>
@@ -384,17 +384,17 @@ namespace density
             <th>Types</th>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x86</td>
             <td>uint32_t</td>
         </tr>
         <tr>
-            <td>Msc</td>
+            <td>msc</td>
             <td>x64</td>
             <td>uint32_t, uint64_t</td>
         </tr>
         <tr>
-            <td>G++</td>
+            <td>g++/clang</td>
             <td>any</td>
             <td>uintptr_t</td>
         </tr>

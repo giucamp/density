@@ -9,51 +9,58 @@
 #include <utility> // for std::move
 #include <type_traits> // for std::aligned_storage and std::conditional
 
-#if !defined(NDEBUG)
-    #define DENSITY_DEBUG                    1
-    #define DENSITY_DEBUG_INTERNAL           1
+/** \def DENSITY_ASSERT(bool_expr) assert used to detect user errors that causes undefined behavior */
+#if defined(NDEBUG)
+    #define DENSITY_ASSERT DENSITY_ASSUME
 #else
-    #define DENSITY_DEBUG                    0
-    #define DENSITY_DEBUG_INTERNAL           0
+    #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
 #endif
 
-#if DENSITY_DEBUG
-    #ifdef _MSC_VER
-        #define DENSITY_ASSERT(bool_expr)              if(!(bool_expr)) { __debugbreak(); } else (void)0
-    #else
-        #define DENSITY_ASSERT(bool_expr)              assert((bool_expr))
-    #endif
+/** \def DENSITY_ASSERT_INTERNAL(bool_expr) assert used to detect bugs of the library that causes undefined behavior */
+#if defined(NDEBUG)
+    #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
 #else
-    #if defined( __clang__ )
-        #define DENSITY_ASSERT(bool_expr)               _Pragma("clang diagnostic push")\
-                                                        _Pragma("clang diagnostic ignored \"-Wassume\"")\
-                                                         __builtin_assume((bool_expr))\
-                                                        _Pragma("clang diagnostic pop")
-    #elif defined(_MSC_VER)
-        #define DENSITY_ASSERT(bool_expr)                __assume((bool_expr))
-    #else
-        #define DENSITY_ASSERT(bool_expr)                (void)0
-    #endif
+    #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
 #endif
 
+/** \def DENSITY_ASSERT_ALIGNED(address, alignment) macro used to enforce the alignment of a pointer as an invariant. */
 #define DENSITY_ASSERT_ALIGNED(address, alignment)      DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
+
+/** \def DENSITY_ASSERT_ALIGNED(uint, alignment) macro used to enforce the alignment of an unsigned integer as an invariant. */
 #define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
-#define DENSITY_ASSERT_INTERNAL(bool_expr)              DENSITY_ASSERT((bool_expr))
+/** \def DENSITY_LIKELY(bool_expr) macro that tells the compiler that a condition is in most cases true. This is just an hint to the optimizer. */
+#if defined( __clang__ )
+    #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
+#else
+    #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
+#endif
 
-#define DENSITY_LIKELY(bool_expr)                    (bool_expr)
-#define DENSITY_UNLIKELY(bool_expr)                  (bool_expr)
-
+/** \def DENSITY_ASSERT_INTERNAL macro used in some circumstances to avoid inlining of a function, for
+        example because the call handles a somewhat rare slow path. */
 #ifdef _MSC_VER
-    #define DENSITY_NO_INLINE                    __declspec(noinline)
-    #if DENSITY_DEBUG
-        #define DENSITY_STRONG_INLINE
-    #else
-        #define DENSITY_STRONG_INLINE            __forceinline
-    #endif
+    #define DENSITY_NO_INLINE                           __declspec(noinline)
 #else
     #define DENSITY_NO_INLINE
-    #define DENSITY_STRONG_INLINE
+#endif
+
+/** \def DENSITY_CHECKING_ASSERT(bool_expr) assert that on failure should cause an halt of the program. Used only locally in this header. */
+#ifdef _MSC_VER
+    #define DENSITY_CHECKING_ASSERT(bool_expr)          if(!(bool_expr)) { __debugbreak(); } else (void)0
+#else
+    #define DENSITY_CHECKING_ASSERT(bool_expr)          assert((bool_expr))
+#endif
+
+/** \def DENSITY_ASSUME(bool_expr) macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
+#if defined( __clang__ )
+    #define DENSITY_ASSUME(bool_expr)                   _Pragma("clang diagnostic push")\
+                                                        _Pragma("clang diagnostic ignored \"-Wassume\"")\
+                                                        __builtin_assume((bool_expr))\
+                                                        _Pragma("clang diagnostic pop")
+#elif defined(_MSC_VER)
+    #define DENSITY_ASSUME(bool_expr)                   __assume((bool_expr))
+#else
+    #define DENSITY_ASSUME(bool_expr)                   (void)0
 #endif
 
 namespace density
@@ -62,13 +69,14 @@ namespace density
 
         This is a configuration variable, intended to be customized by the user of the library. The default value is 64.
 
-        If a C++17 compiler is available, this constant may be defined as std::hardware_destructive_interference_size. */
+        If a C++17 compiler is available, this constant may be defined as 
+        [std::hardware_destructive_interference_size](http://en.cppreference.com/w/cpp/thread/hardware_destructive_interference_size). */
     constexpr size_t concurrent_alignment = 64;
 
     /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller.
         This constant must be a power of 2.
 
-        This is a configuration variable, intended to be customized by the user of the library. The default value is 64. */
+        This is a configuration variable, intended to be customized by the user of the library. The default value is 1024 * 64. */
     constexpr size_t default_page_capacity = 1024 * 64;
 
     /** In this version of the library relaxed atomic operations are disabled.
