@@ -19,30 +19,18 @@ namespace density
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
 
         A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
-        It is designed to be efficient, so it does not provide an high-level service to be used directly. All blocks has the 
-        same fixed guaranteed alignment, and the size of the requested blocks must be a multiple of the alignment.
+        It is designed to be efficient, so it does not provide an high-level service to be used directly. All blocks are aligned
+        to the constant value \ref alignment, and the size of the requested blocks must be a multiple of it.
         Deallocation and reallocation functions require the caller to specify the size of the block.
-        
-        lifo_allocator handles block sizes bigger than the size of a page with legacy heap allocations.
+        Block sizes bigger than the size of a page are handled with legacy heap allocations.
 
-        All blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.        
-
-        Memory is allocated/freed with the member functions \ref allocate and \ref deallocate.
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
-        Only the most recently allocated living block can be deallocated or reallocated. If a block which is not
-        the most recently allocated living block is deallocated or reallocated, the behavior is undefined.
-        To simplify the implementation, lifo_allocator does not support custom alignments: every block is guaranteed 
-        to be aligned to \ref alignment.
+        All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.        
+        Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior.
+        Instances of lifo_allocator are not interchangeable: blocks allocated by an instance can't be deallocated with another 
+        instance.
 
-        Blocks allocated with an instance of lifo_allocator can't be deallocated with another instance of lifo_allocator.
-        The user must deallocate all the living blocks before the allocator is destroyed, otherwise the behavior is 
-        undefined.
-
-        lifo_allocator allocates a new page from the underlying allocator when a block is requested by the user and
-        there is no space in the last allocated page. Anyway, if the requested block is too big to fit in a page,
-        a legacy heap block is allocated from the underlying allocator.
-
-        lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable and unmovable.
+        lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable, unmovable and incomparable.
 
         The constructor of lifo_allocator is constexpr and guarantees constant initialization.
 
@@ -50,7 +38,8 @@ namespace density
         --------------------------
         A block allocation or deallocation requires only a few ALU instructions and a branch to a 
         slow path, that is taken whenever a page switch occurs. The internal state of the allocator is composed by a pointer,
-        that points to the next block \ref allocate would return.
+        that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack, 
+        without altering the state of the allocator.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
     template <typename UNDERLYING_ALLOCATOR = void_allocator>
         class lifo_allocator : private UNDERLYING_ALLOCATOR
@@ -122,8 +111,8 @@ namespace density
             This function is equivalent to allocate(0), but it is much faster and never throws.
             The returned block can be reallocated and deallocated. 
             
-            This function is useful to initialize block pointers efficiently, without the risk
-            of exceptions, at the same time avoiding the nullptr special case. The implementation
+            This function is useful to initialize block owners to an empty state in a noexcept 
+            context, without introducing the nullptr special case. The implementation
             of the default constructor of \ref lifo_buffer uses this function. 
             
             \snippet lifo_examples.cpp lifo_allocator allocate_empty 2 */
@@ -338,7 +327,7 @@ namespace density
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
-        internal lifo allocator, which in turn in built upon an \ref instance of data_stack_underlying_allocator.
+        internal lifo allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -346,6 +335,9 @@ namespace density
 
         lifo_buffer provides a low-level service, as it allocates untyped raw memory. It allows resizing preserving 
         the content, but it does so memcpy'ng the content when the address of the block changes.
+
+        A thread may resize a lifo_buffer only if it is the most recently instantiated lifo_buffer or lifo_array, otherwise 
+        the behavior is undefined.
 
         \snippet lifo_examples.cpp lifo_buffer example 1 */
     class lifo_buffer
@@ -359,11 +351,7 @@ namespace density
             the order of the size of a page. Requesting a bigger block size causes undefined behavior. */
         static constexpr size_t max_block_size = detail::ThreadLifoAllocator<>::max_block_size;
 
-        /** Allocates an empty block.
-            @param i_size size in bytes of the memory block.
-            
-            \pre The behavior is undefined if either:
-                - i_size > \ref max_block_size */
+        /** Allocates an empty block. */
         lifo_buffer() noexcept
             : m_data(detail::ThreadLifoAllocator<>::allocate_empty()), m_size(0)
         {
@@ -464,7 +452,8 @@ namespace density
 
         protected:
             TYPE * const m_elements;
-            size_t const m_size;
+            size_t const m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container 
+                                 was a bad choice, because usually it indicates the number of bytes. */
         };
 
         template <typename TYPE>
@@ -503,7 +492,8 @@ namespace density
         protected:
             void * m_block;
             TYPE * m_elements;
-            size_t const m_size;
+            size_t const m_size;  /**< number of elements. Note: the term 'size' for the number of elements in the container 
+                                 was a bad choice, because usually it indicates the number of bytes. */
         };
     }
 
@@ -513,7 +503,7 @@ namespace density
         @tparam TYPE Element type.
         
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
-        internal lifo allocator, which in turn in built upon an \ref instance of data_stack_underlying_allocator.
+        internal lifo allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -523,7 +513,9 @@ namespace density
 
         \snippet lifo_examples.cpp lifo_array example 2
 
-        The size of a \ref lifo_array is fixed at construction time, with no resize function provided.
+        Note: when replacing <code>std::vector</code> instantiated in the automatic storage
+
+        The size of a lifo_array is fixed at construction time and is immutable.
         Elements are constructed in positional order and destroyed in reverse order.
 
         \snippet lifo_examples.cpp lifo_array example 1 */
@@ -593,18 +585,20 @@ namespace density
             {
                 for (;i_begin != i_end; ++i_begin)
                 {
+                    DENSITY_ASSERT_INTERNAL(dest_element != nullptr); // hint for the optimizer
                     new(dest_element) TYPE(*i_begin);
                     ++dest_element;
                 }
             }
             catch (...)
             {
-                // destroy all the elements constructed till now, and then deallocate
-                auto it = dest_element;
-                it--;
-                for (; it >= m_elements; it--)
+                // destroy all the elements constructed until now. The destructor of the base class will deallocate the block
+                auto count_to_destroy = dest_element - m_elements;
+                while (count_to_destroy > 0)
                 {
-                    it->TYPE::~TYPE();
+                    --dest_element;
+                    --count_to_destroy;
+                    dest_element->TYPE::~TYPE();
                 }
                 throw;
             }
@@ -677,17 +671,19 @@ namespace density
             {
                 for (; element_index < m_size; element_index++)
                 {
-                    new(m_elements + element_index) TYPE();
+                    auto const dest = m_elements + element_index;
+                    DENSITY_ASSERT_INTERNAL(dest != nullptr); // hint for the optimizer
+                    new(dest) TYPE();
                 }
             }
             catch (...)
             {
-                // destroy all the elements constructed till now, and then deallocate
-                auto it = m_elements + element_index;
-                it--;
-                for (; it >= m_elements; it--)
+                // destroy all the elements constructed until now. The destructor of the base class will deallocate the block
+                auto count_to_destroy = element_index;
+                while (count_to_destroy > 0)
                 {
-                    it->TYPE::~TYPE();
+                    --count_to_destroy;
+                    m_elements[count_to_destroy].TYPE::~TYPE();
                 }
                 throw;
             }

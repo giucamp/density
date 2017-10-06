@@ -14,8 +14,6 @@
 
 namespace density_tests
 {
-    using density::max_align;
-
     template <typename TYPE>
         std::string truncated_type_name(size_t i_max_size = 80)
     {
@@ -76,4 +74,12 @@ namespace density_tests
 
         }
     };
+
+
+    // old versions of libstdc++ don't define std::max_align_t
+    #if defined(__GLIBCXX__)
+        constexpr size_t MaxAlignment = alignof(max_align_t);
+    #else
+        constexpr size_t MaxAlignment = alignof(std::max_align_t);
+    #endif
 }

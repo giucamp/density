@@ -69,13 +69,6 @@ namespace density
                                     without invocation is not supported.*/
     };
 
-    #if defined(__GLIBCXX__)
-        constexpr size_t max_align = alignof(max_align_t);
-    #else
-        /** Value of alignof(std::max_align_t) */
-        constexpr size_t max_align = alignof(std::max_align_t);
-    #endif
-
                 // address functions
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
@@ -391,9 +384,14 @@ namespace density
         {
             static constexpr size_t value = std::is_empty<TYPE>::value ? 0 : sizeof(TYPE);
         };
+
+        // old versions of libstdc++ don't define std::max_align_t
+        #if defined(__GLIBCXX__)
+            constexpr size_t MaxAlignment = alignof(max_align_t);
+        #else
+            constexpr size_t MaxAlignment = alignof(std::max_align_t);
+        #endif
     }
-
-
 
     /** Uses the global operator new to allocate a memory block with at least the specified size and alignment
             @param i_size size of the requested memory block, in bytes
@@ -419,7 +417,7 @@ namespace density
 
         // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
-        if (i_alignment <= max_align && i_alignment_offset == 0)
+        if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
             user_block = operator new (i_size);
         }
@@ -471,7 +469,7 @@ namespace density
 
         // if this function is inlined, and i_alignment is constant, the allocator should simplify much of this function
         void * user_block;
-        if (i_alignment <= max_align && i_alignment_offset == 0)
+        if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
             user_block = operator new (i_size, std::nothrow);
         }
@@ -515,7 +513,7 @@ namespace density
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        if (i_alignment <= max_align && i_alignment_offset == 0)
+        if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
             #if __cplusplus >= 201402L
                 operator delete (i_block, i_size); // since C++14
@@ -694,6 +692,9 @@ The data stack
 --------------
 The data stack is a thread-local paged memory pool dedicated to lifo allocations. The thread must ensure that deallocations are performed in the reverse
 order. 
+
+The state of lifo_allocator is only a pointer
+In case of failiure lifo_array throws a std::bad_alloc
 
 Density provides two lifo data structures: lifo_array and lifo_buffer.
 

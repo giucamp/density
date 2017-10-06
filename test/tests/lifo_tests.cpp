@@ -58,7 +58,7 @@ namespace density_tests
     size_t random_alignment(std::mt19937 & i_random)
     {
         size_t log2_max = 0;
-        while ((static_cast<size_t>(1) << log2_max) < max_align)
+        while ((static_cast<size_t>(1) << log2_max) < MaxAlignment)
         {
             log2_max++;
         }
@@ -214,6 +214,17 @@ namespace density_tests
             pop_test();
         }
 
+        void lifo_test_push_empty_buffer()
+        {
+            using namespace density;
+
+            lifo_buffer buffer;
+            DENSITY_TEST_ASSERT(address_is_aligned(buffer.data(), lifo_buffer::alignment));
+            push_test(buffer);
+            lifo_test_push();
+            pop_test();
+        }
+
         void lifo_test_push_char()
         {
             using namespace density;
@@ -243,7 +254,7 @@ namespace density_tests
         {
             using namespace density;
 
-            union alignas(max_align * 2) AlignedType
+            union alignas(MaxAlignment * 2) AlignedType
             {
                 int m_value;
                 max_align_t m_unused[2];
@@ -280,7 +291,8 @@ namespace density_tests
             if (m_curr_depth < m_max_depth)
             {
                 using Func = void(LifoTestContext::*)();
-                Func tests[] = { &LifoTestContext::lifo_test_push_buffer, &LifoTestContext::lifo_test_push_char,
+                Func tests[] = { &LifoTestContext::lifo_test_push_buffer, &LifoTestContext::lifo_test_push_empty_buffer,
+                    &LifoTestContext::lifo_test_push_char,
                     &LifoTestContext::lifo_test_push_int, &LifoTestContext::lifo_test_push_double,
                     &LifoTestContext::lifo_test_push_wide_alignment };
 
