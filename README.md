@@ -7,10 +7,10 @@ Density is a C++11 header-only library focused on paged memory management. provi
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
-single threaded   |[function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1function__queue.html)      |[heter_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1heter__queue.html)| - | -
-locking         |[conc_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1conc__function__queue.html) |[conc_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1conc__heter__queue.html)|multiple|multiple
-lock-free       |[lf_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1lf__heter__queue.html)|configurable|configurable
-spin-locking    |[sp_function_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](http://peggysansonetti.it/tech/density/html/classdensity_1_1sp__heter__queue.html)|configurable|configurable
+single threaded   |[function_queue](classdensity_1_1function__queue.html)      |[heter_queue](classdensity_1_1heter__queue.html)| - | -
+locking         |[conc_function_queue](classdensity_1_1conc__function__queue.html) |[conc_hetr_queue](classdensity_1_1conc__heter__queue.html)|multiple|multiple
+lock-free       |[lf_function_queue](classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](classdensity_1_1lf__heter__queue.html)|configurable|configurable
+spin-locking    |[sp_function_queue](classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
 
 All function queues have a common interface, and so all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
@@ -45,7 +45,7 @@ Any callable object can be pushed on the queue: a lambda, the result of an `std:
 All queues in density have a very simple implementation: a *tail pointer*, an *head pointer*, and a set of memory pages. Paging is a kind of quantization of memory: all pages have a fixed size (by default slightly less than 64 kibibyte) and a fixed alignment (by default 64 kibibyte), so that the allocator can be simple and efficient. 
 Values are arranged in the queue by *linear allocation*: allocating a value means just adding its size to the tail pointer. If the new tail pointer would point outside the last page, a new page is allocated, and the linear allocation is performed from there. In case of very huge values, only a pointer is allocated in the pages, and the actual storage for the value is allocated in the heap.
 
-[Continue...](http://peggysansonetti.it/tech/density/html/intro.html)
+[Continue...](intro.html)
 
 > Written with [StackEdit](https://stackedit.io/).
 
