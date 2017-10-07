@@ -63,7 +63,7 @@ namespace density_bench
 
 	struct Progression
 	{
-		using Clock = std::chrono::steady_clock;
+		using Clock = std::chrono::high_resolution_clock;
 
 		std::string m_label;
 		Clock::time_point m_start_time;

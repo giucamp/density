@@ -20,7 +20,6 @@
 *.ipdb
 doc/html
 doc/latex
-test/vs2015/density_test.VC.db
 test/code_blocks/.objs/
 test/code_lite/Debug
 test/code_lite/Release
@@ -32,3 +31,4 @@ doc/doxygen/doxygen_out.txt
 test/vs2017/x64/
 test/vs2017/.vs/
 test/build/
+bench/build/

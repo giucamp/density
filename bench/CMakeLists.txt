@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.1)
-project (density_test)
+project (density_bench)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -22,14 +22,14 @@ add_executable(density_bench
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	MESSAGE( STATUS "will compile with clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-	TARGET_LINK_LIBRARIES(density_test pthread)	
+	TARGET_LINK_LIBRARIES(density_bench pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "will compile with g++")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-	TARGET_LINK_LIBRARIES(density_test pthread)
+	TARGET_LINK_LIBRARIES(density_bench pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "will compile with msvc")
 	add_compile_options(/bigobj)
 endif()
 
-install (TARGETS density_test DESTINATION bin)
+install (TARGETS density_bench DESTINATION bin)

@@ -1,7 +1,10 @@
 
 #include <density/lifo.h>
 #include <memory>
-#include "bench_framework\test_tree.h"
+#include "bench_framework/test_tree.h"
+#if __linux__
+    #include <alloca.h> 
+#endif
 
 namespace density_bench
 {
@@ -26,19 +29,29 @@ namespace density_bench
             chars[0] = c;
         }, __LINE__);
 
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<char*>(_alloca(i_cardinality));
-            volatile char c = 0;
-            chars[0] = c;
-        }, __LINE__);
+        #ifdef _WIN32
 
-        #ifdef _MSC_VER
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<char*>(_malloca(i_cardinality));
-            volatile char c = 0;
-            chars[0] = c;
-            _freea(chars);
-        }, __LINE__);
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                auto chars = static_cast<char*>(_alloca(i_cardinality));
+                volatile char c = 0;
+                chars[0] = c;
+            }, __LINE__);
+
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                auto chars = static_cast<char*>(_malloca(i_cardinality));
+                volatile char c = 0;
+                chars[0] = c;
+                _freea(chars);
+            }, __LINE__);
+
+        #elif defined(__linux__)
+
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                auto chars = static_cast<char*>(alloca(i_cardinality));
+                volatile char c = 0;
+                chars[0] = c;
+            }, __LINE__);
+
         #endif
 
         i_tree["lifo_tests_1"].add_performance_test(group);
@@ -60,11 +73,23 @@ namespace density_bench
             chars[0] = c;
         }, __LINE__);
 
-        group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            auto chars = static_cast<double*>(_alloca(i_cardinality * sizeof(double)));
-            volatile double c = 0;
-            chars[0] = c;
-        }, __LINE__);
+        #ifdef _WIN32
+
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                auto chars = static_cast<double*>(_alloca(i_cardinality * sizeof(double)));
+                volatile double c = 0;
+                chars[0] = c;
+            }, __LINE__);
+
+        #elif defined(__linux__)
+
+            group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
+                auto chars = static_cast<double*>(alloca(i_cardinality * sizeof(double)));
+                volatile double c = 0;
+                chars[0] = c;
+            }, __LINE__);
+
+        #endif
 
         i_tree["lifo_tests_2"].add_performance_test(group);
     }
