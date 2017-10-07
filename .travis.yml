@@ -13,7 +13,7 @@ matrix:
           packages:
             - g++-4.9
       env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
     - os: linux
       addons:
@@ -23,7 +23,7 @@ matrix:
           packages:
             - g++-7
       env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
     - os: linux
       addons:
@@ -33,7 +33,7 @@ matrix:
           packages:
             - clang-4.0
       env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
+        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
     - os: linux
       addons:
@@ -43,10 +43,11 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
 before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - cd test && mkdir build && cd build && cmake .. && make && sudo make install && density_test
+  - scripts/test.sh
+  - scripts/bench.sh
