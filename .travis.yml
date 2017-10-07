@@ -46,6 +46,8 @@ matrix:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
 before_install:
+    - chmod +x scripts/test.sh
+    - chmod +x scripts/bench.sh
     - eval "${MATRIX_EVAL}"
 
 script:
