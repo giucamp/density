@@ -6,6 +6,7 @@ matrix:
   include:
     
     - os: linux
+      env: TEST_RUN=TRUE BENCH_RUN=FALSE
       addons:
         apt:
           sources:
@@ -13,9 +14,10 @@ matrix:
           packages:
             - g++-4.9
       env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     
     - os: linux
+      env: TEST_RUN=TRUE BENCH_RUN=FALSE
       addons:
         apt:
           sources:
@@ -23,9 +25,10 @@ matrix:
           packages:
             - g++-7
       env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     
     - os: linux
+      env: TEST_RUN=TRUE BENCH_RUN=FALSE
       addons:
         apt:
           sources:
@@ -33,9 +36,10 @@ matrix:
           packages:
             - clang-4.0
       env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
 
     - os: linux
+      env: TEST_RUN=TRUE BENCH_RUN=FALSE
       addons:
         apt:
           sources:
@@ -43,7 +47,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
 before_install:
     - chmod +x scripts/test.sh
