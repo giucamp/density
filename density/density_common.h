@@ -724,8 +724,25 @@ ObjectB::update(0.0166667)
 
 The data stack
 --------------
-The data stack is a thread-local paged memory pool dedicated to lifo allocations. The thread must ensure that deallocations are performed in the reverse
-order. 
+The data stack is a thread-local paged memory pool dedicated to lifo allocations. To respect the lifo ordering a thread may reallocate 
+or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
+The easiest and safest way of using the data stack is with [lifo_array](\ref density::lifo_array):
+
+\snippet lifo_examples.cpp lifo_array example 1
+
+A lifo array is very similar to a raw array, but its size is not a compile time constant, and it should be instantiated only in the 
+automatic storage (locally in a function or function block). Instantiating <code>lifo_array</code>s only in the automatic storage
+there is no way to way to break the lifo constraint.:
+
+\snippet lifo_examples.cpp lifo_array example 3
+
+It is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint is not broken. The C++ language
+is very LIFO friendly, as members of struct and classes, and elements of arrays are destroyed in reverse order:
+
+\snippet lifo_examples.cpp lifo_array example 4
+
+density allows to access the data stack only indirectly and only with \ref lifo_array and \ref lifo_buffer. Both are supposed
+to be instantiated in the automatic storage (locally in a function or function block)
 
 The state of lifo_allocator is only a pointer
 In case of failiure lifo_array throws a std::bad_alloc
