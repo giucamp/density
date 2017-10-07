@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ../test
+cd test
 mkdir build
 cd build
 cmake ..
