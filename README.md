@@ -1,5 +1,16 @@
-[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
-[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density)
+
+## Build status
+
+| [Linux][lin-link] | [Windows][win-link] | [Coveralls][cov-link] |
+| :---------------: | :-----------------: | :-------------------: |
+| ![lin-badge]      | ![win-badge]        | ![cov-badge]          |
+
+[lin-badge]: https://travis-ci.org/giucamp/density.svg?branch=master "Travis build status"
+[lin-link]:  https://travis-ci.org/giucamp/density "Travis build status"
+[win-badge]: https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true "AppVeyor build status"
+[win-link]:  https://ci.appveyor.com/project/GiuseppeCampana/density "AppVeyor build status"
+[cov-badge]: https://coveralls.io/repos/?branch=master "Coveralls coverage"
+[cov-link]:  https://coveralls.io/r/?branch=master "Coveralls coverage"
 
 Density Overview
 ----------------
