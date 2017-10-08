@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
 [![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density)
+[![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg)](https://coveralls.io/github/giucamp/density)
 
 Density is a C++11 header-only library focused on paged memory management and concurrency, providing:
 
@@ -32,7 +33,7 @@ This library is tested against these compilers:
 - clang++-4.0 and clang++-5.0
 
 ## How to...
-To use the library, just download or clone the repository, and then copy the directory "density" in your include paths. The library is comosed only by headers, so there is no need to compile. The directory doc contains the html documentation.
+To use the library, just download or clone the repository, and then copy the directory "density" in your include paths. The library is composed only by headers, so there is nothing to build. The directory doc contains the html documentation.
 In the test directory there is a test program you you can build with cmake or Visual Studio 2017.
 In the bench directory there is a benchmark program you you can build with cmake or Visual Studio 2017.
 
