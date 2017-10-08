@@ -23,3 +23,7 @@ if [ "$RUN" = "TRUE" ]; then
     sudo make install
     density_test
 fi
+
+if [ "$COVERAGE" = "TRUE" ]; then
+    coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+fi
