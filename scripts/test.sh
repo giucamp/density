@@ -17,7 +17,7 @@ fi
 cd test
 mkdir build
 cd build
-cmake .. "$MAKE_ARGS" -DCOMPILER_EXTRA:STRING=MAKE_ARGS
+cmake "$MAKE_ARGS" -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
 make
 if [ "$RUN" = "TRUE" ]; then
     sudo make install
