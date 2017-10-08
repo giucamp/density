@@ -12,6 +12,8 @@
 [cov-badge]: https://coveralls.io/repos/?branch=master "Coveralls coverage"
 [cov-link]:  https://coveralls.io/r/?branch=master "Coveralls coverage"
 
+[Documentation](http://giucamp.github.io/density/doc/html/index.html)
+
 Density Overview
 ----------------
 Density is a C++11 header-only library focused on paged memory management. providing a rich set of highly configurable heterogeneous queues.
@@ -56,7 +58,7 @@ Any callable object can be pushed on the queue: a lambda, the result of an `std:
 All queues in density have a very simple implementation: a *tail pointer*, an *head pointer*, and a set of memory pages. Paging is a kind of quantization of memory: all pages have a fixed size (by default slightly less than 64 kibibyte) and a fixed alignment (by default 64 kibibyte), so that the allocator can be simple and efficient. 
 Values are arranged in the queue by *linear allocation*: allocating a value means just adding its size to the tail pointer. If the new tail pointer would point outside the last page, a new page is allocated, and the linear allocation is performed from there. In case of very huge values, only a pointer is allocated in the pages, and the actual storage for the value is allocated in the heap.
 
-[Continue...](intro.html)
+[Continue...](http://giucamp.github.io/density/doc/html/index.html)
 
 > Written with [StackEdit](https://stackedit.io/).
 
