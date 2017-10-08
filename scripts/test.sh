@@ -24,6 +24,8 @@ if [ "$RUN" = "TRUE" ]; then
     density_test
 fi
 
+cd ..
+cd ..
 if [ "$COVERAGE" = "TRUE" ]; then
-    coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+    coveralls --verbose --gcov-options '\-rl'
 fi
