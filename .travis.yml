@@ -48,7 +48,7 @@ matrix:
 
 before_install:
     - if [ ${GCOV} != "" ]; then
-         sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/${GCOV} 90
+         sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/${GCOV} 90;
     fi
     - pip install --user cpp-coveralls
     - chmod +x scripts/test.sh
