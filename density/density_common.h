@@ -584,10 +584,10 @@ Density is a C++11 header-only library focused on paged and lifo memory manageme
 density provides a rich set of highly configurable heterogeneous queues:
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
-single threaded   |[function_queue](classdensity_1_1function__queue.html)      |[heter_queue](classdensity_1_1heter__queue.html)| - | -
-locking         |[conc_function_queue](classdensity_1_1conc__function__queue.html) |[conc_hetr_queue](classdensity_1_1conc__heter__queue.html)|multiple|multiple
-lock-free       |[lf_function_queue](classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](classdensity_1_1lf__heter__queue.html)|configurable|configurable
-spin-locking    |[sp_function_queue](classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](classdensity_1_1sp__heter__queue.html)|configurable|configurable
+single threaded   |[function_queue](\ref density::function_queue)      |[heter_queue](\ref density::heter_queue)| - | -
+locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_hetr_queue](\ref density::conc_hetr_queue)|multiple|multiple
+lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_hetr_queue](\ref density::lf_hetr_queue)|configurable|configurable
+spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_hetr_queue](\ref density::sp_hetr_queue)|configurable|configurable
 
 All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, 
 or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
@@ -602,6 +602,50 @@ This library is tested against these compilers:
     - clang++-4.0 and clang++-5.0
 
 [Github Repository](https://github.com/giucamp/density)
+
+The data stack
+--------------
+The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may 
+reallocate or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
+The data stack is actually composed by a set of memory pages and an internal thread-local pointer (the top of the stack).
+There is no size-overhead. Allocations just add the size to allocate to the top pointer, and deallocations set the top pointer to the
+block to deallocate. In case of page switch, a branch is taken to a non-inlined slow path.
+The data stack has constant initialization and trivial destruction, so it can't slow down thread creation and destruction and does not
+require dynamic any initialization guard by the compiler. 
+Empty data stacks don't consume any memory page, so it does not have a cost for threads not using it. The first time a thread uses the
+data stack, it takes the slow path and it allocates a memory page.
+
+The data stack can be accessed only indirectly, with [lifo_array](\ref density::lifo_array) and [lifo_buffer](\ref density::lifo_buffer).
+
+<code>%lifo_array</code> is the easiest and safest way of using the data stack. A <code>%lifo_array</code> is very 
+similar to a raw array, but its size is not a compile time constant. The elements are not allocated on the callstack, so there is no 
+risk of stack overflow. In case of out of memory, a <code>std::bad_alloc</code> is thrown.
+
+\snippet lifo_examples.cpp lifo_array example 1
+
+To avoid breaking the lifo constraint and consequently having the undefined behavior, <code>%lifo_array</code>s should be instantiated 
+only in the automatic storage (locally in a function or function block). Following this simple rule there is no way to way to break the 
+lifo constraint.
+
+Actually it is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint is not broken.
+The C++ language is very LIFO friendly, as members of structs and elements of arrays are destroyed in the reverse order they
+are constructed. Anyway this may be dangerous, so it's not recommended.
+
+\snippet lifo_examples.cpp lifo_array example 4
+
+<code>%lifo_array</code> is an alternative to the c-ish and unsafe [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and
+has nearly the [same performances](\ref lifo_array_benchmarks).
+Just like built-in arrays and <code>std::array</code>, <code>%lifo_array</code> does not initialize elements if they have 
+[POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c). This is a big difference with <code>std::vector</code>.
+
+A <code>lifo_buffer</code> allocates on the data stack an untyped raw memory block with dynamic size. Unlike <code>%lifo_array</code> it supports
+resizing, but only on the most recently instantiated living instance, and only if a more recent living <code>%lifo_array</code> doesn't exist.
+If the resize changes the address of the block, the surviving content is preserved <code>memcpy</code>'ing it.
+
+\snippet lifo_examples.cpp lifo example 1
+
+Internally the data stack is a thread-local instance of \ref lifo_allocator, a class template that provides lifo memory management.
+This class can be used to exploit performances of lifo memory in other contexts.
 
 About function queues
 --------------
@@ -720,85 +764,6 @@ Output:
 ObjectA::update(0.0166667)
 ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
-~~~~~~~~~~~~~~
-
-The data stack
---------------
-The data stack is a thread-local paged memory pool dedicated to lifo allocations. To respect the lifo ordering a thread may reallocate 
-or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
-The easiest and safest way of using the data stack is with [lifo_array](\ref density::lifo_array):
-
-\snippet lifo_examples.cpp lifo_array example 1
-
-A lifo array is very similar to a raw array, but its size is not a compile time constant, and it should be instantiated only in the 
-automatic storage (locally in a function or function block). Instantiating <code>lifo_array</code>s only in the automatic storage
-there is no way to way to break the lifo constraint.:
-
-\snippet lifo_examples.cpp lifo_array example 3
-
-It is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint is not broken. The C++ language
-is very LIFO friendly, as members of struct and classes, and elements of arrays are destroyed in reverse order:
-
-\snippet lifo_examples.cpp lifo_array example 4
-
-density allows to access the data stack only indirectly and only with \ref lifo_array and \ref lifo_buffer. Both are supposed
-to be instantiated in the automatic storage (locally in a function or function block)
-
-The state of lifo_allocator is only a pointer
-In case of failiure lifo_array throws a std::bad_alloc
-
-Density provides two lifo data structures: lifo_array and lifo_buffer.
-
-[lifo_array](classdensity_1_1lifo__array.html) is a modern C++ version of the variable length automatic arrays of C99. It is is an alternative to the non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html) function, much more C++ish.
-
-		void dijkstra_path_find(const GraphNode * i_nodes, size_t i_node_count, size_t i_initial_node_index)
-		{
-			lifo_array<float> min_distance(i_node_count, std::numeric_limits<float>::max() );
-			min_distance[i_initial_node_index] = 0.f;
-
-			// ...
-
-The size of the array is provided at construction time, and cannot be changed. lifo_array allocates its element contiguously in memory in the **data stack** of the calling thread. 
-The data stack is a thread-local storage managed by a lifo allocator.  By "lifo" (last-in-first-out) we mean that only the most recently allocated block can be deallocated. If the lifo constraint is violated, the behaviour of the program is undefined (defining DENSITY_DEBUG as non-zero in density_common.h enables a debug check, but beaware of the [one definition rule](https://en.wikipedia.org/wiki/One_Definition_Rule)). 
-If you declare a lifo_array locally to a function, you don't have to worry about the lifo-constraint, because C++ is designed so that automatic objects are destroyed in lifo order. Even a lifo_array as non-static member of a struct/class allocated on the callstack is safe.
-
-A [lifo_buffer](classdensity_1_1lifo__buffer.html) is not a container, it's more low-level. It provides a dynamic raw storage. Unlike lifo_array, lifo_buffer allows reallocation (that is changing the size and the alignment of the buffer), but only of the last created lifo_buffer (otherwise the behavior is undefined).
-
-~~~~~~~~~~~~~~
-
-    void string_io()
-    {
-        using namespace std;
-        vector<string> strings{ "string", "long string", "very long string", "much longer string!!!!!!" };
-        uint32_t len = 0;
-
-		// for each string, write a length-chars pair on a temporary file
-        #ifndef _MSC_VER
-            auto file = tmpfile();
-        #else
-            FILE * file = nullptr;
-            tmpfile_s(&file);
-        #endif
-        for (const auto & str : strings)
-        {
-            len = static_cast<uint32_t>( str.length() + 1);
-            fwrite(&len, sizeof(len), 1, file);
-            fwrite(str.c_str(), 1, len, file);
-        }
-
-		// now we read what we have written
-        rewind(file);
-        lifo_buffer buff;
-        while (fread(&len, sizeof(len), 1, file) == 1)
-        {
-            buff.resize(len);
-            fread(buff.data(), len, 1, file);
-            cout << static_cast<char*>(buff.data()) << endl;
-        }
-
-        fclose(file);
-    }
-
 ~~~~~~~~~~~~~~
 
 Concepts

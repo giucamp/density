@@ -114,6 +114,10 @@ namespace density
             This function is useful to initialize block owners to an empty state in a noexcept 
             context, without introducing the nullptr special case. The implementation
             of the default constructor of \ref lifo_buffer uses this function. 
+
+            \b Throws: nothing.
+            
+            <i>Implementation notes</i>: this function just returns the top of the stack, without altering the state of the allocator.
             
             \snippet lifo_examples.cpp lifo_allocator allocate_empty 2 */
         void * allocate_empty() noexcept
@@ -402,13 +406,14 @@ namespace density
             return block;
         }
 
-        /** Returns the associated memory block. */
+        /** Returns the address of the owned memory block. If the block is empty (that is the size is zero), the
+            return value is undefined (may be nullptr, or any address), but it's still aligned to \ref alignment. */
         void * data() const noexcept
         {
             return m_data;
         }
 
-        /** Returns the size of the associated memory block. */
+        /** Returns the size of the owned memory block. */
         size_t size() const noexcept
         {
             return m_size;
