@@ -23,7 +23,7 @@ matrix:
           packages:
             - g++-7
       env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_DEBUG=TRUE && TEST_COVERAGE=TRUE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && GCOV=gcov-7 && TEST_DEBUG=TRUE && TEST_COVERAGE=TRUE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
     - os: linux
       env:
@@ -47,6 +47,9 @@ matrix:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_DEBUG=TRUE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
 before_install:
+    - if [ ${GCOV} != "" ]; then
+         sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/${GCOV} 90
+    fi
     - pip install --user cpp-coveralls
     - chmod +x scripts/test.sh
     - chmod +x scripts/bench.sh
