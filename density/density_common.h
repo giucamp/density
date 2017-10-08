@@ -766,6 +766,10 @@ ObjectB::update(0.0166667)
 ObjectB::update(0.0166667)
 ~~~~~~~~~~~~~~
 
+Implementation details
+----------
+<a href="implementation.pdf" target="_blank">This document</a> describes some of the internals of density.
+
 Concepts
 ----------
 
