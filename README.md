@@ -8,9 +8,10 @@ Density is a C++11 header-only library focused on paged memory management and co
 - function queues
 
 Lifo memory management is provided with [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html), [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html), and [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html).
-([More](http://giucamp.github.io/density/doc/html/intro.html#lifo)).
 
-Here is the table of all the available queues: ([More](http://giucamp.github.io/density/doc/html/intro.html#queues))
+<p align="right"><a href="http://giucamp.github.io/density/doc/html/intro.html#lifo">More...</a></p>
+
+Here is the table of all the available queues:
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
@@ -19,10 +20,10 @@ locking         |[conc_function_queue](http://giucamp.github.io/density/doc/html
 lock-free       |[lf_function_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1lf__heter__queue.html)|configurable|configurable
 spin-locking    |[sp_function_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
+<p align="right"><a href="http://giucamp.github.io/density/doc/html/intro.html#queues">More...</a></p>
 
 ## Documentation
-The [overview](http://giucamp.github.io/density/doc/html/intro.html) should be enough for an effective use of the library.
-The [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) contains the detailed description of classes and function. The documentation includes the result of some benchmarks. 
+The [overview](http://giucamp.github.io/density/doc/html/intro.html) should be enough for an effective use of the library. Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation includes the results of some benchmarks. 
 
 ## Support
 This library is tested against these compilers:
@@ -35,4 +36,4 @@ To use the library, just download or clone the repository, and then copy the dir
 In the test directory there is a test program you you can build with cmake or Visual Studio 2017.
 In the bench directory there is a benchmark program you you can build with cmake or Visual Studio 2017.
 
-<a href="mailto:giu.campana@gmail.com">Feedback</a>
+<a href="mailto:giu.campana@gmail.com">[give feedback]</a>
