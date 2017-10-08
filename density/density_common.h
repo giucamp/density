@@ -603,7 +603,7 @@ This library is tested against these compilers:
 
 [Github Repository](https://github.com/giucamp/density)
 
-The data stack
+<a name="lifo">The data stack</a>
 --------------
 The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may 
 reallocate or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
@@ -647,7 +647,7 @@ If the resize changes the address of the block, the surviving content is preserv
 Internally the data stack is a thread-local instance of \ref lifo_allocator, a class template that provides lifo memory management.
 This class can be used to exploit performances of lifo memory in other contexts.
 
-About function queues
+<a name="queues">About function queues</a>
 --------------
 A function queue is an heterogeneous FIFO pseudo-container that stores callable objects, each with a different type, but all invokable with the same signature.
 Foundamentaly a funcion queue is a queue of `std::function`-like objects that uses an in-page linear allocation for the storage of the captures.
