@@ -32,10 +32,35 @@ namespace density_tests
     }
     //! [lifo_array example 1]
 
+    //! [lifo example 1]
+    void func(size_t i_size)
+    {
+        using namespace density;
+
+        lifo_buffer buffer_1(i_size);
+        assert(buffer_1.size() == i_size);
+
+        lifo_buffer buffer_2; // now buffer_1 can't be resized until buffer_2 is destroyed
+        assert(buffer_2.size() == 0);
+
+        auto mem = buffer_2.resize(sizeof(int));
+        assert(mem == buffer_2.data());
+        *static_cast<int*>(mem) = 5;
+
+        mem = buffer_2.resize(sizeof(int) * 20);
+        assert(*static_cast<int*>(mem) == 5);
+
+        lifo_array<int> other_numbers(7);
+        // buffer_2.resize(20); <---- violation of the lifo constraint, other_numbers is more recent!
+    }
+    //! [lifo example 1]
     
     void lifo_array_example_2()
     {
         using namespace density;
+
+        func(200);
+
 
         {
     //! [lifo_array example 2]
@@ -69,34 +94,37 @@ namespace density_tests
 
         {
     //! [lifo_array example 3]
-            struct MyStruct
-            {
-                lifo_array<std::string> m_strings{ 6 };
-                lifo_array<std::string> m_other_strings{ 6 };
-            };
+    struct MyStruct
+    {
+        lifo_array<std::string> m_strings{ 6 };
+        lifo_array<std::string> m_other_strings{ 6 };
+    };
     
-            // In C++ array elements and struct members have lifo-compliant lifetime
-            lifo_array<MyStruct> structs{ 10 };
-            lifo_array<MyStruct> other_structs{ 10 };
+    // In C++ array elements and struct members have lifo-compliant lifetime
+    lifo_array<MyStruct> structs{ 10 };
+    lifo_array<MyStruct> other_structs{ 10 };
     //! [lifo_array example 3]
         }
         {
     //! [lifo_array example 4]
-            struct MyStruct
-            {
-                lifo_array<std::string> m_strings{ 6 };
-                lifo_array<std::string> m_other_strings{ 6 };
-            };
+    struct MyStruct
+    {
+        lifo_array<std::string> m_strings{ 6 };
+        lifo_array<std::string> m_other_strings{ 6 };
+    };
 
-            struct MyStruct1
-            {
-                lifo_array<MyStruct> m_structs{ 6 };
-                lifo_array<MyStruct> m_other_structs{ 6 };
-            };
+    struct MyStruct1
+    {
+        lifo_array<MyStruct> m_structs{ 6 };
+        lifo_array<MyStruct> m_other_structs{ 6 };
+    };
+
+    // In C++ array elements and struct members have lifo-compliant lifetime
+    lifo_array<MyStruct> structs{ 10 };
     
-            // Still valid, but don't go too far
-            lifo_array<std::unique_ptr<MyStruct1>> structs{ 10 };
-            std::generate(structs.begin(), structs.end(), [] () { return std::unique_ptr<MyStruct1>(new MyStruct1); });
+    // Still legal, but don't go too far
+    lifo_array<std::unique_ptr<MyStruct1>> other_structs{ 10 };
+    std::generate(other_structs.begin(), other_structs.end(), [] () { return std::unique_ptr<MyStruct1>(new MyStruct1); });
     //! [lifo_array example 4]
         }
         {
