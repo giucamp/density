@@ -1,8 +1,8 @@
 #!/bin/bash
 
 RUN=$1
-DEBUG=&2
-COVERAGE=&3
+DEBUG=$2
+COVERAGE=$3
 
 echo "RUN = $RUN, DEBUG = $DEBUG, COVERAGE = $COVERAGE"
 
