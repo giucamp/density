@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['intro',['Intro',['../intro.html',1,'']]]
+  ['pagedallocator_20concept',['PagedAllocator concept',['../PagedAllocator_concept.html',1,'']]]
 ];

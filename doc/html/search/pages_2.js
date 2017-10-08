@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pagedallocator_20concept',['PagedAllocator concept',['../PagedAllocator_concept.html',1,'']]]
+  ['runtimetype_20concept',['RuntimeType concept',['../RuntimeType_concept.html',1,'']]]
 ];
