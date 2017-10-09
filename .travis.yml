@@ -5,15 +5,15 @@ language: cpp
 matrix:
   include:
     
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_DEBUG=FALSE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+#    - os: linux
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#          packages:
+#            - g++-4.9
+#      env:
+#         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_DEBUG=FALSE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
     - os: linux
       addons:
@@ -25,26 +25,26 @@ matrix:
       env:
          - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_DEBUG=TRUE && TEST_COVERAGE=TRUE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
-    - os: linux
-      env:
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - clang-4.0
-      env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_DEBUG=FALSE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+#    - os: linux
+#      env:
+#      addons:
+#        apt:
+#          sources:
+#            - llvm-toolchain-trusty-4.0
+#          packages:
+#            - clang-4.0
+#      env:
+#        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_DEBUG=FALSE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-      env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_DEBUG=TRUE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
+#    - os: linux
+#      addons:
+#        apt:
+#          sources:
+#            - llvm-toolchain-trusty-5.0
+#          packages:
+#            - clang-5.0
+#      env:
+#        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_DEBUG=TRUE && TEST_COVERAGE=FALSE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
 
 before_install:
     - pip install --user cpp-coveralls

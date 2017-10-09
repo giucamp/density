@@ -27,5 +27,5 @@ fi
 cd ..
 cd ..
 if [ "$COVERAGE" = "TRUE" ]; then
-    coveralls --verbose --gcov '/usr/bin/gov-7' --gcov-options '\-rl'
+    coveralls --verbose --gcov '/usr/bin/cgov-7' --gcov-options '\-rl'
 fi
