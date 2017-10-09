@@ -22,7 +22,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-            - gcov-7
       env:
          - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_DEBUG=TRUE && TEST_COVERAGE=TRUE && TEST_RUN=TRUE && BENCH_RUN=FALSE"
     
