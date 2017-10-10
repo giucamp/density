@@ -9,9 +9,65 @@
 #include "../test_framework/exception_tests.h"
 #include <density/lifo.h>
 #include <stack>
+#include <vector>
 
 namespace density_tests
 {
+    class MemRangeRegistry
+    {
+    public:
+
+        void add(void * i_start, size_t i_size)
+        {
+            check_no_overlap(i_start, i_size);
+
+            m_ranges.push_back(Range{i_start, i_size});
+        }
+
+        void remove(void * i_start, size_t i_size)
+        {
+            bool found = false;
+            for (auto it = m_ranges.begin(); it != m_ranges.end(); it++)
+            {
+                if (it->m_start == i_start)
+                {
+                    DENSITY_TEST_ASSERT(it->m_size == i_size);
+                    m_ranges.erase(it);
+                    found = true;
+                    break;
+                }
+            }
+            DENSITY_TEST_ASSERT(found);
+        }
+
+    private:
+        void check_no_overlap(void * i_start, size_t i_size) const
+        {
+            auto const input_end = density::address_add(i_start, i_size);
+
+            for (const auto & other : m_ranges)
+            {
+                if (i_start < other.m_start)
+                {
+                    DENSITY_TEST_ASSERT(input_end <= other.m_start);
+                }
+                else
+                {
+                    auto const other_end = density::address_add(other.m_start, other.m_size);
+                    DENSITY_TEST_ASSERT(i_start >= other_end);
+                }
+            }
+        }
+
+    private:
+        struct Range
+        {
+            void * m_start;
+            size_t m_size;
+        };
+        std::vector<Range> m_ranges;
+    };
+
     /** Decorator to lifo_allocator that adds debug checks to detect violations of the LIFO order, wrong size passed
         to deallocate or reallocate and leaks of lifo blocks. Functions that can throw call exception_checkpoint()
         to allow exception testing. */
@@ -67,10 +123,12 @@ namespace density_tests
         void notify_alloc(void * i_block, size_t i_size)
         {
             m_blocks.push(Block{i_block, i_size});
+            m_ranges.add(i_block, i_size);
         }
 
         void notify_dealloc(void * i_block, size_t i_size)
         {
+            m_ranges.remove(i_block, i_size);
             DENSITY_TEST_ASSERT(!m_blocks.empty() &&
                 m_blocks.top().m_block == i_block &&
                 m_blocks.top().m_size == i_size);
@@ -85,6 +143,8 @@ namespace density_tests
             size_t m_size;
         };
         std::stack<Block> m_blocks; /**< used to check the LIFO order */
+
+        MemRangeRegistry m_ranges;
 
         density::lifo_allocator<UNDERLYING_ALLOCATOR, ALIGNMENT> m_allocator;
     };
