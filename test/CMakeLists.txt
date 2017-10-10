@@ -35,6 +35,7 @@ add_executable(density_test
 	tests/load_unload_tests.cpp
 	tests/sp_heterogeneous_queue_basic_tests.cpp
 	tests/lifo_tests.cpp
+    tests/user_data_stack.cpp
 	test_framework/density_test_common.cpp
 	test_framework/dynamic_type.cpp
 	test_framework/exception_tests.cpp

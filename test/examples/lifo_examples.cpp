@@ -59,6 +59,10 @@ namespace density_tests
     {
         using namespace density;
 
+        {
+            lifo_buffer buff(100);
+        }
+
         func(200);
 
 

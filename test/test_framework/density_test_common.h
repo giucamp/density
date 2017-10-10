@@ -10,7 +10,7 @@
 #include <chrono>
 #include <density/void_allocator.h>
 
-#define DENSITY_TEST_ASSERT(expr)        if(!(expr)) detail::assert_failed(__FILE__, __func__, __LINE__, #expr); else (void)0
+#define DENSITY_TEST_ASSERT(expr)        if(!(expr)) density_tests::detail::assert_failed(__FILE__, __func__, __LINE__, #expr); else (void)0
 
 namespace density_tests
 {

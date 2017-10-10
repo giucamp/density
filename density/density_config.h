@@ -92,6 +92,22 @@ namespace density
         and \ref PagedAllocator_concept "PagedAllocator" */
     using data_stack_underlying_allocator = basic_void_allocator<default_page_capacity>;
 
+    /** \def DENSITY_USER_DATA_STACK If defined enables the user data stack. */
+    #ifdef DENSITY_USER_DATA_STACK
+        namespace user_data_stack
+        {
+            constexpr size_t alignment = alignof(void*);
+
+            void * allocate(size_t i_size);
+
+            void * allocate_empty() noexcept;
+            
+            void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size);
+
+            void deallocate(void * i_block, size_t i_size) noexcept;
+        }
+    #endif
+
     /* Very minimal implementation of std::optional, that can be used as target for density::optional. */
     template <typename TYPE>
         class builtin_optional

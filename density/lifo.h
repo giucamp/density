@@ -41,7 +41,7 @@ namespace density
         that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack, 
         without altering the state of the allocator.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
-    template <typename UNDERLYING_ALLOCATOR = void_allocator>
+    template <typename UNDERLYING_ALLOCATOR = void_allocator, size_t ALIGNMENT = alignof(void*)>
         class lifo_allocator : private UNDERLYING_ALLOCATOR
     {
     public:
@@ -50,11 +50,7 @@ namespace density
         using underlying_allocator = UNDERLYING_ALLOCATOR;
 
         /** Alignment of the memory blocks. The value is implementation defined */
-        static constexpr size_t alignment = alignof(void*);
-
-        /** Max size of a single block. This size is equal to the size of the address space, minus an implementation defined value in 
-            the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. */
-        static constexpr size_t max_block_size = (std::numeric_limits<uintptr_t>::max() - UNDERLYING_ALLOCATOR::page_size);
+        static constexpr size_t alignment = ALIGNMENT;
 
         // compile time checks
         static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
@@ -83,7 +79,6 @@ namespace density
 
             \pre The behavior is undefined if either:
                 - i_size is not a multiple of \ref alignment
-                - i_size > \ref max_block_size
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
@@ -162,7 +157,6 @@ namespace density
                 - the specified block is null or it is not the most recently allocated
                 - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
                 - i_new_size is not a multiple of \ref alignment
-                - i_new_size > \ref max_block_size
 
             \n\b Throws: unspecified.
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
@@ -293,37 +287,70 @@ namespace density
         /** \internal Stateless class template that provides a thread local LIFO memory management */
         template <int=0> class ThreadLifoAllocator
         {
-        public:
+        #ifndef DENSITY_USER_DATA_STACK
 
-            static constexpr size_t alignment = lifo_allocator<data_stack_underlying_allocator>::alignment;
-            static constexpr size_t max_block_size = lifo_allocator<data_stack_underlying_allocator>::max_block_size;
+            // default data stack
 
-            static void * allocate(size_t i_size)
-            {
-                return s_allocator.allocate(i_size);
-            }
+            public:
 
-            static void * allocate_empty() noexcept
-            {
-                return s_allocator.allocate_empty();
-            }
+                static constexpr size_t alignment = lifo_allocator<data_stack_underlying_allocator>::alignment;
+
+                static void * allocate(size_t i_size)
+                {
+                    return s_allocator.allocate(i_size);
+                }
+
+                static void * allocate_empty() noexcept
+                {
+                    return s_allocator.allocate_empty();
+                }
             
-            static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
-            {
-                return s_allocator.reallocate(i_block, i_old_size, i_new_size);
-            }
+                static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+                {
+                    return s_allocator.reallocate(i_block, i_old_size, i_new_size);
+                }
 
-            static void deallocate(void * i_block, size_t i_size) noexcept
-            {
-                s_allocator.deallocate(i_block, i_size);
-            }
+                static void deallocate(void * i_block, size_t i_size) noexcept
+                {
+                    s_allocator.deallocate(i_block, i_size);
+                }
 
-        private:
-            static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
+            private:
+                static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
+        #else
+
+            // DENSITY_USER_DATA_STACK is defined: forward to the user defined data stack
+
+            public:
+                static constexpr size_t alignment = user_data_stack::alignment;
+                
+                static void * allocate(size_t i_size)
+                {
+                    return user_data_stack::allocate(i_size);
+                }
+
+                static void * allocate_empty() noexcept
+                {
+                    return user_data_stack::allocate_empty();
+                }
+            
+                static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+                {
+                    return user_data_stack::reallocate(i_block, i_old_size, i_new_size);
+                }
+
+                static void deallocate(void * i_block, size_t i_size) noexcept
+                {
+                    user_data_stack::deallocate(i_block, i_size);
+                }
+
+        #endif
         };
 
-        template <int DUMMY>
-            thread_local lifo_allocator<data_stack_underlying_allocator> ThreadLifoAllocator<DUMMY>::s_allocator;
+        #ifndef DENSITY_USER_DATA_STACK
+            template <int DUMMY>
+                thread_local lifo_allocator<data_stack_underlying_allocator> ThreadLifoAllocator<DUMMY>::s_allocator;
+        #endif
 
     } // namespace detail
 
@@ -350,10 +377,6 @@ namespace density
 
         /** Alignment guaranteed for the block */
         static constexpr size_t alignment = detail::ThreadLifoAllocator<>::alignment;
-        
-        /** Max size of a block. This size is equal to the size of the address space, minus an implementation defined value in 
-            the order of the size of a page. Requesting a bigger block size causes undefined behavior. */
-        static constexpr size_t max_block_size = detail::ThreadLifoAllocator<>::max_block_size;
 
         /** Allocates an empty block. */
         lifo_buffer() noexcept
@@ -362,10 +385,7 @@ namespace density
         }
 
         /** Allocates the block
-            @param i_size size in bytes of the memory block.
-            
-            \pre The behavior is undefined if either:
-                - i_size > \ref max_block_size */
+            @param i_size size in bytes of the memory block. */
         lifo_buffer(size_t i_size)
             : m_data(detail::ThreadLifoAllocator<>::allocate(uint_upper_align(i_size, alignment))), m_size(i_size)
         {
@@ -392,7 +412,6 @@ namespace density
             This function may reallocate the block, so its address may change.
 
             \pre The behavior is undefined if either:
-                - i_new_size > \ref max_block_size
                 - this block was not the most recently allocated one on the data stack of the calling thread
 
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */

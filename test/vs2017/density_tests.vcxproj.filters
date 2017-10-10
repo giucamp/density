@@ -98,6 +98,9 @@
     <ClCompile Include="..\examples\lifo_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="..\tests\user_data_stack.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">

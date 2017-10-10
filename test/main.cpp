@@ -38,7 +38,7 @@ namespace density_tests
     void sp_func_queue_samples(std::ostream &);
 
     void lifo_examples();
-    void lifo_tests(std::ostream & i_output, uint32_t i_random_seed);
+    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed);
 }
 
 DENSITY_NO_INLINE void sandbox()
@@ -105,18 +105,8 @@ DENSITY_NO_INLINE void sandbox()
     }
 }
 
-void do_tests(std::ostream & i_ostream)
+void do_tests(std::ostream & i_ostream, uint32_t i_random_seed)
 {
-    uint32_t random_seed = 0; // 0 -> non-deterministic
-
-    while (random_seed == 0)
-    {
-        random_seed = std::random_device()();
-    }
-
-    std::cout << "Number of processors: " << density_tests::get_num_of_processors() << "\n";
-    std::cout << "Random seed: " << random_seed << "\n" << std::endl;
-
     auto const prev_stream_flags = i_ostream.setf(std::ios_base::boolalpha);
 
     using namespace density_tests;
@@ -145,19 +135,20 @@ void do_tests(std::ostream & i_ostream)
     size_t const element_count = 1000;
 
     lifo_examples();
-    lifo_tests(i_ostream, random_seed);
+    lifo_tests(QueueTesterFlags::eNone, i_ostream, i_random_seed);
+    lifo_tests(QueueTesterFlags::eNone | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
-    all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, random_seed, element_count);
+    all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed, element_count);
 
     i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-    all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, random_seed, element_count);
+    all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, element_count);
 
     i_ostream << "\n*** executing generic tests with test allocators..." << std::endl;
-    all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread, i_ostream, random_seed, element_count);
+    all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed, element_count);
 
     i_ostream << "\n*** executing generic tests with test allocators and exceptions..." << std::endl;
-    all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, random_seed, element_count);
+    all_queues_generic_tests(QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, element_count);
 
     i_ostream << "\n*** executing load unload tests..." << std::endl;
     load_unload_tests(std::cout);
@@ -167,8 +158,33 @@ void do_tests(std::ostream & i_ostream)
 
 int main()
 {
+    std::ostream & out = std::cout;
+    
+    #if defined(NDEBUG)
+        out << "NDEBUG: defined" << std::endl;
+    #else
+        out << "NDEBUG: not defined" << std::endl;
+    #endif
+
+    #if defined(DENSITY_USER_DATA_STACK)
+        out << "DENSITY_USER_DATA_STACK: defined" << std::endl;
+    #else
+        out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
+    #endif
+
+    uint32_t random_seed = 22; // 0 -> non-deterministic
+
+    while (random_seed == 0)
+    {
+        random_seed = std::random_device()();
+    }
+
+    std::cout << "Number of processors: " << density_tests::get_num_of_processors() << "\n";
+    std::cout << "Random seed: " << random_seed << "\n" << std::endl;
+
     //sandbox();
 
-    do_tests(std::cout);
+    do_tests(out, random_seed);
+
     return 0;
 }

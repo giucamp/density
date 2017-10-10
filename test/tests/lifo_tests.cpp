@@ -7,11 +7,14 @@
 #include "../test_framework/density_test_common.h"
 #include "../test_framework/easy_random.h"
 #include "../test_framework/progress.h"
+#include "../test_framework/test_objects.h"
+#include "../test_framework/exception_tests.h"
 #include <density/lifo.h>
 #include <random>
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <thread>
 
 namespace density_tests
 {
@@ -21,6 +24,7 @@ namespace density_tests
     void lifo_test_1(std::ostream & i_output, std::mt19937 & i_random)
     {
         (void)constexpr_lifo_allocator;
+        InstanceCounted::ScopedLeakCheck objecty_leak_check;
 
         PrintScopeDuration duration(i_output, "lifo_test_1");
 
@@ -124,9 +128,9 @@ namespace density_tests
             const auto old_size = m_buffer.size();
             const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
 
-            m_vector.resize(new_size);
-
             m_buffer.resize(new_size);
+
+            m_vector.resize(new_size);
 
             if (old_size < new_size)
             {
@@ -298,7 +302,7 @@ namespace density_tests
 
                 m_curr_depth++;
 
-                const auto iter_count = std::uniform_int_distribution<int>(0, 5)(m_random);
+                const auto iter_count = std::uniform_int_distribution<int>(0, 2)(m_random);
                 for (int i = 0; i < iter_count; i++)
                 {
                     resize(m_random);
@@ -317,25 +321,59 @@ namespace density_tests
 
     }; // LifoTestContext
 
-    void lifo_test_2(std::ostream & i_output, std::mt19937 & i_random)
+    void lifo_test_2(EasyRandom & i_random)
     {
-        PrintScopeDuration duration(i_output, "lifo_test_2");
+        const auto & std_rand = i_random.underlying_rand();
 
-        LifoTestContext context(i_random, 7);
-        context.lifo_test_push();
+        run_exception_test([&std_rand]{
+            
+            auto rand_copy = std_rand;
+
+            InstanceCounted::ScopedLeakCheck objecty_leak_check;
+            LifoTestContext context(rand_copy, 7);
+            context.lifo_test_push();
+        });
+
     }
 
-    void lifo_tests(std::ostream & i_output, uint32_t i_random_seed)
+    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed)
     {
         PrintScopeDuration duration(i_output, "lifo_tests");
 
-        EasyRandom easy_random = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
-        auto & rand = easy_random.underlying_rand();
-
-        for (int i = 0; i < 10; i++)
+        EasyRandom main_random = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
+        
+        // create thread entries
+        const size_t thread_count = 1;
+        struct ThreadEntry
         {
-            lifo_test_1(i_output, rand);
-            lifo_test_2(i_output, rand);
+            EasyRandom m_random;
+            std::thread m_thread;
+            ThreadEntry(EasyRandom & i_main_random)
+                : m_random(i_main_random.fork())
+            {
+
+            }
+        };
+        std::vector<ThreadEntry> threads;
+        threads.reserve(thread_count);
+        for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
+        {
+            threads.emplace_back(main_random);
+        }
+
+        // start threads
+        for (auto & thread_entry : threads)
+        {
+            auto & thread_random = thread_entry.m_random;
+            thread_entry.m_thread = std::thread([&thread_random]{
+                lifo_test_2(thread_random);
+            });
+        }
+
+        // join threads
+        for (auto & thread_entry : threads)
+        {
+            thread_entry.m_thread.join();
         }
     }
 
