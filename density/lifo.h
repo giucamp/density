@@ -197,6 +197,15 @@ namespace density
             }
         }
 
+        /** Destroys the allocator, deallocating the bottom page in case this allocator is not virgin */
+        ~lifo_allocator()
+        {
+            if(m_top != s_virgin_top)
+            {
+                UNDERLYING_ALLOCATOR::deallocate_page(reinterpret_cast<void*>(m_top));
+            }
+        }
+
     private:
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
@@ -277,9 +286,10 @@ namespace density
         }
 
     private:
-        uintptr_t m_top = uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment); /**< pointer to the top of the stack. 
-                                                                    This variable is an integer to allow constant initialization 
-                                                                    (reinterpret_cast can't be used in compile time evaluations). */
+        static constexpr uintptr_t s_virgin_top = uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment);
+        uintptr_t m_top = s_virgin_top; /**< pointer to the top of the stack. 
+                                            This variable is an integer to allow constant initialization 
+                                            (reinterpret_cast can't be used in compile time evaluations). */
     };
 
     namespace detail

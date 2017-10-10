@@ -9,21 +9,19 @@
 #include "../test_framework/progress.h"
 #include "../test_framework/test_objects.h"
 #include "../test_framework/exception_tests.h"
+#include "../test_framework/threading_extensions.h"
 #include <density/lifo.h>
 #include <random>
 #include <vector>
 #include <algorithm>
 #include <cstring>
 #include <thread>
+#include <sstream>
 
 namespace density_tests
 {
-    // verify that lifo_allocator can have constant initialization
-    constexpr density::lifo_allocator<> constexpr_lifo_allocator;
-
     void lifo_test_1(std::ostream & i_output, std::mt19937 & i_random)
     {
-        (void)constexpr_lifo_allocator;
         InstanceCounted::ScopedLeakCheck objecty_leak_check;
 
         PrintScopeDuration duration(i_output, "lifo_test_1");
@@ -69,16 +67,16 @@ namespace density_tests
         return static_cast<size_t>(1) << std::uniform_int_distribution<size_t>(0, log2_max * 2)(i_random);
     }
 
-    class LifoTestItem
+    class ILifoTestItem
     {
     public:
         virtual void check() const = 0;
-        virtual bool resize(std::mt19937 & /*i_random*/) { return false; }
-        virtual ~LifoTestItem() {}
+        virtual bool resize(std::mt19937 & i_random) = 0;
+        virtual ~ILifoTestItem() = default;
     };
     
     template <typename TYPE>
-        class LifoTestArray : public LifoTestItem
+        class LifoTestArray : public ILifoTestItem
     {
     public:
         LifoTestArray(const density::lifo_array<TYPE> & i_array)
@@ -98,12 +96,22 @@ namespace density_tests
             }
         }
 
+        bool resize(std::mt19937 & /*i_random*/) override
+        { 
+            return false;
+        }
+
+        ~LifoTestArray()
+        {
+            check();
+        }
+
     private:
         const density::lifo_array<TYPE> & m_array;
         std::vector<TYPE> m_vector;
     };
 
-    class LifoTestBuffer : public LifoTestItem
+    class LifoTestBuffer : public ILifoTestItem
     {
     public:
         LifoTestBuffer(density::lifo_buffer & i_buffer)
@@ -128,6 +136,7 @@ namespace density_tests
             const auto old_size = m_buffer.size();
             const auto new_size = std::uniform_int_distribution<size_t>(0, 32)(i_random);
 
+            // resize the buffer first, because it may throw
             m_buffer.resize(new_size);
 
             m_vector.resize(new_size);
@@ -147,6 +156,11 @@ namespace density_tests
             return true;
         }
 
+        ~LifoTestBuffer()
+        {
+            check();
+        }
+
     private:
         density::lifo_buffer & m_buffer;
         std::vector<unsigned char> m_vector;
@@ -158,7 +172,7 @@ namespace density_tests
         std::mt19937 & m_random;
         int m_curr_depth = 0;
         int m_max_depth = 0;
-        std::vector< std::unique_ptr< LifoTestItem > > m_tests;
+        std::vector< std::unique_ptr< ILifoTestItem > > m_tests;
 
     public:
 
@@ -321,19 +335,21 @@ namespace density_tests
 
     }; // LifoTestContext
 
-    void lifo_test_2(EasyRandom & i_random)
+    void lifo_test_2(EasyRandom & i_random, QueueTesterFlags i_flags)
     {
         const auto & std_rand = i_random.underlying_rand();
 
-        run_exception_test([&std_rand]{
-            
+        auto do_tests = [&std_rand]{            
             auto rand_copy = std_rand;
-
             InstanceCounted::ScopedLeakCheck objecty_leak_check;
-            LifoTestContext context(rand_copy, 7);
+            LifoTestContext context(rand_copy, 7 /*=max depth of the tests*/ );
             context.lifo_test_push();
-        });
+        };
 
+        if(i_flags && QueueTesterFlags::eTestExceptions)
+            run_exception_test(std::function<void()>(do_tests));
+        else
+            do_tests();
     }
 
     void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed)
@@ -341,9 +357,15 @@ namespace density_tests
         PrintScopeDuration duration(i_output, "lifo_tests");
 
         EasyRandom main_random = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
-        
+
+        auto const num_of_processors = get_num_of_processors();
+        bool const reserve_core1_to_main = (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
+        uint64_t affinity_mask = std::numeric_limits<uint64_t>::max();
+        if (reserve_core1_to_main)
+            affinity_mask -= 2;
+
         // create thread entries
-        const size_t thread_count = 1;
+        const size_t thread_count = 6;
         struct ThreadEntry
         {
             EasyRandom m_random;
@@ -351,7 +373,6 @@ namespace density_tests
             ThreadEntry(EasyRandom & i_main_random)
                 : m_random(i_main_random.fork())
             {
-
             }
         };
         std::vector<ThreadEntry> threads;
@@ -362,11 +383,19 @@ namespace density_tests
         }
 
         // start threads
-        for (auto & thread_entry : threads)
+        for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
         {
+            auto & thread_entry = threads[thread_index];
             auto & thread_random = thread_entry.m_random;
-            thread_entry.m_thread = std::thread([&thread_random]{
-                lifo_test_2(thread_random);
+            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags]{
+
+                set_thread_affinity(affinity_mask);
+                
+                lifo_test_2(thread_random, i_flags);
+
+                std::ostringstream label;
+                label << "thread " << thread_index << " has finished\n";
+                i_output << label.str();
             });
         }
 

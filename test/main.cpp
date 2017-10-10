@@ -135,8 +135,8 @@ void do_tests(std::ostream & i_ostream, uint32_t i_random_seed)
     size_t const element_count = 1000;
 
     lifo_examples();
-    lifo_tests(QueueTesterFlags::eNone, i_ostream, i_random_seed);
-    lifo_tests(QueueTesterFlags::eNone | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
+    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed);
+    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
     all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed, element_count);
@@ -172,7 +172,7 @@ int main()
         out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
     #endif
 
-    uint32_t random_seed = 22; // 0 -> non-deterministic
+    uint32_t random_seed = 0; // 0 -> non-deterministic
 
     while (random_seed == 0)
     {
