@@ -206,6 +206,24 @@ namespace density
             }
         }
 
+        /** Returns a reference to the underlying allocator */
+        UNDERLYING_ALLOCATOR & underlying_allocator_ref() noexcept
+        {
+            return *this;
+        }
+
+        /** \internal Top pointer of virgin allocators. Internal only, do not use */
+        static void * virgin_top() noexcept
+        {
+            return reinterpret_cast<void*>(s_virgin_top);
+        }
+
+        /** \internal Returns the top pointer of this allocator. Internal only, do not use */
+        void * top_pointer() const noexcept
+        {
+            return reinterpret_cast<void*>(m_top);
+        }
+
     private:
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
@@ -268,10 +286,19 @@ namespace density
                 m_top = new_top;
                 return new_block;
             }
+            else if (i_size < UNDERLYING_ALLOCATOR::page_size)
+            {
+                // allocate a new page
+                auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
+                m_top = reinterpret_cast<uintptr_t>(new_page) + i_size;
+                return new_page;
+            }
             else
             {
-                // this branch does not use the value of m_top
-                return allocate_slow_path(i_size);
+                // external block
+                auto const new_external_block = UNDERLYING_ALLOCATOR::allocate(i_size, alignment);
+                m_top = reinterpret_cast<uintptr_t>(i_current_top);
+                return new_external_block;
             }
         }
 
