@@ -29,12 +29,22 @@ namespace density_tests
             bool found = false;
             for (auto it = m_ranges.begin(); it != m_ranges.end(); it++)
             {
-                if (it->m_start == i_start)
+                if (it->m_start == i_start && it->m_size == i_size)
                 {
-                    DENSITY_TEST_ASSERT(it->m_size == i_size);
                     m_ranges.erase(it);
                     found = true;
                     break;
+                }
+            }
+            if (!found)
+            {
+                std::vector<size_t> matching_adresss_sizes;
+                for (auto it = m_ranges.begin(); it != m_ranges.end(); it++)
+                {
+                    if (it->m_start == i_start)
+                    {
+                        matching_adresss_sizes.push_back(it->m_size);
+                    }
                 }
             }
             DENSITY_TEST_ASSERT(found);
