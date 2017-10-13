@@ -18,6 +18,8 @@
 #include <thread>
 #include <sstream>
 #include <limits>
+#include <chrono>
+#include <string>
 
 namespace density_tests
 {
@@ -30,23 +32,26 @@ namespace density_tests
     };
     
     template <typename TYPE>
-        class LifoTestArray : public ILifoTestItem
+        class LifoArrayWithBackup : public ILifoTestItem
     {
     public:
-        LifoTestArray(const density::lifo_array<TYPE> & i_array)
-            : m_array(i_array)
+
+        template <typename CONTENT_GENERATOR>
+            LifoArrayWithBackup(size_t i_size, const CONTENT_GENERATOR & i_content_generator)
+                : m_array(i_size)
         {
-            DENSITY_TEST_ASSERT( density::address_is_aligned( i_array.data(), alignof(TYPE) ) );
-            m_vector.insert(m_vector.end(), i_array.begin(), i_array.end());
+            std::generate(m_array.begin(), m_array.end(), i_content_generator);
+            DENSITY_TEST_ASSERT( density::address_is_aligned( m_array.data(), alignof(TYPE) ) );
+            m_backup.insert(m_backup.end(), m_array.begin(), m_array.end());
         }
 
         void check() const override
         {
             const size_t size = m_array.size();
-            DENSITY_TEST_ASSERT(m_vector.size() == size);
+            DENSITY_TEST_ASSERT(m_backup.size() == size);
             for(size_t i = 0; i < size; i++)
             {
-                DENSITY_TEST_ASSERT( m_vector[i] == m_array[i] );
+                DENSITY_TEST_ASSERT( m_backup[i] == m_array[i] );
             }
         }
 
@@ -55,27 +60,57 @@ namespace density_tests
             return false;
         }
 
-        ~LifoTestArray()
+        ~LifoArrayWithBackup()
         {
             check();
         }
 
     private:
-        const density::lifo_array<TYPE> & m_array;
-        std::vector<TYPE> m_vector;
+        density::lifo_array<TYPE> m_array;
+        std::vector<TYPE> m_backup;
     };
 
-    template <typename CONTENT_GENERATOR>
-        class LifoTestBuffer : public ILifoTestItem
+    template <size_t SIZE, size_t ALIGNMENT>
+        class LifoArrayOfTestObjects : public ILifoTestItem
     {
     public:
 
-        LifoTestBuffer(const CONTENT_GENERATOR & i_content_generator)
+        LifoArrayOfTestObjects(size_t i_size)
+            : m_array(i_size)
+        {
+        }
+
+        void check() const override
+        {
+            for(auto const & obj : m_array)
+                obj.check();
+        }
+
+        bool resize(std::mt19937 & /*i_random*/) override
+        { 
+            return false;
+        }
+
+        ~LifoArrayOfTestObjects()
+        {
+            check();
+        }
+
+    private:
+        density::lifo_array<TestObject<SIZE, ALIGNMENT>> m_array;
+    };
+
+    template <typename CONTENT_GENERATOR>
+        class LifoBufferWithBackup : public ILifoTestItem
+    {
+    public:
+
+        LifoBufferWithBackup(const CONTENT_GENERATOR & i_content_generator)
             : m_content_generator(i_content_generator)
         {
         }
 
-        LifoTestBuffer(const CONTENT_GENERATOR & i_content_generator, size_t i_size)
+        LifoBufferWithBackup(const CONTENT_GENERATOR & i_content_generator, size_t i_size)
             : m_content_generator(i_content_generator), m_buffer(i_size)
         {
             auto const buffer_bytes = static_cast<unsigned char*>( m_buffer.data() ); 
@@ -112,7 +147,7 @@ namespace density_tests
             return true;
         }
 
-        ~LifoTestBuffer()
+        ~LifoBufferWithBackup()
         {
             check();
         }
@@ -125,6 +160,33 @@ namespace density_tests
 
     struct RecursiveLifoTests
     {
+        // test lifo_array<int>
+        static std::unique_ptr<ILifoTestItem> make_int_array_test(std::mt19937 & i_random)
+        {
+            auto const size = std::uniform_int_distribution<size_t>(0, 0xFFF)(i_random);
+            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<int>(size, 
+                [&i_random] { return std::uniform_int_distribution<int>(0, 1000)(i_random); }
+            ));
+        }
+
+        // test lifo_array<std::string>
+        static std::unique_ptr<ILifoTestItem> make_string_array_test(std::mt19937 & i_random)
+        {
+            auto const size = std::uniform_int_distribution<size_t>(0, 0xFFF)(i_random);
+            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<std::string>(size, 
+                [&i_random] { return std::string("This is a very long string..."); }
+            ));
+        }
+
+        // test lifo_array<TestObject<SIZE, ALIGNMENT>>
+        template <size_t SIZE, size_t ALIGNMENT>
+            static std::unique_ptr<ILifoTestItem> make_test_obj_array_test(std::mt19937 & i_random)
+        {
+            auto const size = std::uniform_int_distribution<size_t>(0, 3)(i_random);
+            return std::unique_ptr<ILifoTestItem>(new LifoArrayOfTestObjects<SIZE, ALIGNMENT>(size));
+        }
+
+        // test lifo_buffer(size)
         static std::unique_ptr<ILifoTestItem> make_buffer_test(std::mt19937 & i_random)
         {
             auto content_generator = [&i_random] { 
@@ -134,9 +196,10 @@ namespace density_tests
 
             auto const size = std::uniform_int_distribution<size_t>(0, 0xFFFFF)(i_random);
 
-            return std::unique_ptr<ILifoTestItem>(new LifoTestBuffer<decltype(content_generator)>(content_generator, size));
+            return std::unique_ptr<ILifoTestItem>(new LifoBufferWithBackup<decltype(content_generator)>(content_generator, size));
         }
 
+        // test lifo_buffer()
         static std::unique_ptr<ILifoTestItem> make_empty_buffer_test(std::mt19937 & i_random)
         {
             auto content_generator = [&i_random] { 
@@ -144,14 +207,26 @@ namespace density_tests
                 return static_cast<unsigned char>(result);
             };
 
-            return std::unique_ptr<ILifoTestItem>(new LifoTestBuffer<decltype(content_generator)>(content_generator));
+            return std::unique_ptr<ILifoTestItem>(new LifoBufferWithBackup<decltype(content_generator)>(content_generator));
         }
 
+        /** \internal Function that for 'i_residual_depth' times calls itself recursively multiple times, or one
+            time after reaching the depth 'i_residual_fork_depth'. On every call it creates a lifo tests, that is
+            an object implementing ILifoTestItem, optionally resizing it.
+            
+            @param i_random random generator to se for the tests
+            @param i_residual_depth depth to reach in recursion
+            @param i_residual_fork_depth below this depth, this function invokes itself multiple times, forking every time,
+                and causing an exponential growth of the tests. From this depth on, recursive_test calls itself only one time. */
         static void recursive_test(std::mt19937 & i_random, size_t i_residual_depth, size_t i_residual_fork_depth)
         {
-            // table of ILifoTestItem factory functions
+            // tests factory: table of ILifoTestItem factory functions
             using Func = std::unique_ptr<ILifoTestItem>(*)(std::mt19937 & i_random);
-            static constexpr Func tests[] = { &RecursiveLifoTests::make_buffer_test, &RecursiveLifoTests::make_empty_buffer_test };
+            static constexpr Func tests[] = {
+                &RecursiveLifoTests::make_buffer_test, &RecursiveLifoTests::make_empty_buffer_test,
+                &RecursiveLifoTests::make_int_array_test, &RecursiveLifoTests::make_string_array_test,
+                &RecursiveLifoTests::make_test_obj_array_test<1, 1>, &RecursiveLifoTests::make_test_obj_array_test<8, 2>,
+                &RecursiveLifoTests::make_test_obj_array_test<16, 1>, &RecursiveLifoTests::make_test_obj_array_test<128*3, 128> };
 
             // pick a random factory and create a test (in the automatic storage)
             auto const random_index = std::uniform_int_distribution<size_t>(0, sizeof(tests) / sizeof(tests[0]) - 1)(i_random);
@@ -175,27 +250,39 @@ namespace density_tests
         }
     };
 
+    /** \internal Thread procedure used for lifo tests */
     void lifo_test_thread_proc(QueueTesterFlags i_flags, EasyRandom & i_random, 
         size_t i_depth, size_t i_fork_depth)
     {
         const auto & std_rand = i_random.underlying_rand();
 
+        // local function that executes the tests
         auto do_tests = [&std_rand, i_depth, i_fork_depth]{            
             auto rand_copy = std_rand;
-            InstanceCounted::ScopedLeakCheck objecty_leak_check;
             RecursiveLifoTests::recursive_test(rand_copy, i_depth, i_fork_depth);
         };
 
+        // check if we should run the normal test or the exhaustive exception test
         if(i_flags && QueueTesterFlags::eTestExceptions)
+        {
             run_exception_test(std::function<void()>(do_tests));
+        }
         else
+        {
             do_tests();
+        }
     }
 
+    /** \internal Stars 6 threads, each executing interdependently a recursive test of lifo_array and lifo_buffer. Each thread
+        has its own random generator, but all are forked deterministically from the one passes as argument. */
     void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed,
         size_t i_depth, size_t i_fork_depth)
     {
-        PrintScopeDuration duration(i_output, "lifo_tests");
+        PrintScopeDuration duration(i_output, i_flags && QueueTesterFlags::eTestExceptions ? "lifo_tests with exceptions" : "lifo_tests");
+
+        /* this checks that TestObject's don't leak. Note: the instance counting is not thread local, so we have to scope the thread
+            procedures inside it. */
+        InstanceCounted::ScopedLeakCheck scoped_leak_check;
 
         EasyRandom main_random = i_random_seed == 0 ? EasyRandom() : EasyRandom(i_random_seed);
 
@@ -205,7 +292,7 @@ namespace density_tests
         if (reserve_core1_to_main)
             affinity_mask -= 2;
 
-        // create thread entries
+        // create thread entries - here we pay the cost of forking the random generator
         const size_t thread_count = 6;
         struct ThreadEntry
         {
@@ -224,18 +311,22 @@ namespace density_tests
         }
 
         // start threads
+        auto const start_time = std::chrono::high_resolution_clock::now();
         for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
         {
             auto & thread_entry = threads[thread_index];
             auto & thread_random = thread_entry.m_random;
-            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth]{
+            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth, start_time]{
 
                 set_thread_affinity(affinity_mask);
                 
                 lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
 
+                using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
+                auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - start_time);
+                
                 std::ostringstream label;
-                label << "thread " << thread_index << " has finished\n";
+                label << "thread " << thread_index << " has finished after " << elapsed.count() << " secs\n";
                 i_output << label.str();
             });
         }
