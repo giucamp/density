@@ -21,53 +21,6 @@
 
 namespace density_tests
 {
-    void lifo_test_1(std::ostream & i_output, std::mt19937 & i_random)
-    {
-        InstanceCounted::ScopedLeakCheck objecty_leak_check;
-
-        PrintScopeDuration duration(i_output, "lifo_test_1");
-
-        using namespace density;
-
-        // instance a lifo_allocator
-        void_allocator underlying_allocator;
-        lifo_allocator<> allocator(underlying_allocator);
-
-        // for a random number of times....
-        while (std::uniform_int_distribution<size_t>(0, 10000)(i_random) > 10)
-        {
-            // allocate a block and fill it with progressive numbers
-            auto size = uint_upper_align(std::uniform_int_distribution<size_t>(0, 1000)(i_random), decltype(allocator)::alignment);
-            auto block = static_cast<unsigned char*>( allocator.allocate(size) );
-            for (size_t index = 0; index < size; index++)
-            {
-                block[index] = static_cast<unsigned char>(index & 0xFF);
-            }
-
-            // reallocate the block with reallocate_preserve, and check the content
-            auto new_size = uint_upper_align(std::uniform_int_distribution<size_t>(0, 8000)(i_random), decltype(allocator)::alignment);
-            block = static_cast<unsigned char*>(allocator.reallocate(block, size, new_size));
-            for (size_t index = 0; index < std::min(size, new_size); index++)
-            {
-                DENSITY_TEST_ASSERT( block[index] == static_cast<unsigned char>(index & 0xFF) );
-            }
-            size = new_size;
-
-            // done
-            allocator.deallocate(block, size);
-        }
-    }
-
-    size_t random_alignment(std::mt19937 & i_random)
-    {
-        size_t log2_max = 0;
-        while ((static_cast<size_t>(1) << log2_max) < MaxAlignment)
-        {
-            log2_max++;
-        }
-        return static_cast<size_t>(1) << std::uniform_int_distribution<size_t>(0, log2_max * 2)(i_random);
-    }
-
     class ILifoTestItem
     {
     public:
@@ -172,7 +125,7 @@ namespace density_tests
 
     struct RecursiveLifoTests
     {
-        static std::unique_ptr<ILifoTestItem> buffer_test(std::mt19937 & i_random)
+        static std::unique_ptr<ILifoTestItem> make_buffer_test(std::mt19937 & i_random)
         {
             auto content_generator = [&i_random] { 
                 auto const result = std::uniform_int_distribution<unsigned>(0, std::numeric_limits<unsigned char>::max())(i_random);
@@ -184,7 +137,7 @@ namespace density_tests
             return std::unique_ptr<ILifoTestItem>(new LifoTestBuffer<decltype(content_generator)>(content_generator, size));
         }
 
-        static std::unique_ptr<ILifoTestItem> empty_buffer_test(std::mt19937 & i_random)
+        static std::unique_ptr<ILifoTestItem> make_empty_buffer_test(std::mt19937 & i_random)
         {
             auto content_generator = [&i_random] { 
                 auto const result = std::uniform_int_distribution<unsigned>(0, std::numeric_limits<unsigned char>::max())(i_random);
@@ -198,7 +151,7 @@ namespace density_tests
         {
             // table of ILifoTestItem factory functions
             using Func = std::unique_ptr<ILifoTestItem>(*)(std::mt19937 & i_random);
-            static constexpr Func tests[] = { &RecursiveLifoTests::buffer_test, &RecursiveLifoTests::empty_buffer_test };
+            static constexpr Func tests[] = { &RecursiveLifoTests::make_buffer_test, &RecursiveLifoTests::make_empty_buffer_test };
 
             // pick a random factory and create a test (in the automatic storage)
             auto const random_index = std::uniform_int_distribution<size_t>(0, sizeof(tests) / sizeof(tests[0]) - 1)(i_random);
@@ -222,14 +175,15 @@ namespace density_tests
         }
     };
 
-    void lifo_test_2(EasyRandom & i_random, QueueTesterFlags i_flags)
+    void lifo_test_thread_proc(QueueTesterFlags i_flags, EasyRandom & i_random, 
+        size_t i_depth, size_t i_fork_depth)
     {
         const auto & std_rand = i_random.underlying_rand();
 
-        auto do_tests = [&std_rand]{            
+        auto do_tests = [&std_rand, i_depth, i_fork_depth]{            
             auto rand_copy = std_rand;
             InstanceCounted::ScopedLeakCheck objecty_leak_check;
-            RecursiveLifoTests::recursive_test(rand_copy, 10 /*=max depth of the tests*/, 3 /*=max fork depth*/);
+            RecursiveLifoTests::recursive_test(rand_copy, i_depth, i_fork_depth);
         };
 
         if(i_flags && QueueTesterFlags::eTestExceptions)
@@ -238,7 +192,8 @@ namespace density_tests
             do_tests();
     }
 
-    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed)
+    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed,
+        size_t i_depth, size_t i_fork_depth)
     {
         PrintScopeDuration duration(i_output, "lifo_tests");
 
@@ -251,7 +206,7 @@ namespace density_tests
             affinity_mask -= 2;
 
         // create thread entries
-        const size_t thread_count = 1;
+        const size_t thread_count = 6;
         struct ThreadEntry
         {
             EasyRandom m_random;
@@ -273,11 +228,11 @@ namespace density_tests
         {
             auto & thread_entry = threads[thread_index];
             auto & thread_random = thread_entry.m_random;
-            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags]{
+            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth]{
 
                 set_thread_affinity(affinity_mask);
                 
-                lifo_test_2(thread_random, i_flags);
+                lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
 
                 std::ostringstream label;
                 label << "thread " << thread_index << " has finished\n";

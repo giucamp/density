@@ -224,6 +224,12 @@ namespace density
             return reinterpret_cast<void*>(m_top);
         }
 
+        /** \internal Returns whether a block with the given size is allocated internally in the pages. Internal only, do not use */
+        static bool is_internal_block(size_t i_size) noexcept
+        {
+            return i_size < UNDERLYING_ALLOCATOR::page_size;
+        }
+        
     private:
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
@@ -253,8 +259,7 @@ namespace density
         DENSITY_NO_INLINE void deallocate_slow_path(void * i_block, size_t i_size) noexcept
         {
             // align the size
-            auto const actual_size = uint_upper_align(i_size, alignment);
-            if (actual_size < UNDERLYING_ALLOCATOR::page_size)
+            if (i_size < UNDERLYING_ALLOCATOR::page_size)
             {
                 auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
                 DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
@@ -264,12 +269,12 @@ namespace density
             else
             {
                 // external block
-                UNDERLYING_ALLOCATOR::deallocate(i_block, actual_size, alignment);
+                UNDERLYING_ALLOCATOR::deallocate(i_block, i_size, alignment);
             }
         }
 
-        /** Sets has the same effect of setting m_top to i_current_top and then allocating a block.
-            This function provides the strong exception guarantee. */
+        /** This function has the same effect of setting m_top to i_current_top and then allocating a block.
+            Provides the strong exception guarantee. */
         void * set_top_and_allocate(void * const i_current_top, size_t const i_size)
         {
             DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
@@ -307,7 +312,9 @@ namespace density
             if (i_old_block != i_new_block)
             {
                 auto const size_to_copy = detail::size_min(i_new_size, i_old_size);
-                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0); // this may help the optimizer
+                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0);
+                DENSITY_ASSERT_ALIGNED(i_old_block, alignment);
+                DENSITY_ASSERT_ALIGNED(i_new_block, alignment);
                 memcpy(i_new_block, i_old_block, size_to_copy);
             }
         }

@@ -38,7 +38,8 @@ namespace density_tests
     void sp_func_queue_samples(std::ostream &);
 
     void lifo_examples();
-    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed);
+    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed,
+        size_t i_depth, size_t i_fork_depth);
 }
 
 DENSITY_NO_INLINE void sandbox()
@@ -135,8 +136,8 @@ void do_tests(std::ostream & i_ostream, uint32_t i_random_seed)
     size_t const element_count = 1000;
 
     lifo_examples();
-    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed);
-    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
+    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed, 20, 4);
+    lifo_tests(QueueTesterFlags::eReserveCoreToMainThread | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 4, 3);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
     all_queues_generic_tests(QueueTesterFlags::eReserveCoreToMainThread, i_ostream, i_random_seed, element_count);

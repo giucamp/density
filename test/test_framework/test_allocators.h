@@ -11,6 +11,8 @@
 #include "easy_random.h"
 #include <atomic>
 #include <iostream>
+#include <algorithm>
+#include <vector>
 
 namespace density_tests
 {
@@ -26,6 +28,17 @@ namespace density_tests
         }
         return true;
     }
+
+    class IAllocatorHook
+    {
+    public:
+
+        virtual void on_allocated_page(void * i_page) = 0;
+
+        virtual void on_deallocating_page(void * i_page) = 0;
+
+        virtual ~IAllocatorHook() = default;        
+    };
 
     /** A thread can instance this class on the automatic storage to cause try_* allocations
         to randomly fail during its lifetime. */
@@ -105,6 +118,7 @@ namespace density_tests
 
             auto page = Base::allocate_page();
             m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            invoke_hook(&IAllocatorHook::on_allocated_page, page);
             return page;
         }
 
@@ -117,12 +131,14 @@ namespace density_tests
             if (page != nullptr)
             {
                 m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+                invoke_hook(&IAllocatorHook::on_allocated_page, page);
             }
             return page;
         }
 
         void deallocate_page(void * i_page) noexcept
         {
+            invoke_hook(&IAllocatorHook::on_deallocating_page, i_page);
             m_registry.unregister_block(s_page_category,
                 density::address_lower_align(i_page, page_alignment), page_size, page_alignment, 0);
             Base::deallocate_page(i_page);
@@ -134,6 +150,7 @@ namespace density_tests
 
             auto page = Base::allocate_page_zeroed();
             m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+            invoke_hook(&IAllocatorHook::on_allocated_page, page);
             return page;
         }
 
@@ -146,12 +163,14 @@ namespace density_tests
             if (page != nullptr)
             {
                 m_registry.register_block(s_page_category, page, page_size, page_alignment, 0);
+                invoke_hook(&IAllocatorHook::on_allocated_page, page);
             }
             return page;
         }
 
         void deallocate_page_zeroed(void * i_page) noexcept
         {
+            invoke_hook(&IAllocatorHook::on_deallocating_page, i_page);
             m_registry.unregister_block(s_page_category,
                 density::address_lower_align(i_page, page_alignment), page_size, page_alignment, 0);
             Base::deallocate_page_zeroed(i_page);
@@ -177,10 +196,34 @@ namespace density_tests
             Base::unpin_page(i_address);
         }
 
+        void add_hook(IAllocatorHook* i_hook)
+        {
+            m_hooks.push_back(i_hook);
+        }
+
+        void remove_hook(IAllocatorHook* i_hook)
+        {
+            auto const it = std::find(m_hooks.begin(), m_hooks.end(), i_hook);
+            DENSITY_TEST_ASSERT(it != m_hooks.end());
+            m_hooks.erase(it);
+        }
+
+    private:
+
+        template <typename... PARAMS>
+             void invoke_hook(void (IAllocatorHook::*i_function)(PARAMS...), PARAMS... i_params)
+        {
+            for (auto hook : m_hooks)
+            {
+                (hook->*i_function)(i_params...);
+            }
+        }
+
     private:
         constexpr static int s_default_category = 2;
         constexpr static int s_page_category = 4;
         SharedBlockRegistry m_registry;
+        std::vector<IAllocatorHook*> m_hooks;
     };
 
     /* Allocators that meets the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
