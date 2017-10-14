@@ -24,8 +24,8 @@ if [ "$RUN" = "TRUE" ]; then
     density_test
 fi
 
-cd CMakeFiles/density_test.dir
+cd ../..
 if [ "$COVERAGE" = "TRUE" ]; then
     gcov-7 -version
-    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-l'
+    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
 fi
