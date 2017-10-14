@@ -53,5 +53,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_DEBUG $GCOV
+  - scripts/test.sh $TEST_RUN $TEST_DEBUG FALSE $GCOV
   - scripts/bench.sh $BENCH_RUN
