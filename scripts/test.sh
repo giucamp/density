@@ -2,15 +2,15 @@
 
 RUN=$1
 DEBUG=$2
-COVERAGE=$3
+GCOV=$3
 
-echo "RUN = $RUN, DEBUG = $DEBUG, COVERAGE = $COVERAGE"
+echo "RUN = $RUN, DEBUG = $DEBUG, GCOV = $GCOV"
 
 if [ "$DEBUG" = "TRUE" ]; then
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Debug"
 fi
 
-if [ "$COVERAGE" = "TRUE" ]; then
+if [ "$GCOV" != "" ]; then
     GCC_OPTIONS+=" -fprofile-arcs -ftest-coverage"
 fi
 
@@ -26,6 +26,6 @@ fi
 
 cd ../..
 if [ "$COVERAGE" = "TRUE" ]; then
-    gcov-7 -version
-    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
+    $GCOV -version
+    coveralls --verbose --gcov '$GCOV' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
 fi
