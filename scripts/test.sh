@@ -27,5 +27,5 @@ fi
 cd CMakeFiles/density_test.dir
 if [ "$COVERAGE" = "TRUE" ]; then
     gcov-7 -version
-    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-rl'
+    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-l'
 fi
