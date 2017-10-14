@@ -101,6 +101,7 @@
     <ClCompile Include="..\tests\user_data_stack.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">
@@ -232,6 +233,7 @@
     <ClInclude Include="..\..\density\detail\function_runtime_type.h">
       <Filter>density\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\test_settings.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

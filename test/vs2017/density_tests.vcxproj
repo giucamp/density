@@ -321,6 +321,7 @@
     <ClCompile Include="..\test_framework\test_allocators.cpp" />
     <ClCompile Include="..\test_framework\test_objects.cpp" />
     <ClCompile Include="..\test_framework\threading_extensions.cpp" />
+    <ClCompile Include="..\test_settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\conc_function_queue.h" />
@@ -366,6 +367,7 @@
     <ClInclude Include="..\test_framework\test_allocators.h" />
     <ClInclude Include="..\test_framework\test_objects.h" />
     <ClInclude Include="..\test_framework\threading_extensions.h" />
+    <ClInclude Include="..\test_settings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
