@@ -30,7 +30,7 @@ if [ "$RUN" = "TRUE" ]; then
 fi
 
 cd ../..
-if [ "$GCOV" != "" ]; then
-    $GCOV -version
-    coveralls --verbose --gcov '$GCOV' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
+if [ "$GCOV" == "gcov-7" ]; then
+    gcov-7 -version
+    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
 fi
