@@ -3,6 +3,12 @@ project (density_test)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
+
+IF(ENABLE_TEST_DATA_STACK)
+    ADD_DEFINITIONS(-DDENSITY_USER_DATA_STACK)
+ENDIF(ENABLE_TEST_DATA_STACK)
+
 include_directories(".")
 include_directories("../")
 
