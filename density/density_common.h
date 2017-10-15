@@ -836,24 +836,27 @@ Benchmarks
         The test program is in the directory 'test'. You can build it with cmake or Visual Studio 2017. It supports
         the following command line parameters:
 
-            -rand_seed:{32-bit unsigned integer} - default is zero. Seed used to initialize the main random generator.
+            - rand_seed:{32-bit unsigned integer} - default is zero. Seed used to initialize the main random generator.
                 If it is zero the random generator is initialized with <code>std::ranom_device</code>. In multi-thread test 
-                the random generator for the spawned threads is forked by the main one.
+                the random generator for the spawned threads is forked from the main one.
 
-            -exceptions:{0 or 1} - default is 1. If non-zero enables the testing of exceptional execution paths. This is
+            - exceptions:{0 or 1} - default is 1. If non-zero enables the testing of exceptional execution paths. This is
                 done using test allocators and test objects that throw an exception once in every point that may possibly
                 throw.
 
-            -spare_one_cpu:{0 or 1} - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
+            - spare_one_cpu:{0 or 1} - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
 
-            -test_allocators:{0 or 1} - default is 1. If non-zero enables special allocators that detect bugs in the memory 
+            - test_allocators:{0 or 1} - default is 1. If non-zero enables special allocators that detect bugs in the memory 
                 management. The tests with the normal allocators are executed in any case.
 
-            -queue_tests_cardinality:{size_t} - default is 1000. Number of elements to push in every queue tests. In multi-thread
+            - queue_tests_cardinality:{size_t} - default is 1000. Number of elements to push in every queue tests. In multi-thread
                 tests this number is partitioned among all threads.
 
         Example:
-            density_test -rand_seed:22 -exceptions:1 -spare_one_cpu:1 -test_allocators:1 -queue_tests_cardinality:2000
-                
+
+        ~~~~~~~~~~~~~~
+        density_test -rand_seed:22 -exceptions:1 -spare_one_cpu:1 -test_allocators:1 -queue_tests_cardinality:2000
+        ~~~~~~~~~~~~~~
+
         */
 } // namespace density
