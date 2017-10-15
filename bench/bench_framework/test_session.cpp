@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <algorithm>
 #ifdef _MSC_VER
     #include <time.h>
 #endif
@@ -26,7 +27,7 @@ namespace density_bench
             ProgressionCallback m_callback;
             std::chrono::high_resolution_clock::time_point m_next_callback_call;
             std::chrono::high_resolution_clock::duration m_callback_call_period =
-                std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::seconds(1));
+                std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::seconds(5));
 
             ProgressionUpdater(const char * i_label = "", ProgressionCallback i_callback = ProgressionCallback())
                 : m_callback(i_callback)
@@ -110,6 +111,18 @@ namespace density_bench
         private:
             TestConfig m_config;
         };
+
+        // https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+        std::string replace_all(std::string str, const std::string& from, const std::string& to)
+        {
+            size_t start_pos = 0;
+            while((start_pos = str.find(from, start_pos)) != std::string::npos)
+            {
+                str.replace(start_pos, from.length(), to);
+                start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+            }
+            return str;
+        }
 
     } // namespace detail
 
@@ -295,6 +308,62 @@ namespace density_bench
         {
             save_to_impl(i_path + node.name() + '/', node, i_ostream);
         }
+    }
+
+    void Results::print_summary(std::ostream & i_ostream)
+    {
+        struct TestAvgDuration
+        {
+            double m_avg_duration{0.};
+            double m_count{1.};
+        };
+        std::unordered_map<const PerformanceTest *, TestAvgDuration> tests;
+
+        // compute average duration
+        // http://stackoverflow.com/questions/1930454/what-is-a-good-solution-for-calculating-an-average-where-the-sum-of-all-values-e
+        for(const auto & result : m_performance_results)
+        {
+            auto & test_data = tests[result.first.m_test];
+
+            constexpr double mult = static_cast<double>(Duration::period::num) / static_cast<double>(Duration::period::den);
+            test_data.m_avg_duration += (result.second.count() * mult - test_data.m_avg_duration) / test_data.m_count;
+            test_data.m_count += 1.0;
+        }
+
+        m_test_tree.recursive_for_each_child([&tests, &i_ostream](const TestTree & i_test) {
+            for (const auto & group : i_test.performance_tests())
+            {
+                struct TestResult
+                {
+                    std::string m_code;
+                    double m_duration;
+                };
+
+                double max_duration = -1;
+                std::vector<TestResult> results;
+                for (const auto & test : group.tests())
+                {
+                    TestResult result;
+                    result.m_code = test.source_code();
+                    result.m_code = std::string("\t") + detail::replace_all(result.m_code, "#nl#", "\n\t");                    
+                    result.m_duration = tests[&test].m_avg_duration;
+                    max_duration = std::max(max_duration, result.m_duration);
+                    results.push_back(result);
+                }
+
+                std::sort(results.begin(), results.end(), [](const TestResult & i_first, const TestResult & i_second) {
+                    return i_first.m_duration >= i_second.m_duration;
+                });
+
+                i_ostream << "\n\n\n---------------------------------------\n";
+                for (auto const & result : results)
+                {
+                    double const duration_percentage = (result.m_duration / max_duration) * 100.;
+                    i_ostream << " * Duration: " << duration_percentage << "% (" << result.m_duration  << " secs)\n";
+                    i_ostream << result.m_code << "\n---------------------------------------\n";
+                }
+            }
+        });
     }
 
     Results run_session(const TestTree & i_test_tree, const TestConfig & i_config,

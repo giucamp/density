@@ -8,6 +8,7 @@
 #include "bench_framework/test_tree.h"
 #include "bench_framework/test_session.h"
 #include <iostream>
+#include <fstream>
 #include <chrono>
 
 namespace density_bench
@@ -16,8 +17,12 @@ namespace density_bench
     void lifo_tests(TestTree & i_tree);
 }
 
+bool touch_file(const char * i_file_name)
+{
+    return !std::ofstream(i_file_name).fail();
+}
 
-int main()
+int main(int argc, char *argv[])
 {
     using namespace density_bench;
 
@@ -26,6 +31,17 @@ int main()
     #endif
 
     std::cout << "density_bench - built on " __DATE__  " at " __TIME__ << std::endl;
+
+    const char * out_file = nullptr;
+    if (argc >= 2)
+    {
+        out_file = argv[1];
+        if (!touch_file(out_file))
+        {
+            std::cerr << "can't open for write the file " << out_file << std::endl;
+            return -1;
+        }
+    }   
 
     TestTree root("density");
     single_thread_tests(root);
@@ -42,5 +58,11 @@ int main()
     };
 
     auto result = run_session(root, TestConfig(), progression);
-    result.save_to("results.txt");
+
+    if (out_file != nullptr)
+    {
+        result.save_to(out_file);
+    }
+
+    result.print_summary(std::cout);
 }

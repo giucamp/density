@@ -33,6 +33,8 @@ namespace density_bench
         void save_to(const char * i_filename) const;
 
         void save_to(std::ostream & i_ostream) const;
+        
+        void print_summary(std::ostream & i_ostream);
 
     private:
         void save_to_impl(std::string i_path, const TestTree & i_test_tree, std::ostream & i_ostream) const;
