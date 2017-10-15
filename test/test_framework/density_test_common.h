@@ -9,6 +9,9 @@
 #include <string>
 #include <chrono>
 #include <density/void_allocator.h>
+#ifdef __GNUC__
+    #include <cxxabi.h>
+#endif
 
 #define DENSITY_TEST_ASSERT(expr)        if(!(expr)) density_tests::detail::assert_failed(__FILE__, __func__, __LINE__, #expr); else (void)0
 
@@ -17,9 +20,20 @@ namespace density_tests
     template <typename TYPE>
         std::string truncated_type_name(size_t i_max_size = 80)
     {
-        std::string name = typeid(TYPE).name();
+        #ifdef __GNUC__
+            int status = 0;
+            auto const demangled = abi::__cxa_demangle(typeid(TYPE).name(), 0, 0, &status);
+            std::string name = status == 0 ? demangled : typeid(TYPE).name();
+        #else
+            std::string name = typeid(TYPE).name();
+        #endif
+
         if (name.size() > i_max_size)
             name.resize(i_max_size);
+
+        #ifdef __GNUC__
+            free(demangled);
+        #endif
         return name;
     }
 

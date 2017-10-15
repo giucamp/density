@@ -178,7 +178,11 @@ int main(int argc, char **argv)
 {
     std::ostream & out = std::cout;
 
-    auto const settings = parse_settings(argc, argv);
+    out << "Density tests" << std::endl;
+    for (auto parameter = argv; *parameter != nullptr; parameter++)
+    {
+        out << "\t" << *parameter << std::endl;
+    }
 
     #if defined(NDEBUG)
         out << "NDEBUG: defined" << std::endl;
@@ -191,6 +195,8 @@ int main(int argc, char **argv)
     #else
         out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
     #endif
+
+    auto const settings = parse_settings(argc, argv);
 
     uint32_t random_seed = settings->m_rand_seed;
     while (random_seed == 0)
