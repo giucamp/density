@@ -9,34 +9,36 @@
 #include <utility> // for std::move
 #include <type_traits> // for std::aligned_storage and std::conditional
 
-/** \def DENSITY_ASSERT(bool_expr) assert used to detect user errors that causes undefined behavior */
+/*! \file */
+
+/** Assert used to detect user errors that causes undefined behavior */
 #if defined(NDEBUG)
     #define DENSITY_ASSERT DENSITY_ASSUME
 #else
     #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
 #endif
 
-/** \def DENSITY_ASSERT_INTERNAL(bool_expr) assert used to detect bugs of the library that causes undefined behavior */
+/** Assert used to detect bugs of the library that causes undefined behavior */
 #if defined(NDEBUG)
     #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
 #else
     #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
 #endif
 
-/** \def DENSITY_ASSERT_ALIGNED(address, alignment) macro used to enforce the alignment of a pointer as an invariant. */
+/** Macro used to enforce the alignment of a pointer as an invariant. */
 #define DENSITY_ASSERT_ALIGNED(address, alignment)      DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
 
-/** \def DENSITY_ASSERT_ALIGNED(uint, alignment) macro used to enforce the alignment of an unsigned integer as an invariant. */
+/** Macro used to enforce the alignment of an unsigned integer as an invariant. */
 #define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
-/** \def DENSITY_LIKELY(bool_expr) macro that tells the compiler that a condition is in most cases true. This is just an hint to the optimizer. */
+/** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
 #if defined( __clang__ )
     #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
 #else
     #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
 #endif
 
-/** \def DENSITY_ASSERT_INTERNAL macro used in some circumstances to avoid inlining of a function, for
+/** Macro used in some circumstances to avoid inlining of a function, for
         example because the call handles a somewhat rare slow path. */
 #ifdef _MSC_VER
     #define DENSITY_NO_INLINE                           __declspec(noinline)
@@ -44,14 +46,14 @@
     #define DENSITY_NO_INLINE
 #endif
 
-/** \def DENSITY_CHECKING_ASSERT(bool_expr) assert that on failure should cause an halt of the program. Used only locally in this header. */
+/** Assert that on failure should cause an halt of the program. Used only locally in this header. */
 #ifdef _MSC_VER
     #define DENSITY_CHECKING_ASSERT(bool_expr)          if(!(bool_expr)) { __debugbreak(); } else (void)0
 #else
     #define DENSITY_CHECKING_ASSERT(bool_expr)          assert((bool_expr))
 #endif
 
-/** \def DENSITY_ASSUME(bool_expr) macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
+/** Macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
 #if defined( __clang__ )
     #define DENSITY_ASSUME(bool_expr)                   _Pragma("clang diagnostic push")\
                                                         _Pragma("clang diagnostic ignored \"-Wassume\"")\

@@ -25,7 +25,7 @@ int main()
         std::cout << "WARNING: this is a debug build!" << std::endl;
     #endif
 
-    std::cout << "density_bench\n" << std::endl;
+    std::cout << "density_bench - built on " __DATE__  " at " __TIME__ << std::endl;
 
     TestTree root("density");
     single_thread_tests(root);
