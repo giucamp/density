@@ -106,7 +106,7 @@ namespace density_tests
     {
     public:
 
-        // to do: find a better one
+        // to do: find a better fill byte
         constexpr static unsigned char s_fill_byte = static_cast<unsigned char>(SIZE & std::numeric_limits<unsigned char>::max());
 
         TestObject()

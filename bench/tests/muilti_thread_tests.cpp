@@ -1,4 +1,10 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+
 #include <density/function_queue.h>
 #include <density/conc_function_queue.h>
 #include <density/lf_function_queue.h>
@@ -14,12 +20,12 @@ namespace density_bench
     void multi_thread_tests(TestTree & i_tree)
     {
         PerformanceTestGroup group("multi_thread", "");
-       
+
         using namespace density;
 
         group.add_test(BENCH_MAKE_TEST(i_cardinality,
             conc_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -31,7 +37,7 @@ namespace density_bench
 
         group.add_test(BENCH_MAKE_TEST(i_cardinality,
             lf_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -43,7 +49,7 @@ namespace density_bench
 
         group.add_test(BENCH_MAKE_TEST(i_cardinality,
             sp_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 

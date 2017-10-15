@@ -3,8 +3,16 @@ project (density_test)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
+
+IF(ENABLE_TEST_DATA_STACK)
+    ADD_DEFINITIONS(-DDENSITY_USER_DATA_STACK)
+ENDIF(ENABLE_TEST_DATA_STACK)
+
 include_directories(".")
 include_directories("../")
+
+SET(COMPILER_EXTRA "" CACHE STRING "additional compiler options")
 
 # the compiler used for C++ files 
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
@@ -33,6 +41,7 @@ add_executable(density_test
 	tests/load_unload_tests.cpp
 	tests/sp_heterogeneous_queue_basic_tests.cpp
 	tests/lifo_tests.cpp
+    tests/user_data_stack.cpp
 	test_framework/density_test_common.cpp
 	test_framework/dynamic_type.cpp
 	test_framework/exception_tests.cpp
@@ -43,15 +52,16 @@ add_executable(density_test
 	test_framework/test_allocators.cpp
 	test_framework/test_objects.cpp
 	test_framework/threading_extensions.cpp
+    test_settings.cpp
 	main.cpp )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	MESSAGE( STATUS "will compile with clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "will compile with g++")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "will compile with msvc")

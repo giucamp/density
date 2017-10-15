@@ -120,7 +120,7 @@ namespace density_tests
             }
 
             auto const num_of_processors = get_num_of_processors();
-            bool reserve_core1_to_main = (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
+            bool const reserve_core1_to_main = (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
 
             for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
             {

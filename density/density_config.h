@@ -69,7 +69,7 @@ namespace density
 
         This is a configuration variable, intended to be customized by the user of the library. The default value is 64.
 
-        If a C++17 compiler is available, this constant may be defined as 
+        If a C++17 compiler is available, this constant may be defined as
         [std::hardware_destructive_interference_size](http://en.cppreference.com/w/cpp/thread/hardware_destructive_interference_size). */
     constexpr size_t concurrent_alignment = 64;
 
@@ -88,9 +88,25 @@ namespace density
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
         class basic_void_allocator;
 
-    /** Allocator type the data stack is built upon. It must meet the requirements of both \ref UntypedAllocator_concept "UntypedAllocator" 
+    /** Allocator type the data stack is built upon. It must meet the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" */
     using data_stack_underlying_allocator = basic_void_allocator<default_page_capacity>;
+
+    /** \def DENSITY_USER_DATA_STACK If defined enables the user data stack. */
+    #ifdef DENSITY_USER_DATA_STACK
+        namespace user_data_stack
+        {
+            constexpr size_t alignment = alignof(void*);
+
+            void * allocate(size_t i_size);
+
+            void * allocate_empty() noexcept;
+
+            void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size);
+
+            void deallocate(void * i_block, size_t i_size) noexcept;
+        }
+    #endif
 
     /* Very minimal implementation of std::optional, that can be used as target for density::optional. */
     template <typename TYPE>

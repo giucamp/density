@@ -52,12 +52,12 @@ namespace density_tests
             for (size_t i = 0; i < id_map_size; i++)
             {
                 #if defined(__GLIBCXX__)
-                    // some versions of libstdc++ lack std::atomic_init 
+                    // some versions of libstdc++ lack std::atomic_init
                     m_id_map[i].store(0);
                 #else
                     std::atomic_init(&m_id_map[i], static_cast<int8_t>(0));
                 #endif
-            }                
+            }
         }
 
         // copy not allowed
@@ -169,7 +169,7 @@ namespace density_tests
         struct Stats
         {
             Stats() noexcept { }
-            
+
             std::atomic<size_t> m_consumed{ 0 };
             std::atomic<size_t> m_produced{ 0 };
 

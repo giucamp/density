@@ -279,6 +279,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\bench_framework\environment.cpp" />
     <ClCompile Include="..\bench_framework\performance_test.cpp" />
     <ClCompile Include="..\bench_framework\test_session.cpp" />
     <ClCompile Include="..\bench_framework\test_tree.cpp" />
@@ -288,6 +289,7 @@
     <ClCompile Include="..\tests\single_thread_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\bench_framework\environment.h" />
     <ClInclude Include="..\bench_framework\performance_test.h" />
     <ClInclude Include="..\bench_framework\test_session.h" />
     <ClInclude Include="..\bench_framework\test_tree.h" />
