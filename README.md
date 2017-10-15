@@ -1,6 +1,8 @@
-[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)
-[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density)
-[![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg)](https://coveralls.io/github/giucamp/density)
+
+branch          |build status
+--------------- |------------------
+master|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density) [![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density) [![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg?branch=master)](https://coveralls.io/github/giucamp/density?branch=master)
+develop|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=develop)](https://travis-ci.org/giucamp/density)[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct/branch/develop?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density/branch/develop)[![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg?branch=develop)](https://coveralls.io/github/giucamp/density?branch=develop)
 
 Density is a C++11 header-only library focused on paged memory management and concurrency, providing:
 
@@ -34,7 +36,11 @@ This library is tested against these compilers:
 
 ## How to...
 To use the library, just download or clone the repository, and then copy the directory "density" in your include paths. The library is composed only by headers, so there is nothing to build. The directory doc contains the html documentation.
-In the test directory there is a test program you you can build with cmake or Visual Studio 2017.
+
+In the test directory there is a test program that you can build with cmake or Visual Studio 2017. Read [here](http://giucamp.github.io/density/doc/html/test_bench.html) for the details.
+
 In the bench directory there is a benchmark program you you can build with cmake or Visual Studio 2017.
+
+[This document](http://giucamp.github.io/density/doc/html/implementation.pdf) describes the implementation of the library.
 
 <a href="mailto:giu.campana@gmail.com">[give feedback]</a>
