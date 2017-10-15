@@ -9,7 +9,7 @@
 #include <string>
 #include <chrono>
 #include <density/void_allocator.h>
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_MSC_VER)
     #include <cxxabi.h>
 #endif
 
@@ -20,7 +20,7 @@ namespace density_tests
     template <typename TYPE>
         std::string truncated_type_name(size_t i_max_size = 80)
     {
-        #ifdef __GNUC__
+        #if defined(__GNUC__) && !defined(_MSC_VER)
             int status = 0;
             auto const demangled = abi::__cxa_demangle(typeid(TYPE).name(), 0, 0, &status);
             std::string name = status == 0 ? demangled : typeid(TYPE).name();
@@ -31,7 +31,7 @@ namespace density_tests
         if (name.size() > i_max_size)
             name.resize(i_max_size);
 
-        #ifdef __GNUC__
+        #if defined(__GNUC__) && !defined(_MSC_VER)
             free(demangled);
         #endif
         return name;
