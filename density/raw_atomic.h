@@ -284,7 +284,7 @@ namespace density
         #endif
 
     #elif defined(__GNUG__) // gcc and clang
-    
+
         namespace detail
         {
             inline int mem_order_cnv(std::memory_order i_order)
@@ -304,10 +304,10 @@ namespace density
                     case std::memory_order_seq_cst:
                     default:
                         return __ATOMIC_SEQ_CST;
-                }                
-            }            
+                }
+            }
         }
-        
+
         inline uintptr_t raw_atomic_load(uintptr_t const * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
@@ -327,14 +327,14 @@ namespace density
         {
             DENSITY_ASSERT_ALIGNED((void*)i_atomic, alignof(decltype(i_atomic)));
 
-            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false, 
+            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, false,
                 detail::mem_order_cnv(i_success), detail::mem_order_cnv(i_failure));
         }
 
         inline bool raw_atomic_compare_exchange_weak(uintptr_t * i_atomic,
             uintptr_t * i_expected, uintptr_t i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept
         {
-            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, true, 
+            return __atomic_compare_exchange_n(i_atomic, i_expected, i_desired, true,
                 detail::mem_order_cnv(i_success), detail::mem_order_cnv(i_failure));
         }
 

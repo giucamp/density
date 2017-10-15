@@ -157,7 +157,7 @@ namespace density
 
                 /** Sum of the sizes (in bytes) of all the memory regions in the list up to this one */
                 uintptr_t m_cumulative_available_memory{ 0 };
-                
+
                 Region() noexcept { }
                 Region(const Region &) = delete;
                 Region & operator = (const Region &) = delete;

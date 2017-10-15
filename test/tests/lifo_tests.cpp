@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -30,7 +30,7 @@ namespace density_tests
         virtual bool resize(std::mt19937 & i_random) = 0;
         virtual ~ILifoTestItem() = default;
     };
-    
+
     template <typename TYPE>
         class LifoArrayWithBackup : public ILifoTestItem
     {
@@ -56,7 +56,7 @@ namespace density_tests
         }
 
         bool resize(std::mt19937 & /*i_random*/) override
-        { 
+        {
             return false;
         }
 
@@ -87,7 +87,7 @@ namespace density_tests
         }
 
         bool resize(std::mt19937 & /*i_random*/) override
-        { 
+        {
             return false;
         }
 
@@ -113,9 +113,9 @@ namespace density_tests
         LifoBufferWithBackup(const CONTENT_GENERATOR & i_content_generator, size_t i_size)
             : m_content_generator(i_content_generator), m_buffer(i_size)
         {
-            auto const buffer_bytes = static_cast<unsigned char*>( m_buffer.data() ); 
+            auto const buffer_bytes = static_cast<unsigned char*>( m_buffer.data() );
             std::generate(buffer_bytes, buffer_bytes + i_size, m_content_generator);
-            
+
             m_backup.insert(m_backup.end(),
                 static_cast<unsigned char*>(m_buffer.data()),
                 static_cast<unsigned char*>(m_buffer.data()) + m_buffer.size() );
@@ -139,7 +139,7 @@ namespace density_tests
             if (old_size < new_size)
             {
                 // generate new content
-                auto const buffer_bytes = static_cast<unsigned char*>( m_buffer.data() ); 
+                auto const buffer_bytes = static_cast<unsigned char*>( m_buffer.data() );
                 std::generate(buffer_bytes + old_size, buffer_bytes + new_size, m_content_generator);
                 memcpy(m_backup.data() + old_size, buffer_bytes + old_size, new_size - old_size);
             }
@@ -164,7 +164,7 @@ namespace density_tests
         static std::unique_ptr<ILifoTestItem> make_int_array_test(std::mt19937 & i_random)
         {
             auto const size = std::uniform_int_distribution<size_t>(0, 0xFFF)(i_random);
-            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<int>(size, 
+            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<int>(size,
                 [&i_random] { return std::uniform_int_distribution<int>(0, 1000)(i_random); }
             ));
         }
@@ -173,7 +173,7 @@ namespace density_tests
         static std::unique_ptr<ILifoTestItem> make_string_array_test(std::mt19937 & i_random)
         {
             auto const size = std::uniform_int_distribution<size_t>(0, 0xFFF)(i_random);
-            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<std::string>(size, 
+            return std::unique_ptr<ILifoTestItem>(new LifoArrayWithBackup<std::string>(size,
                 [&i_random] { return std::string("This is a very long string..."); }
             ));
         }
@@ -189,7 +189,7 @@ namespace density_tests
         // test lifo_buffer(size)
         static std::unique_ptr<ILifoTestItem> make_buffer_test(std::mt19937 & i_random)
         {
-            auto content_generator = [&i_random] { 
+            auto content_generator = [&i_random] {
                 auto const result = std::uniform_int_distribution<unsigned>(0, std::numeric_limits<unsigned char>::max())(i_random);
                 return static_cast<unsigned char>(result);
             };
@@ -202,7 +202,7 @@ namespace density_tests
         // test lifo_buffer()
         static std::unique_ptr<ILifoTestItem> make_empty_buffer_test(std::mt19937 & i_random)
         {
-            auto content_generator = [&i_random] { 
+            auto content_generator = [&i_random] {
                 auto const result = std::uniform_int_distribution<unsigned>(0, std::numeric_limits<unsigned char>::max())(i_random);
                 return static_cast<unsigned char>(result);
             };
@@ -213,7 +213,7 @@ namespace density_tests
         /** \internal Function that for 'i_residual_depth' times calls itself recursively multiple times, or one
             time after reaching the depth 'i_residual_fork_depth'. On every call it creates a lifo tests, that is
             an object implementing ILifoTestItem, optionally resizing it.
-            
+
             @param i_random random generator to se for the tests
             @param i_residual_depth depth to reach in recursion
             @param i_residual_fork_depth below this depth, this function invokes itself multiple times, forking every time,
@@ -239,7 +239,7 @@ namespace density_tests
 
                 if(i_residual_depth > 0)
                 {
-                    recursive_test(i_random, i_residual_depth - 1, 
+                    recursive_test(i_random, i_residual_depth - 1,
                         i_residual_fork_depth > 0 ? i_residual_fork_depth - 1 : 0);
                 }
 
@@ -251,13 +251,13 @@ namespace density_tests
     };
 
     /** \internal Thread procedure used for lifo tests */
-    void lifo_test_thread_proc(QueueTesterFlags i_flags, EasyRandom & i_random, 
+    void lifo_test_thread_proc(QueueTesterFlags i_flags, EasyRandom & i_random,
         size_t i_depth, size_t i_fork_depth)
     {
         const auto & std_rand = i_random.underlying_rand();
 
         // local function that executes the tests
-        auto do_tests = [&std_rand, i_depth, i_fork_depth]{            
+        auto do_tests = [&std_rand, i_depth, i_fork_depth]{
             auto rand_copy = std_rand;
             RecursiveLifoTests::recursive_test(rand_copy, i_depth, i_fork_depth);
         };
@@ -319,12 +319,12 @@ namespace density_tests
             thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth, start_time]{
 
                 set_thread_affinity(affinity_mask);
-                
+
                 lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
 
                 using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
                 auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - start_time);
-                
+
                 std::ostringstream label;
                 label << "thread " << thread_index << " has finished after " << elapsed.count() << " secs\n";
                 i_output << label.str();

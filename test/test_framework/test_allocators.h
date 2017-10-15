@@ -37,7 +37,7 @@ namespace density_tests
 
         virtual void on_deallocating_page(void * i_page) = 0;
 
-        virtual ~IAllocatorHook() = default;        
+        virtual ~IAllocatorHook() = default;
     };
 
     /** A thread can instance this class on the automatic storage to cause try_* allocations

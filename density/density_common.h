@@ -412,7 +412,7 @@ namespace density
         #endif
 
         // internal macro - rethrows disabling the warning "function assumed not to throw an exception but does"
-        #ifdef _MSC_VER        
+        #ifdef _MSC_VER
             #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
                 __pragma(warning(push)) \
                 __pragma(warning(disable:4297)) \
@@ -575,8 +575,8 @@ namespace density
 
     /*!
 
-    \page intro Intro
-    
+    \mainpage overview Overview
+
 Density Overview
 ----------------
 Density is a C++11 header-only library focused on paged and lifo memory management, concurrency, and exception safeness.
@@ -589,10 +589,10 @@ locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc
 lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_hetr_queue](\ref density::lf_hetr_queue)|configurable|configurable
 spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_hetr_queue](\ref density::sp_hetr_queue)|configurable|configurable
 
-All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration, 
+All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration,
 or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
 
-density provides a lifo_allocator built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly 
+density provides a lifo_allocator built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly
 the [same performance](\ref lifo_array_benchmarks) of the unsafe, C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html).
 The data stack can only be used indirectly with lifo_array and lifo_buffer.
 
@@ -605,26 +605,24 @@ This library is tested against these compilers:
 
 <a name="lifo">The data stack</a>
 --------------
-The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may 
+The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may
 reallocate or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
 The data stack is actually composed by a set of memory pages and an internal thread-local pointer (the top of the stack).
 There is no size-overhead. Allocations just add the size to allocate to the top pointer, and deallocations set the top pointer to the
 block to deallocate. In case of page switch, a branch is taken to a non-inlined slow path.
-The data stack has constant initialization and trivial destruction, so it can't slow down thread creation and destruction and does not
-require dynamic any initialization guard by the compiler. 
-Empty data stacks don't consume any memory page, so it does not have a cost for threads not using it. The first time a thread uses the
-data stack, it takes the slow path and it allocates a memory page.
+The data stack has constant initialization, so it doesn't slow down thread creation or require dynamic any initialization guard 
+by the compiler on access. The first time a thread uses the data stack, it takes the slow path and it allocates a memory page.
 
 The data stack can be accessed only indirectly, with [lifo_array](\ref density::lifo_array) and [lifo_buffer](\ref density::lifo_buffer).
 
-<code>%lifo_array</code> is the easiest and safest way of using the data stack. A <code>%lifo_array</code> is very 
-similar to a raw array, but its size is not a compile time constant. The elements are not allocated on the callstack, so there is no 
+<code>%lifo_array</code> is the easiest and safest way of using the data stack. A <code>%lifo_array</code> is very
+similar to a raw array, but its size is not a compile time constant. The elements are not allocated on the callstack, so there is no
 risk of stack overflow. In case of out of memory, a <code>std::bad_alloc</code> is thrown.
 
 \snippet lifo_examples.cpp lifo_array example 1
 
-To avoid breaking the lifo constraint and consequently having the undefined behavior, <code>%lifo_array</code>s should be instantiated 
-only in the automatic storage (locally in a function or function block). Following this simple rule there is no way to way to break the 
+To avoid breaking the lifo constraint and consequently having the undefined behavior, <code>%lifo_array</code>s should be instantiated
+only in the automatic storage (locally in a function or function block). Following this simple rule there is no way to way to break the
 lifo constraint.
 
 Actually it is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint is not broken.
@@ -635,7 +633,7 @@ are constructed. Anyway this may be dangerous, so it's not recommended.
 
 <code>%lifo_array</code> is an alternative to the c-ish and unsafe [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and
 has nearly the [same performances](\ref lifo_array_benchmarks).
-Just like built-in arrays and <code>std::array</code>, <code>%lifo_array</code> does not initialize elements if they have 
+Just like built-in arrays and <code>std::array</code>, <code>%lifo_array</code> does not initialize elements if they have
 [POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c). This is a big difference with <code>std::vector</code>.
 
 A <code>lifo_buffer</code> allocates on the data stack an untyped raw memory block with dynamic size. Unlike <code>%lifo_array</code> it supports
@@ -659,7 +657,7 @@ Any callable object can be pushed on the queue: a lambda, the result of an `std:
 
 \snippet misc_examples.cpp function_queue example 3
 
-All queues in density have a very simple implementation: a *tail pointer*, an *head pointer*, and a set of memory pages. Paging is a kind of quantization of memory: all pages have a fixed size (by default slightly less than 64 kibibyte) and a fixed alignment (by default 64 kibibyte), so that the allocator can be simple and efficient. 
+All queues in density have a very simple implementation: a *tail pointer*, an *head pointer*, and a set of memory pages. Paging is a kind of quantization of memory: all pages have a fixed size (by default slightly less than 64 kibibyte) and a fixed alignment (by default 64 kibibyte), so that the allocator can be simple and efficient.
 Values are arranged in the queue by *linear allocation*: allocating a value means just adding its size to the tail pointer. If the new tail pointer would point outside the last page, a new page is allocated, and the linear allocation is performed from there. In case of very huge values, only a pointer is allocated in the pages, and the actual storage for the value is allocated in the heap.
 
 
@@ -687,10 +685,10 @@ Internally instant puts are implemented in terms of transactional puts, so there
     // ... = omissis\n
     template <...> void emplace(...)\n
     {\n
-    	start_emplace(...).commit();\n
+        start_emplace(...).commit();\n
     }\n
 </code>
-  
+
 
 Consume operations have the `start_*` variant in heterogeneous queues (but not in function queues). Anyway this operation is not a transaction, as the element disappears from the queue when the operation starts, and will reappear if the operation is canceled.
 
@@ -736,7 +734,7 @@ There is no functional difference between the two consumes. Anyway,
 currently only for lock-free and spin-locking queues supporting multi-producers, the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer is reading it.
 When a consumer needs to access a page, it increments a ref-count in the page (it *pins* the page), to notify to the allocator that it is using it. When it has finished, the consumer decrements the ref-count (it *unpins* the page).
 If a thread performs many consecutive consumes, it will ends up doing many atomic increments and decrements of the same page (that is a somewhat expensive operation). Since pin\unpin logic is encapsulated in the consume_operation, if the consumer thread keeps the consume_operation alive, pinning and unpinning will be performed only in case of page switch.
-Note: a forgotten consume_operation which has pinned a page prevents the page from being recycled by the page allocator, even if it was deallocated by other consumers.  
+Note: a forgotten consume_operation which has pinned a page prevents the page from being recycled by the page allocator, even if it was deallocated by other consumers.
 
 Heterogeneous queues
 --------------------
@@ -803,15 +801,15 @@ Benchmarks
         In the first test the function queues of density are instantiated with the default template parameters.
         In the second test they exploit all the available optimizations, that is:
 
-        - \ref function_manual_clear, so that every element is actually a single pointer (plus an internal overhead pointer). 
+        - \ref function_manual_clear, so that every element is actually a single pointer (plus an internal overhead pointer).
         - \ref concurrency_single, when it's applicable
         - \ref consistency_relaxed, when it's applicable
 
         Summary of the results
         ----------
-        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 
-        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation 
-        with a given cardinality, and every invocation occurs 8 times. 
+        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz,
+        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation
+        with a given cardinality, and every invocation occurs 8 times.
 
 
         Even unnecessarily paying the cost of multithreading, concurrent function queues are in general better than <code>std::queue</code> of <code>std::function</code>.
@@ -822,11 +820,40 @@ Benchmarks
         ----------
 
         \image html func_queue_st_b1.png
-        
+
         Results of the second test
         ----------
 
         \image html func_queue_st_b2.png
     */
 
+    /*! \page test_bench
+
+        Running the tests
+        ----------
+        ----------
+
+        The test program is in the directory 'test'. You can build it with cmake or Visual Studio 2017. It supports
+        the following command line parameters:
+
+            -rand_seed:{32-bit unsigned integer} - default is zero. Seed used to initialize the main random generator.
+                If it is zero the random generator is initialized with <code>std::ranom_device</code>. In multi-thread test 
+                the random generator for the spawned threads is forked by the main one.
+
+            -exceptions:{0 or 1} - default is 1. If non-zero enables the testing of exceptional execution paths. This is
+                done using test allocators and test objects that throw an exception once in every point that may possibly
+                throw.
+
+            -spare_one_cpu:{0 or 1} - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
+
+            -test_allocators:{0 or 1} - default is 1. If non-zero enables special allocators that detect bugs in the memory 
+                management. The tests with the normal allocators are executed in any case.
+
+            -queue_tests_cardinality:{size_t} - default is 1000. Number of elements to push in every queue tests. In multi-thread
+                tests this number is partitioned among all threads.
+
+        Example:
+            density_test -rand_seed:22 -exceptions:1 -spare_one_cpu:1 -test_allocators:1 -queue_tests_cardinality:2000
+                
+        */
 } // namespace density

@@ -15,13 +15,13 @@ namespace density
     namespace detail
     {
         /** Class template implementing an easy, safe and efficient singleton.
-            
+
             SingletonPtr is an empty class template with pointer semantics. Instances are immutable and always non-null.
             The construction/destruction of the target singleton is thread safe, and happens always during the construction/destruction
             of globals. The target singleton is allocated in a fixed static (properly aligned) storage.
-            
+
             The access to the singleton (operators * and ->, function get) is basically a no-op, as it returns the address
-            of the static storage: no initialization guard is necessary. All the cost of handling the (thread synchronized) lifetime of 
+            of the static storage: no initialization guard is necessary. All the cost of handling the (thread synchronized) lifetime of
             the singleton is paid in the constructor and destructor.
 
             Internally SingletonPtr declares a static instance of itself, to guarantee that the singleton is constructed during

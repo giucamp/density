@@ -462,7 +462,7 @@ namespace density
                         DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
                         DENSITY_ASSERT_INTERNAL(new_tail != nullptr);
                         m_tail = new_tail;
-                        
+
                         return Block{ control_block, next_ptr, user_storage };
                     }
                     else if (can_fit_in_a_page) // if this allocation may fit in a page

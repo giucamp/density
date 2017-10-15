@@ -74,7 +74,7 @@ namespace density_tests
     using QueueOfInvokables = heter_queue<void, runtime_type<void, MyFeatures>, void_allocator >;
     QueueOfInvokables my_queue;
     my_queue.push([](std::string s) { std::cout << s << std::endl; });
-    
+
     // invoke my_queue.begin()
     my_queue.begin()->first.get_feature<MyInvoke>()(my_queue.begin()->second, "hello!");
             //! [type_features::invoke example 1]

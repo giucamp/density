@@ -1,4 +1,10 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+
 #include <density/function_queue.h>
 #include <density/conc_function_queue.h>
 #include <density/lf_function_queue.h>
@@ -14,12 +20,12 @@ namespace density_bench
     void single_thread_tests_1(TestTree & i_tree)
     {
         PerformanceTestGroup group("func_queue_st_b1", "");
-       
+
         using namespace density;
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -31,7 +37,7 @@ namespace density_bench
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             conc_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -43,7 +49,7 @@ namespace density_bench
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             lf_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -55,7 +61,7 @@ namespace density_bench
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
             sp_function_queue<void()> queue;
-            size_t i = 0; 
+            size_t i = 0;
             for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -69,7 +75,7 @@ namespace density_bench
             std::vector<std::function<void()>> queue;
             for (size_t i = 0; i < i_cardinality; i++)
                 queue.push_back([] { volatile int u = 0; (void)u; });
-            
+
             for (size_t i = 0; i < i_cardinality; i++)
                 queue[i]();
             queue.clear();
@@ -93,7 +99,7 @@ namespace density_bench
     void single_thread_tests_2(TestTree & i_tree)
     {
         PerformanceTestGroup group("func_queue_st_b2", "");
-       
+
         using namespace density;
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
@@ -130,7 +136,7 @@ namespace density_bench
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            sp_function_queue<void(), void_allocator, function_manual_clear, 
+            sp_function_queue<void(), void_allocator, function_manual_clear,
                 concurrency_single, concurrency_single> queue;
             size_t i = 0; for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
@@ -145,7 +151,7 @@ namespace density_bench
             std::vector<std::function<void()>> queue;
             for (size_t i = 0; i < i_cardinality; i++)
                 queue.push_back([] { volatile int u = 0; (void)u; });
-            
+
             for (size_t i = 0; i < i_cardinality; i++)
                 queue[i]();
             queue.clear();

@@ -17,18 +17,18 @@ namespace density
 
         @tparam UNDERLYING_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
             of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
+        @tparam ALIGNMENT Alignment of the blocks. It must be non-zero and a power of 2.
 
-        A lifo_allocator allocates memory pages from the underlying allocator to provide lifo memory management to the user.
-        It is designed to be efficient, so it does not provide an high-level service to be used directly. All blocks are aligned
-        to the constant value \ref alignment, and the size of the requested blocks must be a multiple of it.
-        Deallocation and reallocation functions require the caller to specify the size of the block.
+        A lifo_allocator uses memory pages allocated from the underlying allocator to provide lifo memory management to the user.
+        It is designed to be efficient, so it does not provide an high-level service. All blocks has the
+        same alignment (specified by the template argument), and the size of the requested blocks must be a multiple of it.
+        Deallocation and reallocation functions require the caller to specify the current size of the block.
         Block sizes bigger than the size of a page are handled with legacy heap allocations.
 
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
-        All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.        
         Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior.
-        Instances of lifo_allocator are not interchangeable: blocks allocated by an instance can't be deallocated with another 
-        instance.
+        Instances of lifo_allocator are not interchangeable: blocks allocated by an instance can't be deallocated with another
+        instance. All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.
 
         lifo_allocator is a stateful class template (it has non-static data members). It is uncopyable, unmovable and incomparable.
 
@@ -36,9 +36,9 @@ namespace density
 
         Implementation notes
         --------------------------
-        A block allocation or deallocation requires only a few ALU instructions and a branch to a 
+        A block allocation or deallocation requires only a few ALU instructions and a branch to a
         slow path, that is taken whenever a page switch occurs. The internal state of the allocator is composed by a pointer,
-        that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack, 
+        that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack,
         without altering the state of the allocator.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
     template <typename UNDERLYING_ALLOCATOR = void_allocator, size_t ALIGNMENT = alignof(void*)>
@@ -46,10 +46,12 @@ namespace density
     {
     public:
 
+        static_assert(ALIGNMENT > 0 && is_power_of_2(ALIGNMENT), "ALIGNMENT must be a power of 2");
+
         /** Alias for the template argument UNDERLYING_ALLOCATOR */
         using underlying_allocator = UNDERLYING_ALLOCATOR;
 
-        /** Alignment of the memory blocks. The value is implementation defined */
+        /** Alias for the template argument ALIGNMENT */
         static constexpr size_t alignment = ALIGNMENT;
 
         // compile time checks
@@ -68,7 +70,7 @@ namespace density
 
         /** Copy construction not allowed */
         lifo_allocator(const lifo_allocator &) = delete;
-        
+
         /** Copy assignment not allowed */
         lifo_allocator & operator = (const lifo_allocator &) = delete;
 
@@ -97,23 +99,23 @@ namespace density
                 DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = reinterpret_cast<void*>(m_top);
                 m_top = new_top;
-                return new_block;                
+                return new_block;
             }
         }
 
         /** Allocates a block with size 0.
-        
+
             This function is equivalent to allocate(0), but it is much faster and never throws.
-            The returned block can be reallocated and deallocated. 
-            
-            This function is useful to initialize block owners to an empty state in a noexcept 
+            The returned block can be reallocated and deallocated. @
+
+            This function is useful to initialize block owners to an empty state in a noexcept
             context, without introducing the nullptr special case. The implementation
-            of the default constructor of \ref lifo_buffer uses this function. 
+            of the default constructor of \ref lifo_buffer uses this function.
 
             \b Throws: nothing.
-            
+
             <i>Implementation notes</i>: this function just returns the top of the stack, without altering the state of the allocator.
-            
+
             \snippet lifo_examples.cpp lifo_allocator allocate_empty 2 */
         void * allocate_empty() noexcept
         {
@@ -167,7 +169,7 @@ namespace density
             {
                 // the following call sets the top only when it is sure to not throw
                 auto const new_block = set_top_and_allocate(i_block, i_new_size);
-                
+
                 copy(i_block, i_old_size, new_block, i_new_size);
                 return new_block;
             }
@@ -180,9 +182,9 @@ namespace density
 
                     // the following call sets the top only when it is sure to not throw
                     auto const new_block = set_top_and_allocate(i_block, i_new_size);
-                                
+
                     copy(i_block, i_old_size, new_block, i_new_size);
-                    
+
                     UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
                     return new_block;
                 }
@@ -229,7 +231,7 @@ namespace density
         {
             return i_size < UNDERLYING_ALLOCATOR::page_size;
         }
-        
+
     private:
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
@@ -321,8 +323,8 @@ namespace density
 
     private:
         static constexpr uintptr_t s_virgin_top = uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment);
-        uintptr_t m_top = s_virgin_top; /**< pointer to the top of the stack. 
-                                            This variable is an integer to allow constant initialization 
+        uintptr_t m_top = s_virgin_top; /**< pointer to the top of the stack.
+                                            This variable is an integer to allow constant initialization
                                             (reinterpret_cast can't be used in compile time evaluations). */
     };
 
@@ -348,7 +350,7 @@ namespace density
                 {
                     return s_allocator.allocate_empty();
                 }
-            
+
                 static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
                 {
                     return s_allocator.reallocate(i_block, i_old_size, i_new_size);
@@ -367,7 +369,7 @@ namespace density
 
             public:
                 static constexpr size_t alignment = user_data_stack::alignment;
-                
+
                 static void * allocate(size_t i_size)
                 {
                     return user_data_stack::allocate(i_size);
@@ -377,7 +379,7 @@ namespace density
                 {
                     return user_data_stack::allocate_empty();
                 }
-            
+
                 static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
                 {
                     return user_data_stack::reallocate(i_block, i_old_size, i_new_size);
@@ -401,17 +403,17 @@ namespace density
     /** Class that allocates a memory block from the thread-local data stack, and owns it. The block
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
-        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
-        internal lifo allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
+        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
         as the language guarantees destruction in reverse order, even inside arrays or aggregate types.
 
-        lifo_buffer provides a low-level service, as it allocates untyped raw memory. It allows resizing preserving 
+        lifo_buffer provides a low-level service, as it allocates untyped raw memory. It allows resizing preserving
         the content, but it does so memcpy'ng the content when the address of the block changes.
 
-        A thread may resize a lifo_buffer only if it is the most recently instantiated lifo_buffer or lifo_array, otherwise 
+        A thread may resize a lifo_buffer only if it is the most recently instantiated lifo_buffer or lifo_array, otherwise
         the behavior is undefined.
 
         \snippet lifo_examples.cpp lifo_buffer example 1 */
@@ -447,9 +449,9 @@ namespace density
             detail::ThreadLifoAllocator<>::deallocate(m_data, uint_upper_align(m_size, alignment));
         }
 
-        /** Changes the size of the block, preserving its existing content. 
+        /** Changes the size of the block, preserving its existing content.
             If the buffer grows (the new size is bigger than the previous one) the new content has undefined content.
-        
+
             @param i_new_size size in bytes of the memory block.
             @return the new address of the block
 
@@ -462,8 +464,8 @@ namespace density
         void * resize(size_t i_new_size)
         {
             /* we must allocate before updating any data member, so that in case of exception no change remains */
-            auto const block = m_data = detail::ThreadLifoAllocator<>::reallocate(m_data, 
-                uint_upper_align(m_size, alignment), 
+            auto const block = m_data = detail::ThreadLifoAllocator<>::reallocate(m_data,
+                uint_upper_align(m_size, alignment),
                 uint_upper_align(i_new_size, alignment));
             m_size = i_new_size;
             return block;
@@ -520,7 +522,7 @@ namespace density
 
         protected:
             TYPE * const m_elements;
-            size_t const m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container 
+            size_t const m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
                                  was a bad choice, because usually it indicates the number of bytes. */
         };
 
@@ -560,7 +562,7 @@ namespace density
         protected:
             void * m_block;
             TYPE * m_elements;
-            size_t const m_size;  /**< number of elements. Note: the term 'size' for the number of elements in the container 
+            size_t const m_size;  /**< number of elements. Note: the term 'size' for the number of elements in the container
                                  was a bad choice, because usually it indicates the number of bytes. */
         };
     }
@@ -569,19 +571,19 @@ namespace density
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
         @tparam TYPE Element type.
-        
-        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an 
-        internal lifo allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+
+        The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
+        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
         as the language guarantees destruction in reverse order, even inside arrays or aggregate types.
 
-        If elements are POD types, they are not initialized by the default constructor:
+        Exactly like raw arrays and <code>std::array</code>, the default constructor of \ref lifo_array default-constructs the elements. 
+        So if elements have POD type, they are not initialized. In contrast, <code>std::vector</code> value-initializes its elements, 
+        so POD types are initialized to zero.
 
         \snippet lifo_examples.cpp lifo_array example 2
-
-        Note: when replacing <code>std::vector</code> instantiated in the automatic storage
 
         The size of a lifo_array is fixed at construction time and is immutable.
         Elements are constructed in positional order and destroyed in reverse order.
@@ -611,7 +613,7 @@ namespace density
         /** Constructs all the elements with the provided parameter pack.
             @param i_size number of elements of the array
             @param i_construction_params construction parameters to use for every element of the array
-            
+
             \snippet lifo_examples.cpp lifo_array constructor 3 */
         template <typename... CONSTRUCTION_PARAMS>
             lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
@@ -640,8 +642,8 @@ namespace density
 
         /** Initializes the array from an input range. The size of the array is computed with <code>std::distance(i_begin, i_end)</code>.
             @param i_begin iterator pointing to the first source value
-            @param i_end iterator pointing to the first value that is not copied in the array. 
-            
+            @param i_end iterator pointing to the first value that is not copied in the array.
+
             \snippet lifo_examples.cpp lifo_array constructor 2 */
         template <typename INPUT_ITERATOR>
             lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
@@ -685,7 +687,7 @@ namespace density
         }
 
         /** Returns a reference to the i-th element.
-        
+
             \pre The behavior is undefined if either:
                 - i_index >= \ref size
         */
@@ -696,7 +698,7 @@ namespace density
         }
 
         /** Returns a const reference to the i-th element.
-        
+
             \pre The behavior is undefined if either:
                 - i_index >= \ref size
         */
@@ -783,10 +785,10 @@ namespace density
         ----------
         ----------
 
-        In this tests \ref lifo_array is compared with a legacy heap array, the function 
-        [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and the function 
+        In this tests \ref lifo_array is compared with a legacy heap array, the function
+        [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and the function
         [_malloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/malloca) (a Microsoft-specific safer version).
-        A comparison with <code>std::vector</code> wouldn't be fair because <code>std::vector</code> value-initializes the elements 
+        A comparison with <code>std::vector</code> wouldn't be fair because <code>std::vector</code> value-initializes the elements
         even if they are pod types, while %lifo_array doesn't.
 
         The benchmark is composed by two tests:
@@ -797,27 +799,27 @@ namespace density
 
         Summary of the results
         ----------
-        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz, 
-        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation 
-        with a given cardinality, and every invocation occurs 8 times. 
-        
+        All the tests are compiled with Visual Studio 2017 (version 15.1), and executed on Windows 10 with an int Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz,
+        2808 Mhz, 4 cores, 8 logical processors. The benchmarks of the whole library are shuffled and interleaved at the granularity of a single invocation
+        with a given cardinality, and every invocation occurs 8 times.
+
         The results are quite noisy: there are two separate classes of players, but no clear winner in each of them.
 
-        - <code>_malloca</code> is roughly the same to the array on the heap (actually many times it's slower). The reason is that this 
-            function allocates on the heap sizes bigger than 1024 bytes, and the tests allocate up to 30-40 kibibytes. Note that <code>_malloca</code> 
-            needs a deallocation function to be called ([_freea](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/freea)), and that it 
+        - <code>_malloca</code> is roughly the same to the array on the heap (actually many times it's slower). The reason is that this
+            function allocates on the heap sizes bigger than 1024 bytes, and the tests allocate up to 30-40 kibibytes. Note that <code>_malloca</code>
+            needs a deallocation function to be called ([_freea](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/freea)), and that it
             can still possibly cause a stack overflow, though much more rarely than <code>alloca</code>.
 
         - <code>alloca</code> and <code>%lifo_array</code> are very close, with the first being ~80% of times slightly faster if the size an element is
             not a multiple of lifo_allocator::alignment (currently = <code>alignof(void*)</code>). Otherwise <code>%lifo_array</code> can skip some
-            ALU instructions that align the size of the block. I'm not sure that this is the reason, but this case it's often slightly faster than 
+            ALU instructions that align the size of the block. I'm not sure that this is the reason, but this case it's often slightly faster than
             <code>alloca</code>. Anyway both <code>alloca</code> and <code>%lifo_array</code> are very fast.
 
 
         Generated code for %lifo_array
         ----------
 
-        Visual Stdio 2017 translates the source code of first test:
+        Visual Stdio 2017 translates the source code of the first test:
 
         ~~~~~~~~~~~~~~
         lifo_array<char> chars(i_cardinality);
@@ -825,52 +827,51 @@ namespace density
         chars[0] = c;
         ~~~~~~~~~~~~~~
 
-        to this machine code:
+        to this x64 code:
 
         ~~~~~~~~~~~~~~
-                    lifo_array<char> chars(i_cardinality);
-         mov         rax,qword ptr gs:[58h]  
-                    lifo_array<char> chars(i_cardinality);
-         lea         rdi,[rdx+7]  
-         and         rdi,0FFFFFFFFFFFFFFF8h  
-         mov         ebx,128h  
-         add         rbx,qword ptr [rax]  
-         mov         rdx,qword ptr [rbx]  
-         mov         rcx,rdx  
-         and         rcx,0FFFFFFFFFFFF0000h  
-         lea         r8,[rdi+rdx]  
-         mov         rax,r8  
-         sub         rax,rcx  
-         cmp         rax,0FFF0h  
-         jb          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+57h (07FF72B438037h)  
-         mov         rdx,rdi  
-         mov         rcx,rbx  
-         call        density::lifo_allocator<density::basic_void_allocator<65536> >::allocate_slow_path (07FF72B4385B0h)  
-         mov         rdx,rax  
-         jmp         <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+5Ah (07FF72B43803Ah)  
-         mov         qword ptr [rbx],r8  
+            lifo_array<char> chars(i_cardinality);
+        00007FF636BD8C5F  mov         rax,qword ptr gs:[58h]  
+        00007FF636BD8C68  lea         rdi,[rdx+7]  
+        00007FF636BD8C6C  and         rdi,0FFFFFFFFFFFFFFF8h  
+        00007FF636BD8C70  mov         ebx,128h  
+        00007FF636BD8C75  add         rbx,qword ptr [rax]  
+        00007FF636BD8C78  mov         rdx,qword ptr [rbx]  
+        00007FF636BD8C7B  mov         rcx,rdx  
+        00007FF636BD8C7E  and         rcx,0FFFFFFFFFFFF0000h  
+        00007FF636BD8C85  lea         r8,[rdi+rdx]  
+        00007FF636BD8C89  mov         rax,r8  
+        00007FF636BD8C8C  sub         rax,rcx  
+        00007FF636BD8C8F  cmp         rax,0FFF0h  
+        00007FF636BD8C95  jb          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+57h (07FF636BD8CA7h)  
+        00007FF636BD8C97  mov         rdx,rdi  
+        00007FF636BD8C9A  mov         rcx,rbx  
+        00007FF636BD8C9D  call        density::lifo_allocator<density::basic_void_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
+        00007FF636BD8CA2  mov         rdx,rax  
+        00007FF636BD8CA5  jmp         <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+5Ah (07FF636BD8CAAh)  
+        00007FF636BD8CA7  mov         qword ptr [rbx],r8  
                     volatile char c = 0;
-         mov         byte ptr [rsp+30h],0  
+        00007FF636BD8CAA  mov         byte ptr [rsp+30h],0  
                     chars[0] = c;
-         movzx       eax,byte ptr [c]  
-         mov         byte ptr [rdx],al  
-                }
-         mov         rax,qword ptr [rbx]  
-         xor         rax,rdx  
-         test        rax,0FFFFFFFFFFFF0000h  
-         je          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+89h (07FF72B438069h)  
-         mov         r8,rdi  
-         mov         rcx,rbx  
-         mov         rbx,qword ptr [rsp+38h]  
-         add         rsp,20h  
-         pop         rdi  
-         jmp         density::lifo_allocator<density::basic_void_allocator<65536> >::deallocate_slow_path (07FF72B438520h)  
-         mov         qword ptr [rbx],rdx  
-         mov         rbx,qword ptr [rsp+38h]  
+        00007FF636BD8CAF  movzx       eax,byte ptr [c]  
+        00007FF636BD8CB4  mov         byte ptr [rdx],al  
+                }, __LINE__);
+        00007FF636BD8CB6  mov         rax,qword ptr [rbx]  
+        00007FF636BD8CB9  xor         rax,rdx  
+        00007FF636BD8CBC  test        rax,0FFFFFFFFFFFF0000h  
+        00007FF636BD8CC2  je          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+89h (07FF636BD8CD9h)  
+        00007FF636BD8CC4  mov         r8,rdi  
+        00007FF636BD8CC7  mov         rcx,rbx  
+        00007FF636BD8CCA  mov         rbx,qword ptr [rsp+38h]  
+        00007FF636BD8CCF  add         rsp,20h  
+        00007FF636BD8CD3  pop         rdi  
+        00007FF636BD8CD4  jmp         density::lifo_allocator<density::basic_void_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
+        00007FF636BD8CD9  mov         qword ptr [rbx],rdx  
+        00007FF636BD8CDC  mov         rbx,qword ptr [rsp+38h]
         ~~~~~~~~~~~~~~
 
-        The branch after <code>cmp</code> and the one after <code>test</code> skip the slow paths. They are always taken unless 
-        a page switch is required, or the requested block does not fit in a page (in which case the block is allocated in the 
+        The branch after <code>cmp</code> and the one after <code>test</code> skip the slow paths. They are always taken unless
+        a page switch is required, or the requested block does not fit in a page (in which case the block is allocated in the
         heap). The branch predictor of the cpu should do a good job here.
 
         Note that the first instructions align the size of the block to 8 bytes.
@@ -886,48 +887,45 @@ namespace density
         is translated to:
 
         ~~~~~~~~~~~~~~
-                    lifo_array<double> chars(i_cardinality);
-         mov         rax,qword ptr gs:[58h]  
-                    lifo_array<double> chars(i_cardinality);
-         lea         rdi,[rdx*8]  
-         mov         ebx,128h  
-         add         rbx,qword ptr [rax]  
-         mov         rdx,qword ptr [rbx]  
-         mov         rcx,rdx  
-         and         rcx,0FFFFFFFFFFFF0000h  
-         lea         r8,[rdx+rdi]  
-         mov         rax,r8  
-         sub         rax,rcx  
-         cmp         rax,0FFF0h  
-         jb          <lambda_c7840347498da9fa856125956fe6e478>::operator()+57h (07FF74CD28457h)  
-         mov         rdx,rdi  
-         mov         rcx,rbx  
-         call        density::lifo_allocator<density::basic_void_allocator<65536> >::allocate_slow_path (07FF74CD285B0h)  
-         mov         rdx,rax  
-         jmp         <lambda_c7840347498da9fa856125956fe6e478>::operator()+5Ah (07FF74CD2845Ah)  
-         mov         qword ptr [rbx],r8  
-         xorps       xmm0,xmm0  
+        00007FF636BD907F  mov         rax,qword ptr gs:[58h]  
+        00007FF636BD9088  lea         rdi,[rdx*8]  
+        00007FF636BD9090  mov         ebx,128h  
+        00007FF636BD9095  add         rbx,qword ptr [rax]  
+        00007FF636BD9098  mov         rdx,qword ptr [rbx]  
+        00007FF636BD909B  mov         rcx,rdx  
+        00007FF636BD909E  and         rcx,0FFFFFFFFFFFF0000h  
+        00007FF636BD90A5  lea         r8,[rdx+rdi]  
+        00007FF636BD90A9  mov         rax,r8  
+        00007FF636BD90AC  sub         rax,rcx  
+        00007FF636BD90AF  cmp         rax,0FFF0h  
+        00007FF636BD90B5  jb          <lambda_c7840347498da9fa856125956fe6e478>::operator()+57h (07FF636BD90C7h)  
+        00007FF636BD90B7  mov         rdx,rdi  
+        00007FF636BD90BA  mov         rcx,rbx  
+        00007FF636BD90BD  call        density::lifo_allocator<density::basic_void_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
+        00007FF636BD90C2  mov         rdx,rax  
+        00007FF636BD90C5  jmp         <lambda_c7840347498da9fa856125956fe6e478>::operator()+5Ah (07FF636BD90CAh)  
+        00007FF636BD90C7  mov         qword ptr [rbx],r8  
+        00007FF636BD90CA  xorps       xmm0,xmm0  
                     volatile double c = 0;
-         movsd       mmword ptr [rsp+30h],xmm0  
+        00007FF636BD90CD  movsd       mmword ptr [rsp+30h],xmm0  
                     chars[0] = c;
-         movsd       xmm1,mmword ptr [c]  
-                }
-         mov         rax,qword ptr [rbx]  
-         xor         rax,rdx  
+        00007FF636BD90D3  movsd       xmm1,mmword ptr [c]  
+                }, __LINE__);
+        00007FF636BD90D9  mov         rax,qword ptr [rbx]  
+        00007FF636BD90DC  xor         rax,rdx  
                     chars[0] = c;
-         movsd       mmword ptr [rdx],xmm1  
-                }
-         test        rax,0FFFFFFFFFFFF0000h  
-         je          <lambda_c7840347498da9fa856125956fe6e478>::operator()+90h (07FF74CD28490h)  
-         mov         r8,rdi  
-         mov         rcx,rbx  
-         mov         rbx,qword ptr [rsp+38h]  
-         add         rsp,20h  
-                }
-         pop         rdi  
-         jmp         density::lifo_allocator<density::basic_void_allocator<65536> >::deallocate_slow_path (07FF74CD28520h)  
-         mov         qword ptr [rbx],rdx  
-         mov         rbx,qword ptr [rsp+38h]  
+        00007FF636BD90DF  movsd       mmword ptr [rdx],xmm1  
+                }, __LINE__);
+        00007FF636BD90E3  test        rax,0FFFFFFFFFFFF0000h  
+        00007FF636BD90E9  je          <lambda_c7840347498da9fa856125956fe6e478>::operator()+90h (07FF636BD9100h)  
+        00007FF636BD90EB  mov         r8,rdi  
+        00007FF636BD90EE  mov         rcx,rbx  
+        00007FF636BD90F1  mov         rbx,qword ptr [rsp+38h]  
+        00007FF636BD90F6  add         rsp,20h  
+        00007FF636BD90FA  pop         rdi  
+        00007FF636BD90FB  jmp         density::lifo_allocator<density::basic_void_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
+        00007FF636BD9100  mov         qword ptr [rbx],rdx  
+        00007FF636BD9103  mov         rbx,qword ptr [rsp+38h]
 
         ~~~~~~~~~~~~~~
 
@@ -940,7 +938,7 @@ namespace density
         \image html lifo_array_b1_2.png
         \image html lifo_array_b1_3.png
 
-        
+
         Results of the second test
         ----------
 

@@ -116,7 +116,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     PrintScopeDuration dur(i_ostream, "all tests");
 
     auto flags = QueueTesterFlags::eNone;
-    if (i_settings.m_spare_core)
+    if (i_settings.m_spare_one_cpu)
     {
         flags = flags | QueueTesterFlags::eReserveCoreToMainThread;
     }
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     std::ostream & out = std::cout;
 
     auto const settings = parse_settings(argc, argv);
-    
+
     #if defined(NDEBUG)
         out << "NDEBUG: defined" << std::endl;
     #else

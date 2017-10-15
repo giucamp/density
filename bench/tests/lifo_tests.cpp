@@ -1,9 +1,15 @@
 
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+
 #include <density/lifo.h>
 #include <memory>
 #include "bench_framework/test_tree.h"
 #if __linux__
-    #include <alloca.h> 
+    #include <alloca.h>
 #endif
 
 namespace density_bench
@@ -11,7 +17,7 @@ namespace density_bench
     void lifo_tests_1(TestTree & i_tree)
     {
         PerformanceTestGroup group("lifo_array_b1", "");
-       
+
         using namespace density;
 
         group.set_cardinality_start(16);
@@ -60,7 +66,7 @@ namespace density_bench
     void lifo_tests_2(TestTree & i_tree)
     {
         PerformanceTestGroup group("lifo_array_b2", "");
-       
+
         using namespace density;
 
         group.set_cardinality_start(16);

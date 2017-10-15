@@ -11,6 +11,7 @@ MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
 
 add_executable(density_bench
+    bench_framework/environment.cpp
     bench_framework/performance_test.cpp
     bench_framework/test_session.cpp
     bench_framework/test_tree.cpp

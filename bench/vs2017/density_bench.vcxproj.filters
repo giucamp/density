@@ -20,6 +20,9 @@
     <ClCompile Include="..\tests\lifo_tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\bench_framework\environment.cpp">
+      <Filter>bench_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="bench_framework">
@@ -37,6 +40,9 @@
       <Filter>bench_framework</Filter>
     </ClInclude>
     <ClInclude Include="..\bench_framework\test_tree.h">
+      <Filter>bench_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bench_framework\environment.h">
       <Filter>bench_framework</Filter>
     </ClInclude>
   </ItemGroup>

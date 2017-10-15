@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -50,7 +50,7 @@ namespace density_tests
                 check_consinstency();
             return block;
         }
-            
+
         /** same to lifo_allocator::reallocate */
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
@@ -114,7 +114,7 @@ namespace density_tests
                         curr_address = density::address_add(block.m_block, block.m_size);
                     }
                 }
-            
+
                 if (curr_address == nullptr)
                 {
                     DENSITY_TEST_ASSERT(density::address_is_aligned(top, UNDERLYING_ALLOCATOR::page_alignment));
@@ -123,17 +123,17 @@ namespace density_tests
                 {
                     DENSITY_TEST_ASSERT(top == curr_address || density::address_is_aligned(top, UNDERLYING_ALLOCATOR::page_alignment));
                 }
-            }           
+            }
 
             for (auto page : m_pages)
             {
-                auto blocks = std::count_if(m_blocks.begin(), m_blocks.end(), [page](Block i_block){ 
+                auto blocks = std::count_if(m_blocks.begin(), m_blocks.end(), [page](Block i_block){
                     return i_block.belongs_to_page(page);
                 });
 
                 auto const top_page = density::address_lower_align(top, UNDERLYING_ALLOCATOR::page_alignment);
                 bool const top_is_there = top_page == page;
-                
+
                 DENSITY_TEST_ASSERT(top_is_there || blocks > 0);
             }
         }
@@ -172,7 +172,7 @@ namespace density_tests
         }
 
     private:
-            
+
         struct Block
         {
             void * m_block;
@@ -219,7 +219,7 @@ namespace density_tests
             {
                 return user_data_stack.allocate_empty();
             }
-            
+
             void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
             {
                 return user_data_stack.reallocate(i_block, i_old_size, i_new_size);
@@ -231,7 +231,7 @@ namespace density_tests
             }
 
         } // namespace user_data_stack
-    
+
     } // namespace density
 
 #endif // #ifdef DENSITY_USER_DATA_STACK

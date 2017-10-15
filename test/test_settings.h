@@ -13,7 +13,7 @@ struct TestSettings
 {
     uint32_t m_rand_seed = 0;
     bool m_exceptions = true;
-    bool m_spare_core = true;
+    bool m_spare_one_cpu = true;
     bool m_test_allocators = true;
     size_t m_queue_tests_cardinality = 1000;
 };
