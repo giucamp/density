@@ -9,7 +9,7 @@ var indexSectionsWithContent =
   6: "cfp",
   7: "cfp",
   8: "s",
-  9: "ipru"
+  9: "opru"
 };
 
 var indexSectionNames =

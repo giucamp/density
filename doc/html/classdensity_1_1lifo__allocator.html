@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>density: lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt; Class Template Reference</title>
+<title>density: lifo_allocator&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -92,10 +92,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classdensity_1_1lifo__allocator-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt; Class Template Reference</div>  </div>
+<div class="title">lifo_allocator&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -126,27 +127,42 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa838620e2eb35205f72223152774eeb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac84b7cb9e27cd394b8cba1f0442aeaff"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#ac84b7cb9e27cd394b8cba1f0442aeaff">reallocate</a> (void *i_block, size_t i_old_size, size_t i_new_size)</td></tr>
 <tr class="separator:ac84b7cb9e27cd394b8cba1f0442aeaff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7c6b16bcdd69901a027b8a7ee7b41da"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#ac7c6b16bcdd69901a027b8a7ee7b41da">~lifo_allocator</a> ()</td></tr>
+<tr class="separator:ac7c6b16bcdd69901a027b8a7ee7b41da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ad696f73ca99a680361dd50ec3d115c"><td class="memItemLeft" align="right" valign="top">UNDERLYING_ALLOCATOR &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#a8ad696f73ca99a680361dd50ec3d115c">underlying_allocator_ref</a> () noexcept</td></tr>
+<tr class="separator:a8ad696f73ca99a680361dd50ec3d115c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa392b7e3121a0bc8b80eb98a39e88640"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa392b7e3121a0bc8b80eb98a39e88640"></a>
+void *&#160;</td><td class="memItemRight" valign="bottom"><b>top_pointer</b> () const  noexcept</td></tr>
+<tr class="separator:aa392b7e3121a0bc8b80eb98a39e88640"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a3647515b2dcc40f57d9aaa1fa330d9e1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3647515b2dcc40f57d9aaa1fa330d9e1"></a>
+static void *&#160;</td><td class="memItemRight" valign="bottom"><b>virgin_top</b> () noexcept</td></tr>
+<tr class="separator:a3647515b2dcc40f57d9aaa1fa330d9e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bf70a344789047a1d2aff685d560174"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4bf70a344789047a1d2aff685d560174"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_internal_block</b> (size_t i_size) noexcept</td></tr>
+<tr class="separator:a4bf70a344789047a1d2aff685d560174"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:ac15e6b5f88a94c672b70f8a914798517"><td class="memItemLeft" align="right" valign="top">static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a> = alignof(void*)</td></tr>
+<tr class="memitem:ac15e6b5f88a94c672b70f8a914798517"><td class="memItemLeft" align="right" valign="top">static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a> = ALIGNMENT</td></tr>
 <tr class="separator:ac15e6b5f88a94c672b70f8a914798517"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee50db51d856defe22824bdd28f1189c"><td class="memItemLeft" align="right" valign="top">static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__allocator.html#aee50db51d856defe22824bdd28f1189c">max_block_size</a> = (std::numeric_limits&lt;uintptr_t&gt;::max() - UNDERLYING_ALLOCATOR::page_size)</td></tr>
-<tr class="separator:aee50db51d856defe22824bdd28f1189c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename UNDERLYING_ALLOCATOR = void_allocator&gt;<br />
-class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
+<div class="textblock"><h3>template&lt;typename UNDERLYING_ALLOCATOR = void_allocator, size_t ALIGNMENT = alignof(void*)&gt;<br />
+class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt;</h3>
 
 <p>Class template that provides LIFO memory management.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">UNDERLYING_ALLOCATOR</td><td>Underlying allocator class, that can be stateless or stateful. It must meet the requirements of both <a class="el" href="UntypedAllocator_concept.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_concept.html">PagedAllocator</a>.</td></tr>
+    <tr><td class="paramname">UNDERLYING_ALLOCATOR</td><td>Underlying allocator class, that can be stateless or stateful. It must meet the requirements of both <a class="el" href="UntypedAllocator_concept.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_concept.html">PagedAllocator</a>. </td></tr>
+    <tr><td class="paramname">ALIGNMENT</td><td>Alignment of the blocks. It must be non-zero and a power of 2.</td></tr>
   </table>
   </dd>
 </dl>
-<p>A <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> allocates memory pages from the underlying allocator to provide lifo memory management to the user. It is designed to be efficient, so it does not provide an high-level service to be used directly. All blocks are aligned to the constant value <a class="el" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a>, and the size of the requested blocks must be a multiple of it. Deallocation and reallocation functions require the caller to specify the size of the block. Block sizes bigger than the size of a page are handled with legacy heap allocations.</p>
-<p>A living block is a block allocated, eventually reallocated, but not yet deallocated. All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined. Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior. Instances of <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> are not interchangeable: blocks allocated by an instance can't be deallocated with another instance.</p>
+<p>A <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> uses memory pages allocated from the underlying allocator to provide lifo memory management to the user. It is designed to be efficient, so it does not provide an high-level service. All blocks has the same alignment (specified by the template argument), and the size of the requested blocks must be a multiple of it. Deallocation and reallocation functions require the caller to specify the current size of the block. Block sizes bigger than the size of a page are handled with legacy heap allocations.</p>
+<p>A living block is a block allocated, eventually reallocated, but not yet deallocated. Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior. Instances of <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> are not interchangeable: blocks allocated by an instance can't be deallocated with another instance. All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.</p>
 <p><a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> is a stateful class template (it has non-static data members). It is uncopyable, unmovable and incomparable.</p>
 <p>The constructor of <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> is constexpr and guarantees constant initialization.</p>
 <h2>Implementation notes </h2>
@@ -250,7 +266,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a>&lt; UNDERLYING_ALLOCATOR &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a>&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -265,6 +281,30 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
 
 </div>
 </div>
+<a class="anchor" id="ac7c6b16bcdd69901a027b8a7ee7b41da"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">~<a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Destroys the allocator, deallocating the bottom page in case this allocator is not virgin </p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a94d4738f72c9a26842da2316a2a32f33"></a>
 <div class="memitem">
@@ -276,7 +316,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a>&amp; operator= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a>&lt; UNDERLYING_ALLOCATOR &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a>&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -321,7 +361,6 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
 <dl class="section return"><dt>Returns</dt><dd>address of the allocated block</dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The behavior is undefined if either:<ul>
 <li>i_size is not a multiple of <a class="el" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a></li>
-<li>i_size &gt; <a class="el" href="classdensity_1_1lifo__allocator.html#aee50db51d856defe22824bdd28f1189c">max_block_size</a></li>
 </ul>
 </dd></dl>
 <p><br />
@@ -351,7 +390,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
 </table>
 </div><div class="memdoc">
 <p>Allocates a block with size 0.</p>
-<p>This function is equivalent to allocate(0), but it is much faster and never throws. The returned block can be reallocated and deallocated.</p>
+<p>This function is equivalent to allocate(0), but it is much faster and never throws. The returned block can be reallocated and deallocated. @</p>
 <p>This function is useful to initialize block owners to an empty state in a noexcept context, without introducing the nullptr special case. The implementation of the default constructor of <a class="el" href="classdensity_1_1lifo__buffer.html">lifo_buffer</a> uses this function.</p>
 <p><b>Throws:</b> nothing.</p>
 <p><em>Implementation notes</em>: this function just returns the top of the stack, without altering the state of the allocator.</p>
@@ -456,12 +495,35 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
 <li>the specified block is null or it is not the most recently allocated</li>
 <li>i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)</li>
 <li>i_new_size is not a multiple of <a class="el" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a></li>
-<li>i_new_size &gt; <a class="el" href="classdensity_1_1lifo__allocator.html#aee50db51d856defe22824bdd28f1189c">max_block_size</a></li>
 </ul>
 </dd></dl>
 <p><br />
 <b>Throws:</b> unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). </p>
+
+</div>
+</div>
+<a class="anchor" id="a8ad696f73ca99a680361dd50ec3d115c"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">UNDERLYING_ALLOCATOR&amp; underlying_allocator_ref </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns a reference to the underlying allocator </p>
 
 </div>
 </div>
@@ -474,7 +536,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">constexpr size_t alignment = alignof(void*)</td>
+          <td class="memname">constexpr size_t alignment = ALIGNMENT</td>
         </tr>
       </table>
   </td>
@@ -483,28 +545,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR &gt;</h3>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Alignment of the memory blocks. The value is implementation defined </p>
-
-</div>
-</div>
-<a class="anchor" id="aee50db51d856defe22824bdd28f1189c"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">constexpr size_t max_block_size = (std::numeric_limits&lt;uintptr_t&gt;::max() - UNDERLYING_ALLOCATOR::page_size)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Max size of a single block. This size is equal to the size of the address space, minus an implementation defined value in the order of the size of a page. Requesting a bigger size to an allocation function causes undefined behavior. </p>
+<p>Alias for the template argument ALIGNMENT </p>
 
 </div>
 </div>

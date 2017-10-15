@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['intro',['Intro',['../intro.html',1,'']]],
   ['invoke',['invoke',['../structdensity_1_1type__features_1_1invoke.html',1,'density::type_features']]],
   ['invoke_5fdestroy',['invoke_destroy',['../structdensity_1_1type__features_1_1invoke__destroy.html',1,'density::type_features']]],
   ['is',['is',['../classdensity_1_1runtime__type.html#a7420a5e28322c9a7a3348d35b46fbe66',1,'density::runtime_type']]],
