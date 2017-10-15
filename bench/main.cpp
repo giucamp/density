@@ -20,6 +20,13 @@ namespace density_bench
 int main()
 {
     using namespace density_bench;
+
+    #if !defined(NDEBUG)
+        std::cout << "WARNING: this is a debug build!" << std::endl;
+    #endif
+
+    std::cout << "density_bench\n" << std::endl;
+
     TestTree root("density");
     single_thread_tests(root);
     lifo_tests(root);
