@@ -28,7 +28,9 @@ Supported compilers:
 - g++-4.9 and g++-7
 - clang++-4.0 and clang++-5.0
 
-The current version has not been tested on achitectures with weak memory ordering, so relaxed atomic operations are disabled with a global compile-time constant. Future versions will exploit relaxed atomics.
+The current version has not been tested on achitectures with weak memory ordering, so relaxed atomic operations are disabled with a global compile-time constant. Future versions will exploit relaxed atomics. 
+
+The library has an extensive test program, which is executed on every commit in the master and develop branches. Anyway the coverage percentage reported by gcov and coveralls is biased due to some uninstantiated function templates. The use of the current version on critical production code is not recommended. That is, use it for your videogame, but not for heart surgery or landing a plane.
 
 ## How to...
 To use the library, just download or clone the repository, and then copy the directory "density" in your include paths. The library is composed only by headers, so there is nothing to build. The directory doc contains the html documentation.
