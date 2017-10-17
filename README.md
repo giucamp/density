@@ -10,7 +10,7 @@ Density is a C++11 header-only library focused on paged memory management and co
   - [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html)
   - [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html)
   - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html)
-* heterogeneous queues and function queues:
+* [heterogeneous queues and function queues](http://giucamp.github.io/density/doc/html/index.html#queues):
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
@@ -19,7 +19,7 @@ locking         |[conc_function_queue](http://giucamp.github.io/density/doc/html
 lock-free       |[lf_function_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1lf__function__queue.html) |[lf_hetr_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1lf__heter__queue.html)|configurable|configurable
 spin-locking    |[sp_function_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__function__queue.html) |[sp_hetr_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__heter__queue.html)|configurable|configurable
 
-<p align="right"><a href="http://giucamp.github.io/density/doc/html/index.html#queues">More...</a></p>
+<p align="right"><a href="">More...</a></p>
 
 ## Documentation
 The [overview](http://giucamp.github.io/density/doc/html/index.html) should be enough for an effective use of the library. Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation includes the results of some benchmarks. 
