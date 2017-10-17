@@ -7,9 +7,9 @@ develop|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=develo
 Density is a C++11 header-only library focused on paged memory management and concurrency, providing:
 
 * [lifo memory management](http://giucamp.github.io/density/doc/html/index.html#lifo):
-  - ([lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html)
+  - [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html)
   - [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html)
-  - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html))
+  - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html)
 * heterogeneous queues and function queues:
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
