@@ -28,7 +28,7 @@ Supported compilers:
 - g++-4.9 and g++-7
 - clang++-4.0 and clang++-5.0
 
-The current version has not been tested on achitectures with weaker memory ordering, so relaxed atomic operations are disabled with a global compile-time constant. Future versions will exploit relaxed atomics.
+The current version has not been tested on achitectures with weak memory ordering, so relaxed atomic operations are disabled with a global compile-time constant. Future versions will exploit relaxed atomics.
 
 ## How to...
 To use the library, just download or clone the repository, and then copy the directory "density" in your include paths. The library is composed only by headers, so there is nothing to build. The directory doc contains the html documentation.
