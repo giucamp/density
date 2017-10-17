@@ -23,7 +23,7 @@ namespace density
         It is designed to be efficient, so it does not provide an high-level service. All blocks has the
         same alignment (specified by the template argument), and the size of the requested blocks must be a multiple of it.
         Deallocation and reallocation functions require the caller to specify the current size of the block.
-        Block sizes bigger than the size of a page are handled with legacy heap allocations.
+        Blocks that are very large according to a some implementation-defined criteria, are handled with legacy heap allocations.
 
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
         Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior.
@@ -92,10 +92,12 @@ namespace density
             auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
             {
+                // page overflow
                 return allocate_slow_path(i_size);
             }
             else
             {
+                // advance m_top
                 DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = reinterpret_cast<void*>(m_top);
                 m_top = new_top;
@@ -106,7 +108,7 @@ namespace density
         /** Allocates a block with size 0.
 
             This function is equivalent to allocate(0), but it is much faster and never throws.
-            The returned block can be reallocated and deallocated. @
+            The returned block can be reallocated and deallocated.
 
             This function is useful to initialize block owners to an empty state in a noexcept
             context, without introducing the nullptr special case. The implementation
@@ -147,8 +149,8 @@ namespace density
         }
 
         /** Reallocates the most recently allocated living memory block, changing its size.
-            The address of the block may change. The content of the memory block is preserved up to the existing extend:
-            if the memory block is moved to another address, its content is copied with memcopy.
+            The address of the block may change. The content of the memory block is preserved up to the existing extend.
+            If the memory block is moved to another address, its content is copied with memcopy.
                 @param i_block block to be resized. After the call, if no exception is thrown, this pointer must be discarded,
                     because it may point to invalid memory.
                 @param i_old_size the previous size of the block, in bytes.
@@ -157,7 +159,7 @@ namespace density
 
             \pre The behavior is undefined if either:
                 - the specified block is null or it is not the most recently allocated
-                - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (If no reallocation was performed)
+                - i_old_size is not the one asked to the most recent reallocation of the block, or to the allocation (if no reallocation was performed)
                 - i_new_size is not a multiple of \ref alignment
 
             \n\b Throws: unspecified.
@@ -175,7 +177,8 @@ namespace density
             }
             else
             {
-                if (i_old_size < UNDERLYING_ALLOCATOR::page_size)
+                if ((m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
+                    same_page(reinterpret_cast<PageHeader*>(m_top)[-1].m_prev_page, i_block) )
                 {
                     auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
                     DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
@@ -226,13 +229,15 @@ namespace density
             return reinterpret_cast<void*>(m_top);
         }
 
-        /** \internal Returns whether a block with the given size is allocated internally in the pages. Internal only, do not use */
-        static bool is_internal_block(size_t i_size) noexcept
-        {
-            return i_size < UNDERLYING_ALLOCATOR::page_size;
-        }
-
     private:
+
+        /** \internal Allocated at the beginning of every page */
+        struct alignas(alignment) alignas(void*) PageHeader
+        {
+            void * m_prev_page; /**< pointer to a byte of the previous page */
+        };
+
+        static_assert(UNDERLYING_ALLOCATOR::page_size / 2 > sizeof(PageHeader), "page_size is too small");
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
         static bool same_page(const void * i_first, const void * i_second) noexcept
@@ -244,12 +249,13 @@ namespace density
         DENSITY_NO_INLINE void * allocate_slow_path(size_t i_size)
         {
             DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
-            if (i_size < UNDERLYING_ALLOCATOR::page_size)
+            if (i_size < UNDERLYING_ALLOCATOR::page_size / 2)
             {
                 // allocate a new page
-                auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                m_top = reinterpret_cast<uintptr_t>(new_page) + i_size;
-                return new_page;
+                auto const new_page = static_cast<PageHeader*>(UNDERLYING_ALLOCATOR::allocate_page());
+                new_page->m_prev_page = reinterpret_cast<void*>(m_top);
+                m_top = reinterpret_cast<uintptr_t>(new_page + 1) + i_size;
+                return new_page + 1;
             }
             else
             {
@@ -260,9 +266,12 @@ namespace density
 
         DENSITY_NO_INLINE void deallocate_slow_path(void * i_block, size_t i_size) noexcept
         {
-            // align the size
-            if (i_size < UNDERLYING_ALLOCATOR::page_size)
+            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
+
+            if ((m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
+                same_page(reinterpret_cast<PageHeader*>(m_top)[-1].m_prev_page, i_block) )
             {
+                // deallocate the top page
                 auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
                 DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
                 UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
@@ -293,12 +302,13 @@ namespace density
                 m_top = new_top;
                 return new_block;
             }
-            else if (i_size < UNDERLYING_ALLOCATOR::page_size)
+            else if (i_size < UNDERLYING_ALLOCATOR::page_size / 2)
             {
                 // allocate a new page
-                auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                m_top = reinterpret_cast<uintptr_t>(new_page) + i_size;
-                return new_page;
+                auto const new_page = static_cast<PageHeader*>(UNDERLYING_ALLOCATOR::allocate_page());
+                new_page->m_prev_page = reinterpret_cast<void*>(current_top);
+                m_top = reinterpret_cast<uintptr_t>(new_page + 1) + i_size;
+                return new_page + 1;
             }
             else
             {
@@ -673,6 +683,12 @@ namespace density
                 throw;
             }
         }
+
+        /** Copy construction not allowed */
+        lifo_array(const lifo_array &) = delete;
+
+        /** Copy assignment not allowed */
+        lifo_array & operator = (const lifo_array &) = delete;
 
         /** Destroys a lifo_array and all its elements. Elements are destroyed in reverse positional order. */
         ~lifo_array()

@@ -611,16 +611,17 @@ This library is tested against these compilers:
 The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may
 reallocate or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
 The data stack is actually composed by a set of memory pages and an internal thread-local pointer (the top of the stack).
-There is no size-overhead. Allocations just add the size to allocate to the top pointer, and deallocations set the top pointer to the
-block to deallocate. In case of page switch, a branch is taken to a non-inlined slow path.
+The underlying algorithm is very simple: allocations just add the size to allocate to the top pointer, and deallocations set the top
+pointer to the block to deallocate. In case of page switch, a branch is taken to a non-inlined slow path.
 The data stack has constant initialization, so it doesn't slow down thread creation or require dynamic any initialization guard 
 by the compiler on access. The first time a thread uses the data stack, it takes the slow path and it allocates a memory page.
 
 The data stack can be accessed only indirectly, with [lifo_array](\ref density::lifo_array) and [lifo_buffer](\ref density::lifo_buffer).
 
-<code>%lifo_array</code> is the easiest and safest way of using the data stack. A <code>%lifo_array</code> is very
-similar to a raw array, but its size is not a compile time constant. The elements are not allocated on the callstack, so there is no
-risk of stack overflow. In case of out of memory, a <code>std::bad_alloc</code> is thrown.
+<code>%lifo_array</code> is an alternative to the c-ish and unsafe [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and
+has nearly the [same performances](\ref lifo_array_benchmarks). It is the easiest and safest way of using the data-stack. A <code>%lifo_array</code> is very
+similar to a raw array, but its size is not a compile time constant. The elements are allocated on the data-stack, rather than on the 
+call-stack, so there is no risk of stack overflow. In case of out of system memory, a <code>std::bad_alloc</code> is thrown.
 
 \snippet lifo_examples.cpp lifo_array example 1
 
@@ -628,16 +629,15 @@ To avoid breaking the lifo constraint and consequently having the undefined beha
 only in the automatic storage (locally in a function or function block). Following this simple rule there is no way to way to break the
 lifo constraint.
 
-Actually it is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint is not broken.
+Actually it is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint on the calling thread is not broken.
 The C++ language is very LIFO friendly, as members of structs and elements of arrays are destroyed in the reverse order they
 are constructed. Anyway this may be dangerous, so it's not recommended.
 
 \snippet lifo_examples.cpp lifo_array example 4
 
-<code>%lifo_array</code> is an alternative to the c-ish and unsafe [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and
-has nearly the [same performances](\ref lifo_array_benchmarks).
 Just like built-in arrays and <code>std::array</code>, <code>%lifo_array</code> does not initialize elements if they have
-[POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c). This is a big difference with <code>std::vector</code>.
+[POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c), unless an explicit initialization value is provided to the constructor. 
+This is a big difference with <code>std::vector</code>.
 
 A <code>lifo_buffer</code> allocates on the data stack an untyped raw memory block with dynamic size. Unlike <code>%lifo_array</code> it supports
 resizing, but only on the most recently instantiated living instance, and only if a more recent living <code>%lifo_array</code> doesn't exist.
@@ -646,12 +646,13 @@ If the resize changes the address of the block, the surviving content is preserv
 \snippet lifo_examples.cpp lifo example 1
 
 Internally the data stack is a thread-local instance of \ref lifo_allocator, a class template that provides lifo memory management.
-This class can be used to exploit performances of lifo memory in other contexts.
+This class can be used to exploit performances of lifo memory in other contexts, but it is a low-level class: it should be wrapped in some
+data structure, rather than used directly.
 
 <a name="queues">About function queues</a>
 --------------
 A function queue is an heterogeneous FIFO pseudo-container that stores callable objects, each with a different type, but all invokable with the same signature.
-Foundamentaly a funcion queue is a queue of `std::function`-like objects that uses an in-page linear allocation for the storage of the captures.
+Fundamentally a function queue is a queue of `std::function`-like objects that uses an in-page linear allocation for the storage of the captures.
 
 \snippet misc_examples.cpp function_queue example 1
 

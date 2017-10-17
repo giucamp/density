@@ -6,6 +6,8 @@
 
 #include "performance_test.h"
 #include <fstream>
+#include <iostream>
+#include <ios>
 #include <algorithm>
 
 namespace density_bench
@@ -17,6 +19,12 @@ namespace density_bench
 
         // open the source file and read the lines from i_start_line to i_end_line
         ifstream stream(i_source_file);
+        if (stream.fail())
+        {
+            auto const error_message = std::string("Can't open the source ") + i_source_file;
+            std::cerr << error_message << std::endl;
+            throw std::ios_base::failure(error_message);
+        }
         int curr_line = 0;
         vector<string> lines;
         while (!stream.eof() && curr_line < i_end_line - 1)

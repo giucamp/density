@@ -90,7 +90,7 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(m_pages.empty());
                 for (const auto & block : m_blocks)
                 {
-                    DENSITY_TEST_ASSERT(!decltype(m_allocator)::is_internal_block(block.m_size));
+                    DENSITY_TEST_ASSERT(!is_in_any_page(block.m_block));
                 }
             }
             else
@@ -98,7 +98,7 @@ namespace density_tests
                 void * curr_address = nullptr;
                 for (const auto & block : m_blocks)
                 {
-                    if (decltype(m_allocator)::is_internal_block(block.m_size))
+                    if (is_in_any_page(block.m_block))
                     {
                         if (curr_address != nullptr)
                         {
@@ -146,6 +146,12 @@ namespace density_tests
             return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
         }
 
+        bool is_in_any_page(void * i_block) const noexcept
+        {
+            auto page = density::address_lower_align(i_block, UNDERLYING_ALLOCATOR::page_alignment);
+            return std::find(m_pages.begin(), m_pages.end(), page) != m_pages.end();
+        }
+
         void notify_alloc(void * i_block, size_t i_size)
         {
             m_blocks.push_back(Block{i_block, i_size});
@@ -166,7 +172,8 @@ namespace density_tests
 
         void on_deallocating_page(void * i_page) override
         {
-            auto it = std::find(m_pages.begin(), m_pages.end(), i_page);
+            auto const page_start = density::address_lower_align(i_page, UNDERLYING_ALLOCATOR::page_alignment);
+            auto const it = std::find(m_pages.begin(), m_pages.end(), page_start);
             DENSITY_TEST_ASSERT(it != m_pages.end());
             m_pages.erase(it);
         }
@@ -178,7 +185,7 @@ namespace density_tests
             void * m_block;
             size_t m_size;
 
-            bool belongs_to_page(void * i_page) noexcept
+            bool belongs_to_page(void * i_page) const noexcept
             {
                 auto const page_start = density::address_lower_align(i_page, UNDERLYING_ALLOCATOR::page_alignment);
                 auto const page_end = density::address_add(page_start, UNDERLYING_ALLOCATOR::page_size);

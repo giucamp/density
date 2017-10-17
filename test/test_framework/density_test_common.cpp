@@ -21,7 +21,11 @@ namespace density_tests
             std::cerr << "function: " << i_function << "\n";
             std::cerr << "expression: " << i_expr << std::endl;
 
-            assert(false);
+            #ifdef _MSC_VER
+                __debugbreak();
+            #else
+                assert(false);
+            #endif
         }
     }
 }
