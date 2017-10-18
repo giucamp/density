@@ -217,16 +217,10 @@ namespace density
             return *this;
         }
 
-        /** \internal Top pointer of virgin allocators. Internal only, do not use */
-        static void * virgin_top() noexcept
+        /** Returns a const reference to the underlying allocator */
+        const UNDERLYING_ALLOCATOR & underlying_allocator_ref() const noexcept
         {
-            return reinterpret_cast<void*>(s_virgin_top);
-        }
-
-        /** \internal Returns the top pointer of this allocator. Internal only, do not use */
-        void * top_pointer() const noexcept
-        {
-            return reinterpret_cast<void*>(m_top);
+            return *this;
         }
 
     private:

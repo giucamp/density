@@ -37,6 +37,10 @@ namespace density_tests
 
         virtual void on_deallocating_page(void * i_page) = 0;
 
+        virtual void on_allocated_block(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset) = 0;
+
+        virtual void on_deallocating_block(void * i_page, size_t i_size, size_t i_alignment, size_t i_alignment_offset) = 0;
+
         virtual ~IAllocatorHook() = default;
     };
 
@@ -87,6 +91,7 @@ namespace density_tests
 
             auto block = Base::allocate(i_size, i_alignment, i_alignment_offset);
             m_registry.register_block(s_default_category, block, i_size, i_alignment, i_alignment_offset);
+            invoke_hook(&IAllocatorHook::on_allocated_block, block, i_size, i_alignment, i_alignment_offset);
             return block;
         }
 
@@ -102,12 +107,14 @@ namespace density_tests
             if (result != nullptr)
             {
                 m_registry.register_block(s_default_category, result, i_size, i_alignment, i_alignment_offset);
+                invoke_hook(&IAllocatorHook::on_allocated_block, result, i_size, i_alignment, i_alignment_offset);
             }
             return result;
         }
 
         void deallocate(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
         {
+            invoke_hook(&IAllocatorHook::on_deallocating_block, i_block, i_size, i_alignment, i_alignment_offset);
             m_registry.unregister_block(s_default_category, i_block, i_size, i_alignment, i_alignment_offset);
             Base::deallocate(i_block, i_size, i_alignment, i_alignment_offset);
         }
@@ -206,6 +213,28 @@ namespace density_tests
             auto const it = std::find(m_hooks.begin(), m_hooks.end(), i_hook);
             DENSITY_TEST_ASSERT(it != m_hooks.end());
             m_hooks.erase(it);
+        }
+
+        using BlockInfo = SharedBlockRegistry::BlockInfo;
+
+        /** Calls the provided function for each living non-page block. The provided callable must be inokable
+            with the signature:
+                void ()(void * i_block, const BlockInfo &). */
+        template <typename CALLABLE>
+            void for_each_block(const CALLABLE & i_callable) const
+        {
+            m_registry.for_each_block(s_default_category, i_callable);
+        }
+
+        /** Calls the provided function for each living page. The provided callable must be inokable
+            with the signature:
+                void ()(void* i_page, size_t i_progressive). */
+        template <typename CALLABLE>
+            void for_each_page(const CALLABLE & i_callable) const
+        {
+            m_registry.for_each_block(s_page_category, [&i_callable](void *i_page, const SharedBlockRegistry::BlockInfo & i_block_info) {
+                i_callable(i_page, i_block_info.m_progressive);
+            });
         }
 
     private:

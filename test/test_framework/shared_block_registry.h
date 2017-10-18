@@ -8,6 +8,7 @@
 #include "density_test_common.h"
 #include <memory>
 #include <atomic>
+#include <functional>
 
 namespace density_tests
 {
@@ -38,7 +39,7 @@ namespace density_tests
 
         SharedBlockRegistry & operator = (SharedBlockRegistry &&) noexcept;
 
-        /** Registers a block.
+        /** Registers a block. This call temporary locks an instance mutex.
                 @param i_category user-defined category of the block.
                 @param i_block start address of the block.
                 @param i_size size in bytes of the block.
@@ -47,7 +48,7 @@ namespace density_tests
         void register_block(int i_category, void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
 
         /** Unregisters a block. If any of the parameters does not match exactly the value passed to a register_block,
-            a DENSITY_TEST_ASSERT fails.
+            a DENSITY_TEST_ASSERT fails.  This call temporary locks an instance mutex.
                 @param i_category user-defined category of the block.
                 @param i_block start address of the block.
                 @param i_size size in bytes of the block.
@@ -67,8 +68,22 @@ namespace density_tests
             return m_data != i_other.m_data;
         }
 
+        struct BlockInfo
+        {
+            int m_category = 0;
+            size_t m_progressive = 0;
+            size_t m_size = 0;
+            size_t m_alignment = 0;
+            size_t m_alignment_offset = 0;
+        };
+
+        /** Calls the provided function for each living block.  This call temporary locks an instance mutex. */
+        void for_each_block(const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
+
+        /** Calls the provided function for each living block with the specified category.  This call temporary locks an instance mutex. */
+        void for_each_block(int i_category, const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
+
     private:
-        struct AllocationEntry;
         struct Data;
 
     private:

@@ -21,6 +21,21 @@
 #include <chrono>
 #include <string>
 
+#ifdef DENSITY_USER_DATA_STACK
+    namespace density
+    {
+        namespace user_data_stack
+        {
+            /* If DENSITY_USER_DATA_STACK is defined, this test program implements this function
+                that make a complete check of the data-stack, and updates the internal statistics. */
+            void stat_sample();
+
+            /* Prints the internal statistics. */
+            void stats_print(std::ostream & i_dest);
+        }
+    }
+#endif // #ifdef DENSITY_USER_DATA_STACK
+
 namespace density_tests
 {
     class ILifoTestItem
@@ -218,7 +233,7 @@ namespace density_tests
             @param i_residual_depth depth to reach in recursion
             @param i_residual_fork_depth below this depth, this function invokes itself multiple times, forking every time,
                 and causing an exponential growth of the tests. From this depth on, recursive_test calls itself only one time. */
-        static void recursive_test(std::mt19937 & i_random, size_t i_residual_depth, size_t i_residual_fork_depth)
+        static void recursive_test(std::mt19937 & i_random, size_t i_residual_depth, size_t i_residual_fork_depth )
         {
             // tests factory: table of ILifoTestItem factory functions
             using Func = std::unique_ptr<ILifoTestItem>(*)(std::mt19937 & i_random);
@@ -241,6 +256,10 @@ namespace density_tests
                 {
                     recursive_test(i_random, i_residual_depth - 1,
                         i_residual_fork_depth > 0 ? i_residual_fork_depth - 1 : 0);
+                }
+                else
+                {
+                    density::user_data_stack::stat_sample();
                 }
 
                 test->resize(i_random);
@@ -327,7 +346,8 @@ namespace density_tests
 
                 std::ostringstream label;
                 label << "thread " << thread_index << " has finished after " << elapsed.count() << " secs\n";
-                i_output << label.str();
+                density::user_data_stack::stats_print(label);
+                i_output << label.str() << std::endl;
             });
         }
 

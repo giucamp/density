@@ -12,19 +12,10 @@
 
 namespace density_tests
 {
-    struct SharedBlockRegistry::AllocationEntry
-    {
-        int m_category = 0;
-        size_t m_progressive = 0;
-        size_t m_size = 0;
-        size_t m_alignment = 0;
-        size_t m_alignment_offset = 0;
-    };
-
     struct SharedBlockRegistry::Data
     {
         std::mutex m_mutex;
-        std::unordered_map<void*, AllocationEntry> m_allocations;
+        std::unordered_map<void*, BlockInfo> m_allocations;
         static std::atomic<size_t> s_last_progressive;
 
         ~Data()
@@ -68,9 +59,7 @@ namespace density_tests
 
         if (m_data != nullptr) // avoid a crash, but
         {
-            auto & data = *m_data;
-
-            AllocationEntry entry;
+            BlockInfo entry;
             entry.m_category = i_category;
             entry.m_size = i_size;
             entry.m_alignment = i_alignment;
@@ -78,8 +67,8 @@ namespace density_tests
             entry.m_alignment_offset = i_alignment_offset;
             // DENSITY_TEST_ASSERT(entry.m_progressive != ...);
 
+            auto & data = *m_data;
             std::lock_guard<std::mutex> lock(data.m_mutex);
-
             auto res = data.m_allocations.insert(std::make_pair(i_block, entry));
             DENSITY_TEST_ASSERT(res.second);
         }
@@ -103,6 +92,29 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(it->second.m_alignment == i_alignment);
                 DENSITY_TEST_ASSERT(it->second.m_alignment_offset == i_alignment_offset);
                 data.m_allocations.erase(it);
+            }
+        }
+    }
+
+    void SharedBlockRegistry::for_each_block(const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const
+    {
+        auto & data = *m_data;
+        std::lock_guard<std::mutex> lock(data.m_mutex);
+        for (auto & entry : data.m_allocations)
+        {
+            i_callback(entry.first, entry.second);
+        }
+    }
+
+    void SharedBlockRegistry::for_each_block(int i_category, const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const
+    {
+        auto & data = *m_data;
+        std::lock_guard<std::mutex> lock(data.m_mutex);
+        for (auto & entry : data.m_allocations)
+        {
+            if (entry.second.m_category == i_category)
+            {
+                i_callback(entry.first, entry.second);
             }
         }
     }

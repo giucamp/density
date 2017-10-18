@@ -195,6 +195,8 @@
       <AdditionalIncludeDirectories>..\..;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -364,6 +366,7 @@
     <ClInclude Include="..\test_framework\queue_load_unload_test.h" />
     <ClInclude Include="..\test_framework\queue_generic_tester.h" />
     <ClInclude Include="..\test_framework\shared_block_registry.h" />
+    <ClInclude Include="..\test_framework\statistics.h" />
     <ClInclude Include="..\test_framework\test_allocators.h" />
     <ClInclude Include="..\test_framework\test_objects.h" />
     <ClInclude Include="..\test_framework\threading_extensions.h" />

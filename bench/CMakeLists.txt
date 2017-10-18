@@ -16,7 +16,6 @@ add_executable(density_bench
     bench_framework/test_session.cpp
     bench_framework/test_tree.cpp
     tests/lifo_tests.cpp
-    tests/muilti_thread_tests.cpp
     tests/single_thread_tests.cpp
     main.cpp )
 

@@ -234,6 +234,9 @@
       <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\test_settings.h" />
+    <ClInclude Include="..\test_framework\statistics.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

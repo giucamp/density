@@ -285,7 +285,6 @@
     <ClCompile Include="..\bench_framework\test_tree.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\lifo_tests.cpp" />
-    <ClCompile Include="..\tests\muilti_thread_tests.cpp" />
     <ClCompile Include="..\tests\single_thread_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
