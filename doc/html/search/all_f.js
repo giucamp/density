@@ -2,6 +2,7 @@ var searchData=
 [
   ['size',['size',['../structdensity_1_1type__features_1_1size.html',1,'density::type_features']]],
   ['size',['size',['../structdensity_1_1type__features_1_1feature__list.html#a685609860d73ccd0d45ada287ab9ab5f',1,'density::type_features::feature_list::size()'],['../classdensity_1_1lifo__buffer.html#a44545a936daa510da7f9fe4835f6ee84',1,'density::lifo_buffer::size()'],['../classdensity_1_1lifo__array.html#a44545a936daa510da7f9fe4835f6ee84',1,'density::lifo_array::size()'],['../classdensity_1_1runtime__type.html#a44545a936daa510da7f9fe4835f6ee84',1,'density::runtime_type::size()']]],
+  ['size_5flog2',['size_log2',['../density__common_8h.html#a106d5eff5247f0872aee82213783dddc',1,'density::detail']]],
   ['sp_5ffunction_5fqueue',['sp_function_queue',['../classdensity_1_1sp__function__queue.html',1,'density']]],
   ['sp_5ffunction_5fqueue',['sp_function_queue',['../classdensity_1_1sp__function__queue.html#ad8d4d19008b24c9cb9755d03c977a55a',1,'density::sp_function_queue::sp_function_queue() noexcept=default'],['../classdensity_1_1sp__function__queue.html#ad2c5104bf51635dc3ef1ea90fd679cc5',1,'density::sp_function_queue::sp_function_queue(sp_function_queue &amp;&amp;i_source) noexcept=default']]],
   ['sp_5fheter_5fqueue',['sp_heter_queue',['../classdensity_1_1sp__heter__queue.html',1,'density']]],

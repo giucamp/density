@@ -134,6 +134,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a46c96e850d9c759a370614ebf8b5ddb9"><td class="memTemplParams" colspan="2">template&lt;typename INPUT_ITERATOR &gt; </td></tr>
 <tr class="memitem:a46c96e850d9c759a370614ebf8b5ddb9"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__array.html#a46c96e850d9c759a370614ebf8b5ddb9">lifo_array</a> (INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end, typename std::iterator_traits&lt; INPUT_ITERATOR &gt;::iterator_category=typename std::iterator_traits&lt; INPUT_ITERATOR &gt;::iterator_category())</td></tr>
 <tr class="separator:a46c96e850d9c759a370614ebf8b5ddb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b362ba41e7d0be0a80c3ae04d28e1fc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__array.html#a7b362ba41e7d0be0a80c3ae04d28e1fc">lifo_array</a> (const <a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a> &amp;)=delete</td></tr>
+<tr class="separator:a7b362ba41e7d0be0a80c3ae04d28e1fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a805db6ece47dd8577fe4d7c45521e40a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__array.html#a805db6ece47dd8577fe4d7c45521e40a">operator=</a> (const <a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a> &amp;)=delete</td></tr>
+<tr class="separator:a805db6ece47dd8577fe4d7c45521e40a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36d207a088fc2cc504a3056ad0ba71a7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__array.html#a36d207a088fc2cc504a3056ad0ba71a7">~lifo_array</a> ()</td></tr>
 <tr class="separator:a36d207a088fc2cc504a3056ad0ba71a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44545a936daa510da7f9fe4835f6ee84"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1lifo__array.html#a44545a936daa510da7f9fe4835f6ee84">size</a> () const  noexcept</td></tr>
@@ -298,6 +302,31 @@ class density::lifo_array&lt; TYPE &gt;</h3>
 <div class="fragment"><div class="line">    std::vector&lt;int&gt; vect{ 1, 2, 3 };</div><div class="line">    lifo_array&lt;int&gt; array(vect.cbegin(), vect.cend());</div><div class="line">    <span class="keyword">auto</span> int_sum = std::accumulate(array.begin(), array.end(), 0);</div><div class="line">    assert(int_sum == 6);</div></div><!-- fragment -->
 </div>
 </div>
+<a class="anchor" id="a7b362ba41e7d0be0a80c3ae04d28e1fc"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a> </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a>&lt; TYPE &gt; &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Copy construction not allowed </p>
+
+</div>
+</div>
 <a class="anchor" id="a36d207a088fc2cc504a3056ad0ba71a7"></a>
 <div class="memitem">
 <div class="memproto">
@@ -323,6 +352,31 @@ class density::lifo_array&lt; TYPE &gt;</h3>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a805db6ece47dd8577fe4d7c45521e40a"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a>&amp; operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a>&lt; TYPE &gt; &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Copy assignment not allowed </p>
+
+</div>
+</div>
 <a class="anchor" id="a44545a936daa510da7f9fe4835f6ee84"></a>
 <div class="memitem">
 <div class="memproto">
