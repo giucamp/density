@@ -121,6 +121,13 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         flags = flags | QueueTesterFlags::eReserveCoreToMainThread;
     }
 
+    lifo_examples();
+    lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
+    if (i_settings.m_exceptions)
+    {
+        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 4, 3);
+    }
+
     misc_examples();
 
     heterogeneous_queue_samples(i_ostream);
@@ -139,13 +146,6 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     conc_func_queue_samples(i_ostream);
     lf_func_queue_samples(i_ostream);
     sp_func_queue_samples(i_ostream);
-
-    lifo_examples();
-    lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
-    if (i_settings.m_exceptions)
-    {
-        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 4, 3);
-    }
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
     all_queues_generic_tests(flags, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);

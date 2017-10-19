@@ -82,19 +82,31 @@ namespace density_tests
 
             Statistics m_external_block_count;
             Statistics m_external_block_size;
+            size_t m_sample_count = 0;
 
             std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
 
-            constexpr static size_t s_table_cell_width = 22;
+            constexpr static size_t s_table_cell_width = 20;
 
             static void write_stats_header(std::ostream & i_stream)
             {
-                //            1234567890123456789012|1234567890123456789012|1234567890123456789012
-                i_stream << "|--------------------------------------------------------------------|\n";
-                i_stream << "|        thread        |     page_count       | external_block_count |\n";
-                i_stream << "|      lifo_blocks     |   page_block_count   |external_block_size(%)|\n";
-                i_stream << "|      time (secs)     |  page_used_space(%)  |                      |\n";
-                i_stream << "|--------------------------------------------------------------------|\n";
+                std::string const separator_line(s_table_cell_width * 3 + 4, '-');
+                
+                i_stream << separator_line << '\n';
+                i_stream << '|' << format_fixed("thread", s_table_cell_width);
+                i_stream << '|' << format_fixed("page_count", s_table_cell_width);
+                i_stream << '|' << format_fixed("ext_block_count", s_table_cell_width);
+                i_stream << "|\n";
+
+                i_stream << '|' << format_fixed("lifo_blocks", s_table_cell_width);
+                i_stream << '|' << format_fixed("page_block_count", s_table_cell_width);
+                i_stream << '|' << format_fixed("ext_block_size", s_table_cell_width);
+                i_stream << "|\n";
+
+                i_stream << '|' << format_fixed("time (secs)", s_table_cell_width);
+                i_stream << '|' << format_fixed("page_used_space(%)", s_table_cell_width);
+                i_stream << '|' << format_fixed("stat sample count", s_table_cell_width);
+                i_stream << "|\n" << separator_line << '\n';
             }
 
             void write_stats(std::ostream & i_stream, const char * i_thread_name) const
@@ -102,7 +114,7 @@ namespace density_tests
                 using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
                 auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
 
-                std::string const empty(s_table_cell_width, ' ');
+                std::string const separator_line(s_table_cell_width * 3 + 4, '-');
 
                 i_stream << '|' << format_fixed(i_thread_name, s_table_cell_width);
                 i_stream << '|' << format_fixed(m_page_count, s_table_cell_width);
@@ -116,8 +128,8 @@ namespace density_tests
 
                 i_stream << '|' << format_fixed(elapsed.count(), s_table_cell_width);
                 i_stream << '|' << format_fixed(m_page_used_space, s_table_cell_width);
-                i_stream << '|' << empty;
-                i_stream << "|\n|--------------------------------------------------------------------|\n";
+                i_stream << '|' << format_fixed(m_sample_count, s_table_cell_width);
+                i_stream << "|\n" << separator_line << '\n';
             }
         };
 
@@ -165,6 +177,7 @@ namespace density_tests
             });
 
             // update stats about counts
+            m_stats.m_sample_count++;
             m_stats.m_lifo_blocks.sample(static_cast<double>(m_lifo_blocks.size()));
             m_stats.m_page_count.sample(static_cast<double>(pages.size()));
             m_stats.m_external_block_count.sample(static_cast<double>(external_blocks.size()));
@@ -174,12 +187,19 @@ namespace density_tests
             void * const virgin_top = get_virgin_top();
             if (current_top == virgin_top)
             {
-                // virgin data-stack: only external blocks must exist. external_blocks and m_lifo_blocks must match exactly
+                /* virgin data-stack: only external blocks must exist. external_blocks and m_lifo_blocks must 
+                    match exactly (after stripping virgin blocks from m_lifo_blocks */
+                auto non_virgin_lifo_blocks = m_lifo_blocks;
+                non_virgin_lifo_blocks.erase(
+                    std::remove_if(non_virgin_lifo_blocks.begin(), non_virgin_lifo_blocks.end(), 
+                        [virgin_top](const Block & i_block){ return i_block.m_block == virgin_top; }),
+                    non_virgin_lifo_blocks.end());
+
                 DENSITY_TEST_ASSERT(pages.size() == 0);
-                DENSITY_TEST_ASSERT(external_blocks.size() == m_lifo_blocks.size());
+                DENSITY_TEST_ASSERT(external_blocks.size() == non_virgin_lifo_blocks.size());
                 for (size_t index = 0; index < external_blocks.size(); index++)
                 {
-                    auto const & lifo_block = m_lifo_blocks[index];
+                    auto const & lifo_block = non_virgin_lifo_blocks[index];
                     auto const & external_block = external_blocks[index];
                     DENSITY_TEST_ASSERT(external_block.m_block == lifo_block.m_block);
                     DENSITY_TEST_ASSERT(external_block.m_block_info.m_size == lifo_block.m_size);

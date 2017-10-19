@@ -12,6 +12,7 @@
 
 namespace density_tests
 {
+    /** Computes incrementally the average, the mininum and the maximum of a set of samples. */
     class Statistics
     {
     public:
@@ -33,16 +34,19 @@ namespace density_tests
 
         void sample(double i_value) noexcept
         {
+            auto const new_count = m_count + 1.;
             m_min = std::min(m_min, i_value);
             m_max = std::max(m_max, i_value);
-            m_average += (i_value - m_average) / m_count_plus_one;
-            m_count_plus_one += 1.;
+            m_average += (i_value - m_average) / new_count;
+            m_count = new_count;
         }
 
         void to_stream(std::ostream & i_stream) const
         {
-            if (m_count_plus_one == 1.)
+            if (m_count == 0.)
                 i_stream << "no samples";
+            else if (m_min == m_max)
+                i_stream << m_min;
             else
                 i_stream << "[" << m_min << ", " << m_max << "](" << m_average << ")";
         }
@@ -57,7 +61,7 @@ namespace density_tests
         double m_min = std::numeric_limits<double>::infinity();
         double m_max = -std::numeric_limits<double>::infinity();
         double m_average = 0.;
-        double m_count_plus_one = 1.;
+        double m_count = 0.;
     };
 
 } // namespace density_test
