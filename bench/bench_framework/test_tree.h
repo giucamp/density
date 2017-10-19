@@ -35,6 +35,26 @@ namespace density_bench
 
         TestTree * find(const char * i_path);
 
+        template <typename FUNC>
+            void recursive_for_each_child(const FUNC & i_callable) const
+        {
+            for (auto const & child : m_children)
+            {
+                i_callable(child);
+                child.recursive_for_each_child(i_callable);
+            }
+        }
+
+        template <typename FUNC>
+            void recursive_for_each_child(const FUNC & i_callable)
+        {
+            for (auto const & child : m_children)
+            {
+                i_callable(child);
+                child.recursive_for_each_child(i_callable);
+            }
+        }
+
     private:
         std::string const m_name;
         std::vector< PerformanceTestGroup > m_performance_tests;

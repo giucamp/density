@@ -12,6 +12,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 
 namespace density_tests
 {
@@ -73,6 +74,8 @@ namespace density_tests
 
         struct Stats
         {
+            Statistics m_lifo_blocks;
+
             Statistics m_page_count;
             Statistics m_page_block_count;
             Statistics m_page_used_space;
@@ -80,14 +83,41 @@ namespace density_tests
             Statistics m_external_block_count;
             Statistics m_external_block_size;
 
-            friend std::ostream & operator << (std::ostream & i_stream, const Stats & i_statistics)
+            std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
+
+            constexpr static size_t s_table_cell_width = 22;
+
+            static void write_stats_header(std::ostream & i_stream)
             {
-                i_stream << "page_count: " << i_statistics.m_page_count;
-                i_stream << "\tpage_block_count: " << i_statistics.m_page_block_count;
-                i_stream << "\tpage_used_space: " << i_statistics.m_page_used_space;
-                i_stream << "\nexternal_block_count: " << i_statistics.m_external_block_count;
-                i_stream << "\texternal_block_size: " << i_statistics.m_external_block_size;
-                return i_stream;
+                //            1234567890123456789012|1234567890123456789012|1234567890123456789012
+                i_stream << "|--------------------------------------------------------------------|\n";
+                i_stream << "|        thread        |     page_count       | external_block_count |\n";
+                i_stream << "|      lifo_blocks     |   page_block_count   |external_block_size(%)|\n";
+                i_stream << "|      time (secs)     |  page_used_space(%)  |                      |\n";
+                i_stream << "|--------------------------------------------------------------------|\n";
+            }
+
+            void write_stats(std::ostream & i_stream, const char * i_thread_name) const
+            {
+                using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
+                auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
+
+                std::string const empty(s_table_cell_width, ' ');
+
+                i_stream << '|' << format_fixed(i_thread_name, s_table_cell_width);
+                i_stream << '|' << format_fixed(m_page_count, s_table_cell_width);
+                i_stream << '|' << format_fixed(m_external_block_count, s_table_cell_width);
+                i_stream << "|\n";
+
+                i_stream << '|' << format_fixed(m_lifo_blocks, s_table_cell_width);
+                i_stream << '|' << format_fixed(m_page_block_count, s_table_cell_width);
+                i_stream << '|' << format_fixed(m_external_block_size, s_table_cell_width);
+                i_stream << "|\n";
+
+                i_stream << '|' << format_fixed(elapsed.count(), s_table_cell_width);
+                i_stream << '|' << format_fixed(m_page_used_space, s_table_cell_width);
+                i_stream << '|' << empty;
+                i_stream << "|\n|--------------------------------------------------------------------|\n";
             }
         };
 
@@ -134,7 +164,8 @@ namespace density_tests
                 return i_first.m_block_info.m_progressive < i_second.m_block_info.m_progressive;
             });
 
-            // update stats about count
+            // update stats about counts
+            m_stats.m_lifo_blocks.sample(static_cast<double>(m_lifo_blocks.size()));
             m_stats.m_page_count.sample(static_cast<double>(pages.size()));
             m_stats.m_external_block_count.sample(static_cast<double>(external_blocks.size()));
 
@@ -153,7 +184,7 @@ namespace density_tests
                     DENSITY_TEST_ASSERT(external_block.m_block == lifo_block.m_block);
                     DENSITY_TEST_ASSERT(external_block.m_block_info.m_size == lifo_block.m_size);
 
-                    m_stats.m_external_block_size.sample(static_cast<double>(external_block.m_block_info.m_size));
+                    m_stats.m_external_block_size.sample(size_percentage(external_block.m_block_info.m_size));
                 }
             }
             else
@@ -161,39 +192,41 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(!pages.empty()); // at least one page must exist
 
                 // iterate m_lifo_blocks
-                Block prev_block;
+                Block prev_inpage_block;
                 size_t page_index = 0, external_block_index = 0;
-                size_t lifo_block_index = 0;
-                for (; lifo_block_index < m_lifo_blocks.size() && m_lifo_blocks[lifo_block_index].m_block == virgin_top; lifo_block_index++)
-                {
-                    // skip initial virgin blocks
-                }
-                for( ; lifo_block_index < m_lifo_blocks.size(); lifo_block_index++)
+                for(size_t lifo_block_index = 0; lifo_block_index < m_lifo_blocks.size(); lifo_block_index++)
                 {
                     const auto & block = m_lifo_blocks[lifo_block_index];
-                    if (external_block_index < external_blocks.size() && external_blocks[external_block_index].m_block == block.m_block)
+                    if (block.m_block == virgin_top)
+                    {
+                        // empty virgin blocks can appear only before the first in-page block
+                        DENSITY_TEST_ASSERT(prev_inpage_block.m_block == nullptr);
+                    }
+                    else if (external_block_index < external_blocks.size() && external_blocks[external_block_index].m_block == block.m_block)
                     {
                         // consume an external block
                         DENSITY_TEST_ASSERT(external_blocks[external_block_index].m_block_info.m_size == block.m_size);
-                        m_stats.m_external_block_size.sample(static_cast<double>(external_blocks[external_block_index].m_block_info.m_size));
+                        m_stats.m_external_block_size.sample(size_percentage(external_blocks[external_block_index].m_block_info.m_size));
                         external_block_index++;
                     }
                     else
                     {
-                        if (!same_page(block.m_block, prev_block.m_block))
+                        if (!same_page(block.m_block, prev_inpage_block.m_block))
                         {
                             // page switch
-                            if (prev_block.m_block == nullptr)
+                            if (prev_inpage_block.m_block != nullptr)
                             {
-                                // first page
-                            }
-                            else
-                            {
+                                // not first page
                                 m_stats.m_page_block_count.sample(static_cast<double>(pages[page_index].m_blocks));
-                                m_stats.m_page_used_space.sample(static_cast<double>(pages[page_index].m_used_size));
+                                m_stats.m_page_used_space.sample(size_percentage(pages[page_index].m_used_size));
                                 page_index++;
                                 DENSITY_TEST_ASSERT(page_index < pages.size());
                             }
+                        }
+                        else
+                        {
+                            // no page switch, this block must begin at the end of the previous in-page block
+                            DENSITY_TEST_ASSERT(block.m_block == density::address_add(prev_inpage_block.m_block, prev_inpage_block.m_size));
                         }
                         DENSITY_TEST_ASSERT(same_page(block.m_block, pages[page_index].m_page));                        
 
@@ -201,7 +234,7 @@ namespace density_tests
                         pages[page_index].m_blocks++;
                         pages[page_index].m_used_size += block.m_size;
 
-                        prev_block = block;
+                        prev_inpage_block = block;
                     }
                 }
 
@@ -212,6 +245,12 @@ namespace density_tests
         }
 
     private:
+
+        static int size_percentage(size_t i_size)
+        {
+            auto const factor = 100. / static_cast<double>(underlying_allocator::page_size);
+            return static_cast<int>(i_size * factor + .5);
+        }
 
         static bool same_page(const void * i_first, const void * i_second) noexcept
         {
@@ -235,13 +274,6 @@ namespace density_tests
 
         void notify_alloc(void * i_block, size_t i_size)
         {
-            // virgin blocks can be only at the bottom
-            void * const virgin_top = get_virgin_top();
-            if (!m_lifo_blocks.empty() && m_lifo_blocks.back().m_block != virgin_top)
-            {
-                DENSITY_TEST_ASSERT(i_block != virgin_top);
-            }
-
             Block new_block;
             new_block.m_block = i_block;
             new_block.m_size = i_size;
@@ -322,10 +354,15 @@ namespace density_tests
                 user_data_stack.stat_sample();
             }
 
-            /* Prints the internal statistics. */
-            void stats_print(std::ostream & i_dest)
+            void stats_header(std::ostream & i_dest)
             {
-                i_dest << user_data_stack.stats();
+                user_data_stack.stats().write_stats_header(i_dest);
+            }
+
+            /* Prints the internal statistics. */
+            void stats_print(std::ostream & i_dest, const char * i_thread_name)
+            {
+                user_data_stack.stats().write_stats(i_dest, i_thread_name);
             }
 
         } // namespace user_data_stack

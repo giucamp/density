@@ -44,7 +44,7 @@ namespace density_tests
             if (m_count_plus_one == 1.)
                 i_stream << "no samples";
             else
-                i_stream << "[" << m_min << ", " << m_max << "], avg: " << m_average;
+                i_stream << "[" << m_min << ", " << m_max << "](" << m_average << ")";
         }
 
         friend std::ostream & operator << (std::ostream & i_stream, const Statistics & i_statistics)

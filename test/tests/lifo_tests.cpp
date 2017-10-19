@@ -30,8 +30,10 @@
                 that make a complete check of the data-stack, and updates the internal statistics. */
             void stat_sample();
 
+            void stats_header(std::ostream & i_dest);
+
             /* Prints the internal statistics. */
-            void stats_print(std::ostream & i_dest);
+            void stats_print(std::ostream & i_dest, const char * i_thread_name);
         }
     }
 #endif // #ifdef DENSITY_USER_DATA_STACK
@@ -329,25 +331,23 @@ namespace density_tests
             threads.emplace_back(main_random);
         }
 
+        density::user_data_stack::stats_header(i_output);
+
         // start threads
-        auto const start_time = std::chrono::high_resolution_clock::now();
         for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
         {
             auto & thread_entry = threads[thread_index];
             auto & thread_random = thread_entry.m_random;
-            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth, start_time]{
+            thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth]{
 
                 set_thread_affinity(affinity_mask);
 
                 lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
 
-                using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-                auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - start_time);
-
-                std::ostringstream label;
-                label << "thread " << thread_index << " has finished after " << elapsed.count() << " secs\n";
-                density::user_data_stack::stats_print(label);
-                i_output << label.str() << std::endl;
+                std::ostringstream stats_stream;
+                density::user_data_stack::stats_print(stats_stream, std::to_string(thread_index).c_str());
+                i_output << stats_stream.str();
+                i_output.flush();
             });
         }
 

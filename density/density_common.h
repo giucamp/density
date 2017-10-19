@@ -13,7 +13,7 @@
 #include <new>
 
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version, NN = minor version, and RR = revision */
-#define DENSITY_VERSION            0x00010000
+#define DENSITY_VERSION            0x00010100
 
 #include <density/density_config.h>
 

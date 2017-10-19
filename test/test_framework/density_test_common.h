@@ -9,6 +9,8 @@
 #include <string>
 #include <chrono>
 #include <density/void_allocator.h>
+#include <sstream>
+#include <string>
 #if defined(__GNUC__) && !defined(_MSC_VER)
     #include <cxxabi.h>
 #endif
@@ -89,6 +91,47 @@ namespace density_tests
         }
     };
 
+    enum FormatAlignment
+    {
+        eAlignLeft,
+        eAlignCenter
+    };
+
+    /** Writes to a string a value using a fixed number of chars. Usefull for tables. */
+    template <typename TYPE>
+        std::string format_fixed(const TYPE & i_value, size_t i_char_count, FormatAlignment i_alignment = eAlignCenter, char i_fill_char = ' ')
+    {
+        std::ostringstream out;
+        out << i_value;
+        auto string = out.str();
+        switch (i_alignment)
+        {
+            case eAlignLeft:
+            {
+                string.resize(i_char_count, i_fill_char);
+                break;
+            }
+            case eAlignCenter:
+            {
+                if (string.size() > i_char_count)
+                {
+                    // truncate
+                    string.resize(i_char_count);
+                }
+                else
+                {
+                    // align
+                    auto const padding = i_char_count - string.size();
+                    auto const left_padding = padding / 2;
+                    string.insert(0, left_padding, i_fill_char);
+                    string.resize(i_char_count, i_fill_char);
+                }
+            }
+            default:
+                break;
+        }        
+        return string;
+    }
 
     // old versions of libstdc++ don't define std::max_align_t
     #if defined(__GLIBCXX__)
