@@ -4,9 +4,14 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#if defined(_MSC_VER)
+    #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "bench_framework/test_tree.h"
 #include "bench_framework/test_session.h"
+#include "bench_framework/performance_test.h"
+#include <density/density_common.h>
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -31,17 +36,38 @@ int main(int argc, char *argv[])
     #endif
 
     std::cout << "density_bench - built on " __DATE__  " at " __TIME__ << std::endl;
+    std::cout << "density version: " << density::version << std::endl;
+    
+    std::string out_file;
+    std::string src_dir;
 
-    const char * out_file = nullptr;
-    if (argc >= 2)
+    char string_argument[4096];
+    for (int i = 1; i < argc; i++)
     {
-        out_file = argv[1];
-        if (!touch_file(out_file))
+        if (sscanf(argv[i], "-out: %4095s", string_argument) == 1)
+        {
+            out_file = string_argument;
+        }
+        else if (sscanf(argv[i], "-source: %4095s", string_argument) == 1)
+        {
+            src_dir = string_argument;
+        }
+        else
+        {
+            std::cerr << "unrecognized commandline argument: " << argv[i] << std::endl;
+        }
+    }
+
+    if (!out_file.empty())
+    {
+        if (!touch_file(out_file.c_str()))
         {
             std::cerr << "can't open for write the file " << out_file << std::endl;
             return -1;
         }
-    }   
+    }
+
+    PerformanceTestGroup::set_source_dir(src_dir.c_str());
 
     TestTree root("density");
     single_thread_tests(root);
@@ -59,10 +85,14 @@ int main(int argc, char *argv[])
 
     auto result = run_session(root, TestConfig(), progression);
 
-    if (out_file != nullptr)
+    if (!out_file.empty())
     {
-        result.save_to(out_file);
+        result.save_to(out_file.c_str());
     }
 
     result.print_summary(std::cout);
 }
+
+#if defined(_MSC_VER)
+    #undef _CRT_SECURE_NO_WARNINGS
+#endif

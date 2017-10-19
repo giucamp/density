@@ -359,7 +359,7 @@ namespace density_bench
                 for (auto const & result : results)
                 {
                     double const duration_percentage = (result.m_duration / max_duration) * 100.;
-                    i_ostream << " * Duration: " << duration_percentage << "% (" << result.m_duration  << " secs)\n";
+                    i_ostream << " * average duration: " << duration_percentage << "% (" << result.m_duration  << " secs)\n";
                     i_ostream << result.m_code << "\n---------------------------------------\n";
                 }
             }

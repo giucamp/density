@@ -1,0 +1,20 @@
+
+***************************************
+      _                _ _         
+     | |              (_) |        
+   __| | ___ _ __  ___ _| |_ _   _ 
+  / _` |/ _ \ '_ \/ __| | __| | | |
+ | (_| |  __/ | | \__ \ | |_| |_| |
+  \__,_|\___|_| |_|___/_|\__|\__, |
+                              __/ |
+                             |___/ 
+
+                       revision history
+***************************************
+
+version 1.01.00 - changes:
+	- fixed lifo space catastrophe: with a specific allocation-deallocation pattern, much of the capacity of the pages was wasted
+	- fixed lifo_array not deleting copy constructor and assignment
+	- improved lifo testing, added statistics
+	- default queue test cardinality is now 2000 (it was 1000)
+	- documentation update

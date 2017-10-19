@@ -372,6 +372,9 @@
     <ClInclude Include="..\test_framework\threading_extensions.h" />
     <ClInclude Include="..\test_settings.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\history.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -258,4 +258,9 @@
       <UniqueIdentifier>{bde40fab-7dc3-46aa-9141-e3800b57ccc9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\history.txt">
+      <Filter>density</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

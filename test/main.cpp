@@ -125,7 +125,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
     if (i_settings.m_exceptions)
     {
-        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 4, 3);
+        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
     }
 
     misc_examples();
@@ -204,8 +204,14 @@ int main(int argc, char **argv)
         random_seed = std::random_device()();
     }
 
-    std::cout << "Number of processors: " << density_tests::get_num_of_processors() << "\n";
-    std::cout << "Random seed: " << random_seed << "\n" << std::endl;
+    std::cout << "number of processors: " << density_tests::get_num_of_processors() << "\n";
+    std::cout << "random seed: " << random_seed << "\n";
+    std::cout << "density version: " << density::version << "\n";
+    std::cout << "default page size: " << density::void_allocator::page_size << "\n" << std::endl;
+
+    // check that density::version and DENSITY_VERSION are consistent
+    std::string version = std::to_string(DENSITY_VERSION >> 16) + '.' + std::to_string((DENSITY_VERSION >> 8) & 0xFF) + '.' + std::to_string(DENSITY_VERSION & 0xFF);
+    DENSITY_TEST_ASSERT(version == density::version);
 
     //sandbox();
 

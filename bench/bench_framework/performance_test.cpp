@@ -12,28 +12,41 @@
 
 namespace density_bench
 {
+    std::string PerformanceTestGroup::s_source_dir;
+
+    void PerformanceTestGroup::set_source_dir(const char * i_dir)
+    {
+        s_source_dir = i_dir;
+        while (!s_source_dir.empty() && (s_source_dir.back() == '\\' || s_source_dir.back() == '/'))
+        {
+            s_source_dir.resize(s_source_dir.size() - 1);
+        }
+        if(!s_source_dir.empty())
+            s_source_dir += '/';
+    }
+
     void PerformanceTestGroup::add_test(const char * i_source_file, int i_start_line,
         PerformanceTest::TestFunction i_function, int i_end_line)
     {
-        using namespace std;
+        auto const source_file = s_source_dir + i_source_file;
 
         // open the source file and read the lines from i_start_line to i_end_line
-        ifstream stream(i_source_file);
+        std::ifstream stream(source_file.c_str());
         if (stream.fail())
         {
-            auto const error_message = std::string("Can't open the source ") + i_source_file;
+            auto const error_message = std::string("Can't open the source ") + source_file;
             std::cerr << error_message << std::endl;
             throw std::ios_base::failure(error_message);
         }
         int curr_line = 0;
-        vector<string> lines;
+        std::vector<std::string> lines;
         while (!stream.eof() && curr_line < i_end_line - 1)
         {
-            string line;
-            getline(stream, line);
+            std::string line;
+            std::getline(stream, line);
             if (curr_line >= i_start_line)
             {
-                lines.push_back(move(line));
+                lines.push_back(std::move(line));
             }
             curr_line++;
         }
@@ -72,13 +85,13 @@ namespace density_bench
         }
 
         // reconstruct the source code, with "#nl#" instead of newlines
-        string source_code;
+        std::string source_code;
         for (auto & line : lines)
         {
             line.erase(line.begin(), line.begin() + std::min(white_prefix_length, line.length()));
             source_code += line + "#nl#";
         }
 
-        add_test(PerformanceTest(source_code.c_str(), move(i_function)));
+        add_test(PerformanceTest(source_code.c_str(), std::move(i_function)));
     }
 } // namespace density_bench

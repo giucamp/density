@@ -15,7 +15,7 @@ struct TestSettings
     bool m_exceptions = true;
     bool m_spare_one_cpu = true;
     bool m_test_allocators = true;
-    size_t m_queue_tests_cardinality = 1000;
+    size_t m_queue_tests_cardinality = 2000;
 };
 
 std::shared_ptr<const TestSettings> parse_settings(int argc, char **argv);

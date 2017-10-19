@@ -76,11 +76,20 @@ namespace density_bench
 
         const std::vector<PerformanceTest> & tests() const { return m_tests; }
 
+        static void set_source_dir(const char * i_dir);
+
+        static const char * set_source_dir()
+        {
+            return s_source_dir.c_str();
+        }
+
     private:
         size_t m_cardinality_start = 0;
         size_t m_cardinality_step = 1000;
         size_t m_cardinality_end = 80000;
         std::vector<PerformanceTest> m_tests;
         std::string m_name, m_description, m_prolog_code, m_version_label;
+        
+        static std::string s_source_dir;
     };
 }
