@@ -1,14 +1,36 @@
-SET CONFIGURATION=Release
-SET PLATFORM=x64
+REM SET CONFIGURATION=Release
+REM SET PLATFORM=x64
 
-ECHO Testing %PLATFORM% %CONFIGURATION%
-IF "%PLATFORM%"=="x64" (
-    test\vs2017\x64\%CONFIGURATION%\density_tests.exe
-) ELSE (
-    test\vs2017\Win32\%CONFIGURATION%\density_tests.exe
+ECHO OFF
+
+REM Setup based in the configuration
+IF "%CONFIGURATION%"=="Debug" (
+    SET QUEUE_TEST_CARD=1000
+    SET BENCH=FALSE
+)
+IF "%CONFIGURATION%"=="DebugClang" (
+    SET QUEUE_TEST_CARD=1000
+    SET BENCH=FALSE
+)
+IF "%CONFIGURATION%"=="Release" (
+    SET QUEUE_TEST_CARD=2000
+    SET BENCH=TRUE
+)
+IF "%CONFIGURATION%"=="ReleaseClang" (
+    SET QUEUE_TEST_CARD=2000
+    SET BENCH=TRUE
 )
 
-IF "%CONFIGURATION%"=="Release" (
+REM Run test
+ECHO Testing %PLATFORM% %CONFIGURATION%
+IF "%PLATFORM%"=="x64" (
+    test\vs2017\x64\%CONFIGURATION%\density_tests.exe -queue_tests_cardinality:%QUEUE_TEST_CARD%
+) ELSE (
+    test\vs2017\Win32\%CONFIGURATION%\density_tests.exe -queue_tests_cardinality:%QUEUE_TEST_CARD%
+)
+
+REM Run bench
+IF "%BENCH%"=="TRUE" (
     ECHO Benchmarking %PLATFORM% %CONFIGURATION%
     IF "%PLATFORM%"=="x64" (
         test\vs2017\x64\%CONFIGURATION%\density_bench.exe -source:"bench\vs2017"
@@ -17,4 +39,4 @@ IF "%CONFIGURATION%"=="Release" (
     )
 )
 
-PAUSE
+REM PAUSE
