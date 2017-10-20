@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 RUN=$1
 BUILD_TYPE=$2
@@ -21,7 +22,7 @@ fi
 echo "MAKE_ARGS = $MAKE_ARGS"
 
 cd test
-mkdir build
+mkdir build || true
 cd build
 cmake $MAKE_ARGS -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
 make
@@ -33,5 +34,5 @@ fi
 cd ../..
 if [ "$GCOV" == "gcov-7" ]; then
     gcov-7 -version
-    coveralls --verbose --gcov '/usr/bin/gcov-7' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
+    coveralls --gcov '/usr/bin/gcov-7' --gcov-options '\-lp' -b test/build/CMakeFiles/density_test.dir
 fi
