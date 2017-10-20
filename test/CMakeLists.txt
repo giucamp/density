@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.1)
 project (density_test)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
 
 IF(ENABLE_TEST_DATA_STACK)
