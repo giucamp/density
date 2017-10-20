@@ -34,6 +34,10 @@ std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
             {
                 results.m_spare_one_cpu = integer != 0;
             }
+            else if (sscanf(*parameter, "-print_progress:%d", &integer) == 1)
+            {
+                results.m_print_progress = integer != 0;
+            }
             else if (sscanf(*parameter, "-test_allocators:%d", &integer) == 1)
             {
                 results.m_test_allocators = integer != 0;

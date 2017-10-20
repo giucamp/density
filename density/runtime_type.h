@@ -709,16 +709,16 @@ namespace density
         runtime_type meets the requirements of \ref RuntimeType_concept "RuntimeType".
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
-        instances of the target types, depending on the features included on FEATURE_LIST. \n
+        instances of the target types, depending on the features included on <code>FEATURE_LIST</code>. \n
         A runtime_type bound to a type can be created with the static function runtime_type::make. runtime_type has value semantic, and is copyable. \n
         A default-constructed runtime_type is empty: trying to use type-features of an empty runtime_type leads to undefined behavior.
-        A runtime_type becomes empty is the member function clear is called.
+        A runtime_type becomes empty is the member function \ref clear is called.
 
-        runtime_type exposes a set of functions to manipulate instances of the target type. Anyway it can be extended
-        with any type feature built-in in density (for example type_features::equals or type_features::less). Furthermore
-        user-defined features are supported, to add custom capabilities to the type erasure (see the examples below). \n
+        runtime_type exposes a set of functions to manipulate instances of the target type. Furthermore it can be extended
+        with any type feature built-in in density (for example type_features::equals or type_features::less). User-defined
+        features are also supported, to add custom capabilities to the type erasure (see the examples below). \n
         Features can be queried with the function runtime_type::get_feature, specifying the requested feature at compile-time as template
-        argument. The search is performed at compile time. If the requested feature is not included in FEATURE_LIST, a
+        argument. The search is performed at compile time. If the requested feature is not included in <code>FEATURE_LIST</code>, a
         static_assert fails.
 
         \n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable, that is a static array of feature
@@ -730,14 +730,14 @@ namespace density
 
         \snippet misc_examples.cpp runtime_type example 1
 
-        This is an example of user-defined features: it calls a function named 'update', that takes as parameter a float
+        This is an example of user-defined features: it calls a function named <code>update</code>, that takes as parameter a <code>float</code>.
 
         \snippet misc_examples.cpp runtime_type example 2
 
         The example below uses feature_call_update. Note that:
-            - ObjectA and ObjectB are unrelated types (no common base class)
-            - ObjectA::update and ObjectB::update are not virtual functions
-            - If a std::string was added to the array, a compile time error would report that std::string has not an update function
+            - <code>ObjectA</code> and <code>ObjectB</code> are unrelated types (no common base class)
+            - <code>ObjectA::update</code> and <code>ObjectB::update</code> are not virtual functions
+            - If a <code>std::string</code> was added to the array, a compile time error would report that <code>std::string</code> has not an update function
 
         \snippet misc_examples.cpp runtime_type example 3
 
@@ -792,6 +792,7 @@ namespace density
         /** Returns whether this runtime_type is not bound to a target type */
         bool empty() const noexcept { return m_table == nullptr; }
 
+        /** Unbind from a target. If the runtime_type was already empty this function has no effect. */
         void clear() noexcept
         {
             m_table = nullptr;

@@ -120,6 +120,10 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     {
         flags = flags | QueueTesterFlags::eReserveCoreToMainThread;
     }
+    if (i_settings.m_print_progress)
+    {
+        flags = flags | QueueTesterFlags::ePrintProgress;
+    }
 
     lifo_examples();
     lifo_tests(flags, i_ostream, i_random_seed, 20, 4);

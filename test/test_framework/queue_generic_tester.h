@@ -192,8 +192,12 @@ namespace density_tests
                     DENSITY_TEST_ASSERT(consumed <= i_target_put_count && produced <= i_target_put_count);
                     complete = consumed >= i_target_put_count && produced >= i_target_put_count;
 
-                    progress.set_progress(consumed);
-                    line << "Active threads: " << active_threads << " Consumed: " << consumed << " (" << progress << "), enqueued: " << produced - consumed << std::endl;
+                    if (i_flags && QueueTesterFlags::ePrintProgress)
+                    {
+                        progress.set_progress(consumed);
+                        line << "Active threads: " << active_threads << " Consumed: " << consumed << " (" << progress << "), enqueued: " << produced - consumed << std::endl;
+                    }
+
                     if (!complete)
                     {
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));

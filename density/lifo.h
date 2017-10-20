@@ -408,7 +408,7 @@ namespace density
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -577,7 +577,7 @@ namespace density
         @tparam TYPE Element type.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
