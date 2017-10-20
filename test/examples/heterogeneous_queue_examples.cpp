@@ -1140,9 +1140,7 @@ void heterogeneous_queue_samples_1()
     queue.push(4);
     queue.push(std::complex<double>(1., 4.));
     queue.emplace<std::string>("Hello!!");
-
-    // This would not compile because std::thread does not have a << operator for streams
-    // queue.emplace<std::thread>();
+    // queue.emplace<std::thread>(); - This would not compile because std::thread does not have a << operator for streams
 
     // consume all the elements
     while (auto consume = queue.try_start_consume())
@@ -1235,7 +1233,7 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
     //! [heter_queue iterators example 1]
     heter_queue<> queue_1, queue_2;
     queue_1.push(42);
-    assert(queue_1.end() == queue_2.end() && queue_1.end() == heter_queue<>::iterator() );
+    assert(queue_1.end() == queue_2.end() && queue_1.end() == heter_queue<>::const_iterator() );
 
     for (const auto & value : queue_1)
     {
