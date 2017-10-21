@@ -1,16 +1,16 @@
 
 branch          |build status
 --------------- |------------------
-master|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density) [![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density) [![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg?branch=master)](https://coveralls.io/github/giucamp/density?branch=master)
+master|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=master)](https://travis-ci.org/giucamp/density)[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct/branch/master?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density/branch/master)[![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg?branch=master)](https://coveralls.io/github/giucamp/density?branch=master)
 develop|[![Build Status](https://travis-ci.org/giucamp/density.svg?branch=develop)](https://travis-ci.org/giucamp/density)[![Build status](https://ci.appveyor.com/api/projects/status/td8xk69gswc6vuct/branch/develop?svg=true)](https://ci.appveyor.com/project/GiuseppeCampana/density/branch/develop)[![Coverage Status](https://coveralls.io/repos/github/giucamp/density/badge.svg?branch=develop)](https://coveralls.io/github/giucamp/density?branch=develop)
 
 Density is a C++11 header-only library focused on paged memory management and concurrency, providing:
 
-* [lifo memory management](http://giucamp.github.io/density/doc/html/index.html#lifo):
-  - [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html)
-  - [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html)
-  - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html)
-* [heterogeneous queues and function queues](http://giucamp.github.io/density/doc/html/index.html#queues):
+* efficient thread-local dynamic memory (see [lifo memory management](http://giucamp.github.io/density/doc/html/index.html#lifo)):
+  - [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html), an high-level container similar variable length arrays of to c99
+  - [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html), an untyped and resizable buffer 
+  - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html), a low-level allocatotr that uses a page allocator to ptopvide LIFO memory management
+* a toolkit of queues suitable for generic thread communication (see [heterogeneous queues and function queues](http://giucamp.github.io/density/doc/html/index.html#queues)):
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
