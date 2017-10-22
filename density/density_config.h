@@ -32,7 +32,7 @@
 #define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
 /** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(_MSC_VER)
     #define DENSITY_LIKELY(bool_expr)                   (__builtin_expect(bool_expr, true), bool_expr)
 #else
     #define DENSITY_LIKELY(bool_expr)                   (bool_expr)

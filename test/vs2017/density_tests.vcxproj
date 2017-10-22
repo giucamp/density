@@ -170,7 +170,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK;DENSITY_DEBUG;DENSITY_DEBUG_INTERNAL</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -185,7 +185,7 @@
       </PrecompiledHeader>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK;DENSITY_DEBUG;DENSITY_DEBUG_INTERNAL</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>FullDebug</DebugInformationFormat>
     </ClCompile>
@@ -199,7 +199,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK;DENSITY_DEBUG;DENSITY_DEBUG_INTERNAL</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -216,7 +216,7 @@
       </PrecompiledHeader>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);DENSITY_USER_DATA_STACK;DENSITY_DEBUG;DENSITY_DEBUG_INTERNAL</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>FullDebug</DebugInformationFormat>
     </ClCompile>
