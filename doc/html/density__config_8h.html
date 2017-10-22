@@ -115,9 +115,9 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a6c20118d82576f496376ea222bfb5c03"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#a6c20118d82576f496376ea222bfb5c03">DENSITY_ASSERT</a>&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a></td></tr>
+<tr class="memitem:a6c20118d82576f496376ea222bfb5c03"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#a6c20118d82576f496376ea222bfb5c03">DENSITY_ASSERT</a>&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aa8273fbeb3de7f54df7729e6f8500c6d">DENSITY_ASSUME</a></td></tr>
 <tr class="separator:a6c20118d82576f496376ea222bfb5c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a667963aff107c478054ed96746f53586"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#a667963aff107c478054ed96746f53586">DENSITY_ASSERT_INTERNAL</a>&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a></td></tr>
+<tr class="memitem:a667963aff107c478054ed96746f53586"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#a667963aff107c478054ed96746f53586">DENSITY_ASSERT_INTERNAL</a>&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aa8273fbeb3de7f54df7729e6f8500c6d">DENSITY_ASSUME</a></td></tr>
 <tr class="separator:a667963aff107c478054ed96746f53586"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0fab5b0779502270447f2cd95a086cb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#ae0fab5b0779502270447f2cd95a086cb">DENSITY_ASSERT_ALIGNED</a>(address,  alignment)        &#160;&#160;&#160;<a class="el" href="density__config_8h.html#a6c20118d82576f496376ea222bfb5c03">DENSITY_ASSERT</a>(::<a class="el" href="namespacedensity.html#abd5fec5a58abed06cfb780ff147814a7">density::address_is_aligned</a>(address, alignment))</td></tr>
 <tr class="separator:ae0fab5b0779502270447f2cd95a086cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,7 +127,7 @@ Macros</h2></td></tr>
 <tr class="separator:aadf3f123ad48722592749cb2837348c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22405bf1e3bcd0ceadbebcdfebf5c664"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#a22405bf1e3bcd0ceadbebcdfebf5c664">DENSITY_NO_INLINE</a></td></tr>
 <tr class="separator:a22405bf1e3bcd0ceadbebcdfebf5c664"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aced06b42bbbb2e8433561dcf59f5d1e1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a>(bool_expr)                &#160;&#160;&#160;assert((bool_expr))</td></tr>
+<tr class="memitem:aced06b42bbbb2e8433561dcf59f5d1e1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a>(bool_expr)                &#160;&#160;&#160;assert(bool_expr)</td></tr>
 <tr class="separator:aced06b42bbbb2e8433561dcf59f5d1e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8273fbeb3de7f54df7729e6f8500c6d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="density__config_8h.html#aa8273fbeb3de7f54df7729e6f8500c6d">DENSITY_ASSUME</a>(bool_expr)                                  &#160;&#160;&#160;(void)0</td></tr>
 <tr class="separator:aa8273fbeb3de7f54df7729e6f8500c6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -155,7 +155,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define DENSITY_ASSERT&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a></td>
+          <td class="memname">#define DENSITY_ASSERT&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aa8273fbeb3de7f54df7729e6f8500c6d">DENSITY_ASSUME</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -168,7 +168,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define DENSITY_ASSERT_INTERNAL&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aced06b42bbbb2e8433561dcf59f5d1e1">DENSITY_CHECKING_ASSERT</a></td>
+          <td class="memname">#define DENSITY_ASSERT_INTERNAL&#160;&#160;&#160;<a class="el" href="density__config_8h.html#aa8273fbeb3de7f54df7729e6f8500c6d">DENSITY_ASSUME</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -269,7 +269,7 @@ Variables</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">bool_expr</td><td>)</td>
-          <td>&#160;&#160;&#160;assert((bool_expr))</td>
+          <td>&#160;&#160;&#160;assert(bool_expr)</td>
         </tr>
       </table>
 </div><div class="memdoc">
