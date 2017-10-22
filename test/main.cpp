@@ -188,6 +188,18 @@ int main(int argc, char **argv)
         out << "\t" << *parameter << std::endl;
     }
 
+    #if defined(DENSITY_DEBUG)
+        out << "DENSITY_DEBUG: defined" << std::endl;
+    #else
+        out << "DENSITY_DEBUG: not defined" << std::endl;
+    #endif
+
+    #if defined(DENSITY_DEBUG_INTERNAL)
+        out << "DENSITY_DEBUG_INTERNAL: defined" << std::endl;
+    #else
+        out << "DENSITY_DEBUG_INTERNAL: not defined" << std::endl;
+    #endif
+
     #if defined(NDEBUG)
         out << "NDEBUG: defined" << std::endl;
     #else

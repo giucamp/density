@@ -90,7 +90,7 @@ namespace density
 
             auto const new_top = m_top + i_size;
             auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
-            if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
+            if (!DENSITY_LIKELY(new_offset < UNDERLYING_ALLOCATOR::page_size))
             {
                 // page overflow
                 return allocate_slow_path(i_size);
@@ -138,7 +138,7 @@ namespace density
             DENSITY_ASSERT(i_block != nullptr && i_size % alignment == 0);
 
             // this check detects page switches and external blocks
-            if (!same_page(i_block, reinterpret_cast<void*>(m_top)))
+            if (!DENSITY_LIKELY(same_page(i_block, reinterpret_cast<void*>(m_top))))
             {
                 deallocate_slow_path(i_block, i_size);
             }
