@@ -120,6 +120,10 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     {
         flags = flags | QueueTesterFlags::eReserveCoreToMainThread;
     }
+    if (i_settings.m_print_progress)
+    {
+        flags = flags | QueueTesterFlags::ePrintProgress;
+    }
 
     lifo_examples();
     lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
@@ -183,6 +187,18 @@ int main(int argc, char **argv)
     {
         out << "\t" << *parameter << std::endl;
     }
+
+    #if defined(DENSITY_DEBUG)
+        out << "DENSITY_DEBUG: defined" << std::endl;
+    #else
+        out << "DENSITY_DEBUG: not defined" << std::endl;
+    #endif
+
+    #if defined(DENSITY_DEBUG_INTERNAL)
+        out << "DENSITY_DEBUG_INTERNAL: defined" << std::endl;
+    #else
+        out << "DENSITY_DEBUG_INTERNAL: not defined" << std::endl;
+    #endif
 
     #if defined(NDEBUG)
         out << "NDEBUG: defined" << std::endl;

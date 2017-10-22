@@ -12,6 +12,12 @@
                        revision history
 ***************************************
 
+version 1.02.00 - changes:
+	- fixed a serious bug of heter_queue::const_iterator (indirection returning a reference to a temporary)
+	- test: added commandline parameter -print_progress:[0|1]
+	- continuous integration: benchmarks are now executed on every build
+	- doc fixes and improvements
+
 version 1.01.00 - changes:
 	- fixed lifo space catastrophe: with a specific allocation-deallocation pattern, much of the capacity of the pages was wasted
 	- fixed lifo_array not deleting copy constructor and assignment

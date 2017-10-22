@@ -16,13 +16,13 @@ namespace density
         /** \internal
             Class template the provides thread safe irreversible page allocation from the system.
 
-            system_page_manager allocates memory regions using the built-in operator new or
-            o.s.-specific APIs. Memory regions are deallocated when system_page_manager is
+            SystemPageManager allocates memory regions using the built-in operator new or
+            o.s.-specific APIs. Memory regions are deallocated when SystemPageManager is
             destroyed. In some cases of contention between threads a region may be allocated
             and then deallocated before using it to allocate pages for the user. \n
             The user can request a page with the function allocate_page. There is no function
-            to deallocate a page. Pages are guaranteed to remain valid until the system_page_manager
-            is destroyed. Therefore, system_page_manager does not provide an end-user interface,
+            to deallocate a page. Pages are guaranteed to remain valid until the SystemPageManager
+            is destroyed. Therefore, SystemPageManager does not provide an end-user interface,
             but it is suitable as base for a memory management stack.\n
 
             If allocate_page can allocate a page without requesting a new memory region to the system,
@@ -38,9 +38,9 @@ namespace density
             allocated pages is undefined or is guaranteed to be zeroed.
 
             To avoid internal fragmentation, it is recommended to create only one instance of every
-            specialization system_page_manager for every program run. */
+            specialization SystemPageManager for every program run. */
         template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
-            class system_page_manager
+            class SystemPageManager
         {
         public:
 
@@ -54,7 +54,7 @@ namespace density
             static constexpr bool pages_are_zeroed = false;
 
             /** Size in bytes of memory region requested to the system, when necessary. If the system fails
-                to allocate a region, system_page_manager may retry iteratively halving the requested size.
+                to allocate a region, SystemPageManager may retry iteratively halving the requested size.
                 If the requested size reaches region_min_size_bytes, and the system can't still allocate a region,
                 the allocation fails. */
             static constexpr size_t region_default_size_bytes = (4 * 1024 * 1024);
@@ -62,7 +62,7 @@ namespace density
             /** Minimum size (in bytes) of a memory region. */
             static constexpr size_t region_min_size_bytes = detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
 
-            system_page_manager() noexcept
+            SystemPageManager() noexcept
             {
                 /** The first region is always empty, so it will be skipped soon */
                 #if defined(__GLIBCXX__)
@@ -73,7 +73,7 @@ namespace density
                 #endif
             }
 
-            ~system_page_manager()
+            ~SystemPageManager()
             {
                 auto curr = m_first_region.m_next_region.load();
                 while (curr != nullptr)
@@ -84,8 +84,8 @@ namespace density
                 }
             }
 
-            system_page_manager(const system_page_manager &) = delete;
-            system_page_manager & operator = (const system_page_manager &) = delete;
+            SystemPageManager(const SystemPageManager &) = delete;
+            SystemPageManager & operator = (const SystemPageManager &) = delete;
 
             /** Allocates a new page from the system. This function never throws.
                 @param i_progress_guarantee Progress guarantee. If it is progress_blocking, a failure indicates an out of memory.

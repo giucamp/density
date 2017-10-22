@@ -1103,9 +1103,7 @@ void conc_heterogeneous_queue_samples_1()
     queue.push(4);
     queue.push(std::complex<double>(1., 4.));
     queue.emplace<std::string>("Hello!!");
-
-    // This would not compile because std::thread does not have a << operator for streams
-    // queue.emplace<std::thread>();
+    // queue.emplace<std::thread>(); - This would not compile because std::thread does not have a << operator for streams
 
     // consume all the elements
     while (auto consume = queue.try_start_consume())

@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.1)
 project (density_test)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
 
 IF(ENABLE_TEST_DATA_STACK)
@@ -18,6 +16,14 @@ SET(COMPILER_EXTRA "" CACHE STRING "additional compiler options")
 # the compiler used for C++ files 
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
+
+IF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    message("debug mode")
+    ADD_DEFINITIONS(-DDENSITY_DEBUG)
+    ADD_DEFINITIONS(-DDENSITY_DEBUG_INTERNAL)
+ELSE(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    message("release mode")
+ENDIF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp

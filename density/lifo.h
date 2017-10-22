@@ -90,7 +90,7 @@ namespace density
 
             auto const new_top = m_top + i_size;
             auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
-            if (new_offset >= UNDERLYING_ALLOCATOR::page_size)
+            if (!DENSITY_LIKELY(new_offset < UNDERLYING_ALLOCATOR::page_size))
             {
                 // page overflow
                 return allocate_slow_path(i_size);
@@ -138,7 +138,7 @@ namespace density
             DENSITY_ASSERT(i_block != nullptr && i_size % alignment == 0);
 
             // this check detects page switches and external blocks
-            if (!same_page(i_block, reinterpret_cast<void*>(m_top)))
+            if (!DENSITY_LIKELY(same_page(i_block, reinterpret_cast<void*>(m_top))))
             {
                 deallocate_slow_path(i_block, i_size);
             }
@@ -408,7 +408,7 @@ namespace density
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -577,7 +577,7 @@ namespace density
         @tparam TYPE Element type.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an \ref instance of density::data_stack_underlying_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,

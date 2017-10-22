@@ -1,11 +1,12 @@
 #!/bin/bash
+set -e
 
 RUN=$1
 
 cd bench
-mkdir build
+mkdir build || true
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 echo "RUN = $RUN"
 make
 if [ "$RUN" = "TRUE" ]; then

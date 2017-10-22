@@ -13,7 +13,7 @@ matrix:
           packages:
             - g++-4.9
       env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_DEBUG=FALSE && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE"
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=TRUE"
     
     - os: linux
       addons:
@@ -23,7 +23,7 @@ matrix:
           packages:
             - g++-7
       env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_DEBUG=TRUE && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && GCOV=gcov-7 && BENCH_RUN=FALSE"
+         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && GCOV=gcov-7 && BENCH_RUN=TRUE"
     
     - os: linux
       env:
@@ -34,17 +34,17 @@ matrix:
           packages:
             - clang-4.0
       env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_DEBUG=FALSE && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=FALSE"
+        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=TRUE"
 
-#    - os: linux
-#      addons:
-#        apt:
-#          sources:
-#            - llvm-toolchain-trusty-5.0
-#          packages:
-#            - clang-5.0
-#      env:
-#        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_DEBUG=TRUE && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE"
 
 before_install:
     - pip install --user cpp-coveralls
@@ -53,5 +53,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_DEBUG $TEST_DATA_STACK $GCOV
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV
   - scripts/bench.sh $BENCH_RUN

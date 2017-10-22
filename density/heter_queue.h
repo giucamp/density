@@ -49,7 +49,7 @@ namespace density
     /** Class template implementing an heterogeneous FIFO pseudo-container.
 
         A value of heter_queue is a pair of a runtime type object bound to a type E, and an object of type E (called element).
-        heter_queue is an heterogeneous pseudo-container: elements of the same queue can have different types.
+        heter_queue is an heterogeneous pseudo-container: elements in the same queue can have different types.
         Elements can be added only at the end (<em>put operation</em>), and can be removed only at the beginning
         (<em>consume operation</em>).
         When doing a put, the user may associate one or more <em>raw memory blocks</em> to the element. Raw blocks are
@@ -57,9 +57,10 @@ namespace density
         heter_queue supports iterators, but they are just <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>
         so heter_queue is not a container.
 
-        @tparam COMMON_TYPE Common type of all the elements. An object of type E can be pushed on the queue only if E* is
-            implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue.
-            Otherwise it should be an user-defined-type, and only types deriving from it can be added.
+        @tparam COMMON_TYPE Common type of all the elements. An object of type <code>E</code> can be pushed on the queue only if 
+        <code>E*</code> is implicitly convertible to <code>COMMON_TYPE*</code>. If <code>COMMON_TYPE</code> is <code>void</code>
+            (the default), any type can be put in the queue. Otherwise it should be an user-defined-type, and only types deriving 
+            from it can be added.
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
@@ -83,7 +84,7 @@ namespace density
 
         Transactional puts returns an object of type put_transaction that should be used to commit or cancel
         the transaction. If a transaction is destroyed before being committed, it is canceled automatically.
-        Before being committed a transaction hasn't observable side effects (it does have non-observable side
+        Before being committed, a transaction has no observable side effects (it does have non-observable side
         effects anyway, like the reservation of space in a page).
         The functions \ref put_transaction::raw_allocate "raw_allocate" and
         \ref put_transaction::raw_allocate_copy "raw_allocate_copy" allows to associate one or
@@ -93,8 +94,8 @@ namespace density
         The function \ref heter_queue::try_start_consume "try_start_consume" can be used to consume an
         element. The returned object has type consume_operation, which is similar to put_transaction (it can be
         canceled or committed), with the difference that it has observable side effects before commit
-        or cancel is called: the element disappears from the queue when try_start_consume is called, and re-appears
-        whenever cancel is called (or the consume_operation is destroyed without being committed).
+        or cancel is called: the element disappears from the queue when <code>try_start_consume</code> is called,
+        and re-appears whenever cancel is called (or the consume_operation is destroyed without being committed).
 
         \snippet heterogeneous_queue_examples.cpp heter_queue consume example 1
 
@@ -194,10 +195,11 @@ namespace density
 
         When a value is consumed, its size is added to the head pointer. Pages are not recycled: when the last
         value of a page is consumed (that is the head moves to another page), the empty page is deallocated.
-        The default allocator, that is void_allocator, is designed to handle efficiently page allocations and
+        The default allocator, that is \ref void_allocator, is designed to handle efficiently page allocations and
         deallocations.
 
-        Values are never moved by the queue. Values are copied only in case of copy-construction or copy assignment.
+        Values are never moved by the queue, and are copied only in case of copy-construction or copy assignment
+        of the queue.
 
         Notes:
 
@@ -239,7 +241,6 @@ namespace density
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
 
-        class iterator;
         class const_iterator;
 
     private:
@@ -2374,9 +2375,9 @@ namespace density
         }
 
 
-                    // iterator
+                    // const_iterator
 
-        class iterator
+        class const_iterator
         {
         public:
 
@@ -2391,121 +2392,71 @@ namespace density
             using size_type = std::size_t;
             using difference_type = std::ptrdiff_t;
 
-            iterator() noexcept = default;
-            iterator(const iterator & i_source) noexcept = default;
-            iterator & operator = (const iterator & i_source) noexcept = default;
-
-            iterator(heter_queue * i_queue, ControlBlock * i_control) noexcept
-                : m_control(i_control), m_queue(i_queue)
-                    { }
-
-            value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
-
-            const value_type * operator -> () const noexcept
+            const_iterator() noexcept = default;
+            const_iterator(const const_iterator & i_source) noexcept
+                : m_control(i_source.m_control), m_queue(i_source.m_queue)
             {
-                return std::pointer_traits<const value_type *>::pointer_to(**this);
+                new (&m_value.m_pair) value_type(m_value.m_pair);
             }
 
-            common_type * element_ptr() const noexcept { return static_cast<value_type *>(get_element(m_control)); }
-
-            const RUNTIME_TYPE & complete_type() const noexcept
+            const_iterator & operator = (const const_iterator & i_source) noexcept
             {
-                return *type_after_control(m_control);
-            }
-
-            iterator & operator ++ () noexcept
-            {
-                DENSITY_ASSERT(m_queue != nullptr);
-                m_control = m_queue->next_valid(m_control);
+                m_control = i_source.m_control;
+                m_queue = i_source.m_queue;
+                new (&m_value.m_pair) value_type(m_value.m_pair);
                 return *this;
             }
 
-            iterator operator ++ (int) noexcept
-            {
-                DENSITY_ASSERT(m_queue != nullptr);
-                auto const prev = m_control;
-                ++*this;
-                return iterator(m_queue, prev);
-            }
-
-            bool operator == (const iterator & i_other) const noexcept
-            {
-                return m_control == i_other.m_control;
-            }
-
-            bool operator != (const iterator & i_other) const noexcept
-            {
-                return m_control != i_other.m_control;
-            }
-
-            bool operator == (const const_iterator & i_other) const noexcept
-            {
-                return m_control == i_other.m_control;
-            }
-
-            bool operator != (const const_iterator & i_other) const noexcept
-            {
-                return m_control != i_other.m_control;
-            }
-
-        private:
-            ControlBlock * m_control = nullptr;
-            heter_queue * m_queue = nullptr;
-        };
-
-        iterator begin() noexcept { return iterator(this, first_valid(m_head)); }
-        iterator end() noexcept { return iterator(); }
-
-        class const_iterator
-        {
-        public:
-
-            using iterator_category = std::input_iterator_tag;
-            using runtime_type = RUNTIME_TYPE;
-            using common_type = COMMON_TYPE;
-            using value_type = const std::pair<const runtime_type &, const common_type* const>;
-            using pointer = const value_type *;
-            using const_pointer = const value_type *;
-            using reference = const value_type &;
-            using const_reference = const value_type&;
-            using size_type = std::size_t;
-            using difference_type = std::ptrdiff_t;
-
-            const_iterator() noexcept = default;
-            const_iterator(const const_iterator & i_source) noexcept = default;
-            const_iterator & operator = (const const_iterator & i_source) noexcept = default;
-
             const_iterator(const heter_queue * i_queue, ControlBlock * i_control) noexcept
                 : m_control(i_control), m_queue(i_queue)
-                    { }
-
-            value_type operator * () const noexcept { return value_type(*type_after_control(m_control), get_element(m_control)); }
-
-            const value_type * operator->() const
             {
-                return std::pointer_traits<pointer>::pointer_to(**this);
+                if(m_control != nullptr)
+                {
+                    new (&m_value.m_pair) value_type(*type_after_control(m_control), get_element(m_control));
+                }
             }
 
-            const common_type * element_ptr() const noexcept { return get_element(m_control); }
+            const value_type & operator * () const noexcept
+            { 
+                DENSITY_ASSERT(m_control != nullptr);
+                return m_value.m_pair;
+            }
+
+            const value_type * operator -> () const noexcept
+            {
+                DENSITY_ASSERT(m_control != nullptr);
+                return &m_value.m_pair;
+            }
 
             const RUNTIME_TYPE & complete_type() const noexcept
             {
-                return *type_after_control(m_control);
+                DENSITY_ASSERT(m_control != nullptr);
+                return m_value.m_pair.first;
+            }
+
+            common_type * element_ptr() const noexcept
+            { 
+                DENSITY_ASSERT(m_control != nullptr);
+                return m_value.m_pair.second;
             }
 
             const_iterator & operator ++ () noexcept
             {
                 DENSITY_ASSERT(m_queue != nullptr);
                 m_control = m_queue->next_valid(m_control);
+                if(m_control != nullptr)
+                {
+                    new (&m_value.m_pair) value_type(*type_after_control(m_control), get_element(m_control));
+                }
                 return *this;
             }
 
             const_iterator operator ++ (int) noexcept
             {
                 DENSITY_ASSERT(m_queue != nullptr);
-                auto const prev = m_control;
+                auto const prev_state = *this;
                 ++*this;
-                return const_iterator(m_queue, prev);
+                return prev_state;
             }
 
             bool operator == (const const_iterator & i_other) const noexcept
@@ -2514,16 +2465,6 @@ namespace density
             }
 
             bool operator != (const const_iterator & i_other) const noexcept
-            {
-                return m_control != i_other.m_control;
-            }
-
-            bool operator == (const iterator & i_other) const noexcept
-            {
-                return m_control == i_other.m_control;
-            }
-
-            bool operator != (const iterator & i_other) const noexcept
             {
                 return m_control != i_other.m_control;
             }
@@ -2531,6 +2472,12 @@ namespace density
         private:
             ControlBlock * m_control = nullptr;
             const heter_queue * m_queue = nullptr;
+            union Value
+            {
+                value_type m_pair;
+                Value() noexcept {}
+                ~Value() {}
+            } m_value;
         };
 
         const_iterator begin() const noexcept { return const_iterator(this, first_valid(m_head)); }

@@ -23,6 +23,8 @@ namespace density_tests
 
             #ifdef _MSC_VER
                 __debugbreak();
+            #elif defined(__GNUC__)
+                __builtin_trap();
             #else
                 assert(false);
             #endif

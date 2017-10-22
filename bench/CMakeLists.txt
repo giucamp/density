@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.1)
 project (density_bench)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 include_directories(".")
 include_directories("../")
 

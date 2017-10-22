@@ -15,6 +15,7 @@ struct TestSettings
     bool m_exceptions = true;
     bool m_spare_one_cpu = true;
     bool m_test_allocators = true;
+    bool m_print_progress = true;
     size_t m_queue_tests_cardinality = 2000;
 };
 

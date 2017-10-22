@@ -261,7 +261,9 @@ namespace density_tests
                 }
                 else
                 {
-                    density::user_data_stack::stat_sample();
+                    #ifdef DENSITY_USER_DATA_STACK
+                        density::user_data_stack::stat_sample();
+                    #endif
                 }
 
                 test->resize(i_random);
@@ -331,7 +333,9 @@ namespace density_tests
             threads.emplace_back(main_random);
         }
 
-        density::user_data_stack::stats_header(i_output);
+        #ifdef DENSITY_USER_DATA_STACK
+            density::user_data_stack::stats_header(i_output);
+        #endif
 
         // start threads
         for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
@@ -348,7 +352,11 @@ namespace density_tests
                 lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
 
                 std::ostringstream stats_stream;
-                density::user_data_stack::stats_print(stats_stream, thread_name.c_str());
+                #ifdef DENSITY_USER_DATA_STACK
+                    density::user_data_stack::stats_print(stats_stream, thread_name.c_str());
+                #else
+                    stats_stream << thread_name << " has finished\n";
+                #endif
                 i_output << stats_stream.str();
                 i_output.flush();
             });

@@ -161,7 +161,7 @@ namespace density
         class basic_void_allocator
     {
     private:
-        using PageAllocator = detail::PageAllocator<typename detail::system_page_manager<PAGE_CAPACITY_AND_ALIGNMENT>>;
+        using PageAllocator = detail::PageAllocator<typename detail::SystemPageManager<PAGE_CAPACITY_AND_ALIGNMENT>>;
 
     public:
 

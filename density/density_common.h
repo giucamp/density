@@ -14,17 +14,17 @@
 
 #include <density/density_config.h>
 
-/** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
-#define DENSITY_VERSION            0x00010100
-
 /*! \file */
+
+/** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
+#define DENSITY_VERSION            0x00010200
 
 /** namespace density */
 namespace density
 {
     /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions. 
             Example of value: "7.240.22" */
-    constexpr char version[] = "1.1.0";
+    constexpr char version[] = "1.2.0";
 
     /** Specifies whether a set of functions actually support concurrency */
     enum concurrency_cardinality
@@ -309,6 +309,8 @@ namespace density
         return address;
     }
 
+    /** \cond INTERNAL_DOC */
+
     namespace detail
     {
         // size_min: avoid including <algorithm> just to use std::min<size_t>
@@ -435,6 +437,8 @@ namespace density
             #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT throw;
         #endif
     }
+
+    /** \endcond */
 
     /** Uses the global operator new to allocate a memory block with at least the specified size and alignment
             @param i_size size of the requested memory block, in bytes
@@ -738,11 +742,16 @@ For all queues, the functions `try_consume` and `try_reentrant_consume` have 2 v
 - one returning a consume operation. If the queue was empty, an empty consume is returned.
 - one taking a reference to a consume as parameter and returning a boolean, raccomanded if a thread performs many consecutive consumes.
 
-There is no functional difference between the two consumes. Anyway,
-currently only for lock-free and spin-locking queues supporting multi-producers, the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer is reading it.
-When a consumer needs to access a page, it increments a ref-count in the page (it *pins* the page), to notify to the allocator that it is using it. When it has finished, the consumer decrements the ref-count (it *unpins* the page).
-If a thread performs many consecutive consumes, it will ends up doing many atomic increments and decrements of the same page (that is a somewhat expensive operation). Since pin\unpin logic is encapsulated in the consume_operation, if the consumer thread keeps the consume_operation alive, pinning and unpinning will be performed only in case of page switch.
-Note: a forgotten consume_operation which has pinned a page prevents the page from being recycled by the page allocator, even if it was deallocated by other consumers.
+There is no functional difference between the two consumes. Anyway, currently only for lock-free and spin-locking queues supporting multi-producers, 
+the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer
+is reading it.
+When a consumer needs to access a page, it increments a ref-count in the page (it *pins* the page), to notify to the allocator that it is using it.
+When it has finished, the consumer decrements the ref-count (it *unpins* the page). If a thread performs many consecutive consumes, it will ends up 
+doing many atomic increments and decrements of the same page (which is a somewhat expensive operation). Since the pin\unpin logic is encapsulated in 
+the <code>consume_operation</code>, if the consumer thread keeps the <code>consume_operation</code> alive, pinning and unpinning will be performed only in case of 
+page switch.
+Note: a forgotten <code>consume_operation</code> which has pinned a page prevents the page from being recycled by the page allocator, even if it was
+deallocated by other consumers.
 
 Heterogeneous queues
 --------------------
@@ -853,6 +862,8 @@ Benchmarks
                 throw.
 
             - spare_one_cpu:<0 or 1> - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
+
+            - print_progress:<0 or 1> - default is 1. Shows a percentage of the progress during queue test 
 
             - test_allocators:<0 or 1> - default is 1. If non-zero enables special allocators that detect bugs in the memory 
                 management. The tests with the normal allocators are executed in any case.

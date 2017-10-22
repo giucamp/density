@@ -12,17 +12,17 @@
 /*! \file */
 
 /** Assert used to detect user errors that causes undefined behavior */
-#if defined(NDEBUG)
-    #define DENSITY_ASSERT DENSITY_ASSUME
-#else
+#if defined(DENSITY_DEBUG)
     #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
+#else
+    #define DENSITY_ASSERT DENSITY_ASSUME
 #endif
 
 /** Assert used to detect bugs of the library that causes undefined behavior */
-#if defined(NDEBUG)
-    #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
-#else
+#if defined(DENSITY_DEBUG_INTERNAL)
     #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
+#else
+    #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
 #endif
 
 /** Macro used to enforce the alignment of a pointer as an invariant. */
@@ -32,8 +32,8 @@
 #define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
 
 /** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
-#if defined( __clang__ )
-    #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
+#if defined(__GNUC__) && !defined(_MSC_VER)
+    #define DENSITY_LIKELY(bool_expr)                   (__builtin_expect(bool_expr, true), bool_expr)
 #else
     #define DENSITY_LIKELY(bool_expr)                   (bool_expr)
 #endif
@@ -42,6 +42,8 @@
         example because the call handles a somewhat rare slow path. */
 #ifdef _MSC_VER
     #define DENSITY_NO_INLINE                           __declspec(noinline)
+#elif defined(__GNUC__)
+    #define DENSITY_NO_INLINE                           __attribute__ ((noinline))
 #else
     #define DENSITY_NO_INLINE
 #endif
@@ -49,8 +51,10 @@
 /** Assert that on failure should cause an halt of the program. Used only locally in this header. */
 #ifdef _MSC_VER
     #define DENSITY_CHECKING_ASSERT(bool_expr)          if(!(bool_expr)) { __debugbreak(); } else (void)0
+#elif defined(__GNUC__)
+    #define DENSITY_CHECKING_ASSERT(bool_expr)          if(!(bool_expr)) { __builtin_trap(); } else (void)0
 #else
-    #define DENSITY_CHECKING_ASSERT(bool_expr)          assert((bool_expr))
+    #define DENSITY_CHECKING_ASSERT(bool_expr)          assert(bool_expr)
 #endif
 
 /** Macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
@@ -61,6 +65,8 @@
                                                         _Pragma("clang diagnostic pop")
 #elif defined(_MSC_VER)
     #define DENSITY_ASSUME(bool_expr)                   __assume((bool_expr))
+#elif defined(__GNUC__)
+    #define DENSITY_ASSUME(bool_expr)                   if (!(bool_expr)) { __builtin_unreachable(); } else (void)0 // https://stackoverflow.com/questions/25667901/assume-clause-in-gcc
 #else
     #define DENSITY_ASSUME(bool_expr)                   (void)0
 #endif
@@ -162,9 +168,6 @@ namespace density
             if (m_has_value)
                 ptr()->TYPE::~TYPE();
         }
-
-        template <typename TYPE_1, typename... PARAMS>
-            friend builtin_optional<TYPE_1> make_optional(PARAMS && ... i_construction_params);
 
         friend void swap(builtin_optional & i_first, builtin_optional & i_second) noexcept
         {
