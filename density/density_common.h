@@ -846,12 +846,20 @@ Benchmarks
 
     /*! \page test_bench
 
+        Building
+        ----------
+        ----------
+        The directory 'test' contains a test program that you can build with cmake.
+        The directory 'bench' contains a benchmark program that you can build with cmake.
+        On Windows you can also build both at once with Visual Studio 2017 using the solution test/vs2017/density_tests.sln.
+
         Running the tests
         ----------
         ----------
+        The test program executes a number of test on all the data structures of the library. When doing massive multithread
+        tests, it scales to the host machine spawning 3 threads for each logical cpu of the system.
 
-        The test program is in the directory 'test'. You can build it with cmake or Visual Studio 2017. It supports
-        the following command line parameters:
+        The test program supports the following command-line parameters:
 
             - rand_seed:<32-bit unsigned integer> - default is zero. Seed used to initialize the main random generator.
                 If it is zero the random generator is initialized with <code>std::ranom_device</code>. In multi-thread test 
@@ -863,12 +871,12 @@ Benchmarks
 
             - spare_one_cpu:<0 or 1> - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
 
-            - print_progress:<0 or 1> - default is 1. Shows a percentage of the progress during queue test 
+            - print_progress:<0 or 1> - default is 1. If non-zero shows a percentage of the progress during queue test 
 
             - test_allocators:<0 or 1> - default is 1. If non-zero enables special allocators that detect bugs in the memory 
                 management. The tests with the normal allocators are executed in any case.
 
-            - queue_tests_cardinality:<size_t> - default is 1000. Number of elements to push in every queue tests. In multi-thread
+            - queue_tests_cardinality:<size_t> - default is 2000. Number of elements to push in every queue tests. In multi-thread
                 tests this number is partitioned among all threads.
 
         If the test program is built with the macro DENSITY_USER_DATA_STACK defined, the normal data stack is replaced with a test
@@ -880,5 +888,14 @@ Benchmarks
         density_test -rand_seed:22 -exceptions:1 -spare_one_cpu:1 -test_allocators:1 -queue_tests_cardinality:2000
         ~~~~~~~~~~~~~~
 
-        */
+        Running the benchmarks
+        ----------
+        ----------
+        The benchmark programs needs to read the source files from which it is compiled. It uses the macro \__FILE__ to locate them,
+        which generally has a path relative to the project file. So if you execute the program from another location, you have to
+        provide a source directory.
+
+            -source:<string> - by default empty, max length = 4095. Path to prepend to the __FILE__ macro to access the source files.
+
+   */
 } // namespace density
