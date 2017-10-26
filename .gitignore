@@ -28,7 +28,8 @@ test/code_lite/ReleaseClang
 test/code_lite/.codelite
 doc/doxygen/doxygen_out.txt
 
-test/vs2017/x64/
 test/vs2017/.vs/
 test/build/
 bench/build/
+test/vs2017/build/
+bench/vs2017/build/

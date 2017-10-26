@@ -246,10 +246,12 @@ namespace density
             if (i_size < UNDERLYING_ALLOCATOR::page_size / 2)
             {
                 // allocate a new page
-                auto const new_page = static_cast<PageHeader*>(UNDERLYING_ALLOCATOR::allocate_page());
-                new_page->m_prev_page = reinterpret_cast<void*>(m_top);
-                m_top = reinterpret_cast<uintptr_t>(new_page + 1) + i_size;
-                return new_page + 1;
+                auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
+                DENSITY_ASSERT_INTERNAL(new_page != nullptr);
+                auto const new_header = new(new_page) PageHeader;
+                new_header->m_prev_page = reinterpret_cast<void*>(m_top);
+                m_top = reinterpret_cast<uintptr_t>(new_header + 1) + i_size;
+                return new_header + 1;
             }
             else
             {
