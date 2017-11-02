@@ -749,8 +749,8 @@ namespace density
         ObjectB::update(0.0166667)
         ~~~~~~~~~~~~~~
     */
-    template <typename COMMON_TYPE = void, typename FEATURE_LIST = typename type_features::default_type_features_t<COMMON_TYPE> >
-        class runtime_type
+template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::default_type_features_t<COMMON_TYPE> >
+    class runtime_type
     {
     public:
 

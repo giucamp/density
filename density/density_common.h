@@ -596,9 +596,9 @@ density provides a rich set of highly configurable heterogeneous queues:
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](\ref density::function_queue)      |[heter_queue](\ref density::heter_queue)| - | -
-locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_hetr_queue](\ref density::conc_hetr_queue)|multiple|multiple
-lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_hetr_queue](\ref density::lf_hetr_queue)|configurable|configurable
-spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_hetr_queue](\ref density::sp_hetr_queue)|configurable|configurable
+locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_hetr_queue](\ref density::conc_heter_queue)|multiple|multiple
+lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_hetr_queue](\ref density::lf_heter_queue)|configurable|configurable
+spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_hetr_queue](\ref density::sp_heter_queue)|configurable|configurable
 
 All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration,
 or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
