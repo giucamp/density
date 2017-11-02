@@ -394,6 +394,42 @@ void heterogeneous_queue_consume_operation_samples()
 {
     using namespace density;
     using namespace type_features;
+    {
+        
+//! [heter_queue consume_operation consume_1 example 1]
+    heter_queue<> queue;
+    queue.push(42);
+    queue.emplace<std::string>("Hello world!");
+    queue.push(42.);
+
+    while (auto consume = queue.try_start_consume())
+    {
+        if(consume.complete_type().is<int>())
+            std::cout << "Found an int: " << consume.element<int>() << std::endl;
+        else if(consume.complete_type().is<std::string>())
+            std::cout << "Found a string: " << consume.element<std::string>() << std::endl;
+        consume.commit();
+    }
+//! [heter_queue consume_operation consume_1 example 1]
+}
+{
+//! [heter_queue consume_operation consume_1 example 2]
+    heter_queue<> queue;
+    queue.push(42);
+    queue.emplace<std::string>("Hello world!");
+    queue.push(42.);
+
+    heter_queue<>::consume_operation consume;
+    while (queue.try_start_consume(consume))
+    {
+        if(consume.complete_type().is<int>())
+            std::cout << "Found an int: " << consume.element<int>() << std::endl;
+        else if(consume.complete_type().is<std::string>())
+            std::cout << "Found a string: " << consume.element<std::string>() << std::endl;
+        consume.commit();
+    }
+//! [heter_queue consume_operation consume_1 example 2]
+    }
 
     {
         heter_queue<> queue;
@@ -587,6 +623,42 @@ void heterogeneous_queue_consume_operation_samples()
 void heterogeneous_queue_reentrant_put_samples()
 {
     using namespace density;
+{
+    heter_queue<> queue;
+
+    //! [heter_queue reentrant put example 1]
+    auto put_1 = queue.start_reentrant_push(12);
+    auto put_2 = queue.start_reentrant_emplace<std::string>("Hello ");
+    auto put_3 = queue.start_reentrant_push(3.14f);
+    put_3.commit();
+    put_1.cancel();
+    put_2.element() += "world!!!!";
+    put_2.commit();
+    //! [heter_queue reentrant put example 1]
+}
+{
+    
+
+    //! [heter_queue transfer]
+    using namespace type_features;
+    using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
+    
+    heter_queue<void, MyRunTimeType> queue_1;
+    queue_1.emplace<std::string>("Hello!");
+    
+    heter_queue<void, MyRunTimeType> queue_2;
+    auto consume = queue_1.try_start_consume();
+    queue_2.dyn_push_move(consume.complete_type(), consume.element_ptr());
+    consume.commit();
+
+    consume = queue_2.try_start_consume();
+    assert(consume && consume.complete_type().is<std::string>());
+    assert(consume.element<std::string>() == "Hello!");
+    consume.commit();
+
+    assert(queue_1.empty() && queue_2.empty());
+    //! [heter_queue transfer]
+}
 {
     heter_queue<> queue;
 

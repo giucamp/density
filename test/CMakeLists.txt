@@ -64,11 +64,11 @@ add_executable(density_test
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	MESSAGE( STATUS "will compile with clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${COMPILER_EXTRA}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -rdynamic ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "will compile with g++")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${COMPILER_EXTRA}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -rdynamic ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "will compile with msvc")

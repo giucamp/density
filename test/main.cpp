@@ -15,6 +15,27 @@
 #include <density/heter_queue.h>
 #include <density/lf_heter_queue.h>
 
+#ifdef __linux__
+    #include <execinfo.h>
+    #include <signal.h>
+    #include <stdlib.h>
+    #include <unistd.h>
+#endif
+
+#ifdef __linux__
+    // https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
+    void seg_fault_handler(int sig) {
+
+      void *array[256];
+      size_t size = backtrace(array, 256);
+
+      // print out all the frames to stderr
+      fprintf(stderr, "Error: signal %d:\n", sig);
+      backtrace_symbols_fd(array, size, STDERR_FILENO);
+      exit(1);
+    }
+#endif
+
 namespace density_tests
 {
     void misc_examples();
@@ -210,6 +231,10 @@ int main(int argc, char **argv)
         out << "DENSITY_USER_DATA_STACK: defined" << std::endl;
     #else
         out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
+    #endif
+
+    #ifdef __linux__
+        signal(SIGSEGV, seg_fault_handler);
     #endif
 
     auto const settings = parse_settings(argc, argv);
