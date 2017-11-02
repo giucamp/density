@@ -89,11 +89,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td>single threaded </td><td><a class="el" href="classdensity_1_1function__queue.html">function_queue</a> </td><td><a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a></td><td>- </td><td>- </td></tr>
 <tr>
-<td>locking </td><td><a class="el" href="classdensity_1_1conc__function__queue.html">conc_function_queue</a> </td><td>conc_hetr_queue</td><td>multiple</td><td>multiple </td></tr>
+<td>locking </td><td><a class="el" href="classdensity_1_1conc__function__queue.html">conc_function_queue</a> </td><td><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_hetr_queue</a></td><td>multiple</td><td>multiple </td></tr>
 <tr>
-<td>lock-free </td><td><a class="el" href="classdensity_1_1lf__function__queue.html">lf_function_queue</a> </td><td>lf_hetr_queue</td><td>configurable</td><td>configurable </td></tr>
+<td>lock-free </td><td><a class="el" href="classdensity_1_1lf__function__queue.html">lf_function_queue</a> </td><td><a class="el" href="classdensity_1_1lf__heter__queue.html">lf_hetr_queue</a></td><td>configurable</td><td>configurable </td></tr>
 <tr>
-<td>spin-locking </td><td><a class="el" href="classdensity_1_1sp__function__queue.html">sp_function_queue</a> </td><td>sp_hetr_queue</td><td>configurable</td><td>configurable </td></tr>
+<td>spin-locking </td><td><a class="el" href="classdensity_1_1sp__function__queue.html">sp_function_queue</a> </td><td><a class="el" href="classdensity_1_1sp__heter__queue.html">sp_hetr_queue</a></td><td>configurable</td><td>configurable </td></tr>
 </table>
 <p>All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> supporting iteration, or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.</p>
 <p>density provides a <a class="el" href="classdensity_1_1lifo__allocator.html">lifo_allocator</a> built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly the <a class="el" href="lifo_array_benchmarks.html">same performance</a> of the unsafe, C-ish and non-standard <a href="http://man7.org/linux/man-pages/man3/alloca.3.html">alloca</a>. The data stack can only be used indirectly with <a class="el" href="classdensity_1_1lifo__array.html">lifo_array</a> and <a class="el" href="classdensity_1_1lifo__buffer.html">lifo_buffer</a>.</p>
