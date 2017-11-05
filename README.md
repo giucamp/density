@@ -12,7 +12,7 @@ Density is a C++11 header-only library that provides:
   - [lifo_array](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__array.html), an high-level container similar to variable length arrays of c99
   - [lifo_buffer](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__buffer.html), an untyped and resizable buffer 
   - [lifo_allocator](http://giucamp.github.io/density/doc/html/classdensity_1_1lifo__allocator.html), a low-level LIFO allocator
-- [fifo data structures](http://giucamp.github.io/density/doc/html/index.html#queues), useful for communication inter-thread communication:
+- [fifo data structures](http://giucamp.github.io/density/doc/html/index.html#queues), useful for inter-thread communication:
 
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
