@@ -17,14 +17,14 @@
 /*! \file */
 
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
-#define DENSITY_VERSION            0x00010200
+#define DENSITY_VERSION            0x00010300
 
 /** namespace density */
 namespace density
 {
     /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions. 
             Example of value: "7.240.22" */
-    constexpr char version[] = "1.2.0";
+    constexpr char version[] = "1.3.0";
 
     /** Specifies whether a set of functions actually support concurrency */
     enum concurrency_cardinality

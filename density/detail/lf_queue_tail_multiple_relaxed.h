@@ -232,7 +232,7 @@ namespace density
                 return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
             }
 
-            static void * get_unaligned_element(LfQueueControl<void> * i_control) noexcept
+            static void * get_unaligned_element(ControlBlock * i_control) noexcept
             {
                 auto result = address_add(i_control, s_element_min_offset);
                 if (i_control->m_next & NbQueue_External)
@@ -258,12 +258,6 @@ namespace density
                     result = address_upper_align(result, type_after_control(i_control)->alignment());
                 }
                 return result;
-            }
-
-            template <typename TYPE>
-                static void * get_unaligned_element(LfQueueControl<TYPE> * i_control) noexcept
-            {
-                return i_control->m_element;
             }
 
             template <typename TYPE>
@@ -478,7 +472,7 @@ namespace density
                 {
                     /* external blocks always allocate space for the type, because it would be complicated
                         for the consumers to handle both cases*/
-                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
                     if (inplace_put.m_user_storage == nullptr)
                     {
                         ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);

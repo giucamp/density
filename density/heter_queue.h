@@ -1068,7 +1068,7 @@ namespace density
                 COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2073,7 +2073,7 @@ namespace density
                 COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *static_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2572,7 +2572,7 @@ namespace density
             return reinterpret_cast<runtime_type*>(address_add(i_control, s_sizeof_ControlBlock));
         }
 
-        static void * get_unaligned_element(detail::QueueControl<void> * i_control) noexcept
+        static void * get_unaligned_element(ControlBlock * i_control) noexcept
         {
             auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
             if (i_control->m_next & detail::Queue_External)
@@ -2594,12 +2594,6 @@ namespace density
                 result = address_upper_align(result, type_after_control(i_control)->alignment());
             }
             return result;
-        }
-
-        template <typename TYPE>
-            static void * get_unaligned_element(detail::QueueControl<TYPE> * i_control) noexcept
-        {
-            return i_control->m_element;
         }
 
         template <typename TYPE>

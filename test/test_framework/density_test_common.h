@@ -98,7 +98,7 @@ namespace density_tests
         eAlignCenter
     };
 
-    /** Writes to a string a value using a fixed number of chars. Usefull for tables. */
+    /** Writes to a string a value using a fixed number of chars. Useful for tables. */
     template <typename TYPE>
         std::string format_fixed(const TYPE & i_value, size_t i_char_count, FormatAlignment i_alignment = eAlignCenter, char i_fill_char = ' ')
     {

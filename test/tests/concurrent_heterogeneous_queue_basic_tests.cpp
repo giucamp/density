@@ -85,7 +85,7 @@ namespace density_tests
     }
 
     template<typename ELEMENT, typename QUEUE>
-        void dynamic_pushes(QUEUE & i_queue)
+        void dynamic_push_3(QUEUE & i_queue)
     {
         auto const type = QUEUE::runtime_type::template make<ELEMENT>();
 
@@ -110,8 +110,8 @@ namespace density_tests
         queue.push(NonPolymorphicBase());
         queue.emplace<SingleDerivedNonPoly>();
 
-        dynamic_pushes<NonPolymorphicBase>(queue);
-        dynamic_pushes<SingleDerivedNonPoly>(queue);
+        dynamic_push_3<NonPolymorphicBase>(queue);
+        dynamic_push_3<SingleDerivedNonPoly>(queue);
 
         for (;;)
         {
@@ -149,45 +149,29 @@ namespace density_tests
         queue.emplace<Derived2>();
         queue.emplace<MultipleDerived>();
 
-        dynamic_pushes<PolymorphicBase>(queue);
-        dynamic_pushes<SingleDerived>(queue);
-        dynamic_pushes<Derived1>(queue);
-        dynamic_pushes<Derived2>(queue);
-        dynamic_pushes<MultipleDerived>(queue);
+        dynamic_push_3<PolymorphicBase>(queue);
+        dynamic_push_3<SingleDerived>(queue);
+        dynamic_push_3<Derived1>(queue);
+        dynamic_push_3<Derived2>(queue);
+        dynamic_push_3<MultipleDerived>(queue);
 
-        int const put_count = 5 * 4;
+        polymorphic_consume<PolymorphicBase>(queue.try_start_consume());
+        polymorphic_consume<SingleDerived>(queue.try_start_reentrant_consume());
+        polymorphic_consume<Derived1>(queue.try_start_consume());
+        polymorphic_consume<Derived2>(queue.try_start_reentrant_consume());
+        polymorphic_consume<MultipleDerived>(queue.try_start_consume());
 
-        int consumed = 0;
-        for (;;)
-        {
-            auto consume = queue.try_start_consume();
-            if (!consume)
-                break;
-            consumed++;
-            if (consume.complete_type().is<PolymorphicBase>())
-            {
-                DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == PolymorphicBase::s_class_id);
-            }
-            else if (consume.complete_type().is<SingleDerived>())
-            {
-                DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == SingleDerived::s_class_id);
-            }
-            else if (consume.complete_type().is<Derived1>())
-            {
-                DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived1::s_class_id);
-            }
-            else if (consume.complete_type().is<Derived2>())
-            {
-                DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == Derived2::s_class_id);
-            }
-            else if (consume.complete_type().is<MultipleDerived>())
-            {
-                DENSITY_TEST_ASSERT(consume.element_ptr()->class_id() == MultipleDerived::s_class_id);
-            }
-            consume.commit();
-        }
+        for(int i = 0; i < 3; i++)
+            polymorphic_consume<PolymorphicBase>(queue.try_start_reentrant_consume());
+        for(int i = 0; i < 3; i++)
+            polymorphic_consume<SingleDerived>(queue.try_start_consume());
+        for(int i = 0; i < 3; i++)
+            polymorphic_consume<Derived1>(queue.try_start_reentrant_consume());
+        for(int i = 0; i < 3; i++)
+            polymorphic_consume<Derived2>(queue.try_start_consume());
+        for(int i = 0; i < 3; i++)
+            polymorphic_consume<MultipleDerived>(queue.try_start_reentrant_consume());
 
-        DENSITY_TEST_ASSERT(consumed == put_count);
         DENSITY_TEST_ASSERT(queue.empty());
     }
 

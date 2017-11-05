@@ -139,7 +139,7 @@ namespace density
             using BaseNaked = typename std::decay<typename std::remove_pointer<BASE>::type>::type;
             using DerivedNaked = typename std::decay<typename std::remove_pointer<DERIVED>::type>::type;
             static_assert(std::is_same< BaseNaked, void >::value || std::is_same< BaseNaked, DerivedNaked >::value ||
-                std::is_base_of< BaseNaked, DerivedNaked >::value, "*BASE must be void, the same or a base a base of *DERIVED");
+                std::is_base_of< BaseNaked, DerivedNaked >::value, "*BASE must be void, DERIVED or a base of *DERIVED");
 
             return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))());
         }

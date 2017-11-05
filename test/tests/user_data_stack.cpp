@@ -100,7 +100,7 @@ namespace density_tests
 
                 i_stream << '|' << format_fixed("lifo_blocks", s_table_cell_width);
                 i_stream << '|' << format_fixed("page_block_count", s_table_cell_width);
-                i_stream << '|' << format_fixed("ext_block_size", s_table_cell_width);
+                i_stream << '|' << format_fixed("ext_block_size(%)", s_table_cell_width);
                 i_stream << "|\n";
 
                 i_stream << '|' << format_fixed("time (secs)", s_table_cell_width);

@@ -12,6 +12,12 @@
                        revision history
 ***************************************
 
+version 1.03.00 - changes:
+    - polishing (removed many unnecessary detail::)
+    - fixed *::consume_operation::element not compiling in case of virtual inheritance (and added test cases)
+    - fixed *::consume_operation::unaligned_element_ptr returning a wrong pointer in case of virtual inheritance (and added test cases)
+	- added pdf document that explains the implementation
+
 version 1.02.00 - changes:
 	- fixed a serious bug of heter_queue::const_iterator (indirection returning a reference to a temporary)
 	- test: added commandline parameter -print_progress:[0|1]

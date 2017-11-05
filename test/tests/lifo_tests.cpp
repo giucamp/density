@@ -249,7 +249,7 @@ namespace density_tests
             auto const random_index = std::uniform_int_distribution<size_t>(0, sizeof(tests) / sizeof(tests[0]) - 1)(i_random);
             auto const test = tests[random_index](i_random);
 
-            const auto iter_count = i_residual_fork_depth > 0 ? std::uniform_int_distribution<int>(1, 4)(i_random) : 1;
+            const auto iter_count = i_residual_fork_depth > 0 ? std::uniform_int_distribution<int>(1, 3)(i_random) : 1;
             for (int i = 0; i < iter_count; i++)
             {
                 test->check();

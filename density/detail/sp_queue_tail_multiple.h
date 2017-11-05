@@ -270,7 +270,7 @@ namespace density
                 return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
             }
 
-            static void * get_unaligned_element(detail::LfQueueControl<void> * i_control)
+            static void * get_unaligned_element(ControlBlock * i_control) noexcept
             {
                 auto result = address_add(i_control, s_element_min_offset);
                 if (i_control->m_next & detail::NbQueue_External)
@@ -296,12 +296,6 @@ namespace density
                     result = address_upper_align(result, type_after_control(i_control)->alignment());
                 }
                 return result;
-            }
-
-            template <typename TYPE>
-                static void * get_unaligned_element(detail::LfQueueControl<TYPE> * i_control)
-            {
-                return i_control->m_element;
             }
 
             template <typename TYPE>
