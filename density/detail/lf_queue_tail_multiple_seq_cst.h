@@ -31,7 +31,7 @@ namespace density
                 The ControlBlock is always at offset 0 in the layout of a value or raw block. */
             constexpr static uintptr_t s_alloc_granularity = size_max( size_max( concurrent_alignment,
                 alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock) ),
-                min_alignment, detail::size_log2(detail::NbQueue_AllFlags + 1) );
+                min_alignment, size_log2(NbQueue_AllFlags + 1) );
 
             /** Offset of the runtime_type in the layout of a value */
             constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
@@ -177,11 +177,11 @@ namespace density
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
                 DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
                 DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
 
                 // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
             }
 
             static void cancel_put_impl(const Block & i_put) noexcept
@@ -199,12 +199,12 @@ namespace density
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
                 DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
                 DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
 
                 // remove NbQueue_Busy and add NbQueue_Dead
-                auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
+                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
             }
 
 
@@ -221,7 +221,7 @@ namespace density
             static void * get_unaligned_element(ControlBlock * i_control) noexcept
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & detail::NbQueue_External)
+                if (i_control->m_next & NbQueue_External)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
@@ -230,10 +230,10 @@ namespace density
                 return result;
             }
 
-            static void * get_element(detail::LfQueueControl<void> * i_control)
+            static void * get_element(LfQueueControl<void> * i_control)
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & detail::NbQueue_External)
+                if (i_control->m_next & NbQueue_External)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
@@ -247,7 +247,7 @@ namespace density
             }
 
             template <typename TYPE>
-                static TYPE * get_element(detail::LfQueueControl<TYPE> * i_control)
+                static TYPE * get_element(LfQueueControl<TYPE> * i_control)
             {
                 return i_control->m_element;
             }
@@ -274,7 +274,7 @@ namespace density
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0);
+                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0);
                 DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && i_size > 0 && (i_size % i_alignment) == 0);
 
                 if (i_alignment < min_alignment)
@@ -288,7 +288,7 @@ namespace density
                 auto const required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
                 // this will pin a page when pin_new is called
-                detail::PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
+                PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
 
                 bool const fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -368,7 +368,7 @@ namespace density
                             // Note: NEEDS ZEROED-PAGES
                             uintptr_t expected_next = 0;
                             raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-                                next + detail::NbQueue_Busy, mem_relaxed);
+                                next + NbQueue_Busy, mem_relaxed);
                             if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
                             {
                                 tail = next;
@@ -389,17 +389,17 @@ namespace density
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                static_assert((CONTROL_BITS & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0, "");
+                static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = detail::size_max(ALIGNMENT, min_alignment);
+                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
                 constexpr auto size = uint_upper_align(SIZE, alignment);
                 constexpr auto overhead = INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset;
                 constexpr auto required_size = overhead + size + (alignment - min_alignment);
                 constexpr auto required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
                 // this will pin a page when pin_new is called
-                detail::PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
+                PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
 
                 bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -478,7 +478,7 @@ namespace density
                             // Note: NEEDS ZEROED-PAGES
                             uintptr_t expected_next = 0;
                             raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-                                next + detail::NbQueue_Busy, mem_relaxed);
+                                next + NbQueue_Busy, mem_relaxed);
                             if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
                                 tail = next;
                         }
@@ -515,7 +515,7 @@ namespace density
                 {
                     /* external blocks always allocate space for the type, because it would be complicated
                         for the consumers to handle both cases*/
-                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
                     if (inplace_put.m_user_storage == nullptr)
                     {
                         ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
@@ -558,13 +558,13 @@ namespace density
                     auto expected_tail = i_tail;
                     auto transient_tail = i_tail + uinits;
                     auto const future_tail = i_tail + uinits * s_alloc_granularity;
-                    if (m_tail.compare_exchange_weak(expected_tail, transient_tail, detail::mem_relaxed, detail::mem_relaxed))
+                    if (m_tail.compare_exchange_weak(expected_tail, transient_tail, mem_relaxed, mem_relaxed))
                     {
                         // m_tail was successfully updated, now we can setup the padding element
                         auto const block = reinterpret_cast<ControlBlock*>(i_tail);
-                        raw_atomic_store(&block->m_next, future_tail + detail::NbQueue_Dead, detail::mem_relaxed);
+                        raw_atomic_store(&block->m_next, future_tail + NbQueue_Dead, mem_relaxed);
                         expected_tail = transient_tail;
-                        if (m_tail.compare_exchange_strong(expected_tail, future_tail, detail::mem_relaxed, detail::mem_relaxed))
+                        if (m_tail.compare_exchange_strong(expected_tail, future_tail, mem_relaxed, mem_relaxed))
                         {
                             return future_tail;
                         }
@@ -597,8 +597,8 @@ namespace density
                 {
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    detail::PinGuard<ALLOCATOR_TYPE> const end_block(this, i_end_control);
-                    auto const updated_tail = reinterpret_cast<ControlBlock *>(m_tail.load(detail::mem_relaxed));
+                    PinGuard<ALLOCATOR_TYPE> const end_block(this, i_end_control);
+                    auto const updated_tail = reinterpret_cast<ControlBlock *>(m_tail.load(mem_relaxed));
                     if (updated_tail != i_end_control)
                     {
                         return updated_tail;
@@ -612,9 +612,9 @@ namespace density
                         return nullptr;
                     }
 
-                    uintptr_t expected_next = detail::NbQueue_InvalidNextPage;
+                    uintptr_t expected_next = NbQueue_InvalidNextPage;
                     if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
-                        reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead))
+                        reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead))
                     {
                         /* Some other thread has already linked a new page. We discard the page we
                             have just allocated. */
@@ -627,7 +627,7 @@ namespace density
                             return updated_tail;
                         }
 
-                        new_page = reinterpret_cast<ControlBlock*>(expected_next & ~detail::NbQueue_AllFlags);
+                        new_page = reinterpret_cast<ControlBlock*>(expected_next & ~NbQueue_AllFlags);
                         DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
                     }
 
@@ -684,7 +684,7 @@ namespace density
                 if (new_page != nullptr)
                 {
                     auto const new_page_end_block = get_end_control_block(new_page);
-                    new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
+                    new_page_end_block->m_next = NbQueue_InvalidNextPage;
                 }
                 else
                 {

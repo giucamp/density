@@ -41,6 +41,16 @@ namespace density_tests
             m_count = new_count;
         }
 
+        void merge_with(const Statistics & i_statistics)
+        {
+            m_min = std::min(m_min, i_statistics.m_min);
+            m_max = std::max(m_max, i_statistics.m_max);
+            auto const total_count = m_count + i_statistics.m_count;
+            const double this_weight = m_count / total_count;
+            m_average = m_average * this_weight + i_statistics.m_average * (1.0 - this_weight);
+            m_count = total_count;
+        }
+
         void to_stream(std::ostream & i_stream) const
         {
             if (m_count == 0.)
