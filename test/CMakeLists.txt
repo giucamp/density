@@ -17,13 +17,15 @@ SET(COMPILER_EXTRA "" CACHE STRING "additional compiler options")
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
 
-IF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    message("debug mode")
-    ADD_DEFINITIONS(-DDENSITY_DEBUG)
-    ADD_DEFINITIONS(-DDENSITY_DEBUG_INTERNAL)
-ELSE(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    message("release mode")
-ENDIF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+IF(DEFINED ${CMAKE_BUILD_TYPE})
+    IF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+        message("debug mode")
+        ADD_DEFINITIONS(-DDENSITY_DEBUG)
+        ADD_DEFINITIONS(-DDENSITY_DEBUG_INTERNAL)
+    ELSE(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+        message("release mode")
+    ENDIF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
 
 add_executable(density_test 
 	examples/concurrent_heterogeneous_queue_examples.cpp
