@@ -46,6 +46,7 @@ namespace density_tests
         eUseTestAllocators = 1 << 2,
         eReserveCoreToMainThread = 1 << 3,
         ePrintProgress = 1 << 4,
+        eSuspender = 1 << 8,
     };
 
     constexpr QueueTesterFlags operator | (QueueTesterFlags i_first, QueueTesterFlags i_second) noexcept

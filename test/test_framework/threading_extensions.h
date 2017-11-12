@@ -16,4 +16,10 @@ namespace density_tests
     bool set_thread_affinity(uint64_t i_mask);
 
     bool set_thread_affinity(std::thread & i_thread, uint64_t i_mask);
+
+    bool supend_thread(std::thread & i_thread);
+
+    void resume_thread(std::thread & i_thread);
+
+    bool set_thread_name(std::thread & i_thread, const char * i_name);
 }
