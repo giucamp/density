@@ -126,7 +126,7 @@ namespace density_tests
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-                size_t thread_index = i_data.m_easy_random.get_int<size_t>(thread_count - 1);
+                size_t thread_index = i_data.m_easy_random.template get_int<size_t>(thread_count - 1);
                 if (supended[thread_index])
                 {
                     i_data.m_suspended_count.fetch_sub(1, std::memory_order_relaxed);

@@ -344,12 +344,13 @@ namespace density_tests
             auto & thread_random = thread_entry.m_random;
             thread_entry.m_thread = std::thread([&thread_random, &i_output, thread_index, affinity_mask, i_flags, i_depth, i_fork_depth]{
 
-                std::string thread_name("thread ");
-                thread_name += std::to_string(thread_index);
-
                 set_thread_affinity(affinity_mask);
 
                 lifo_test_thread_proc(i_flags, thread_random, i_depth, i_fork_depth);
+
+                std::ostringstream thread_name_stream;
+                thread_name_stream << "thread " << thread_index;
+                std::string thread_name = thread_name_stream.str();
 
                 std::ostringstream stats_stream;
                 #ifdef DENSITY_USER_DATA_STACK

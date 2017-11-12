@@ -12,17 +12,18 @@
 #include <iostream>
 #include <cstdlib>
 #include <random>
+#include <sstream>
 #include <density/heter_queue.h>
 #include <density/lf_heter_queue.h>
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
     #include <execinfo.h>
     #include <signal.h>
     #include <stdlib.h>
     #include <unistd.h>
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
     // https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
     void seg_fault_handler(int sig) {
 
@@ -199,7 +200,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     i_ostream.flags(prev_stream_flags);
 }
 
-int main(int argc, char **argv)
+int run(int argc, char **argv)
 {
     std::ostream & out = std::cout;
 
@@ -233,7 +234,7 @@ int main(int argc, char **argv)
         out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
     #endif
 
-    #ifdef __linux__
+    #if defined(__linux__) && !defined(__ANDROID__)
         signal(SIGSEGV, seg_fault_handler);
     #endif
 
@@ -251,11 +252,21 @@ int main(int argc, char **argv)
     std::cout << "default page size: " << density::void_allocator::page_size << "\n" << std::endl;
 
     // check that density::version and DENSITY_VERSION are consistent
-    std::string version = std::to_string(DENSITY_VERSION >> 16) + '.' + std::to_string((DENSITY_VERSION >> 8) & 0xFF) + '.' + std::to_string(DENSITY_VERSION & 0xFF);
-    DENSITY_TEST_ASSERT(version == density::version);
+    std::ostringstream version_stream;
+    version_stream << (DENSITY_VERSION >> 16) << ".";
+    version_stream << ((DENSITY_VERSION >> 8) & 0xFF) << ".";
+    version_stream << (DENSITY_VERSION & 0xFF);
+    DENSITY_TEST_ASSERT(version_stream.str() == density::version);
 
     //sandbox();
 
     do_tests(*settings, out, random_seed);
     return 0;
 }
+
+#if !defined(__ANDROID__)
+int main(int argc, char **argv)
+{
+    return run(argc, argv);
+}
+#endif

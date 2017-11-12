@@ -11,7 +11,7 @@
 #include <thread>
 #include <atomic>
 #include <string>
-
+#include <cstdlib>
 namespace density_tests
 {
     //! [runtime_type example 2]

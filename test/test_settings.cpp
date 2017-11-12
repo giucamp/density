@@ -19,9 +19,9 @@ std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
 
     int integer = 0;
 
-    if(*argv != nullptr)
+    if(*argv != nullptr && *++argv != nullptr)
     {
-        for (auto parameter = argv + 1; *parameter != nullptr; parameter++)
+        for (auto parameter = argv; *parameter != nullptr; parameter++)
         {
             if (sscanf(*parameter, "-rand_seed:%" SCNu32, &results.m_rand_seed) == 1)
             {
