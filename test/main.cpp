@@ -205,10 +205,14 @@ int run(int argc, char **argv)
     std::ostream & out = std::cout;
 
     out << "Density tests" << std::endl;
-    for (auto parameter = argv; *parameter != nullptr; parameter++)
+    if(argv != nullptr)
     {
-        out << "\t" << *parameter << std::endl;
+        for (auto parameter = argv; *parameter != nullptr; parameter++)
+        {
+            out << "\t" << *parameter << std::endl;
+        }
     }
+
 
     #if defined(DENSITY_DEBUG)
         out << "DENSITY_DEBUG: defined" << std::endl;

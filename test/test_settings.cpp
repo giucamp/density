@@ -19,7 +19,7 @@ std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
 
     int integer = 0;
 
-    if(*argv != nullptr && *++argv != nullptr)
+    if(argv != nullptr && *argv != nullptr && *++argv != nullptr)
     {
         for (auto parameter = argv; *parameter != nullptr; parameter++)
         {
