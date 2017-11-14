@@ -443,7 +443,7 @@ namespace density
                         {
                             m_queue->ALLOCATOR_TYPE::pin_page(next);
 
-                            #if DENSITY_DEBUG_INTERNAL
+                            #if defined(DENSITY_DEBUG_INTERNAL)
                                 auto const updated_next_uint = raw_atomic_load(&control->m_next);
                                 auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
                                 DENSITY_ASSERT_INTERNAL(updated_next == next);

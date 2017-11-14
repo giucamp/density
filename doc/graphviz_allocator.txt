@@ -6,5 +6,5 @@ basic_void_allocator[shape = polygon]
 SystemPageManager -> system[label = "  allocates from  "]
 PageAllocator -> SystemPageManager [label = "  allocates from  "]
 basic_void_allocator -> PageAllocator [label = "  allocates from  "]
-PageAllocator->basic_void_allocator [label = "  deallocates to  "]
+basic_void_allocator->PageAllocator [label = "  deallocates to  "]
 }
