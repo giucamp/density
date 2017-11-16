@@ -22,7 +22,11 @@ lock-free       |[lf_function_queue](http://giucamp.github.io/density/doc/html/c
 spin-locking    |[sp_function_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__function__queue.html) |[sp_heter_queue](http://giucamp.github.io/density/doc/html/classdensity_1_1sp__heter__queue.html)|single/multiple|single/multiple
 
 ## Documentation
-The [overview](http://giucamp.github.io/density/doc/html/index.html) should be enough for an effective use of the library. Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation also includes the results of some benchmarks.  [This document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes describes in detail the implementation of the library.
+The [overview](http://giucamp.github.io/density/doc/html/index.html) should be enough for an effective use of the library. 
+
+[This pdf document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes describes in detail the implementation of the library.
+
+Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation also includes the results of some benchmarks.  
 
 ## Support
 Supported compilers:
@@ -37,8 +41,6 @@ The library has an extensive test program that tests all the the data-structure,
 ## How to...
 The library has no dependencies and is composed only by headers, so there is nothing to build. To use it just download or clone the repository, and then copy the directory "density" in your include paths.
 
-In the test directory there is a test program that you can build with cmake or Visual Studio 2017. Read [here](http://giucamp.github.io/density/doc/html/test_bench.html) for the details.
+A test program and a benchmark program are included. You can build them using cmake or Visual Studio 2017. Click [here](http://giucamp.github.io/density/doc/html/test_bench.html) for the details.
 
-In the bench directory there is a benchmark program you you can build with cmake or Visual Studio 2017.
-
-<a href="mailto:giu.campana@gmail.com">[give feedback]</a>
+Feedback to <a href="mailto:giu.campana@gmail.com">giu.campana@gmail.com</a>
