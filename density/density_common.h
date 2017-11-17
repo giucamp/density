@@ -590,20 +590,18 @@ namespace density
 
 Density Overview
 ----------------
-Density is a C++11 header-only library focused on paged and lifo memory management, concurrency, and exception safeness.
-
-density provides a rich set of highly configurable heterogeneous queues:
+Density is a C++11 header-only library focused on paged, lifo e fifo memory management. The library provides a rich set of configurable heterogeneous queues:
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](\ref density::function_queue)      |[heter_queue](\ref density::heter_queue)| - | -
-locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_hetr_queue](\ref density::conc_heter_queue)|multiple|multiple
-lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_hetr_queue](\ref density::lf_heter_queue)|configurable|configurable
-spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_hetr_queue](\ref density::sp_heter_queue)|configurable|configurable
+locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_heter_queue](\ref density::conc_heter_queue)|multiple|multiple
+lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_heter_queue](\ref density::lf_heter_queue)|configurable|configurable
+spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_heter_queue](\ref density::sp_heter_queue)|configurable|configurable
 
 All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration,
 or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
 
-density provides a lifo_allocator built upon the page allocator, and an high performance thread-local lifo memory pool (called the data-stack), which has roughly
+density provides a lifo_allocator built upon the page allocator, and a thread-local lifo memory pool (the *data-stack*), which has roughly
 the [same performance](\ref lifo_array_benchmarks) of the unsafe, C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html).
 The data stack can only be used indirectly with lifo_array and lifo_buffer.
 
@@ -616,25 +614,24 @@ This library is tested against these compilers:
 
 <a name="lifo">The data stack</a>
 --------------
-The **data stack** is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may
+The data-stack is a thread-local paged memory pool dedicated to *lifo* allocations. The lifo ordering implies that a thread may
 reallocate or deallocate only the most recently allocated living block. A violation of this constraint causes undefined behavior.
 The data stack is actually composed by a set of memory pages and an internal thread-local pointer (the top of the stack).
-The underlying algorithm is very simple: allocations just add the size to allocate to the top pointer, and deallocations set the top
-pointer to the block to deallocate. In case of page switch, a branch is taken to a non-inlined slow path.
+The underlying algorithm is very simple: allocations just add the requested size to the top pointer, and deallocations set the top
+pointer to the block to deallocate. In case of page switch, the execution jumps to a non-inlined slow path.
 The data stack has constant initialization, so it doesn't slow down thread creation or require dynamic any initialization guard 
-by the compiler on access. The first time a thread uses the data stack, it takes the slow path and it allocates a memory page.
+by the compiler on access. The first time a thread uses the data stack it allocates the first memory page.
 
 The data stack can be accessed only indirectly, with [lifo_array](\ref density::lifo_array) and [lifo_buffer](\ref density::lifo_buffer).
 
-<code>%lifo_array</code> is an alternative to the c-ish and unsafe [_alloca](https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/alloca), and
-has nearly the [same performances](\ref lifo_array_benchmarks). It is the easiest and safest way of using the data-stack. A <code>%lifo_array</code> is very
+<code>%lifo_array</code> is the easiest and safest way of using the data-stack. A <code>%lifo_array</code> is very
 similar to a raw array, but its size is not a compile time constant. The elements are allocated on the data-stack, rather than on the 
 call-stack, so there is no risk of stack overflow. In case of out of system memory, a <code>std::bad_alloc</code> is thrown.
 
 \snippet lifo_examples.cpp lifo_array example 1
 
-To avoid breaking the lifo constraint and consequently having the undefined behavior, <code>%lifo_array</code>s should be instantiated
-only in the automatic storage (locally in a function or function block). Following this simple rule there is no way to way to break the
+To avoid breaking the lifo constraint and therefore causing the undefined behavior, <code>%lifo_array</code>s should be instantiated
+only in the automatic storage (locally in a function or code block). Following this simple rule there is no way to way to break the
 lifo constraint.
 
 Actually it is possible instantiating a <code>lifo_array</code> anywhere, as long as the lifo constraint on the calling thread is not broken.
@@ -676,13 +673,13 @@ Values are arranged in the queue by *linear allocation*: allocating a value mean
 Transactional puts and raw allocations
 ------------------------------------
 
-The functions `queue::push` and `function_queue::emplace` append a callable at the end of the queue. This is the quick way of doing a *put transaction*. We can have more control breaking it using the **start_** put functions:
+The functions `function_queue::push` and `function_queue::emplace` append a callable at the end of the queue. This is the quick way of doing a *put transaction*. We can have more control breaking it using the **start_** put functions:
 
 \snippet misc_examples.cpp function_queue example 4
 
 The start_* put functions return a [put_transaction](classdensity_1_1heter__queue_1_1put__transaction.html) by which the caller can:
 
- - access or alter the object being pushed before it becomes observable
+ - access the object being pushed before it becomes observable
  - [commit](classdensity_1_1heter__queue_1_1put__transaction.html#a96491d550e91a5918050bfdafe43a72c) the transaction so that the element becomes observable to consumers (the `put_transaction` becomes empty).
  - [cancel](classdensity_1_1heter__queue_1_1put__transaction.html#a209a4e37e25451c144910d6f6aa4911e) the transaction, in which case the transaction is discarded with no observable side effects (the `put_transaction` becomes empty).
  - allocate *raw memory blocks*, that is uninitialized memory, or arrays of a trivially destructible type (`char`s, `float`s) that are linearly allocated in the pages, right after the last allocated value. There is no function to deallocate raw blocks: they are automatically deallocated after the associated element has been canceled or consumed.
@@ -706,13 +703,18 @@ Consume operations have the `start_*` variant in heterogeneous queues (but not i
 
 Reentrancy
 ----------
-During a put or a consume operation an heterogeneous or function queue is not in a consistent state *for the caller thread*. So accessing the queue in any way, in the between of a start_* function and the cancel/commit, causes undefined behavior. Also accessing the queue from the constructor of an element, or from the invocation of a callable of a function queue, causes undefined behavior.
-Anyway in this time span the queue is not in an inconsistent state for the other threads, provided that the queue is concurrency-enabled. This may appear weird, but think to the queues protected by a mutex (`conc_function_queue` and `conc_heter_queue`): reentrancy would mean a double lock by the same thread, which causes undefined behaviour (unless the mutex is recursive, which is not). On the other hand other threads can access the queue: they will eventually block in a lock. Single threaded queues also exploit non-reentrancy to do some minor optimizations (internally they set the transaction as committed when it is started, so that the commit does not write the control bit again).
-Anyway, especially for consumers, reentrancy is sometimes necessary: a callable object, during the invocation, may need to push another callable object to the same queue. For every put or consume function, in every queue, there is a reentrant variant.
+During a put or a consume operation an heterogeneous or function queue is not in a consistent state *for the caller thread*. So accessing the queue in any way,
+in the between of a start_* function and the cancel/commit, causes undefined behavior. 
+Anyway, especially for consumers, reentrancy is sometimes necessary: a callable object, during the invocation, may need to push another callable object to the same queue.
+For every put or consume function, in every queue, there is a reentrant variant.
 
 \snippet conc_func_queue_examples.cpp conc_function_queue try_reentrant_consume example 1
 
-When doing reentrant operations,`conc_function_queue` and `conc_heter_queue` lock the mutex once when starting, and once when committing or canceling. In the middle of the operation the mutex is not locked.
+If an operation is not reentrant the implementation can do some optimizations: single-thread queues start puts in the committed state, so that the commit is a no-operation.
+Furthermore reentrancy can affect thread synchronization: `conc_function_queue` and `conc_heter_queue`, when executing a non-reentrant operation, lock their internal mutex
+when starting, and unlock it when committing or canceling. In contrast, when they execute a reentrant operation, they have to lock and unlock when starting, and lock and
+unlock again when committing or canceling. The internal mutex is not recursive, so if a thread starts a non-reentrant operation and then tries to access the queue, it
+causes undefined behaviour.
 
 Relaxed guarantees
 ------------
@@ -751,7 +753,7 @@ doing many atomic increments and decrements of the same page (which is a somewha
 the <code>consume_operation</code>, if the consumer thread keeps the <code>consume_operation</code> alive, pinning and unpinning will be performed only in case of 
 page switch.
 Note: a forgotten <code>consume_operation</code> which has pinned a page prevents the page from being recycled by the page allocator, even if it was
-deallocated by other consumers.
+deallocated by another consumer.
 
 Heterogeneous queues
 --------------------
