@@ -24,7 +24,7 @@ spin-locking    |[sp_function_queue](http://giucamp.github.io/density/doc/html/c
 ## Documentation
 The [overview](http://giucamp.github.io/density/doc/html/index.html) should be enough for an effective use of the library. 
 
-[This pdf document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes describes in detail the implementation of the library.
+This [pdf document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes in detail the implementation of the library.
 
 Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation also includes the results of some benchmarks.  
 
