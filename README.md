@@ -26,7 +26,7 @@ The [overview](http://giucamp.github.io/density/doc/html/index.html) should be e
 
 This [pdf document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes in detail the implementation of the library.
 
-Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html), generated from the master branch. This documentation also includes the results of some benchmarks.  
+Of course there is a [reference documentation](http://giucamp.github.io/density/doc/html/annotated.html), generated from the master branch. This documentation also includes the results of some benchmarks.  
 
 ## Support
 Supported compilers:
