@@ -26,7 +26,7 @@ The [overview](http://giucamp.github.io/density/doc/html/index.html) should be e
 
 This [pdf document](http://giucamp.github.io/density/doc/html/implementation.pdf) is an alternative overview that describes in detail the implementation of the library.
 
-Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html) (generated from the master branch) for the details. The documentation also includes the results of some benchmarks.  
+Of course there is a [reference](http://giucamp.github.io/density/doc/html/annotated.html), generated from the master branch. This documentation also includes the results of some benchmarks.  
 
 ## Support
 Supported compilers:
@@ -36,7 +36,9 @@ Supported compilers:
 
 The current version has not been tested on achitectures with weak memory ordering, so relaxed atomic operations are disabled with a global compile-time constant. Future versions will exploit relaxed atomics. 
 
-The library has an extensive test program that tests all the the data-structure, in normal and exceptional paths. The test program is executed on every commit in the master and develop branches. Anyway the current version is not mature enough for critical production code, and the coverage percentage reported by gcov and coveralls is biased due to some uninstantiated function templates. So: use it for your videogame, but not for heart surgery or landing a plane.
+The library has an extensive test program that tests all the the data-structure, in normal and exceptional paths. The test program is executed on every commit in the master and develop branches. Anyway the current version is not mature enough for critical production code, and the coverage percentage reported by gcov and coveralls is biased due to some uninstantiated function templates. So: use it for your videogame, but not for heart surgery or landing a plane. 
+
+In the [issues page](https://github.com/giucamp/density/issues) you can check the known issues or add some.
 
 ## How to...
 The library has no dependencies and is composed only by headers, so there is nothing to build. To use it just download or clone the repository, and then copy the directory "density" in your include paths.
