@@ -891,9 +891,11 @@ Benchmarks
         Running the benchmarks
         ----------
         ----------
-        The benchmark programs needs to read the source files from which it is compiled. It uses the macro \__FILE__ to locate them,
+        The benchmark program needs to read the source files from which it is compiled. It uses the macro \__FILE__ to locate them,
         which generally has a path relative to the project file. So if you execute the program from another location, you have to
         provide a source directory.
+
+        The benchmark program supports the following command-line parameters:
 
             -source:<string> - by default empty, max length = 4095. Path to prepend to the __FILE__ macro to access the source files.
 
