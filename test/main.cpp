@@ -174,7 +174,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     sp_func_queue_samples(i_ostream);*/
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
-    all_queues_generic_tests(flags, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+    all_queues_generic_tests(flags, i_ostream, i_random_seed, 2000 * 10);
 
     if (i_settings.m_exceptions)
     {

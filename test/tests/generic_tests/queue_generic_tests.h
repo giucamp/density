@@ -33,6 +33,17 @@ struct RuntimeType : density::runtime_type<>
     }
 };
 
+struct LFQueue : density::lf_heter_queue<void, RuntimeType, density::void_allocator,
+    density::concurrency_cardinality::concurrency_single, 
+    density::concurrency_cardinality::concurrency_multiple, 
+    density::consistency_model::consistency_relaxed>
+{
+    using density::lf_heter_queue<void, RuntimeType, density::void_allocator,
+        density::concurrency_cardinality::concurrency_single,
+        density::concurrency_cardinality::concurrency_multiple,
+        density::consistency_model::consistency_relaxed>::lf_heter_queue;
+};
+
 namespace std
 {
     /** Partial specialization of std::hash to allow the use of density::runtime_type as key
@@ -542,7 +553,7 @@ namespace density_tests
                 static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
             }
 
-            if (i_flags && QueueTesterFlags::eUseTestAllocators)
+            /*if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
                 single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<>,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
@@ -560,10 +571,9 @@ namespace density_tests
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }
-            else
+            else*/
             {
-                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, void_allocator,
-                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                single_lf_queue_generic_test<LFQueue>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }
         }
