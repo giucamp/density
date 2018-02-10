@@ -147,7 +147,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         flags = flags | QueueTesterFlags::ePrintProgress;
     }
 
-    lifo_examples();
+    /*lifo_examples();
     lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
     if (i_settings.m_exceptions)
     {
@@ -171,7 +171,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     func_queue_samples(i_ostream);
     conc_func_queue_samples(i_ostream);
     lf_func_queue_samples(i_ostream);
-    sp_func_queue_samples(i_ostream);
+    sp_func_queue_samples(i_ostream);*/
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
     all_queues_generic_tests(flags, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);

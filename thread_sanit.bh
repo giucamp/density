@@ -1,0 +1,2 @@
+
+bash scripts/test.sh TRUE Release FALSE "" "" -fsanitize=thread

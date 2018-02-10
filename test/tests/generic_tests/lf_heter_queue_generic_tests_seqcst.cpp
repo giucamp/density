@@ -25,16 +25,16 @@ namespace density_tests
         constexpr auto single = density::concurrency_single;
         constexpr auto seq_cst = density::consistency_sequential;
 
-        detail::lf_queues_generic_tests<mult, mult, seq_cst>
+  /*      detail::lf_queues_generic_tests<mult, mult, seq_cst>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
         detail::lf_queues_generic_tests<mult, single, seq_cst>
-            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
+            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);*/
 
         detail::lf_queues_generic_tests<single, mult, seq_cst>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, single, seq_cst>
-            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
+/*        detail::lf_queues_generic_tests<single, single, seq_cst>
+            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);*/
     }
 }

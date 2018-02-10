@@ -25,16 +25,16 @@ namespace density_tests
         constexpr auto single = density::concurrency_single;
         constexpr auto relaxed = density::consistency_relaxed;
 
-        detail::lf_queues_generic_tests<mult, mult, relaxed>
+/*        detail::lf_queues_generic_tests<mult, mult, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
         detail::lf_queues_generic_tests<mult, single, relaxed>
-            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
+            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);*/
 
         detail::lf_queues_generic_tests<single, mult, relaxed>
             (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, single, relaxed>
-            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);
+        /*detail::lf_queues_generic_tests<single, single, relaxed>
+            (i_flags, i_output, i_rand, i_element_count, nonblocking_thread_counts);*/
     }
 }

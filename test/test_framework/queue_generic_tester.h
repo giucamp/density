@@ -22,6 +22,8 @@
 #include <memory>
 #include <limits>
 #include <sstream>
+#include <chrono>
+#include<cstdlib>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -95,6 +97,9 @@ namespace density_tests
             run_impl(i_flags, i_random, i_target_put_count);
 
             m_output << "--------------------------------------------\n" << std::endl;
+		
+		std::this_thread::sleep_for(std::chrono::seconds(2));	    
+		abort();
         }
 
     private:

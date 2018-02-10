@@ -175,12 +175,13 @@ namespace density
             }
 
             template <page_allocation_type ALLOCATION_TYPE>
-                void deallocate_page(void * i_page) noexcept
+                void deallocate_page(void *) noexcept
             {
-                auto const page = get_footer(i_page);
+		return;
+                //auto const page = get_footer(i_page);
 
                 // try to push the page once on every slot
-                auto * const original_slot = m_current_slot;
+                /*auto * const original_slot = m_current_slot;
                 bool done = false;
                 do {
 
@@ -197,7 +198,7 @@ namespace density
                 if (!done)
                 {
                     get_private_stack(ALLOCATION_TYPE).push(page);
-                }
+                }*/
             }
 
             size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
