@@ -18,6 +18,35 @@
 #include <cstdint>
 #include <ostream>
 
+struct RuntimeType : density::runtime_type<>
+{
+    RuntimeType(const density::runtime_type<> & i_src)
+        : density::runtime_type<>(i_src)
+    {
+
+    }
+
+    template <typename TYPE>
+        static RuntimeType make() noexcept
+    {
+        return density::runtime_type<>::make<TYPE>();
+    }
+};
+
+namespace std
+{
+    /** Partial specialization of std::hash to allow the use of density::runtime_type as key
+    for unordered associative containers. */
+    template <>
+    struct hash< RuntimeType >
+    {
+        size_t operator()(const RuntimeType & i_runtime_type) const noexcept
+        {
+            return i_runtime_type.hash();
+        }
+    };
+}
+
 namespace density_tests
 {
     // see queue_generic_tests.cpp for the doc
@@ -515,7 +544,7 @@ namespace density_tests
 
             if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<>,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
@@ -523,7 +552,7 @@ namespace density_tests
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<256>,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
@@ -533,7 +562,7 @@ namespace density_tests
             }
             else
             {
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
+                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, void_allocator,
                         PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }
@@ -548,7 +577,7 @@ namespace density_tests
 
             if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
-                single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+                single_lf_queue_generic_test<sp_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<>,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
@@ -556,7 +585,7 @@ namespace density_tests
                     PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
-                single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+                single_lf_queue_generic_test<sp_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<256>,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
@@ -566,7 +595,7 @@ namespace density_tests
             }
             else
             {
-                single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, void_allocator,
+                single_lf_queue_generic_test<sp_heter_queue<void, RuntimeType, void_allocator,
                         PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }

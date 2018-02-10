@@ -39,7 +39,7 @@
     <ProjectGuid>{78BC9721-9B56-4B41-A7F5-495945387937}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>density_tests</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
