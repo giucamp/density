@@ -40,6 +40,42 @@ namespace density_tests
             return set_thread_affinity(i_thread.native_handle(), i_mask);
         }
 
+        bool set_thread_priority(HANDLE i_thread, thread_priority i_priority)
+        {
+            int priority = THREAD_PRIORITY_NORMAL;
+            switch (i_priority)
+            {
+            case density_tests::idle:
+                priority = THREAD_PRIORITY_IDLE;
+                break;
+            case density_tests::low:
+                priority = THREAD_PRIORITY_BELOW_NORMAL;
+                break;
+            case density_tests::normal:
+                priority = THREAD_PRIORITY_NORMAL;
+                break;
+            case density_tests::high:
+                priority = THREAD_PRIORITY_HIGHEST;
+                break;
+            case density_tests::critical:
+                priority = THREAD_PRIORITY_TIME_CRITICAL;
+                break;
+            default:
+                break;
+            }
+            return SetThreadPriority(i_thread, priority) != 0;
+        }
+
+        bool set_thread_priority(thread_priority i_priority)
+        {
+            return set_thread_priority(GetCurrentThread(), i_priority);
+        }
+
+        bool set_thread_priority(std::thread & i_thread, thread_priority i_priority)
+        {
+            return set_thread_priority(i_thread.native_handle(), i_priority);
+        }
+
         bool supend_thread(std::thread & i_thread)
         {
             return SuspendThread(i_thread.native_handle()) != (DWORD)-1;
@@ -154,6 +190,16 @@ namespace density_tests
         }
 
         bool set_thread_name(std::thread &, const char *)
+        {
+            return false;
+        }
+
+        bool set_thread_priority(thread_priority i_priority)
+        {
+            return false;
+        }
+
+        bool set_thread_priority(std::thread & i_thread, thread_priority i_priority)
         {
             return false;
         }
