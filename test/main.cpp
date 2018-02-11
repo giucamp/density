@@ -210,6 +210,12 @@ int run(int argc, char **argv)
         out << "\t" << *parameter << std::endl;
     }
 
+    #if defined(__has_feature)
+        #if __has_feature(thread_sanitizer)
+            out << "Thread-sanitizer is ON" << std::endl;
+        #endif
+    #endif
+
     #if defined(DENSITY_DEBUG)
         out << "DENSITY_DEBUG: defined" << std::endl;
     #else

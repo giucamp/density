@@ -10,6 +10,7 @@
 #include <density/void_allocator.h>
 #include <cstring> // for memcpy
 #include <type_traits>
+#include <iterator>
 
 namespace density
 {
@@ -598,6 +599,7 @@ namespace density
     template <typename TYPE>
         class lifo_array final : detail::LifoArrayImpl<TYPE>
     {
+        struct PrivateTag {};
     public:
 
         using value_type = TYPE;
@@ -605,8 +607,230 @@ namespace density
         using const_reference = TYPE &;
         using pointer = TYPE *;
         using const_pointer = const TYPE *;
-        using iterator = TYPE *;
-        using const_iterator = const TYPE *;
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+
+        class iterator
+        {
+        public:
+            using difference_type = ptrdiff_t;
+            using value_type = TYPE;
+            using pointer = TYPE*;
+            using reference = TYPE&;
+            using iterator_category = std::random_access_iterator_tag;
+
+            iterator(PrivateTag, TYPE * i_ptr) noexcept
+                : m_curr(i_ptr)
+                    { }
+
+            iterator() noexcept = default;
+            iterator(const iterator &) noexcept = default;
+            iterator & operator = (const iterator &) noexcept = default;
+
+            TYPE * operator -> () const noexcept
+            {
+                return m_curr;
+            }
+
+            TYPE & operator * () const & noexcept
+            {
+                return *m_curr;
+            }
+
+            TYPE && operator * () const && noexcept
+            {
+                return *m_curr;
+            }
+
+            iterator & operator ++ () noexcept
+            {
+                m_curr++;
+                return *this;
+            }
+
+            iterator operator ++ (int) noexcept
+            {
+                iterator copy(*this);
+                operator ++ ();
+                return copy;
+            }
+
+            iterator & operator += (difference_type i_diff) noexcept
+            {
+                m_curr += i_diff;
+                return *this;
+            }
+
+            iterator & operator -- () noexcept
+            {
+                m_curr--;
+                return *this;
+            }
+
+            iterator operator -- (int) noexcept
+            {
+                iterator copy(*this);
+                operator ++ ();
+                return copy;
+            }
+
+            iterator & operator -= (difference_type i_diff) noexcept
+            {
+                m_curr -= i_diff;
+                return *this;
+            }
+
+            friend difference_type operator - (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr - i_second.m_curr;
+            }
+
+                // relational operators
+
+            friend bool operator < (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr < i_second.m_curr;
+            }
+
+            friend bool operator <= (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr <= i_second.m_curr;
+            }
+
+            friend bool operator == (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr == i_second.m_curr;
+            }
+
+            friend bool operator != (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr != i_second.m_curr;
+            }
+
+            friend bool operator > (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr > i_second.m_curr;
+            }
+
+            friend bool operator >= (const iterator & i_first, const iterator & i_second) noexcept
+            {
+                return i_first.m_curr >= i_second.m_curr;
+            }
+
+        private:
+            TYPE * m_curr{};
+        };
+
+        class const_iterator
+        {
+        public:
+            using difference_type = ptrdiff_t;
+            using value_type = const TYPE;
+            using pointer = const TYPE * ;
+            using reference = const TYPE & ;
+            using iterator_category = std::random_access_iterator_tag;
+
+            const_iterator(PrivateTag, const TYPE * i_ptr) noexcept
+                : m_curr(i_ptr)
+                    { }
+
+            const_iterator() noexcept = default;
+            const_iterator(const const_iterator &) noexcept = default;
+            const_iterator & operator = (const const_iterator &) noexcept = default;
+
+            const TYPE * operator -> () const noexcept
+            {
+                return m_curr;
+            }
+
+            const TYPE & operator * () const & noexcept
+            {
+                return *m_curr;
+            }
+
+            const TYPE && operator * () const && noexcept
+            {
+                return *m_curr;
+            }
+
+            const_iterator & operator ++ () noexcept
+            {
+                m_curr++;
+                return *this;
+            }
+
+            const_iterator operator ++ (int) noexcept
+            {
+                const_iterator copy(*this);
+                operator ++ ();
+                return copy;
+            }
+
+            const_iterator & operator += (difference_type i_diff) noexcept
+            {
+                m_curr += i_diff;
+                return *this;
+            }
+
+            const_iterator & operator -- () noexcept
+            {
+                m_curr--;
+                return *this;
+            }
+
+            const_iterator operator -- (int) noexcept
+            {
+                const_iterator copy(*this);
+                operator ++ ();
+                return copy;
+            }
+
+            const_iterator & operator -= (difference_type i_diff) noexcept
+            {
+                m_curr -= i_diff;
+                return *this;
+            }
+
+            friend difference_type operator - (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr - i_second.m_curr;
+            }
+
+                // relational operators
+
+            friend bool operator < (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr < i_second.m_curr;
+            }
+
+            friend bool operator <= (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr <= i_second.m_curr;
+            }
+
+            friend bool operator == (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr == i_second.m_curr;
+            }
+
+            friend bool operator != (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr != i_second.m_curr;
+            }
+
+            friend bool operator > (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr > i_second.m_curr;
+            }
+
+            friend bool operator >= (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            {
+                return i_first.m_curr >= i_second.m_curr;
+            }
+
+        private:
+            const TYPE * m_curr{};
+        };
 
         /** Constructs a lifo_array and all its elements. If elements are POD types, they are not initialized.
             @param i_size number of elements of the array */
@@ -726,17 +950,17 @@ namespace density
         /** Returns a pointer to the first element. */
         const_pointer data() const noexcept         { return m_elements; }
 
-        iterator begin() noexcept                   { return m_elements; }
+        iterator begin() noexcept                   { return iterator(PrivateTag{}, m_elements); }
 
-        iterator end() noexcept                     { return m_elements + m_size; }
+        iterator end() noexcept                     { return iterator(PrivateTag{}, m_elements + m_size ); }
 
-        const_iterator cbegin() const noexcept      { return m_elements; }
+        const_iterator cbegin() const noexcept      { return const_iterator(PrivateTag{}, m_elements ); }
 
-        const_iterator cend() const noexcept        { return m_elements + m_size; }
+        const_iterator cend() const noexcept        { return const_iterator(PrivateTag{}, m_elements + m_size ); }
 
-        const_iterator begin() const noexcept       { return m_elements; }
+        const_iterator begin() const noexcept       { return const_iterator(PrivateTag{}, m_elements ); }
 
-        const_iterator end() const noexcept         { return m_elements + m_size; }
+        const_iterator end() const noexcept         { return const_iterator(PrivateTag{}, m_elements + m_size ); }
 
     private:
 
