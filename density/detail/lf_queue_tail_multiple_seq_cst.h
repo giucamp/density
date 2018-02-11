@@ -218,10 +218,10 @@ namespace density
                 return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
             }
 
-            static void * get_unaligned_element(ControlBlock * i_control) noexcept
+            static void * get_unaligned_element(ControlBlock * i_control, bool i_is_external) noexcept
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & NbQueue_External)
+                if (i_is_external)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
@@ -230,10 +230,10 @@ namespace density
                 return result;
             }
 
-            static void * get_element(LfQueueControl<void> * i_control)
+            static void * get_element(LfQueueControl<void> * i_control, bool i_is_external)
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & NbQueue_External)
+                if (i_is_external)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
@@ -247,7 +247,7 @@ namespace density
             }
 
             template <typename TYPE>
-                static TYPE * get_element(LfQueueControl<TYPE> * i_control)
+                static TYPE * get_element(LfQueueControl<TYPE> * i_control, bool /*i_is_external*/)
             {
                 return i_control->m_element;
             }

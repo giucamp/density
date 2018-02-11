@@ -1031,7 +1031,7 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control);
+                return Base::get_unaligned_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
             }
 
             /** Returns a pointer to the element being consumed.
@@ -1044,7 +1044,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control);
+                return Base::get_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
             }
 
             /** Returns a reference to the element being consumed.
@@ -1057,7 +1057,8 @@ namespace density
                 COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control,
+                    (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2599,7 +2600,8 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control);
+                return Base::get_unaligned_element(m_consume_data.m_control, 
+                    (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
             }
 
             /** Returns a pointer to the element being consumed.
@@ -2612,7 +2614,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control);
+                return Base::get_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
             }
 
             /** Returns a reference to the element being consumed.
@@ -2625,7 +2627,9 @@ namespace density
                 COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(
+                    m_consume_data.m_control, 
+                    (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0));
             }
 
             /** \internal - private function, usable only within the library */
