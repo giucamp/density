@@ -63,5 +63,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV "-queue_tests_cardinality:3000" $COMPILER_PARAMS
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV -queue_tests_cardinality:3000 $COMPILER_PARAMS
   - scripts/bench.sh $BENCH_RUN
