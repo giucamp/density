@@ -709,14 +709,10 @@ namespace density_tests
 
             {
                 //! [lf_function_queue clear example 1]
-    bool erasure = ERASURE;
-    if (erasure != function_manual_clear)
-    {
-        lf_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
+        lf_function_queue<int (), void_allocator, function_standard_erasure, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());
-    }
                 //! [lf_function_queue clear example 1]
             }
         }

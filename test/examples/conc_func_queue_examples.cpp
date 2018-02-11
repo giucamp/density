@@ -484,14 +484,10 @@ namespace density_tests
 
             {
                 //! [conc_function_queue clear example 1]
-    bool erasure = ERASURE;
-    if (erasure != function_manual_clear)
-    {
-        conc_function_queue<int (), void_allocator, ERASURE> queue;
+        conc_function_queue<int (), void_allocator, function_standard_erasure> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());
-    }
                 //! [conc_function_queue clear example 1]
             }
         }

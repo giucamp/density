@@ -711,14 +711,10 @@ namespace density_tests
 
             {
                 //! [sp_function_queue clear example 1]
-    bool erasure = ERASURE;
-    if (erasure != function_manual_clear)
-    {
-        sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+        sp_function_queue<int (), void_allocator, function_standard_erasure, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());
-    }
                 //! [sp_function_queue clear example 1]
             }
         }

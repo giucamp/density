@@ -305,16 +305,14 @@ namespace density
             return try_reentrant_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
-        /** Deletes all the callable objects in the queue.
-
-            \pre The behavior is undefined if either:
-                - ERASURE is function_manual_clear
+        /** Deletes all the callable objects in the queue. This function is disabled at conpile-time if ERASURE is function_manual_clear.
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
             \n\b Complexity: linear.
 
         \snippet conc_func_queue_examples.cpp conc_function_queue clear example 1 */
+        template <function_type_erasure ERASURE_ = ERASURE, typename std::enable_if<ERASURE_ != function_manual_clear>::type * = nullptr>
         void clear() noexcept
         {
             auto erasure = ERASURE;
