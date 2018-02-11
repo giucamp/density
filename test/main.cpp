@@ -16,6 +16,11 @@
 #include <density/heter_queue.h>
 #include <density/lf_heter_queue.h>
 
+bool all_types = true;
+bool reentrant_puts = true;
+bool reentrant_consumes = true;
+bool small_pages = true;
+
 #if defined(__linux__) && !defined(__ANDROID__)
     #include <execinfo.h>
     #include <signal.h>

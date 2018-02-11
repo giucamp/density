@@ -18,6 +18,9 @@
 #include <cstdint>
 #include <ostream>
 
+extern bool all_types;
+extern bool small_pages;
+
 struct RuntimeType : density::runtime_type<>
 {
     RuntimeType(const density::runtime_type<> & i_src)
@@ -515,15 +518,18 @@ namespace density_tests
             {
                 QueueGenericTester<QUEUE> tester(i_output, thread_count);
                 tester.template add_test_case<PutInt<QUEUE>>();
-                tester.template add_test_case<PutUInt8<QUEUE>>();
-                tester.template add_test_case<PutUInt16<QUEUE>>();
-                tester.template add_test_case<PutString<QUEUE>>();
-                tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
-                tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
-                tester.template add_test_case<PutTestObject<QUEUE, 2048, 2048>>();
-                tester.template add_test_case<PutRawBlocks<QUEUE>>();
-                tester.template add_test_case<TryPutFloat<QUEUE>>();
-                tester.template add_test_case<ReentrantPush<QUEUE>>();
+                if(all_types)
+                {
+                    tester.template add_test_case<PutUInt8<QUEUE>>();
+                    tester.template add_test_case<PutUInt16<QUEUE>>();
+                    tester.template add_test_case<PutString<QUEUE>>();
+                    tester.template add_test_case<PutTestObject<QUEUE, 128, 8>>();
+                    tester.template add_test_case<PutTestObject<QUEUE, 256, 128>>();
+                    tester.template add_test_case<PutTestObject<QUEUE, 2048, 2048>>();
+                    tester.template add_test_case<PutRawBlocks<QUEUE>>();
+                    tester.template add_test_case<TryPutFloat<QUEUE>>();
+                    tester.template add_test_case<ReentrantPush<QUEUE>>();
+                }
 
                 tester.run(i_flags, i_random, i_element_count);
             }
@@ -553,6 +559,19 @@ namespace density_tests
                 static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
             }
 
+            if (small_pages)
+            {
+                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<256>,
+                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
+            else
+            {
+                single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<default_page_capacity>,
+                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+            }
+
             /*if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
                 single_lf_queue_generic_test<lf_heter_queue<void, RuntimeType, UnmovableFastTestAllocator<>,
@@ -573,8 +592,8 @@ namespace density_tests
             }
             else*/
             {
-                single_lf_queue_generic_test<LFQueue>(
-                    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
+                /*single_lf_queue_generic_test<LFQueue>(
+                    i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);*/
             }
         }
 

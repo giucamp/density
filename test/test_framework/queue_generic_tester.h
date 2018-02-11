@@ -30,6 +30,9 @@
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
 #endif
 
+extern bool reentrant_puts;
+extern bool reentrant_consumes;
+
 namespace density_tests
 {
     template <typename QUEUE>
@@ -528,7 +531,7 @@ namespace density_tests
 
                 auto put_func = [&] {
 
-                    if (m_random.get_bool())
+                    if ((!reentrant_puts) || m_random.get_bool())
                     {
                         bool put_done = (*m_parent_tester.m_put_cases[type_index])(m_queue, m_random);
                         if (put_done)
@@ -564,7 +567,7 @@ namespace density_tests
             void try_consume_one()
             {
                 auto consume_func = [&] {
-                    if (m_random.get_bool())
+                    if ((!reentrant_consumes) || m_random.get_bool())
                     {
                         if (auto consume = m_queue.try_start_consume())
                         {
