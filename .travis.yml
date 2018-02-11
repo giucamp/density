@@ -34,7 +34,7 @@ matrix:
           packages:
             - clang-4.0
       env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=TRUE"
+        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:3000"
 
     - os: linux
       addons:
@@ -54,7 +54,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && COMPILER_PARAMS=-fsanitize=thread"
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:3000 && COMPILER_PARAMS=-fsanitize=thread"
 
 before_install:
     - pip install --user cpp-coveralls
@@ -63,5 +63,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV -queue_tests_cardinality:3000 $COMPILER_PARAMS
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV $TEST_PARAMS $COMPILER_PARAMS
   - scripts/bench.sh $BENCH_RUN
