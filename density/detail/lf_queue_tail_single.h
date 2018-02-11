@@ -230,7 +230,7 @@ namespace density
             static void * get_unaligned_element(ControlBlock * i_control) noexcept
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & NbQueue_External)
+                if (raw_atomic_load(&i_control->m_next) & NbQueue_External)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
@@ -242,7 +242,7 @@ namespace density
             static void * get_element(LfQueueControl<void> * i_control)
             {
                 auto result = address_add(i_control, s_element_min_offset);
-                if (i_control->m_next & NbQueue_External)
+                if (raw_atomic_load(&i_control->m_next) & NbQueue_External)
                 {
                     /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
                         we don't need to align further */
