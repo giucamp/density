@@ -46,6 +46,16 @@ matrix:
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE"
 
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && COMPILER_PARAMS=-fsanitize=thread"
+
 before_install:
     - pip install --user cpp-coveralls
     - chmod +x scripts/test.sh
@@ -53,5 +63,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV "" $COMPILER_PARAMS
   - scripts/bench.sh $BENCH_RUN
