@@ -20,6 +20,7 @@
 
 extern bool all_types;
 extern bool small_pages;
+extern bool reentrant_anyway;
 
 struct RuntimeType : density::runtime_type<>
 {
@@ -78,7 +79,7 @@ namespace density_tests
 
             static bool put(QUEUE & queue, EasyRandom & i_rand)
             {
-                if(i_rand.get_bool())
+                if((!reentrant_anyway) || i_rand.get_bool())
                     queue.push(1);
                 else
                     queue.reentrant_push(1);
