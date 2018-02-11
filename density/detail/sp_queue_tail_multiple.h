@@ -614,7 +614,7 @@ namespace density
                 if (new_page)
                 {
                     auto const new_page_end_block = get_end_control_block(new_page);
-                    new_page_end_block->m_next = detail::NbQueue_InvalidNextPage;
+                    raw_atomic_store(&new_page_end_block->m_next, detail::NbQueue_InvalidNextPage);
 
                     raw_atomic_store(&new_page->m_next, 0, mem_release);
                 }
