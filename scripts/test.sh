@@ -18,7 +18,7 @@ if [ "$TEST_DATA_STACK" = "TRUE" ]; then
     MAKE_ARGS+=" -DENABLE_TEST_DATA_STACK:BOOL=ON"
 fi
 
-if [ "$GCOV" != "" ]; then
+if [ "$GCOV" == "gcov-7" ]; then
     GCC_OPTIONS+=" -fprofile-arcs -ftest-coverage"
 fi
 GCC_OPTIONS+=$COMPILER_PARAMS
