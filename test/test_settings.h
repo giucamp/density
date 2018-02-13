@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <memory>
 #include <cstdint>
+#include <vector>
+#include <string>
 
 struct TestSettings
 {
@@ -17,6 +19,11 @@ struct TestSettings
     bool m_test_allocators = true;
     bool m_print_progress = true;
     size_t m_queue_tests_cardinality = 2000;
+
+    std::vector<std::string> m_run_only;
+    std::vector<std::string> m_exclude;
+
+    bool should_run(const char * i_test_name) const;
 };
 
 std::shared_ptr<const TestSettings> parse_settings(int argc, char **argv);

@@ -17,14 +17,14 @@
 #include <string>
 #include <cstdint>
 #include <ostream>
+#include "test_settings.h"
 
 namespace density_tests
 {
     // see queue_generic_tests.cpp for the doc
-    void all_queues_generic_tests(QueueTesterFlags i_flags,
-        std::ostream & i_output,
-        uint32_t i_random_seed,
-        size_t i_element_count);
+    void all_queues_generic_tests(const TestSettings & i_settings,
+        QueueTesterFlags i_flags, std::ostream & i_output,
+        uint32_t i_random_seed);
 
     namespace detail
     {

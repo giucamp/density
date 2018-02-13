@@ -147,26 +147,44 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         flags = flags | QueueTesterFlags::ePrintProgress;
     }
 
-    lifo_examples();
-    lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
-    if (i_settings.m_exceptions)
+    if(i_settings.should_run("lifo"))
     {
-        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
+        lifo_examples();
+        lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
+        if (i_settings.m_exceptions)
+        {
+            lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
+        }
     }
 
-    misc_examples();
+    if (i_settings.should_run("misc_examples"))
+    {
+        misc_examples();
+    }
 
-    heterogeneous_queue_samples(i_ostream);
-    heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("queue"))
+    {
+        heterogeneous_queue_samples(i_ostream);
+        heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    conc_heterogeneous_queue_samples(i_ostream);
-    conc_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("conc_queue"))
+    {
+        conc_heterogeneous_queue_samples(i_ostream);
+        conc_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    lf_heter_queue_samples(i_ostream);
-    lf_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("lf_queue"))
+    {
+        lf_heter_queue_samples(i_ostream);
+        lf_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    spinlocking_heterogeneous_queue_samples(i_ostream);
-    spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("sp_queue"))
+    {
+        spinlocking_heterogeneous_queue_samples(i_ostream);
+        spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
     func_queue_samples(i_ostream);
     conc_func_queue_samples(i_ostream);
@@ -174,23 +192,24 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     sp_func_queue_samples(i_ostream);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
-    all_queues_generic_tests(flags, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+
+    all_queues_generic_tests(i_settings, flags, i_ostream, i_random_seed);
 
     if (i_settings.m_exceptions)
     {
         i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-        all_queues_generic_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+        all_queues_generic_tests(i_settings, flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
     }
 
     if (i_settings.m_test_allocators)
     {
         i_ostream << "\n*** executing generic tests with test allocators..." << std::endl;
-        all_queues_generic_tests(flags | QueueTesterFlags::eUseTestAllocators, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+        all_queues_generic_tests(i_settings, flags | QueueTesterFlags::eUseTestAllocators, i_ostream, i_random_seed);
 
         if (i_settings.m_exceptions)
         {
             i_ostream << "\n*** executing generic tests with test allocators and exceptions..." << std::endl;
-            all_queues_generic_tests(flags | QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+            all_queues_generic_tests(i_settings, flags | QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
         }
     }
 
@@ -215,6 +234,8 @@ int run(int argc, char **argv)
             out << "Thread-sanitizer is ON" << std::endl;
         #endif
     #endif
+
+    out << "sizeof(void*): " << sizeof(void*) << std::endl;
 
     #if defined(DENSITY_DEBUG)
         out << "DENSITY_DEBUG: defined" << std::endl;
