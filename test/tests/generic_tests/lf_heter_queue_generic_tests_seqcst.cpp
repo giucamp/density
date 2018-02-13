@@ -21,15 +21,15 @@ namespace density_tests
         constexpr auto seq_cst = density::consistency_sequential;
 
         detail::lf_queues_generic_tests<mult, mult, seq_cst>
-            (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         detail::lf_queues_generic_tests<mult, single, seq_cst>
-            (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         detail::lf_queues_generic_tests<single, mult, seq_cst>
-            (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         detail::lf_queues_generic_tests<single, single, seq_cst>
-            (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
     }
 }

@@ -21,18 +21,18 @@ namespace density_tests
 
         if (i_settings.should_run("mult-mult"))
             detail::lf_queues_generic_tests<mult, mult, relaxed>
-                (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         if (i_settings.should_run("mult-sing"))
             detail::lf_queues_generic_tests<mult, single, relaxed>
-                (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         if (i_settings.should_run("sing-mult"))
             detail::lf_queues_generic_tests<single, mult, relaxed>
-                (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
         if (i_settings.should_run("sing-sing"))
             detail::lf_queues_generic_tests<single, single, relaxed>
-                (i_flags, i_output, i_rand, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
     }
 }

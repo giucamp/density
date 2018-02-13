@@ -52,9 +52,11 @@ namespace density_tests
 
         if (i_settings.should_run("lf_queue"))
         {
-            lf_heter_relaxed_queue_generic_tests(i_settings, i_flags, i_output, rand, nonblocking_thread_counts);
+            if (i_settings.should_run("relaxed"))
+                lf_heter_relaxed_queue_generic_tests(i_settings, i_flags, i_output, rand, nonblocking_thread_counts);
 
-            lf_heter_seq_cst_queue_generic_tests(i_settings, i_flags, i_output, rand, nonblocking_thread_counts);
+            if (i_settings.should_run("seq_cnst"))
+                lf_heter_seq_cst_queue_generic_tests(i_settings, i_flags, i_output, rand, nonblocking_thread_counts);
         }
 
         if (i_settings.should_run("sp_queue"))
