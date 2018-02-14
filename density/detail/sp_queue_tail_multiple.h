@@ -360,7 +360,12 @@ namespace density
                     {
                         /* note: while control_block->m_next is zero, no consumers may ever read this
                             variable. So this does not need to be atomic store. */
-                        new_tail->m_next = 0;
+                        //new_tail->m_next = 0;
+                        /* edit: clang5 thread sanitizer has reported a data race between this write and the read:
+                            auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
+                            in start_consume_impl (detail\lf_queue_head_multiple.h).
+                            Making the store atomic.... */
+                        raw_atomic_store(&new_tail->m_next, uintptr_t(0));
 
                         auto const control_block = tail;
                         auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
@@ -446,7 +451,12 @@ namespace density
                     {
                         /* note: while control_block->m_next is zero, no consumers may ever read this
                             variable. So this does not need to be atomic store. */
-                        new_tail->m_next = 0;
+                        //new_tail->m_next = 0;
+                            /* edit: clang5 thread sanitizer has reported a data race between this write and the read:
+                            auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
+                            in start_consume_impl (detail\lf_queue_head_multiple.h).
+                            Making the store atomic.... */
+                        raw_atomic_store(&new_tail->m_next, uintptr_t(0));
 
                         auto const control_block = tail;
                         auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
@@ -614,9 +624,9 @@ namespace density
                 if (new_page)
                 {
                     auto const new_page_end_block = get_end_control_block(new_page);
-                    raw_atomic_store(&new_page_end_block->m_next, detail::NbQueue_InvalidNextPage);
+                    raw_atomic_store(&new_page_end_block->m_next, uintptr_t(detail::NbQueue_InvalidNextPage));
 
-                    raw_atomic_store(&new_page->m_next, 0, mem_release);
+                    raw_atomic_store(&new_page->m_next, uintptr_t(0), mem_release);
                 }
                 return new_page;
             }

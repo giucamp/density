@@ -130,7 +130,7 @@ namespace density
                 if (tail != invalid_control_block())
                 {
                     auto const end_block = get_end_control_block(tail);
-                    end_block->m_next = 0;
+                    raw_atomic_store(&end_block->m_next, uintptr_t(0));
                     ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
                 }
             }
@@ -633,7 +633,7 @@ namespace density
                 if (new_page != nullptr)
                 {
                     auto const new_page_end_block = get_end_control_block(new_page);
-                    raw_atomic_store(&new_page_end_block->m_next, NbQueue_InvalidNextPage);
+                    raw_atomic_store(&new_page_end_block->m_next, uintptr_t(NbQueue_InvalidNextPage));
                 }
                 else
                 {
@@ -648,7 +648,7 @@ namespace density
             void discard_created_page(ControlBlock * i_new_page) noexcept
             {
                 auto const new_page_end_block = get_end_control_block(i_new_page);
-                new_page_end_block->m_next = 0;
+                raw_atomic_store(&new_page_end_block->m_next, uintptr_t(0));
                 ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
             }
 

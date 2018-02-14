@@ -406,4 +406,54 @@ namespace density
         return raw_atomic_compare_exchange_weak(i_atomic, i_expected, i_desired, i_memory_order, i_memory_order);
     }
 
+    template <typename UNDERLYING_TYPE>
+        struct strong_raw_atomic
+    {
+        UNDERLYING_TYPE m_value;
+    };
+
+    using atomic_uintptr_t = strong_raw_atomic<uintptr_t>;
+    using atomic_uint32_t = strong_raw_atomic<uint32_t>;
+    using atomic_uint64_t = strong_raw_atomic<uint64_t>;
+
+    template <typename TYPE>
+        inline TYPE raw_atomic_load(strong_raw_atomic<TYPE> const * i_atomic, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+    {
+        return raw_atomic_load(&i_atomic->m_value, i_memory_order);
+    }
+
+    template <typename TYPE>
+        inline void raw_atomic_store(strong_raw_atomic<TYPE> * i_atomic, TYPE i_value, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+    {
+        raw_atomic_store(&i_atomic->m_value, i_value, i_memory_order);
+    }
+
+    template <typename TYPE>
+        inline bool raw_atomic_compare_exchange_strong(strong_raw_atomic<TYPE> * i_atomic,
+            TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+    {
+        return raw_atomic_compare_exchange_strong(&i_atomic->m_value, i_expected, i_desired, i_memory_order, i_memory_order);
+    }
+
+    template <typename TYPE>
+        inline bool raw_atomic_compare_exchange_weak(strong_raw_atomic<TYPE> * i_atomic,
+            TYPE * i_expected, TYPE i_desired, std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
+    {
+        return raw_atomic_compare_exchange_weak(&i_atomic->m_value, i_expected, i_desired, i_memory_order, i_memory_order);
+    }
+
+    template <typename TYPE>
+        inline bool raw_atomic_compare_exchange_strong(strong_raw_atomic<TYPE> * i_atomic,
+            TYPE * i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept
+    {
+        return raw_atomic_compare_exchange_strong(&i_atomic->m_value, i_expected, i_desired, i_success, i_failure);
+    }
+
+    template <typename TYPE>
+        inline bool raw_atomic_compare_exchange_weak(strong_raw_atomic<TYPE> * i_atomic,
+            TYPE * i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept
+    {
+        return raw_atomic_compare_exchange_weak(&i_atomic->m_value, i_expected, i_desired, i_success, i_failure);
+    }
+
 } // namespace density

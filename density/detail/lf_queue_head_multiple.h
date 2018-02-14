@@ -324,14 +324,14 @@ namespace density
 
                         if (Base::s_deallocate_zeroed_pages)
                         {
-                            raw_atomic_store(&i_control_block->m_next, 0);
+                            raw_atomic_store(&i_control_block->m_next, uintptr_t(0));
                         }
 
                         if (Base::same_page(i_control_block, i_next))
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
+                                auto const memset_dest = const_cast<atomic_uintptr_t*>(&i_control_block->m_next) + 1;
                                 auto const memset_size = address_diff(i_next, memset_dest);
                                 std::memset(memset_dest, 0, memset_size);
                             }
@@ -429,9 +429,9 @@ namespace density
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                raw_atomic_store(&control->m_next, 0);
+                                raw_atomic_store(&control->m_next, uintptr_t(0));
 
-                                auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
+                                auto const memset_dest = const_cast<atomic_uintptr_t*>(&control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
                                 DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
                                 DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
@@ -451,7 +451,7 @@ namespace density
 
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                raw_atomic_store(&control->m_next, 0);
+                                raw_atomic_store(&control->m_next, uintptr_t(0));
                             }
 
                             if (Base::s_deallocate_zeroed_pages)

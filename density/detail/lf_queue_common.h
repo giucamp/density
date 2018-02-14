@@ -5,6 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <density/raw_atomic.h>
 
 namespace density
 {
@@ -12,13 +13,13 @@ namespace density
     {
         template<typename COMMON_TYPE> struct LfQueueControl // used by lf_heter_queue<T,...>
         {
-            uintptr_t m_next; // raw atomic
+            atomic_uintptr_t m_next; // raw atomic
             COMMON_TYPE * m_element;
         };
 
         template<> struct LfQueueControl<void> // used by lf_heter_queue<void,...>
         {
-            uintptr_t m_next; // raw atomic
+            atomic_uintptr_t m_next; // raw atomic
         };
 
         enum NbQueue_Flags : uintptr_t
