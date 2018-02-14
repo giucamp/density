@@ -20,16 +20,20 @@ namespace density_tests
         constexpr auto single = density::concurrency_single;
         constexpr auto seq_cst = density::consistency_sequential;
 
-        detail::lf_queues_generic_tests<mult, mult, seq_cst>
-            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
+        if (i_settings.should_run("mult-mult"))
+            detail::lf_queues_generic_tests<mult, mult, seq_cst>
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<mult, single, seq_cst>
-            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
+        if (i_settings.should_run("mult-sing"))
+            detail::lf_queues_generic_tests<mult, single, seq_cst>
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, mult, seq_cst>
-            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
+        if (i_settings.should_run("sing-mult"))
+            detail::lf_queues_generic_tests<single, mult, seq_cst>
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
 
-        detail::lf_queues_generic_tests<single, single, seq_cst>
-            (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
+        if (i_settings.should_run("sing-sing"))
+            detail::lf_queues_generic_tests<single, single, seq_cst>
+                (i_settings, i_flags, i_output, i_rand, i_nonblocking_thread_counts);
     }
 }

@@ -513,29 +513,40 @@ namespace density_tests
                 static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
             }
 
+            bool const run_page_default = i_settings.should_run("page_def");
+            bool const run_page_256 = i_settings.should_run("page_256");
+
             if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-                    i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                if(run_page_default)
+                {
+                    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>,
+                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
 
-                single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-                    i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                    single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>,
+                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                }
+                if(run_page_256)
+                {
+                    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
+                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
 
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-                    i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
-
-                single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-                    i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                    single_lf_queue_generic_test<lf_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>,
+                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                }
             }
             else
             {
-                single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
-                        PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
-                    i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                if(run_page_default)
+                {
+                    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
+                            PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
+                        i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
+                }
             }
         }
 
