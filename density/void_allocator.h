@@ -417,7 +417,7 @@ namespace density
             \n <b>Throws</b>: nothing. */
         void pin_page(void * i_page) noexcept
         {
-            PageAllocator::thread_local_instance().pin_page(i_page);
+            PageAllocator::pin_page(i_page);
         }
 
         /** Removes a pin from the page, decrementing the internal ref-count.
@@ -430,7 +430,31 @@ namespace density
             \n <b>Throws</b>: nothing. */
         void unpin_page(void * i_address) noexcept
         {
-            PageAllocator::thread_local_instance().unpin_page(i_address);
+            PageAllocator::unpin_page(i_address);
+        }
+
+        /** Tries to pin the page containing the specified address, incrementing an internal page_specific ref-count,
+            If the implementation can't complete the action with the specified progress guarantee, the call has no visible effects,
+            and the return value is false. Otherwise the return value is true..
+
+            \n <b>Progress guarantee</b>: specified by the argument
+            \n <b>Throws</b>: nothing. */
+        bool try_pin_page(progress_guarantee i_progress_guarantee, void * i_address) noexcept
+        {
+            return PageAllocator::try_pin_page(i_progress_guarantee, i_address);
+        }
+
+        /** Removes a pin from the page, decrementing the internal ref-count.
+
+            \pre The behavior is undefined if either:
+                - the page containing i_page was never returned by allocate_page, try_allocate_page, allocate_page_zeroed or try_allocate_page_zeroed
+                - the page was not previously pinned by this thread
+
+            \n <b>Progress guarantee</b>: specified by the argument
+            \n <b>Throws</b>: nothing. */
+        void unpin_page(progress_guarantee i_progress_guarantee, void * i_address) noexcept
+        {
+            return PageAllocator::unpin_page(i_progress_guarantee, i_address);
         }
 
         /** Returns the number of times the specified page has been pinned by any thread. This function is useful only for diagnostic or debugging.
@@ -442,7 +466,7 @@ namespace density
             \n <b>Throws</b>: nothing. */
         uintptr_t get_pin_count(const void * i_address) noexcept
         {
-            return PageAllocator::thread_local_instance().get_pin_count(i_address);
+            return PageAllocator::get_pin_count(i_address);
         }
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.

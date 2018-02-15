@@ -13,60 +13,25 @@ namespace density
         /** \internal Class template that implements put operations */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
             class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_sequential>
-                : protected ALLOCATOR_TYPE
+                : protected LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>
         {
-        public:
+        protected:
 
-            using ControlBlock = LfQueueControl<COMMON_TYPE>;
-            using Block = LfBlock<COMMON_TYPE>;
-
-            /** Minimum alignment used for the storage of the elements.
-                The storage of elements is always aligned according to the most-derived type. */
-            constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on
-                the choice of this value: it just should be a very common alignment. */
-
-            /** Head and tail pointers are alway multiple of this constant. To avoid the need of
-                upper-aligning the addresses of the control-block and the runtime type, we raise it to the
-                maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned).
-                The ControlBlock is always at offset 0 in the layout of a value or raw block. */
-            constexpr static uintptr_t s_alloc_granularity = size_max( size_max( concurrent_alignment,
-                alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock) ),
-                min_alignment, size_log2(NbQueue_AllFlags + 1) );
-
-            /** Offset of the runtime_type in the layout of a value */
-            constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
-
-            /** Minimum offset of the element in the layout of a value (The actual offset is dependent on the alignment of the element). */
-            constexpr static uintptr_t s_element_min_offset = uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
-
-            /** Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
-            constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(sizeof(ControlBlock), size_max(min_alignment, alignof(ExternalBlock)));
-
-            /** Offset from the beginning of the page of the end-control-block. */
-            constexpr static uintptr_t s_end_control_offset = uint_lower_align(ALLOCATOR_TYPE::page_size - sizeof(ControlBlock), s_alloc_granularity);
-
-            /** Maximum size for an element or raw block to be allocated in a page. */
-            constexpr static size_t s_max_size_inpage = s_end_control_offset - s_element_min_offset;
-
-            /** Value used to initialize the head and the tail.
-                This value is designed to always cause a page overflow in the fast path.
-                This mechanism allows the default constructor to be small, fast, and noexcept. */
-            constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
+            using Base = LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
+            using Base::ControlBlock;
+            using Base::Block;
+            using Base::same_page;
+            using Base::min_alignment;
+            using Base::s_alloc_granularity;
+            using Base::s_type_offset;
+            using Base::s_element_min_offset;
+            using Base::s_rawblock_min_offset;
+            using Base::s_end_control_offset;
+            using Base::s_max_size_inpage;
+            using Base::s_invalid_control_block;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
-
-            // some static checks
-            static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) &&
-                s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
-            static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
-
-            /** Returns whether the input addresses belong to the same page or they are both nullptr */
-            static bool same_page(const void * i_first, const void * i_second) noexcept
-            {
-                auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
-                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
-            }
 
             LFQueue_Tail() noexcept
                 : m_tail(s_invalid_control_block),
@@ -75,14 +40,14 @@ namespace density
             }
 
             LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept
-                : ALLOCATOR_TYPE(std::move(i_allocator)),
+                : Base(std::move(i_allocator)),
                   m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {
             }
 
             LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
-                : ALLOCATOR_TYPE(i_allocator),
+                : Base(i_allocator),
                   m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {

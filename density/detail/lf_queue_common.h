@@ -6,6 +6,7 @@
 
 #pragma once
 #include <density/raw_atomic.h>
+#include <type_traits>
 
 namespace density
 {
@@ -59,6 +60,85 @@ namespace density
             );
         }
 
+        template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
+            class LFQueue_Base : public ALLOCATOR_TYPE
+        {
+        protected:
+
+            using ControlBlock = LfQueueControl<COMMON_TYPE>;
+
+            /** \internal This struct contains the result of a low-level allocation. */
+            struct Block
+            {
+                LfQueueControl<COMMON_TYPE> * m_control_block;
+                uintptr_t m_next_ptr;
+                void * m_user_storage;
+
+                Block() noexcept : m_user_storage(nullptr) {}
+
+                Block(LfQueueControl<COMMON_TYPE> * i_control_block, uintptr_t i_next_ptr, void * i_user_storage) noexcept
+                    : m_control_block(i_control_block), m_next_ptr(i_next_ptr), m_user_storage(i_user_storage) {}
+            };
+
+            /** Minimum alignment used for the storage of the elements.
+            The storage of elements is always aligned according to the most-derived type. */
+            constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on
+                                                                    the choice of this value: it just should be a very common alignment. */
+
+            LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value) = default;
+
+            LFQueue_Base(ALLOCATOR_TYPE && i_allocator) noexcept
+                : ALLOCATOR_TYPE(std::move(i_allocator))
+            {
+            }
+
+            LFQueue_Base(const ALLOCATOR_TYPE & i_allocator)
+                : ALLOCATOR_TYPE(i_allocator)
+            {
+            }
+
+            /** Returns whether the input addresses belong to the same page or they are both nullptr */
+            static bool same_page(const void * i_first, const void * i_second) noexcept
+            {
+                auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
+                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
+            }
+
+            /** Head and tail pointers are alway multiple of this constant. To avoid the need of
+            upper-aligning the addresses of the control-block and the runtime type, we raise it to the
+            maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned).
+            The ControlBlock is always at offset 0 in the layout of a value or raw block. */
+            constexpr static uintptr_t s_alloc_granularity = size_max(size_max(concurrent_alignment,
+                alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock)),
+                min_alignment, size_log2(NbQueue_AllFlags + 1));
+
+            /** Offset of the runtime_type in the layout of a value */
+            constexpr static uintptr_t s_type_offset = uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
+
+            /** Minimum offset of the element in the layout of a value (The actual offset is dependent on
+                the alignment of the element). */
+            constexpr static uintptr_t s_element_min_offset = uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
+
+            /** Minimum offset of a row block. (The actual offset is dependent on the alignment of the block). */
+            constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(sizeof(ControlBlock), size_max(min_alignment, alignof(ExternalBlock)));
+
+            /** Offset from the beginning of the page of the end-control-block. */
+            constexpr static uintptr_t s_end_control_offset = uint_lower_align(ALLOCATOR_TYPE::page_size - sizeof(ControlBlock), s_alloc_granularity);
+
+            /** Maximum size for an element or raw block to be allocated in a page. */
+            constexpr static size_t s_max_size_inpage = s_end_control_offset - s_element_min_offset;
+
+            /** Value used to initialize the head and the tail.
+                This value is designed to always cause a page overflow in the fast path.
+                This mechanism allows the default constructor to be small, fast, and noexcept. */
+            constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
+
+            // some static checks
+            static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) &&
+                s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
+            static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
+        };
+
         /** \internal Class template that implements the low-level interface for put transactions */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
             concurrency_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
@@ -68,19 +148,6 @@ namespace density
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
             concurrency_cardinality CONSUMER_CARDINALITY, typename QUEUE_TAIL >
                 class LFQueue_Head;
-
-        /** \internal This struct contains the result of a low-level allocation. */
-        template<typename COMMON_TYPE> struct LfBlock
-        {
-            LfQueueControl<COMMON_TYPE> * m_control_block;
-            uintptr_t m_next_ptr;
-            void * m_user_storage;
-
-            LfBlock() noexcept : m_user_storage(nullptr) {}
-
-            LfBlock(LfQueueControl<COMMON_TYPE> * i_control_block, uintptr_t i_next_ptr, void * i_user_storage) noexcept
-                : m_control_block(i_control_block), m_next_ptr(i_next_ptr), m_user_storage(i_user_storage) {}
-        };
 
     } // namespace detail
 

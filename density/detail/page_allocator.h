@@ -134,6 +134,7 @@ namespace density
             PageAllocatorSlot * m_current_slot, * m_victim_slot;
             PageStack m_private_page_stack, m_private_zeroed_page_stack;
             SingletonPtr<GlobalState<SYSTYEM_PAGE_MANAGER>> m_global_state;
+            PageStack m_pages_to_unpin;
 
             static thread_local PageAllocator t_instance;
 
@@ -210,6 +211,21 @@ namespace density
                 auto const footer = get_footer(i_address);
                 footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
             }
+            
+            static bool try_pin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
+            {
+                auto const footer = get_footer(i_address);
+                if(i_progress_guarantee <= progress_guarantee::progress_lock_free)
+                {
+                    footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
+                    return true;
+                }
+                else
+                {
+                    auto curr_value = footer->m_pin_count.fetch_load(detail::mem_relaxed);
+                    return footer->m_pin_count.compare_exchange_weak(curr_value, detail::mem_acquire);
+                }
+            }
 
             static void unpin_page(void * const i_address) noexcept
             {
@@ -217,6 +233,25 @@ namespace density
                 auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
                 DENSITY_ASSERT(prev_pins > 0);
                 (void)prev_pins;
+            }
+
+            static void unpin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
+            {
+                if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
+                {
+                    unpin_page(i_address);
+                    return true;
+                }
+                else
+                {
+                    auto curr_value = footer->m_pin_count.fetch_load(detail::mem_relaxed);
+                    DENSITY_ASSERT(curr_value > 0);
+                    if (!footer->m_pin_count.compare_exchange_weak(curr_value, detail::mem_acquire))
+                    {
+                        // failed due to contention, we must retry later
+                        t_instance.m_pages_to_unpin.push(footer);
+                    }
+                }
             }
 
             static uintptr_t get_pin_count(const void * const i_address) noexcept
