@@ -29,6 +29,10 @@ namespace density
             using Base::s_end_control_offset;
             using Base::s_max_size_inpage;
             using Base::s_invalid_control_block;
+            using Base::get_end_control_block;
+            using Base::type_after_control;
+            using Base::get_unaligned_element;
+            using Base::get_element;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = true;
@@ -97,13 +101,6 @@ namespace density
                     raw_atomic_store(&end_block->m_next, uintptr_t(0));
                     ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
                 }
-            }
-
-            /** Given an address, returns the end block of the page containing it. */
-            static ControlBlock * get_end_control_block(void * i_address) noexcept
-            {
-                auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
-                return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
             }
 
             Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
@@ -190,47 +187,7 @@ namespace density
                 auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
                 raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
             }
-
-            static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
-            {
-                return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
-            }
-
-            static void * get_unaligned_element(ControlBlock * i_control, bool i_is_external) noexcept
-            {
-                auto result = address_add(i_control, s_element_min_offset);
-                if (i_is_external)
-                {
-                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
-                        we don't need to align further */
-                    result = static_cast<ExternalBlock*>(result)->m_block;
-                }
-                return result;
-            }
-
-            static void * get_element(LfQueueControl<void> * i_control, bool i_is_external) noexcept
-            {
-                auto result = address_add(i_control, s_element_min_offset);
-                if (i_is_external)
-                {
-                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
-                        we don't need to align further */
-                    result = static_cast<ExternalBlock*>(result)->m_block;
-                }
-                else
-                {
-                    result = address_upper_align(result, type_after_control(i_control)->alignment());
-                }
-                return result;
-            }
-
-            template <typename TYPE>
-                static TYPE * get_element(LfQueueControl<TYPE> * i_control, bool /*i_is_external*/) noexcept
-            {
-                return i_control->m_element;
-            }
-
-
+            
         private:
 
             /** Allocates a block of memory.

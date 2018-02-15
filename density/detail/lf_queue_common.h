@@ -85,25 +85,6 @@ namespace density
             constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on
                                                                     the choice of this value: it just should be a very common alignment. */
 
-            LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value) = default;
-
-            LFQueue_Base(ALLOCATOR_TYPE && i_allocator) noexcept
-                : ALLOCATOR_TYPE(std::move(i_allocator))
-            {
-            }
-
-            LFQueue_Base(const ALLOCATOR_TYPE & i_allocator)
-                : ALLOCATOR_TYPE(i_allocator)
-            {
-            }
-
-            /** Returns whether the input addresses belong to the same page or they are both nullptr */
-            static bool same_page(const void * i_first, const void * i_second) noexcept
-            {
-                auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
-                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
-            }
-
             /** Head and tail pointers are alway multiple of this constant. To avoid the need of
             upper-aligning the addresses of the control-block and the runtime type, we raise it to the
             maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned).
@@ -137,6 +118,71 @@ namespace density
             static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) &&
                 s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
             static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
+
+            LFQueue_Base() = default;
+
+            LFQueue_Base(ALLOCATOR_TYPE && i_allocator)
+                : ALLOCATOR_TYPE(std::move(i_allocator))
+            {
+            }
+
+            LFQueue_Base(const ALLOCATOR_TYPE & i_allocator)
+                : ALLOCATOR_TYPE(i_allocator)
+            {
+            }
+
+            /** Returns whether the input addresses belong to the same page or they are both nullptr */
+            static bool same_page(const void * i_first, const void * i_second) noexcept
+            {
+                auto const page_mask = ALLOCATOR_TYPE::page_alignment - 1;
+                return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
+            }
+
+            /** Given an address, returns the end block of the page containing it. */
+            static ControlBlock * get_end_control_block(void * i_address) noexcept
+            {
+                auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
+                return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
+            }
+
+            static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
+            {
+                return static_cast<RUNTIME_TYPE*>(address_add(i_control, s_type_offset));
+            }
+
+            static void * get_unaligned_element(ControlBlock * i_control, bool i_is_external) noexcept
+            {
+                auto result = address_add(i_control, s_element_min_offset);
+                if (i_is_external)
+                {
+                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
+                        we don't need to align further */
+                    result = static_cast<ExternalBlock*>(result)->m_block;
+                }
+                return result;
+            }
+
+            static void * get_element(detail::LfQueueControl<void> * i_control, bool i_is_external)
+            {
+                auto result = address_add(i_control, s_element_min_offset);
+                if (i_is_external)
+                {
+                    /* i_control and s_element_min_offset are aligned to alignof(ExternalBlock), so
+                        we don't need to align further */
+                    result = static_cast<ExternalBlock*>(result)->m_block;
+                }
+                else
+                {
+                    result = address_upper_align(result, type_after_control(i_control)->alignment());
+                }
+                return result;
+            }
+
+            template <typename TYPE>
+                static TYPE * get_element(detail::LfQueueControl<TYPE> * i_control, bool /*i_is_external*/)
+            {
+                return i_control->m_element;
+            }
         };
 
         /** \internal Class template that implements the low-level interface for put transactions */
