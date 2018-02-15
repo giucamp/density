@@ -222,8 +222,8 @@ namespace density
                 }
                 else
                 {
-                    auto curr_value = footer->m_pin_count.fetch_load(detail::mem_relaxed);
-                    return footer->m_pin_count.compare_exchange_weak(curr_value, detail::mem_acquire);
+                    auto curr_value = footer->m_pin_count.load(detail::mem_relaxed);
+                    return footer->m_pin_count.compare_exchange_weak(curr_value, curr_value + 1, detail::mem_acquire);
                 }
             }
 
@@ -240,13 +240,13 @@ namespace density
                 if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
                 {
                     unpin_page(i_address);
-                    return true;
                 }
                 else
                 {
-                    auto curr_value = footer->m_pin_count.fetch_load(detail::mem_relaxed);
+                    auto const footer = get_footer(i_address);
+                    auto curr_value = footer->m_pin_count.load(detail::mem_relaxed);
                     DENSITY_ASSERT(curr_value > 0);
-                    if (!footer->m_pin_count.compare_exchange_weak(curr_value, detail::mem_acquire))
+                    if (!footer->m_pin_count.compare_exchange_weak(curr_value, curr_value - 1, detail::mem_acquire))
                     {
                         // failed due to contention, we must retry later
                         t_instance.m_pages_to_unpin.push(footer);

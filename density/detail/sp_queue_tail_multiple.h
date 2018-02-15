@@ -61,8 +61,8 @@ namespace density
         protected:
 
             using Base = LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
-            using Base::ControlBlock;
-            using Base::Block;
+            using typename Base::ControlBlock;
+            using typename Base::Block;
             using Base::same_page;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
