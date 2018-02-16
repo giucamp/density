@@ -198,9 +198,11 @@ namespace density
     private:
         using Base = detail::LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, CONSUMER_CARDINALITY,
                 detail::SpQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, BUSY_WAIT_FUNC> >;
-        using ControlBlock = typename Base::ControlBlock;
-        using Block = typename Base::Block;
-        using Consume = typename Base::Consume;
+        using typename Base::ControlBlock;
+        using typename Base::Allocation;
+        using typename Base::Consume;
+        using Base::template try_inplace_allocate;
+        using Base::template inplace_allocate;
 
         /** This type is used to make some functions of the inner classes accessible only by the queue */
         enum class PrivateType {};
@@ -832,7 +834,7 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, sp_heter_queue * i_queue, const Block & i_put,
+            put_transaction(PrivateType, sp_heter_queue * i_queue, const Allocation & i_put,
                     std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
@@ -841,14 +843,14 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, sp_heter_queue * i_queue, const Block & i_put,
+            put_transaction(PrivateType, sp_heter_queue * i_queue, const Allocation & i_put,
                     std::true_type /*i_is_void*/, void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
 
         private:
-            Block m_put;
+            Allocation m_put;
             sp_heter_queue * m_queue;
             template <typename OTHERTYPE> friend class put_transaction;
         };
@@ -1267,7 +1269,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2407,7 +2409,7 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, sp_heter_queue * i_queue, const Block & i_put,
+            reentrant_put_transaction(PrivateType, sp_heter_queue * i_queue, const Allocation & i_put,
                     std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
@@ -2416,14 +2418,14 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, sp_heter_queue * i_queue, const Block & i_put,
+            reentrant_put_transaction(PrivateType, sp_heter_queue * i_queue, const Allocation & i_put,
                     std::true_type /*i_is_void*/, void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
 
         private:
-            Block m_put;
+            Allocation m_put;
             sp_heter_queue * m_queue = nullptr;
             template <typename OTHERTYPE> friend class reentrant_put_transaction;
         };
@@ -2729,7 +2731,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;

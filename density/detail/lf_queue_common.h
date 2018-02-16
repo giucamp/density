@@ -42,7 +42,7 @@ namespace density
             LfQueue_Throwing, /**< maps to progress_blocking, allows exceptions */
             LfQueue_Blocking, /**< maps to progress_blocking, noexcept */
             LfQueue_LockFree, /**< maps to progress_lock_free and progress_obstruction_free, noexcept */
-            LfQueue_WaitFree /**< maps to progress_lock_free and progress_wait_free, noexcept */
+            LfQueue_WaitFree /**< maps to progress_wait_free, noexcept */
         };
 
         constexpr LfQueue_ProgressGuarantee ToLfGuarantee(progress_guarantee i_progress_guarantee, bool i_can_throw)
@@ -60,7 +60,7 @@ namespace density
             );
         }
 
-        template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
+        template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename DERIVED>
             class LFQueue_Base : public ALLOCATOR_TYPE
         {
         protected:
@@ -68,15 +68,15 @@ namespace density
             using ControlBlock = LfQueueControl<COMMON_TYPE>;
 
             /** \internal This struct contains the result of a low-level allocation. */
-            struct Block
+            struct Allocation
             {
                 LfQueueControl<COMMON_TYPE> * m_control_block;
                 uintptr_t m_next_ptr;
                 void * m_user_storage;
 
-                Block() noexcept : m_user_storage(nullptr) {}
+                Allocation() noexcept : m_user_storage(nullptr) {}
 
-                Block(LfQueueControl<COMMON_TYPE> * i_control_block, uintptr_t i_next_ptr, void * i_user_storage) noexcept
+                Allocation(LfQueueControl<COMMON_TYPE> * i_control_block, uintptr_t i_next_ptr, void * i_user_storage) noexcept
                     : m_control_block(i_control_block), m_next_ptr(i_next_ptr), m_user_storage(i_user_storage) {}
             };
 
@@ -182,6 +182,56 @@ namespace density
                 static TYPE * get_element(detail::LfQueueControl<TYPE> * i_control, bool /*i_is_external*/)
             {
                 return i_control->m_element;
+            }
+
+            static ControlBlock * invalid_control_block() noexcept
+            {
+                return reinterpret_cast<ControlBlock*>(s_invalid_control_block);
+            }
+
+            Allocation inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+            {
+                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
+            }
+
+            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Allocation inplace_allocate()
+            {
+                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+            }
+
+            Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee, uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment) noexcept
+            {
+                switch (i_progress_guarantee)
+                {
+                case progress_wait_free:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_WaitFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                case progress_lock_free:
+                case progress_obstruction_free:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_LockFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                default:
+                    DENSITY_ASSERT_INTERNAL(false); // fall-through to progress_blocking to avoid 'not all control paths return a value' warnings
+                case progress_blocking:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
+                }
+            }
+
+            /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
+            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
+                Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
+            {
+                switch (i_progress_guarantee)
+                {
+                case progress_wait_free:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_WaitFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                case progress_lock_free:
+                case progress_obstruction_free:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_LockFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                default:
+                    DENSITY_ASSERT_INTERNAL(false); // fall-through to progress_blocking to avoid 'not all control paths return a value' warnings
+                case progress_blocking:
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Blocking, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                }
             }
         };
 

@@ -262,7 +262,7 @@ namespace density
         constexpr static auto s_max_size_inpage = ALLOCATOR_TYPE::page_size - s_sizeof_ControlBlock - s_sizeof_RuntimeType - s_sizeof_ControlBlock;
 
         /** This struct is the return type of allocation functions. */
-        struct Block
+        struct Allocation
         {
             ControlBlock * m_control_block;
             void * m_user_storage;
@@ -821,13 +821,13 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::true_type, void *) noexcept
+            put_transaction(PrivateType, heter_queue * i_queue, Allocation i_push_data, std::true_type, void *) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::false_type, COMMON_TYPE * i_element_storage) noexcept
+            put_transaction(PrivateType, heter_queue * i_queue, Allocation i_push_data, std::false_type, COMMON_TYPE * i_element_storage) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
                 m_put_data.m_user_storage = i_element_storage;
@@ -837,7 +837,7 @@ namespace density
         private:
             heter_queue * m_queue; /**< queue the transaction is bound to. The transaction is empty
                                             if and only if this pointer is nullptr. */
-            Block m_put_data;
+            Allocation m_put_data;
 
             template <typename OTHERTYPE> friend class put_transaction;
         };
@@ -1826,12 +1826,12 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::true_type, void *) noexcept
+            reentrant_put_transaction(PrivateType, heter_queue * i_queue, Allocation i_push_data, std::true_type, void *) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
                     { }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, heter_queue * i_queue, Block i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
+            reentrant_put_transaction(PrivateType, heter_queue * i_queue, Allocation i_push_data, std::false_type, COMMON_TYPE * i_element) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
                 m_put_data.m_user_storage = i_element;
@@ -1840,7 +1840,7 @@ namespace density
 
         private:
             heter_queue * m_queue = nullptr;
-            Block m_put_data;
+            Allocation m_put_data;
 
             template <typename OTHERTYPE> friend class reentrant_put_transaction;
         };
@@ -2625,7 +2625,7 @@ namespace density
         /** Allocates an element and its control block.
             This function may throw anything the allocator may throw. */
         template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE>
-            Block inplace_allocate(size_t i_size, size_t i_alignment)
+            Allocation inplace_allocate(size_t i_size, size_t i_alignment)
         {
             DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
 
@@ -2659,7 +2659,7 @@ namespace density
 
                     control_block->m_next = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
                     m_tail = static_cast<ControlBlock *>(new_tail);
-                    return Block{ control_block, user_storage };
+                    return Allocation{ control_block, user_storage };
                 }
                 else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                 {
@@ -2676,7 +2676,7 @@ namespace density
 
         /** Overload of inplace_allocate with fixed size and alignment */
         template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-            Block inplace_allocate()
+            Allocation inplace_allocate()
         {
             static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
@@ -2714,7 +2714,7 @@ namespace density
 
                     control_block->m_next = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
                     m_tail = static_cast<ControlBlock *>(new_tail);
-                    return Block{ control_block, new_element };
+                    return Allocation{ control_block, new_element };
                 }
                 else if (can_fit_in_a_page)
                 {
@@ -2730,7 +2730,7 @@ namespace density
         }
 
         template <uintptr_t CONTROL_BITS>
-            Block external_allocate(size_t i_size, size_t i_alignment)
+            Allocation external_allocate(size_t i_size, size_t i_alignment)
         {
             auto const external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
             try
@@ -2743,7 +2743,7 @@ namespace density
 
                 DENSITY_ASSERT((inplace_put.m_control_block->m_next & detail::Queue_External) == 0);
                 inplace_put.m_control_block->m_next |= detail::Queue_External;
-                return Block{ inplace_put.m_control_block, external_block };
+                return Allocation{ inplace_put.m_control_block, external_block };
             }
             catch (...)
             {

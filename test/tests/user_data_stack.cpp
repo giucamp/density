@@ -192,7 +192,7 @@ namespace density_tests
                 auto non_virgin_lifo_blocks = m_lifo_blocks;
                 non_virgin_lifo_blocks.erase(
                     std::remove_if(non_virgin_lifo_blocks.begin(), non_virgin_lifo_blocks.end(), 
-                        [virgin_top](const Block & i_block){ return i_block.m_block == virgin_top; }),
+                        [virgin_top](const Allocation & i_block){ return i_block.m_block == virgin_top; }),
                     non_virgin_lifo_blocks.end());
 
                 DENSITY_TEST_ASSERT(pages.size() == 0);
@@ -212,7 +212,7 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(!pages.empty()); // at least one page must exist
 
                 // iterate m_lifo_blocks
-                Block prev_inpage_block;
+                Allocation prev_inpage_block;
                 size_t page_index = 0, external_block_index = 0;
                 for(size_t lifo_block_index = 0; lifo_block_index < m_lifo_blocks.size(); lifo_block_index++)
                 {
@@ -294,7 +294,7 @@ namespace density_tests
 
         void notify_alloc(void * i_block, size_t i_size)
         {
-            Block new_block;
+            Allocation new_block;
             new_block.m_block = i_block;
             new_block.m_size = i_size;
             m_lifo_blocks.push_back(new_block);
@@ -310,7 +310,7 @@ namespace density_tests
 
     private:
 
-        struct Block
+        struct Allocation
         {
             void * m_block = nullptr;
             size_t m_size = 0;
@@ -323,7 +323,7 @@ namespace density_tests
                 return m_block >= page_start && block_end < page_end;
             }
         };
-        std::vector<Block> m_lifo_blocks; /**< used to check the LIFO order */        
+        std::vector<Allocation> m_lifo_blocks; /**< used to check the LIFO order */        
         density::lifo_allocator<underlying_allocator, ALIGNMENT> m_allocator;
         Stats m_stats;
     };

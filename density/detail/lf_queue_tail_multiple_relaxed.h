@@ -13,13 +13,15 @@ namespace density
         /** \internal Class template that implements put operations */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
             class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_relaxed>
-                : protected LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>
+                : protected LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, 
+                    LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_relaxed> >
         {
-        protected:
+        public:
 
-            using Base = LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;
+            using Base = LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
+                LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_relaxed> >;
             using typename Base::ControlBlock;
-            using typename Base::Block;
+            using typename Base::Allocation;
             using Base::same_page;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
@@ -33,15 +35,10 @@ namespace density
             using Base::type_after_control;
             using Base::get_unaligned_element;
             using Base::get_element;
+            using Base::invalid_control_block;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = true;
-
-            /** Type-safe (at least for the caller) version of s_invalid_control_block */
-            static ControlBlock * invalid_control_block() noexcept
-            {
-                return reinterpret_cast<ControlBlock*>(s_invalid_control_block);
-            }
 
             LFQueue_Tail() noexcept
                 : m_tail(invalid_control_block()),
@@ -103,102 +100,20 @@ namespace density
                 }
             }
 
-            Block inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
-            {
-                return try_inplace_allocate_impl<LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
-            }
-
-            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block inplace_allocate()
-            {
-                return try_inplace_allocate_impl<LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
-            }
-
-            Block try_inplace_allocate(progress_guarantee i_progress_guarantee, uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment) noexcept
-            {
-                switch (i_progress_guarantee)
-                {
-                case progress_wait_free:
-                    return try_inplace_allocate_impl<LfQueue_WaitFree>(i_control_bits, i_include_type, i_size, i_alignment);
-                case progress_lock_free:
-                case progress_obstruction_free:
-                    return try_inplace_allocate_impl<LfQueue_LockFree>(i_control_bits, i_include_type, i_size, i_alignment);
-                default:
-                    DENSITY_ASSERT_INTERNAL(false);
-                case progress_blocking:
-                    return try_inplace_allocate_impl<LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
-                }
-            }
-
-            /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
-            template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
-            {
-                switch (i_progress_guarantee)
-                {
-                case progress_wait_free:
-                    return try_inplace_allocate_impl<LfQueue_WaitFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
-                case progress_lock_free:
-                case progress_obstruction_free:
-                    return try_inplace_allocate_impl<LfQueue_LockFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
-                default:
-                    DENSITY_ASSERT_INTERNAL(false);
-                case progress_blocking:
-                    return try_inplace_allocate_impl<LfQueue_Blocking, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
-                }
-            }
-
             ControlBlock * get_initial_page() const noexcept
             {
                 return m_initial_page.load();
             }
 
-            static void commit_put_impl(const Block & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
-
-                // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
-            }
-
-            static void cancel_put_impl(const Block & i_put) noexcept
-            {
-                // destroy the element and the type
-                auto type_ptr = type_after_control(i_put.m_control_block);
-                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
-                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-                cancel_put_nodestroy_impl(i_put);
-            }
-
-            static void cancel_put_nodestroy_impl(const Block & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
-
-                // remove NbQueue_Busy and add NbQueue_Dead
-                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
-            }
-            
-        private:
-
             /** Allocates a block of memory.
                 The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
-                @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Block
+                @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
                 @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
                 @param i_include_type true if this is an element value, false if it's a raw allocation
                 @param i_size it must be > 0 and a multiple of the alignment
                 @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
-                Block try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
+                Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
@@ -245,7 +160,7 @@ namespace density
                         {
                             if (guarantee == LfQueue_WaitFree)
                             {
-                                return Block();
+                                return Allocation();
                             }
                         }
                     }
@@ -256,7 +171,7 @@ namespace density
                         {
                             if (tail == nullptr)
                             {
-                                return Block();
+                                return Allocation();
                             }
                         }
                         else
@@ -269,7 +184,7 @@ namespace density
                         // this allocation would never fit in a page, allocate an external block
                         if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
                         {
-                            return Block();
+                            return Allocation();
                         }
                         else
                         {
@@ -281,7 +196,7 @@ namespace density
 
             /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE, uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
-                Block try_inplace_allocate_impl()
+                Allocation try_inplace_allocate_impl()
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
@@ -328,13 +243,13 @@ namespace density
                             raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
 
                             DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
-                            return Block{ control_block, next_ptr, user_storage };
+                            return Allocation{ control_block, next_ptr, user_storage };
                         }
                         else
                         {
                             if (guarantee == LfQueue_WaitFree)
                             {
-                                return Block();
+                                return Allocation();
                             }
                         }
                     }
@@ -345,7 +260,7 @@ namespace density
                         {
                             if (tail == nullptr)
                             {
-                                return Block();
+                                return Allocation();
                             }
                         }
                         else
@@ -358,7 +273,7 @@ namespace density
                         // this allocation would never fit in a page, allocate an external block
                         if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
                         {
-                            return Block();
+                            return Allocation();
                         }
                         else
                         {
@@ -368,9 +283,46 @@ namespace density
                 }
             }
 
+            static void commit_put_impl(const Allocation & i_put) noexcept
+            {
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove the flag NbQueue_Busy
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
+            }
+
+            static void cancel_put_impl(const Allocation & i_put) noexcept
+            {
+                // destroy the element and the type
+                auto type_ptr = type_after_control(i_put.m_control_block);
+                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
+                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+
+                cancel_put_nodestroy_impl(i_put);
+            }
+
+            static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
+            {
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove NbQueue_Busy and add NbQueue_Dead
+                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
+            }
+            
+        private:
+
             /** Used by inplace_allocate when the block can't be allocated in a page. */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
-                Block external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                Allocation external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
@@ -385,7 +337,7 @@ namespace density
                     external_block = ALLOCATOR_TYPE::try_allocate(ToDenGuarantee(PROGRESS_GUARANTEE), i_size, i_alignment);
                     if (external_block == nullptr)
                     {
-                        return Block();
+                        return Allocation();
                     }
                 }
 
@@ -397,10 +349,10 @@ namespace density
                     if (inplace_put.m_user_storage == nullptr)
                     {
                         ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                        return Block();
+                        return Allocation();
                     }
                     new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
-                    return Block{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
+                    return Allocation{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
                 }
                 catch (...)
                 {
