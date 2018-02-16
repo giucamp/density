@@ -13,7 +13,7 @@ namespace density
         /** \internal Class template that implements put operations */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, consistency_model CONSISTENCY_MODEL>
             class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL>
-                : protected LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, 
+                : public LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, 
                     LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL> >
         {
         public:

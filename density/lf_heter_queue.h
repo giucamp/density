@@ -188,8 +188,8 @@ namespace density
         using typename Base::ControlBlock;
         using typename Base::Allocation;
         using typename Base::Consume;
-        using Base::template try_inplace_allocate;
-        using Base::template inplace_allocate;
+        using Base::try_inplace_allocate;
+        using Base::inplace_allocate;
 
         /** This type is used to make some functions of the inner classes accessible only by the queue */
         enum class PrivateType {};
@@ -1256,7 +1256,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -1760,7 +1760,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push example 1 */
         put_transaction<> try_start_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
@@ -1821,7 +1821,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push_copy example 1 */
         put_transaction<> try_start_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
@@ -1880,7 +1880,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push_move example 1 */
         put_transaction<> try_start_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
@@ -2716,7 +2716,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2748,7 +2748,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2781,7 +2781,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2813,7 +2813,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2988,7 +2988,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();
@@ -3024,7 +3024,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();
@@ -3059,7 +3059,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data = Base::try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();

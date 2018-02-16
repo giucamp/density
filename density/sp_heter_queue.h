@@ -201,8 +201,8 @@ namespace density
         using typename Base::ControlBlock;
         using typename Base::Allocation;
         using typename Base::Consume;
-        using Base::template try_inplace_allocate;
-        using Base::template inplace_allocate;
+        using Base::try_inplace_allocate;
+        using Base::inplace_allocate;
 
         /** This type is used to make some functions of the inner classes accessible only by the queue */
         enum class PrivateType {};
@@ -1269,7 +1269,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
@@ -2731,7 +2731,7 @@ namespace density
             static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
                 "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
 
             COMMON_TYPE * element = nullptr;
             runtime_type * type = nullptr;
