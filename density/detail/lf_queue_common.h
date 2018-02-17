@@ -148,7 +148,7 @@ namespace density
             }
             static uintptr_t get_end_control_block(uintptr_t i_address) noexcept
             {
-                auto const page = uint_lower_align(uintptr_t, ALLOCATOR_TYPE::page_alignment);
+                auto const page = uint_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
                 return page + s_end_control_offset;
             }
 
