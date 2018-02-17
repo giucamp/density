@@ -43,6 +43,8 @@ namespace density
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = true;
 
+            constexpr static bool s_needs_end_control = true;
+
             LFQueue_Tail() noexcept
                 : m_tail(invalid_control_block()),
                   m_initial_page(nullptr)

@@ -351,6 +351,14 @@ namespace density
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
 
+        /** This function is used to suppress warnings about constant conditional expressions 
+            without declaring useless variables. */
+        template <typename TYPE>
+            inline auto non_constant(TYPE && i_value) -> decltype(std::forward<TYPE>(i_value))
+        {
+            return std::forward<TYPE>(i_value);
+        }
+
         /** \internal Utility that provides RAII pinning\unpinning of a memory page */
         template <typename ALLOCATOR_TYPE>
             class PinGuard
