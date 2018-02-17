@@ -420,7 +420,7 @@ namespace density
 
                         bool const is_same_page = Base::same_page(control, next);
                         DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-                        DENSITY_ASSERT_INTERNAL(!non_constant(Base::s_needs_end_control) || is_same_page == (control != Base::get_end_control_block(control)));
+                        DENSITY_ASSERT_INTERNAL(!non_constant((bool)Base::s_needs_end_control) || is_same_page == (control != Base::get_end_control_block(control)));
 
                         static_assert(offsetof(ControlBlock, m_next) == 0, "");
                         //std::memset(control, 0, address_diff(address_of_next, control));
