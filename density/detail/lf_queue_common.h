@@ -119,7 +119,10 @@ namespace density
                 s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
             static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
 
-            constexpr LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value) = default;
+            constexpr LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value)
+		: ALLOCATOR_TYPE()
+            {
+            }
 
             constexpr LFQueue_Base(ALLOCATOR_TYPE && i_allocator)
                     noexcept(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value)
