@@ -1737,7 +1737,7 @@ namespace density
                         type->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                     Base::cancel_put_nodestroy_impl(push_data);
-                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT
+                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT
                 }
             }
 
@@ -2988,7 +2988,7 @@ namespace density
                         type->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                     Base::cancel_put_nodestroy_impl(push_data);
-                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT
+                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT
                 }
             }
 

@@ -422,19 +422,19 @@ namespace density
 
         // internal macro - rethrows disabling the warning "function assumed not to throw an exception but does"
         #ifdef _MSC_VER
-            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
+            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT \
                 __pragma(warning(push)) \
                 __pragma(warning(disable:4297)) \
                 throw; \
                 __pragma(warning(pop))
         #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT \
+            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT \
                 _Pragma("GCC diagnostic push") \
                 _Pragma("GCC diagnostic ignored \"-Wterminate\"") \
                 throw; \
                 _Pragma("GCC diagnostic pop")
         #else
-            #define DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT throw;
+            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT throw;
         #endif
     }
 

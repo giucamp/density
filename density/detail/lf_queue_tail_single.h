@@ -36,6 +36,9 @@ namespace density
             using Base::get_unaligned_element;
             using Base::get_element;
             using Base::invalid_control_block;
+            using Base::commit_put_impl;
+            using Base::cancel_put_impl;
+            using Base::cancel_put_nodestroy_impl;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
@@ -256,41 +259,6 @@ namespace density
                 }
             }
 
-            static void commit_put_impl(const Allocation & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
-
-                // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
-            }
-
-            static void cancel_put_impl(const Allocation & i_put) noexcept
-            {
-                // destroy the element and the type
-                auto type_ptr = type_after_control(i_put.m_control_block);
-                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
-                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-                cancel_put_nodestroy_impl(i_put);
-            }
-
-            static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
-
-                // remove NbQueue_Busy and add NbQueue_Dead
-                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
-            }
-
             ControlBlock * get_initial_page() const noexcept
             {
                 return m_initial_page.load();
@@ -338,7 +306,7 @@ namespace density
                         but we were not able to put the struct ExternalBlock in the page (because a new page was
                         necessary, but we could not allocate it). */
                     ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT;
+                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT;
                 }
             }
 

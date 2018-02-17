@@ -119,14 +119,16 @@ namespace density
                 s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
             static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
 
-            LFQueue_Base() = default;
+            constexpr LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value) = default;
 
-            LFQueue_Base(ALLOCATOR_TYPE && i_allocator)
+            constexpr LFQueue_Base(ALLOCATOR_TYPE && i_allocator)
+                    noexcept(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value)
                 : ALLOCATOR_TYPE(std::move(i_allocator))
             {
             }
 
-            LFQueue_Base(const ALLOCATOR_TYPE & i_allocator)
+            constexpr LFQueue_Base(const ALLOCATOR_TYPE & i_allocator)
+                    noexcept(std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
                 : ALLOCATOR_TYPE(i_allocator)
             {
             }
@@ -143,6 +145,11 @@ namespace density
             {
                 auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
                 return static_cast<ControlBlock *>(address_add(page, s_end_control_offset));
+            }
+            static uintptr_t get_end_control_block(uintptr_t i_address) noexcept
+            {
+                auto const page = uint_lower_align(uintptr_t, ALLOCATOR_TYPE::page_alignment);
+                return page + s_end_control_offset;
             }
 
             static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
@@ -191,13 +198,15 @@ namespace density
 
             Allocation inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
             {
-                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
+                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                    LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
             }
 
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Allocation inplace_allocate()
             {
-                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                    LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
             }
 
             Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee, uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment) noexcept
@@ -205,14 +214,19 @@ namespace density
                 switch (i_progress_guarantee)
                 {
                 case progress_wait_free:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_WaitFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_WaitFree>(i_control_bits, i_include_type, i_size, i_alignment);
+
                 case progress_lock_free:
                 case progress_obstruction_free:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_LockFree>(i_control_bits, i_include_type, i_size, i_alignment);
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_LockFree>(i_control_bits, i_include_type, i_size, i_alignment);
+
                 default:
                     DENSITY_ASSERT_INTERNAL(false); // fall-through to progress_blocking to avoid 'not all control paths return a value' warnings
                 case progress_blocking:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_Blocking>(i_control_bits, i_include_type, i_size, i_alignment);
                 }
             }
 
@@ -223,15 +237,55 @@ namespace density
                 switch (i_progress_guarantee)
                 {
                 case progress_wait_free:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_WaitFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_WaitFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+
                 case progress_lock_free:
                 case progress_obstruction_free:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_LockFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_LockFree, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+
                 default:
                     DENSITY_ASSERT_INTERNAL(false); // fall-through to progress_blocking to avoid 'not all control paths return a value' warnings
                 case progress_blocking:
-                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::LfQueue_Blocking, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
+                    return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
+                        LfQueue_Blocking, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
                 }
+            }
+
+            static void commit_put_impl(const Allocation & i_put) noexcept
+            {
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove the flag NbQueue_Busy
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
+            }
+
+            static void cancel_put_impl(const Allocation & i_put) noexcept
+            {
+                // destroy the element and the type
+                auto type_ptr = type_after_control(i_put.m_control_block);
+                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
+                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
+
+                cancel_put_nodestroy_impl(i_put);
+            }
+
+            static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
+            {
+                // we expect to have NbQueue_Busy and not NbQueue_Dead
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSERT_INTERNAL(
+                    (i_put.m_next_ptr & ~NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) & ~NbQueue_AllFlags) &&
+                    (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
+
+                // remove NbQueue_Busy and add NbQueue_Dead
+                auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
             }
         };
 

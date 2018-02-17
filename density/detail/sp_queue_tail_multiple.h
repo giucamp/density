@@ -79,6 +79,9 @@ namespace density
             using Base::get_unaligned_element;
             using Base::get_element;
             using Base::invalid_control_block;
+            using Base::commit_put_impl;
+            using Base::cancel_put_impl;
+            using Base::cancel_put_nodestroy_impl;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
@@ -150,7 +153,7 @@ namespace density
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0);
+                DENSITY_ASSERT_INTERNAL((i_control_bits & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0);
                 DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
 
                 if (i_alignment < min_alignment)
@@ -194,15 +197,15 @@ namespace density
                         variable. So this does not need to be atomic store. */
                         //new_tail->m_next = 0;
                         /* edit: clang5 thread sanitizer has reported a data race between this write and the read:
-                        auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
+                        auto const next_uint = raw_atomic_load(&control->m_next, mem_relaxed);
                         in start_consume_impl (detail\lf_queue_head_multiple.h).
                         Making the store atomic.... */
                         raw_atomic_store(&new_tail->m_next, uintptr_t(0));
 
                         auto const control_block = tail;
                         auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
-                        DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
-                        raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
+                        DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, mem_relaxed) == 0);
+                        raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
 
                         DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
                         m_tail = new_tail;
@@ -240,10 +243,10 @@ namespace density
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                static_assert((CONTROL_BITS & ~(detail::NbQueue_Busy | detail::NbQueue_Dead | detail::NbQueue_External)) == 0, "");
+                static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = detail::size_max(ALIGNMENT, min_alignment);
+                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
                 constexpr auto size = uint_upper_align(SIZE, alignment);
                 constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
                 constexpr auto over_aligned = alignment > min_alignment;
@@ -285,15 +288,15 @@ namespace density
                         variable. So this does not need to be atomic store. */
                         //new_tail->m_next = 0;
                         /* edit: clang5 thread sanitizer has reported a data race between this write and the read:
-                        auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
+                        auto const next_uint = raw_atomic_load(&control->m_next, mem_relaxed);
                         in start_consume_impl (detail\lf_queue_head_multiple.h).
                         Making the store atomic.... */
                         raw_atomic_store(&new_tail->m_next, uintptr_t(0));
 
                         auto const control_block = tail;
                         auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-                        DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, detail::mem_relaxed) == 0);
-                        raw_atomic_store(&control_block->m_next, next_ptr, detail::mem_release);
+                        DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, mem_relaxed) == 0);
+                        raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
 
                         DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
                         DENSITY_ASSERT_INTERNAL(new_tail != nullptr);
@@ -324,41 +327,6 @@ namespace density
                         return external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
                     }
                 }
-            }
-
-            static void commit_put_impl(const Allocation & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - detail::NbQueue_Busy, detail::mem_seq_cst);
-            }
-
-            static void cancel_put_impl(const Allocation & i_put) noexcept
-            {
-                // destroy the element and the type
-                auto type_ptr = type_after_control(i_put.m_control_block);
-                type_ptr->destroy(static_cast<COMMON_TYPE*>(i_put.m_user_storage));
-                type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
-
-                cancel_put_nodestroy_impl(i_put);
-            }
-
-            static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
-            {
-                // we expect to have NbQueue_Busy and not NbQueue_Dead
-                DENSITY_ASSERT_INTERNAL(address_is_aligned(i_put.m_control_block, s_alloc_granularity));
-                DENSITY_ASSERT_INTERNAL(
-                    (i_put.m_next_ptr & ~detail::NbQueue_AllFlags) == (raw_atomic_load(&i_put.m_control_block->m_next, detail::mem_relaxed) & ~detail::NbQueue_AllFlags) &&
-                    (i_put.m_next_ptr & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                // remove NbQueue_Busy and add NbQueue_Dead
-                auto const addend = static_cast<uintptr_t>(detail::NbQueue_Dead) - static_cast<uintptr_t>(detail::NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, detail::mem_seq_cst);
             }
 
             ControlBlock * get_initial_page() const noexcept
@@ -393,7 +361,7 @@ namespace density
                 {
                     /* external blocks always allocate space for the type, because it would be complicated
                         for the consumers to handle both cases*/
-                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | detail::NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
                     if (inplace_put.m_user_storage == nullptr)
                     {
                         ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
@@ -408,7 +376,7 @@ namespace density
                         but we were not able to put the struct ExternalBlock in the page (because a new page was
                         necessary, but we could not allocate it). */
                     ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                    DENSITY_INTERNAL_RETHROW_WITHIN_POSSIBLY_NOEXCEPT
+                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT
                 }
             }
 
@@ -429,7 +397,7 @@ namespace density
                     m_tail = i_tail;
 
                     auto const block = static_cast<ControlBlock*>(i_tail);
-                    raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + detail::NbQueue_Dead, detail::mem_release);
+                    raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + NbQueue_Dead, mem_release);
                     return page_end;
                 }
                 else
@@ -460,7 +428,7 @@ namespace density
                         return nullptr;
                     }
 
-                    raw_atomic_store(&i_end_control->m_next, reinterpret_cast<uintptr_t>(new_page) + detail::NbQueue_Dead);
+                    raw_atomic_store(&i_end_control->m_next, reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead);
 
                     m_tail = new_page;
 
@@ -498,7 +466,7 @@ namespace density
                 if (new_page)
                 {
                     auto const new_page_end_block = get_end_control_block(new_page);
-                    raw_atomic_store(&new_page_end_block->m_next, uintptr_t(detail::NbQueue_InvalidNextPage));
+                    raw_atomic_store(&new_page_end_block->m_next, uintptr_t(NbQueue_InvalidNextPage));
 
                     raw_atomic_store(&new_page->m_next, uintptr_t(0), mem_release);
                 }
