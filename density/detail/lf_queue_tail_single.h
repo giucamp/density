@@ -117,7 +117,9 @@ namespace density
                 @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are allowed
                 @param i_include_type true if this is an element value, false if it's a raw allocation
                 @param i_size it must be > 0 and a multiple of the alignment
-                @param i_alignment is must be > 0 and a power of two */
+                @param i_alignment is must be > 0 and a power of two 
+
+                The upper layers shouldn't use NbQueue_External:: external blocks are handled internally by indirect recursion. */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
@@ -152,20 +154,27 @@ namespace density
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
                     {
                         /* null-terminate the next control-block before updating the new one, to prevent 
-                            consumers from reaching an unitialized area. */
-                        raw_atomic_store(&reinterpret_cast<ControlBlock*>(new_tail)->m_next, uintptr_t(0));
+                            consumers from reaching an unitialized area. No memory ordering is required here */
+                        raw_atomic_store(&reinterpret_cast<ControlBlock*>(new_tail)->m_next, uintptr_t(0), mem_relaxed);
+                            /* to investigate: this may probably be a non-atomic operation, because consumers can only
+                                read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
+                                has reported it has a data race. */
 
-                        /* setup the new control block (note: i_control_bits has the flag NbQueue_Busy set) */
+                        /* setup the new control block. Here we use release ordering so that consumers
+                            acquiring this control block can see the previous write. */
                         auto const new_block = reinterpret_cast<ControlBlock*>(m_tail);
                         auto const next_ptr = new_tail + i_control_bits;
                         DENSITY_ASSERT_INTERNAL(raw_atomic_load(&new_block->m_next, mem_relaxed) == 0);
                         raw_atomic_store(&new_block->m_next, next_ptr, mem_release);
 
+                        // commit the allocation
                         m_tail = new_tail;
                         return { new_block, next_ptr, user_storage };
                     }
                     else if (i_size + (i_alignment - min_alignment) <= s_max_size_inpage) // if this allocation may fit in a page
                     {
+                        /* allocate another page. Note: on success page_overflow sets m_tail to the beginning of
+                            the new page */
                         auto const result = page_overflow(PROGRESS_GUARANTEE);
                         if (guarantee != LfQueue_Throwing)
                         {
@@ -267,7 +276,7 @@ namespace density
                 }
                 
                 // zero the first block of the new page
-                raw_atomic_store(&new_page->m_next, uintptr_t(0), mem_release);
+                raw_atomic_store(&new_page->m_next, uintptr_t(0), mem_relaxed);
                 
                 if (m_tail == s_invalid_control_block)
                 {
@@ -279,7 +288,7 @@ namespace density
                     auto prev_block = reinterpret_cast<ControlBlock*>(m_tail);
                     DENSITY_ASSERT_INTERNAL(m_tail + sizeof(ControlBlock) <= 
                         uint_lower_align(m_tail, ALLOCATOR_TYPE::page_alignment) + ALLOCATOR_TYPE::page_size);
-                    raw_atomic_store(&prev_block->m_next, reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead);
+                    raw_atomic_store(&prev_block->m_next, reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead, mem_release);
                 }
 
                 m_tail = reinterpret_cast<uintptr_t>(new_page);

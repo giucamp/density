@@ -201,6 +201,8 @@ namespace density
 
             Allocation inplace_allocate(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
             {
+                DENSITY_ASSERT_INTERNAL((i_control_bits & NbQueue_External) == 0); /* External blocks are
+                    decided by the tail layers. The upper layers shouldn't use this flag. */
                 return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
                     LfQueue_Throwing>(i_control_bits, i_include_type, i_size, i_alignment);
             }
@@ -208,12 +210,16 @@ namespace density
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Allocation inplace_allocate()
             {
+                static_assert((CONTROL_BITS & NbQueue_External) == 0, ""); /* External blocks are
+                    decided by the tail layers. The upper layers shouldn't use this flag. */
                 return static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<detail::
                     LfQueue_Throwing, CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT>();
             }
 
             Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee, uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment) noexcept
             {
+                DENSITY_ASSERT_INTERNAL((i_control_bits & NbQueue_External) == 0); /* External blocks are
+                    decided by the tail layers. The upper layers shouldn't use this flag. */
                 switch (i_progress_guarantee)
                 {
                 case progress_wait_free:
@@ -237,6 +243,8 @@ namespace density
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
                 Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
             {
+                static_assert((CONTROL_BITS & NbQueue_External) == 0, ""); /* External blocks are
+                    decided by the tail layers. The upper layers shouldn't use this flag. */
                 switch (i_progress_guarantee)
                 {
                 case progress_wait_free:
