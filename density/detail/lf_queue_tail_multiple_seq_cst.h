@@ -38,6 +38,7 @@ namespace density
             using Base::commit_put_impl;
             using Base::cancel_put_impl;
             using Base::cancel_put_nodestroy_impl;
+            using Base::external_allocate;
 
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
@@ -338,50 +339,6 @@ namespace density
             }
             
         private:
-
-            /** Used by inplace_allocate when the block can't be allocated in a page. */
-            template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
-                Allocation external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
-                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
-            {
-                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
-
-                void * external_block;
-                if (guarantee == LfQueue_Throwing)
-                {
-                    external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
-                }
-                else
-                {
-                    external_block = ALLOCATOR_TYPE::try_allocate(ToDenGuarantee(PROGRESS_GUARANTEE), i_size, i_alignment);
-                    if (external_block == nullptr)
-                    {
-                        return Allocation();
-                    }
-                }
-
-                try
-                {
-                    /* external blocks always allocate space for the type, because it would be complicated
-                        for the consumers to handle both cases*/
-                    auto const inplace_put = try_inplace_allocate_impl<PROGRESS_GUARANTEE>(i_control_bits | NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
-                    if (inplace_put.m_user_storage == nullptr)
-                    {
-                        ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                        return Allocation();
-                    }
-                    new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
-                    return Allocation{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
-                }
-                catch (...)
-                {
-                    /* if inplace_allocate fails, that means that we were able to allocate the external block,
-                        but we were not able to put the struct ExternalBlock in the page (because a new page was
-                        necessary, but we could not allocate it). */
-                    ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT
-                }
-            }
 
             /** Handles a page overflow of the tail. This function may allocate a new page.
                 @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function fails

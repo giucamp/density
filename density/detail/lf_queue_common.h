@@ -67,12 +67,13 @@ namespace density
 
             using ControlBlock = LfQueueControl<COMMON_TYPE>;
 
-            /** \internal This struct contains the result of a low-level allocation. */
+            /** \internal This struct contains the result of a low-level allocation. An Allocation is empty
+                if m_user_storage is nullptr. */
             struct Allocation
             {
-                LfQueueControl<COMMON_TYPE> * m_control_block;
-                uintptr_t m_next_ptr;
-                void * m_user_storage;
+                LfQueueControl<COMMON_TYPE> * m_control_block; /**< Control block of the allocated block */
+                uintptr_t m_next_ptr; /**< Value of m_control_block->m_next */
+                void * m_user_storage; /**< Pointer to the allocated space */
 
                 Allocation() noexcept : m_user_storage(nullptr) {}
 
@@ -264,6 +265,51 @@ namespace density
                 }
             }
 
+            /** Used by inplace_allocate when the block can't be allocated in a page. */
+            template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
+                Allocation external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                    noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
+            {
+                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
+
+                void * external_block;
+                if (guarantee == LfQueue_Throwing)
+                {
+                    external_block = ALLOCATOR_TYPE::allocate(i_size, i_alignment);
+                }
+                else
+                {
+                    external_block = ALLOCATOR_TYPE::try_allocate(ToDenGuarantee(PROGRESS_GUARANTEE), i_size, i_alignment);
+                    if (external_block == nullptr)
+                    {
+                        return Allocation();
+                    }
+                }
+
+                try
+                {
+                    /* external blocks always allocate space for the type, because it would be complicated
+                        for the consumers to handle both cases*/
+                    auto const inplace_put = static_cast<DERIVED*>(this)->template try_inplace_allocate_impl<PROGRESS_GUARANTEE>(
+                        i_control_bits | NbQueue_External, true, sizeof(ExternalBlock), alignof(ExternalBlock));
+                    if (inplace_put.m_user_storage == nullptr)
+                    {
+                        ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
+                        return Allocation();
+                    }
+                    new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
+                    return Allocation{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
+                }
+                catch (...)
+                {
+                    /* if inplace_allocate fails, that means that we were able to allocate the external block,
+                        but we were not able to put the struct ExternalBlock in the page (because a new page was
+                        necessary, but we could not allocate it). */
+                    ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
+                    DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT;
+                }
+            }
+
             static void commit_put_impl(const Allocation & i_put) noexcept
             {
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
@@ -273,7 +319,7 @@ namespace density
                     (i_put.m_next_ptr & (NbQueue_Busy | NbQueue_Dead)) == NbQueue_Busy);
 
                 // remove the flag NbQueue_Busy
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_seq_cst);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_release);
             }
 
             static void cancel_put_impl(const Allocation & i_put) noexcept
@@ -296,7 +342,7 @@ namespace density
 
                 // remove NbQueue_Busy and add NbQueue_Dead
                 auto const addend = static_cast<uintptr_t>(NbQueue_Dead) - static_cast<uintptr_t>(NbQueue_Busy);
-                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_seq_cst);
+                raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr + addend, mem_release);
             }
         };
 
