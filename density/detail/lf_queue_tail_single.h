@@ -193,7 +193,7 @@ namespace density
                     else
                     {
                         // this allocation would never fit in a page, allocate an external block
-                        return external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
                 }
             }

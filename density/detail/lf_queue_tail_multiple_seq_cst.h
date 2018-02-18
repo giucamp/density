@@ -221,7 +221,7 @@ namespace density
                 }
                 else
                 {
-                    return external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
+                    return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                 }
             }
 
@@ -329,7 +329,7 @@ namespace density
                 }
                 else
                 {
-                    return external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, size, alignment);
+                    return Base::template external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, size, alignment);
                 }
             }
 

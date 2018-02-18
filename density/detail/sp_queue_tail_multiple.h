@@ -234,7 +234,7 @@ namespace density
                     {
                         // this allocation would never fit in a page, allocate an external block
                         lock.unlock(); // this avoids recursive locks
-                        return external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
                 }
             }
@@ -327,7 +327,7 @@ namespace density
                     {
                         // this allocation would never fit in a page, allocate an external block
                         lock.unlock(); // this avoids recursive locks
-                        return external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
                     }
                 }
             }
