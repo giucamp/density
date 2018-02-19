@@ -450,7 +450,16 @@ namespace density
             ~PinGuard()
             {
                 if (m_pinned_page != nullptr)
-                    m_allocator->unpin_page(m_progress_guarantee, m_pinned_page);
+                {
+                    if (m_progress_guarantee == progress_wait_free)
+                    {
+                        m_allocator->unpin_page(progress_wait_free, m_pinned_page);
+                    }
+                    else
+                    {
+                        m_allocator->unpin_page(m_pinned_page);
+                    }
+                }
             }
         };
 

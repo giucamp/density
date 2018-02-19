@@ -421,12 +421,23 @@ namespace density_tests
 
         bool try_pin_page(density::progress_guarantee i_progress_guarantee, void * i_address) noexcept
         {
-            return Base::try_pin_page(i_progress_guarantee, i_address);
+            if (Base::try_pin_page(i_progress_guarantee, i_address))
+            {
+                m_living_pins.fetch_add(1, std::memory_order_relaxed);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         void unpin_page(density::progress_guarantee i_progress_guarantee, void * i_address) noexcept
         {
             Base::unpin_page(i_progress_guarantee, i_address);
+
+            auto const prev_living_pins = m_living_pins.fetch_sub(1, std::memory_order_relaxed);
+            DENSITY_TEST_ASSERT(prev_living_pins >= 1);
         }
 
         uintptr_t get_pin_count(const void * i_address) noexcept
