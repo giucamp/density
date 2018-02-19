@@ -61,7 +61,7 @@ namespace density
             {
             }
 
-            const LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
+            constexpr LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
                     noexcept(std::is_nothrow_constructible<Base, const ALLOCATOR_TYPE &>::value)
                 : Base(i_allocator),
                   m_tail(s_invalid_control_block),

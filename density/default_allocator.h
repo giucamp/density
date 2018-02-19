@@ -171,21 +171,6 @@ namespace density
         /** Alignment (in bytes) of memory pages. */
         static constexpr size_t page_alignment = PageAllocator::page_alignment;
 
-        /** Trivial default constructor */
-        constexpr basic_default_allocator() noexcept = default;
-
-        /** Trivial copy constructor */
-        constexpr basic_default_allocator(const basic_default_allocator&) noexcept = default;
-
-        /** Trivial move constructor */
-        constexpr basic_default_allocator(basic_default_allocator&&) noexcept = default;
-
-        /** Trivial copy assignment */
-        constexpr basic_default_allocator & operator = (const basic_default_allocator&) noexcept = default;
-
-        /** Trivial move assignment */
-        constexpr basic_default_allocator & operator = (basic_default_allocator&&) noexcept = default;
-
         /** Allocates a legacy memory block with the specified size and alignment.
                 @param i_size size of the requested memory block, in bytes
                 @param i_alignment alignment of the requested memory block, in bytes
