@@ -79,18 +79,21 @@ namespace density
 
                 Allocation(LfQueueControl<COMMON_TYPE> * i_control_block, uintptr_t i_next_ptr, void * i_user_storage) noexcept
                     : m_control_block(i_control_block), m_next_ptr(i_next_ptr), m_user_storage(i_user_storage) {}
+
+                bool is_valid() const noexcept { return m_user_storage != nullptr; }
+                bool is_empty() const noexcept { return m_user_storage == nullptr; }
             };
 
             /** Minimum alignment used for the storage of the elements.
-            The storage of elements is always aligned according to the most-derived type. */
+                The storage of elements is always aligned according to the most-derived type. */
             constexpr static size_t min_alignment = alignof(void*); /* there are no particular requirements on
                                                                     the choice of this value: it just should be a very common alignment. */
 
             /** Head and tail pointers are alway multiple of this constant. To avoid the need of
-            upper-aligning the addresses of the control-block and the runtime type, we raise it to the
-            maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned).
-            The ControlBlock is always at offset 0 in the layout of a value or raw block. */
-            constexpr static uintptr_t s_alloc_granularity = size_max(size_max(concurrent_alignment,
+                upper-aligning the addresses of the control-block and the runtime type, we raise it to the
+                maximum alignment between ControlBlock and RUNTIME_TYPE (which are unlikely to be overaligned).
+                The ControlBlock is always at offset 0 in the layout of a value or raw block. */
+            constexpr static uintptr_t s_alloc_granularity = size_max(size_max(destructive_interference_size,
                 alignof(ControlBlock), alignof(RUNTIME_TYPE), alignof(ExternalBlock)),
                 min_alignment, size_log2(NbQueue_AllFlags + 1));
 
@@ -118,10 +121,10 @@ namespace density
             // some static checks
             static_assert(ALLOCATOR_TYPE::page_size > sizeof(ControlBlock) &&
                 s_end_control_offset > 0 && s_end_control_offset > s_element_min_offset, "pages are too small");
-            static_assert(is_power_of_2(s_alloc_granularity), "isn't concurrent_alignment a power of 2?");
+            static_assert(is_power_of_2(s_alloc_granularity), "isn't destructive_interference_size a power of 2?");
 
             constexpr LFQueue_Base() noexcept(std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value)
-		: ALLOCATOR_TYPE()
+		        : ALLOCATOR_TYPE()
             {
             }
 
@@ -265,12 +268,13 @@ namespace density
                 }
             }
 
-            /** Used by inplace_allocate when the block can't be allocated in a page. */
+            /** Used by the put layers when the block can't be allocated in a page. */
             template <LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
-                Allocation external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
+                DENSITY_NO_INLINE Allocation external_allocate(uintptr_t i_control_bits, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
+                DENSITY_ASSERT(guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking);
 
                 void * external_block;
                 if (guarantee == LfQueue_Throwing)
@@ -279,7 +283,7 @@ namespace density
                 }
                 else
                 {
-                    external_block = ALLOCATOR_TYPE::try_allocate(ToDenGuarantee(PROGRESS_GUARANTEE), i_size, i_alignment);
+                    external_block = ALLOCATOR_TYPE::try_allocate(i_size, i_alignment);
                     if (external_block == nullptr)
                     {
                         return Allocation();
@@ -310,6 +314,10 @@ namespace density
                 }
             }
 
+            /** Given a block with the 'busy' flag set and the 'dead' flag not set, removes the 'busy' flag.
+                The member m_next_ptr of the argument must match the member m_next of the control block.
+                The upper layers call this function to commit a put transaction.
+                This function performs a release memory operation. */
             static void commit_put_impl(const Allocation & i_put) noexcept
             {
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
@@ -322,6 +330,11 @@ namespace density
                 raw_atomic_store(&i_put.m_control_block->m_next, i_put.m_next_ptr - NbQueue_Busy, mem_release);
             }
 
+            /** Given a block with the 'busy' flag set and the 'dead' flag not set, destroy the element and the
+                runtime type. Then removes the 'busy' flag and adds the 'dead' flags.
+                The upper layers call this function to cancel a put transaction.
+                The member m_next_ptr of the argument must match the member m_next of the control block.
+                This function performs a release memory operation. */
             static void cancel_put_impl(const Allocation & i_put) noexcept
             {
                 // destroy the element and the type
@@ -332,6 +345,12 @@ namespace density
                 cancel_put_nodestroy_impl(i_put);
             }
 
+            /** Given a block with the 'busy' flag set and the 'dead' flag not set, removes the 'busy' flag and
+                adds the 'dead' flags.
+                The upper layers call this function to cancel a put transaction, after calling the destructor on
+                the element being put and on the runtime type (if any).
+                The member m_next_ptr of the argument must match the member m_next of the control block.
+                This function performs a release memory operation. */
             static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
             {
                 // we expect to have NbQueue_Busy and not NbQueue_Dead
@@ -346,15 +365,94 @@ namespace density
             }
         };
 
-        /** \internal Class template that implements the low-level interface for put transactions */
+        /** \internal Class template that implements the put layer. The primary template is not defined. Partial
+                specialization are defined in:
+                    - lf_queue_tail_single.h
+                    - lf_queue_tail_multiple_relaxed.h
+                    - lf_queue_tail_multiple_seq_cst.h
+                    - sp_queue_tail_multiple.h */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
             concurrency_cardinality PROD_CARDINALITY, consistency_model CONSISTENCY_MODEL >
                 class LFQueue_Tail;
 
-        /** \internal Class template that implements the low-level interface for consume operations */
+        /** \internal Class template that implements the consume layer. The primary template is not defined. Partial
+                specialization are defined in:
+                    - lf_queue_head_single.h
+                    - lf_queue_head_multiple.h */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE,
             concurrency_cardinality CONSUMER_CARDINALITY, typename QUEUE_TAIL >
                 class LFQueue_Head;
+
+        enum PinResult
+        {
+            PinSuccessfull,
+            AlreadyPinned,
+            PinFailed
+        };
+
+        /** \internal Utility that provides RAII pinning\unpinning of a memory page */
+        template <typename ALLOCATOR_TYPE>
+            class PinGuard
+        {
+        private:
+            progress_guarantee const m_progress_guarantee;
+            ALLOCATOR_TYPE * const m_allocator;
+            void * m_pinned_page = nullptr;
+
+        public:
+            PinGuard(progress_guarantee const i_progress_guarantee, ALLOCATOR_TYPE * i_allocator) noexcept
+                : m_progress_guarantee(i_progress_guarantee), m_allocator(i_allocator)
+            {
+            }
+
+            PinGuard(const PinGuard &) = delete;
+            PinGuard & operator = (const PinGuard &) = delete;
+
+            /** Trie to pin the page containing the provided addresss */
+            PinResult pin_new(void * i_address) noexcept
+            {
+                auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
+                if (page != m_pinned_page)
+                {
+                    if(m_progress_guarantee == progress_wait_free)
+                    {
+                        if (page != nullptr)
+                        {
+                            if(!m_allocator->try_pin_page(progress_wait_free, page))
+                                return PinFailed;
+                        }
+                        if (m_pinned_page != nullptr)
+                            m_allocator->unpin_page(progress_wait_free, m_pinned_page);
+                        m_pinned_page = page;
+                        return PinSuccessfull;
+                    }
+                    else
+                    {
+                        if (page != nullptr)
+                            m_allocator->pin_page(page);
+                        if (m_pinned_page != nullptr)
+                            m_allocator->unpin_page(m_pinned_page);
+                        m_pinned_page = page;
+                        return PinSuccessfull;
+                    }
+                }
+                else
+                {
+                    return AlreadyPinned;
+                }
+            }
+
+            PinResult pin_new(uintptr_t i_address) noexcept
+            {
+                return pin_new(reinterpret_cast<void*>(i_address));
+            }
+
+            ~PinGuard()
+            {
+                if (m_pinned_page != nullptr)
+                    m_allocator->unpin_page(m_progress_guarantee, m_pinned_page);
+            }
+        };
 
     } // namespace detail
 

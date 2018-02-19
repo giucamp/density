@@ -71,7 +71,7 @@ namespace density_tests
     using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke >;
 
     // create a queue
-    using QueueOfInvokables = heter_queue<void, runtime_type<void, MyFeatures>, void_allocator >;
+    using QueueOfInvokables = heter_queue<void, runtime_type<void, MyFeatures>, default_allocator >;
     QueueOfInvokables my_queue;
     my_queue.push([](std::string s) { std::cout << s << std::endl; });
 
@@ -125,7 +125,7 @@ namespace density_tests
     using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
 
     // create a queue with 3 objects
-    heter_queue<void, runtime_type<void, MyFeatures>, void_allocator > my_queue;
+    heter_queue<void, runtime_type<void, MyFeatures>, default_allocator > my_queue;
     my_queue.emplace<ObjectA>();
     my_queue.emplace<ObjectB>();
     my_queue.emplace<ObjectB>();
@@ -239,10 +239,10 @@ consumer.join();
         {
             //! [lf_function_queue cardinality example]
 // single producer, multiple consumers:
-using Lf_SpMc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_single, concurrency_multiple>;
+using Lf_SpMc_FuncQueue = lf_function_queue<void(), default_allocator, function_standard_erasure, concurrency_single, concurrency_multiple>;
 
 // multiple consumers, single producer:
-using Lf_MpSc_FuncQueue = lf_function_queue<void(), void_allocator, function_standard_erasure, concurrency_multiple, concurrency_single>;
+using Lf_MpSc_FuncQueue = lf_function_queue<void(), default_allocator, function_standard_erasure, concurrency_multiple, concurrency_single>;
 
 // multiple producer, multiple consumers (the default):
 using Lf_MpMc_FuncQueue = lf_function_queue<void()>;

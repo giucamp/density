@@ -141,6 +141,18 @@ namespace density
                 }
                 return nullptr;
             }
+
+            void clear() noexcept
+            {
+                m_first = nullptr;
+                m_cached_last = nullptr;
+            }
+
+            void truncate_to(PageFooter * i_new_first) noexcept
+            {
+                m_first = i_new_first;
+                m_cached_last = nullptr;
+            }
         };
 
     } // namespace detail

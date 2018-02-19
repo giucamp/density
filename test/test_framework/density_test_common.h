@@ -8,7 +8,7 @@
 #include <typeinfo>
 #include <string>
 #include <chrono>
-#include <density/void_allocator.h>
+#include <density/default_allocator.h>
 #include <sstream>
 #include <string>
 #include <cstdlib>
@@ -70,8 +70,8 @@ namespace density_tests
         void assert_failed(const char * i_source_file, const char * i_function, int i_line, const char * i_expr);
     }
 
-    /** Move-only wrapper of void_allocator */
-    struct move_only_void_allocator : density::void_allocator
+    /** Move-only wrapper of default_allocator */
+    struct move_only_void_allocator : density::default_allocator
     {
         move_only_void_allocator(int) {}
 

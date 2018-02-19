@@ -10,7 +10,7 @@ namespace density
 {
     namespace detail
     {
-        /** \internal Class template that implements put operations */
+        /** \internal Partial specialization of LFQueue_Tail for multi-threaded producers, with no sequential consistency. */
         template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
             class LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_relaxed>
                 : public LFQueue_Base<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, 
@@ -46,34 +46,40 @@ namespace density
 
             constexpr static bool s_needs_end_control = true;
 
-            LFQueue_Tail() noexcept
-                : m_tail(invalid_control_block()),
-                  m_initial_page(nullptr)
+            constexpr LFQueue_Tail() 
+                    noexcept(std::is_nothrow_default_constructible<Base>::value)
+                : m_tail(s_invalid_control_block),
+                  m_initial_page(0)
             {
             }
 
-            LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept
+            constexpr LFQueue_Tail(ALLOCATOR_TYPE && i_allocator)
+                    noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
                 : Base(std::move(i_allocator)),
-                  m_tail(invalid_control_block()),
-                  m_initial_page(nullptr)
+                  m_tail(s_invalid_control_block),
+                  m_initial_page(0)
             {
             }
 
-            LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
+            const LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
+                    noexcept(std::is_nothrow_constructible<Base, const ALLOCATOR_TYPE &>::value)
                 : Base(i_allocator),
-                  m_tail(invalid_control_block()),
-                  m_initial_page(nullptr)
+                  m_tail(s_invalid_control_block),
+                  m_initial_page(0)
             {
             }
 
-            LFQueue_Tail(LFQueue_Tail && i_source) noexcept
+            LFQueue_Tail(LFQueue_Tail && i_source)
+                    noexcept(std::is_nothrow_default_constructible<Base>::value) // this matches the the default ctor
                 : LFQueue_Tail()
             {
+                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 swap(i_source);
             }
 
             LFQueue_Tail & operator = (LFQueue_Tail && i_source) noexcept
             {
+                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 LFQueue_Tail::swap(i_source);
                 return *this;
             }
@@ -82,6 +88,9 @@ namespace density
             {
                 // swap the allocator
                 using std::swap;
+                static_assert(noexcept(
+                    swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other))
+                    ), "swap must be noexcept");
                 swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other));
 
                 // swap m_tail
@@ -98,26 +107,19 @@ namespace density
             ~LFQueue_Tail()
             {
                 auto const tail = m_tail.load();
-                if (tail != invalid_control_block())
+                if (tail != s_invalid_control_block)
                 {
-                    auto const end_block = get_end_control_block(tail);
-                    raw_atomic_store(&end_block->m_next, uintptr_t(0));
-                    ALLOCATOR_TYPE::deallocate_page_zeroed(tail);
+                    ALLOCATOR_TYPE::deallocate_page(reinterpret_cast<void*>(tail));
                 }
-            }
-
-            ControlBlock * get_initial_page() const noexcept
-            {
-                return m_initial_page.load();
             }
 
             /** Allocates a block of memory.
                 The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
-                @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
-                @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
-                @param i_include_type true if this is an element value, false if it's a raw allocation
-                @param i_size it must be > 0 and a multiple of the alignment
-                @param i_alignment is must be > 0 and a power of two */
+                    @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
+                    @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
+                    @param i_include_type true if this is an element value, false if it's a raw allocation
+                    @param i_size it must a multiple of the alignment
+                    @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
@@ -136,36 +138,51 @@ namespace density
                 auto tail = m_tail.load(mem_relaxed);
                 for (;;)
                 {
-                    DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
+                    DENSITY_ASSERT_INTERNAL(tail != 0 && uint_is_aligned(tail, s_alloc_granularity));
 
                     // allocate space for the control block (and possibly the runtime type)
-                    void * new_tail = address_add(tail, i_include_type ? s_element_min_offset : s_rawblock_min_offset);
+                    auto new_tail = tail + (i_include_type ? s_element_min_offset : s_rawblock_min_offset);
 
-                    // allocate space for the element
-                    new_tail = address_upper_align(new_tail, i_alignment);
-                    void * const user_storage = new_tail;
-                    new_tail = address_add(new_tail, i_size);
-                    new_tail = address_upper_align(new_tail, s_alloc_granularity);
+                    // allocate the user space
+                    new_tail = uint_upper_align(new_tail, i_alignment);
+                    auto const user_storage = reinterpret_cast<void*>(new_tail);
+                    new_tail = uint_upper_align(new_tail + i_size, s_alloc_granularity);
 
                     // check for page overflow
-                    auto const new_tail_offset = address_diff(new_tail, address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
+                    auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
+                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    auto const new_tail_offset = new_tail - page_start;
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
                     {
                         /* No page overflow occurs with the new tail we have computed. */
-                        if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail),
-                            mem_acquire, mem_relaxed))
+                        if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
                         {
-                            auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + i_control_bits;
-                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&tail->m_next, mem_relaxed) == 0);
-                            raw_atomic_store(&tail->m_next, next_ptr, mem_release);
+                            /* At this point this thread has truncated the queue, because it has allocated
+                               an element, but the member m_next of its control point is still zeroed (the
+                               initial content of a newly allocated page).
+                               Other threads may still put elements, but they will be not visible to the consumers
+                               until the next store is completed. This is one of the reasons why this class 
+                               is not sequential consistent. 
+                               
+                               The next store is safe because the zeroed block is a barrier that consumers will
+                               not get over, so this page can't be deallocated. If this block does not have the 
+                               dead 'flag', the access to this page is safe until the element is commited or canceled. */
 
-                            DENSITY_ASSERT_INTERNAL(tail < get_end_control_block(tail));
-                            return { tail, next_ptr, user_storage };
+                            // initialize the control block
+                            auto const new_block = reinterpret_cast<ControlBlock*>(tail);
+                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&new_block->m_next, mem_relaxed) == 0);
+                            auto const next_ptr = new_tail + i_control_bits;
+                            raw_atomic_store(&new_block->m_next, next_ptr, mem_relaxed);
+
+                            // succesfull
+                            DENSITY_ASSERT_INTERNAL(new_block < get_end_control_block(new_block));
+                            return { new_block, next_ptr, user_storage };
                         }
                         else
                         {
                             if (guarantee == LfQueue_WaitFree)
                             {
+                                // don't retry
                                 return Allocation();
                             }
                         }
@@ -175,27 +192,23 @@ namespace density
                         tail = page_overflow(guarantee, tail);
                         if (guarantee != LfQueue_Throwing)
                         {
-                            if (tail == nullptr)
+                            if (tail == 0)
                             {
-                                return Allocation();
+                                return Allocation{};
                             }
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != nullptr);
+                            DENSITY_ASSERT_INTERNAL(tail != 0);
                         }
                     }
-                    else
+                    else // this allocation would never fit in a page, allocate an external block
                     {
-                        // this allocation would never fit in a page, allocate an external block
-                        if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
-                        {
+                        // legacy heap allocations can only be blocking 
+                        if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
                             return Allocation();
-                        }
-                        else
-                        {
-                            return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
-                        }
+                        
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
                 }
             }
@@ -205,105 +218,28 @@ namespace density
                 Allocation try_inplace_allocate_impl()
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
-                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
-
                 static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size = uint_upper_align(SIZE, alignment);
-                constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
-                constexpr auto over_aligned = alignment > min_alignment;
-
-                auto tail = m_tail.load(mem_relaxed);
-                for (;;)
-                {
-                    DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
-
-                    // allocate space for the control block (and possibly the runtime type)
-                    void * new_tail = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
-
-                    // allocate space for the element
-                    if (over_aligned)
-                    {
-                        new_tail = address_upper_align(new_tail, alignment);
-                    }
-                    void * const user_storage = new_tail;
-                    new_tail = address_add(new_tail, size);
-                    new_tail = address_upper_align(new_tail, s_alloc_granularity);
-
-                    // check for page overflow
-                    auto const new_tail_offset = address_diff(new_tail, address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
-                    if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-                    {
-                        /* No page overflow occurs with the new tail we have computed. */
-                        if (m_tail.compare_exchange_weak(tail, static_cast<ControlBlock*>(new_tail),
-                            mem_acquire, mem_relaxed))
-                        {
-                            /* Assign m_next, and set the flags. This is very important for the consumers,
-                                because they that need this write happens before any other part of the
-                                allocated memory is modified. */
-                            auto const control_block = tail;
-                            auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-                            DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, mem_relaxed) == 0);
-                            raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
-
-                            DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
-                            return Allocation{ control_block, next_ptr, user_storage };
-                        }
-                        else
-                        {
-                            if (guarantee == LfQueue_WaitFree)
-                            {
-                                return Allocation();
-                            }
-                        }
-                    }
-                    else if (can_fit_in_a_page) // if this allocation may fit in a page
-                    {
-                        tail = page_overflow(guarantee, tail);
-                        if (guarantee != LfQueue_Throwing)
-                        {
-                            if (tail == nullptr)
-                            {
-                                return Allocation();
-                            }
-                        }
-                        else
-                        {
-                            DENSITY_ASSERT_INTERNAL(tail != nullptr);
-                        }
-                    }
-                    else
-                    {
-                        // this allocation would never fit in a page, allocate an external block
-                        if (guarantee != LfQueue_Blocking && guarantee != LfQueue_Throwing)
-                        {
-                            return Allocation();
-                        }
-                        else
-                        {
-                            return Base::template external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
-                        }
-                    }
-                }
+                return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
             }
-            
+
+            /** This function is used by the consume layer to initialize the head on the first allocated page*/
+            ControlBlock * get_initial_page() const noexcept
+            {
+                return reinterpret_cast<ControlBlock *>(m_initial_page.load());
+            }
+
         private:
 
             /** Handles a page overflow of the tail. This function may allocate a new page.
                 @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function fails
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
-                @return an updated value of tail that makes the current thread progress, or nullptr in case of failure. */
-            DENSITY_NO_INLINE ControlBlock * page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee, ControlBlock * const i_tail)
+                @return an updated value of tail that makes the current thread progress, or nullptr in case of failure to 
+                    allocate a page. */
+            DENSITY_NO_INLINE uintptr_t page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee, uintptr_t i_tail)
             {
-                // the memory protection currently used (pinning) is based on an atomic increment, that is not wait-free
-                if (i_progress_guarantee == LfQueue_WaitFree)
-                {
-                    return nullptr;
-                }
-
                 auto const page_end = get_end_control_block(i_tail);
                 if (i_tail < page_end)
                 {
@@ -313,12 +249,13 @@ namespace density
                     if (m_tail.compare_exchange_weak(expected_tail, page_end, mem_relaxed, mem_relaxed))
                     {
                         // m_tail was successfully updated, now we can setup the padding element
-                        auto const block = static_cast<ControlBlock*>(i_tail);
-                        raw_atomic_store(&block->m_next, reinterpret_cast<uintptr_t>(page_end) + NbQueue_Dead, mem_release);
+                        auto const block = reinterpret_cast<ControlBlock*>(i_tail);
+                        raw_atomic_store(&block->m_next, page_end + NbQueue_Dead, mem_release);
                         return page_end;
                     }
                     else
                     {
+                        // failed to allocate the padding, reenter the main loop
                         return expected_tail;
                     }
                 }
@@ -336,17 +273,26 @@ namespace density
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
                 @return an updated value of tail that makes the current thread progress, or nullptr in case of failure. */
-            ControlBlock * get_or_allocate_next_page(LfQueue_ProgressGuarantee const i_progress_guarantee, ControlBlock * const i_end_control)
+            uintptr_t get_or_allocate_next_page(LfQueue_ProgressGuarantee const i_progress_guarantee, uintptr_t i_end_control)
             {
-                DENSITY_ASSERT_INTERNAL(i_end_control != nullptr &&
-                    address_is_aligned(i_end_control, s_alloc_granularity) &&
+                DENSITY_ASSERT_INTERNAL(i_end_control != 0 &&
+                    uint_is_aligned(i_end_control, s_alloc_granularity) &&
                     i_end_control == get_end_control_block(i_end_control));
 
-                if (i_end_control != invalid_control_block())
+                if (i_end_control != s_invalid_control_block)
                 {
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    PinGuard<ALLOCATOR_TYPE> const end_block(this, i_end_control);
+
+                    // try pin
+                    PinGuard<ALLOCATOR_TYPE> end_block(progress_lock_free, this);
+                    auto const pin_result = end_block.pin_new(i_end_control);
+                    if (pin_result == PinFailed) // the pinning can fail only in wait-freedom
+                    {
+                        return 0;
+                    }
+
+                    // check if the tail has changed in the meanwhile
                     auto const updated_tail = m_tail.load(mem_relaxed);
                     if (updated_tail != i_end_control)
                     {
@@ -356,14 +302,15 @@ namespace density
 
                     // allocate and setup a new page
                     auto new_page = create_page(i_progress_guarantee);
-                    if (new_page == nullptr)
+                    if (new_page == 0)
                     {
-                        return nullptr;
+                        return 0;
                     }
 
+                    auto const end_control = reinterpret_cast<ControlBlock*>(i_end_control);
                     uintptr_t expected_next = NbQueue_InvalidNextPage;
-                    if (!raw_atomic_compare_exchange_strong(&i_end_control->m_next, &expected_next,
-                        reinterpret_cast<uintptr_t>(new_page) + NbQueue_Dead))
+                    if (!raw_atomic_compare_exchange_strong(&end_control->m_next, &expected_next,
+                        new_page + NbQueue_Dead))
                     {
                         /* Some other thread has already linked a new page. We discard the page we
                             have just allocated. */
@@ -376,8 +323,8 @@ namespace density
                             return updated_tail;
                         }
 
-                        new_page = reinterpret_cast<ControlBlock*>(expected_next & ~NbQueue_AllFlags);
-                        DENSITY_ASSERT_INTERNAL(new_page != nullptr && address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+                        new_page = expected_next & ~NbQueue_AllFlags;
+                        DENSITY_ASSERT_INTERNAL(new_page != 0 && uint_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
                     }
 
                     auto expected_tail = i_end_control;
@@ -392,18 +339,18 @@ namespace density
                 }
             }
 
-            DENSITY_NO_INLINE ControlBlock * create_initial_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
+            DENSITY_NO_INLINE uintptr_t create_initial_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
             {
                 // m_initial_page = initial_page = create_page()
                 auto const first_page = create_page(i_progress_guarantee);
-                if (first_page == nullptr)
+                if (first_page == 0)
                 {
-                    return nullptr;
+                    return 0;
                 }
 
                 /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
                     because this is a oneshot operation, so we can't possibly stick in a loop. */
-                ControlBlock * initial_page = nullptr;
+                uintptr_t initial_page = 0;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))
                 {
                     initial_page = first_page;
@@ -414,7 +361,7 @@ namespace density
                 }
 
                 // m_tail = initial_page;
-                auto tail = invalid_control_block();
+                auto tail = s_invalid_control_block;
                 if (m_tail.compare_exchange_strong(tail, initial_page))
                 {
                     return initial_page;
@@ -425,7 +372,7 @@ namespace density
                 }
             }
 
-            ControlBlock * create_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
+            uintptr_t create_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
             {
                 auto const new_page = static_cast<ControlBlock*>(
                     i_progress_guarantee == LfQueue_Throwing ? ALLOCATOR_TYPE::allocate_page_zeroed() :
@@ -442,19 +389,20 @@ namespace density
                         throw std::bad_alloc();
                     }
                 }
-                return new_page;
+                return reinterpret_cast<uintptr_t>(new_page);
             }
 
-            void discard_created_page(ControlBlock * i_new_page) noexcept
+            void discard_created_page(uintptr_t i_new_page) noexcept
             {
-                auto const new_page_end_block = get_end_control_block(i_new_page);
+                auto const new_page = reinterpret_cast<void*>(i_new_page);
+                auto const new_page_end_block = get_end_control_block(new_page);
                 raw_atomic_store(&new_page_end_block->m_next, uintptr_t(0));
-                ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
+                ALLOCATOR_TYPE::deallocate_page_zeroed(new_page);
             }
 
         private: // data members
-            alignas(concurrent_alignment) std::atomic<ControlBlock*> m_tail;
-            std::atomic<ControlBlock*> m_initial_page;
+            alignas(destructive_interference_size) std::atomic<uintptr_t> m_tail;
+            std::atomic<uintptr_t> m_initial_page;
         };
 
     } // namespace detail

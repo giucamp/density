@@ -103,7 +103,7 @@ namespace density_bench
         using namespace density;
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            function_queue<void(), void_allocator, function_manual_clear> queue;
+            function_queue<void(), default_allocator, function_manual_clear> queue;
             size_t i = 0; for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -114,7 +114,7 @@ namespace density_bench
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            conc_function_queue<void(), void_allocator, function_manual_clear> queue;
+            conc_function_queue<void(), default_allocator, function_manual_clear> queue;
             size_t i = 0; for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -125,7 +125,7 @@ namespace density_bench
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            lf_function_queue<void(), void_allocator, function_manual_clear, concurrency_single, concurrency_single, consistency_relaxed> queue;
+            lf_function_queue<void(), default_allocator, function_manual_clear, concurrency_single, concurrency_single, consistency_relaxed> queue;
             size_t i = 0;  for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });
 
@@ -136,7 +136,7 @@ namespace density_bench
         }, __LINE__);
 
         group.add_test(__FILE__, __LINE__, [](size_t i_cardinality) {
-            sp_function_queue<void(), void_allocator, function_manual_clear,
+            sp_function_queue<void(), default_allocator, function_manual_clear,
                 concurrency_single, concurrency_single> queue;
             size_t i = 0; for (; i < i_cardinality; i++)
                 queue.push([] { volatile int u = 0; (void)u; });

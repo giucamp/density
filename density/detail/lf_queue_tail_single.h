@@ -72,7 +72,7 @@ namespace density
             }
 
             LFQueue_Tail(LFQueue_Tail && i_source)
-                    noexcept(std::is_nothrow_default_constructible<Base>::value) // this matchees the the default ctor
+                    noexcept(std::is_nothrow_default_constructible<Base>::value) // this matches the the default ctor
                 : LFQueue_Tail()
             {
                 static_assert(noexcept(swap(i_source)), "swap must be noexcept");
@@ -117,7 +117,7 @@ namespace density
                 The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
                 @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are allowed
                 @param i_include_type true if this is an element value, false if it's a raw allocation
-                @param i_size it must be > 0 and a multiple of the alignment
+                @param i_size it must a multiple of the alignment
                 @param i_alignment is must be > 0 and a power of two 
 
                 The upper layers shouldn't use NbQueue_External:: external blocks are handled internally by indirect recursion. */
@@ -187,12 +187,16 @@ namespace density
                         }
                         else
                         {
+                            // with LfQueue_Throwing page_overflow throws on failure
                             DENSITY_ASSERT_INTERNAL(result != 0);
                         }
                     }
-                    else
+                    else // this allocation would never fit in a page, allocate an external block
                     {
-                        // this allocation would never fit in a page, allocate an external block
+                        // legacy heap allocations can only be blocking 
+                        if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
+                            return Allocation();
+                        
                         return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
                 }
@@ -209,6 +213,7 @@ namespace density
                 return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
             }
 
+            /** This function is used by the consume layer to initialize the head on the first allocated page*/
             ControlBlock * get_initial_page() const noexcept
             {
                 return m_initial_page.load();
@@ -254,7 +259,7 @@ namespace density
             }
 
         private: // data members
-            alignas(concurrent_alignment) uintptr_t m_tail;
+            alignas(destructive_interference_size) uintptr_t m_tail;
             std::atomic<ControlBlock*> m_initial_page;
         };
 

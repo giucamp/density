@@ -7,7 +7,7 @@
 #pragma once
 #include <density/density_common.h>
 #include <density/runtime_type.h>
-#include <density/void_allocator.h>
+#include <density/default_allocator.h>
 #include <cstring> // for memcpy
 #include <type_traits>
 #include <iterator>
@@ -42,7 +42,7 @@ namespace density
         that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack,
         without altering the state of the allocator.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
-    template <typename UNDERLYING_ALLOCATOR = void_allocator, size_t ALIGNMENT = alignof(void*)>
+    template <typename UNDERLYING_ALLOCATOR = default_allocator, size_t ALIGNMENT = alignof(void*)>
         class lifo_allocator : private UNDERLYING_ALLOCATOR
     {
     public:
@@ -411,7 +411,7 @@ namespace density
         is deallocated by the destructor. This class should be used only on the automatic storage.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref default_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -580,7 +580,7 @@ namespace density
         @tparam TYPE Element type.
 
         The data stack is a pool in which a thread can allocate and deallocate memory in LIFO order. It is handled by an
-        internal \ref lifo_allocator, which in turn in built upon an instance of \ref void_allocator.
+        internal \ref lifo_allocator, which in turn in built upon an instance of \ref default_allocator.
         \ref lifo_array and \ref lifo_buffer allocate on the data stack, so they must respect the LIFO order: only
         the most recently allocated block can be deallocated or reallocated.
         Instantiating \ref lifo_array and \ref lifo_buffer on the automatic storage (locally in a function) is always safe,
@@ -1082,7 +1082,7 @@ namespace density
         00007FF636BD8C95  jb          <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+57h (07FF636BD8CA7h)  
         00007FF636BD8C97  mov         rdx,rdi  
         00007FF636BD8C9A  mov         rcx,rbx  
-        00007FF636BD8C9D  call        density::lifo_allocator<density::basic_void_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
+        00007FF636BD8C9D  call        density::lifo_allocator<density::basic_default_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
         00007FF636BD8CA2  mov         rdx,rax  
         00007FF636BD8CA5  jmp         <lambda_b8a4ec06313d93817536a7cf8b449dcc>::operator()+5Ah (07FF636BD8CAAh)  
         00007FF636BD8CA7  mov         qword ptr [rbx],r8  
@@ -1101,7 +1101,7 @@ namespace density
         00007FF636BD8CCA  mov         rbx,qword ptr [rsp+38h]  
         00007FF636BD8CCF  add         rsp,20h  
         00007FF636BD8CD3  pop         rdi  
-        00007FF636BD8CD4  jmp         density::lifo_allocator<density::basic_void_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
+        00007FF636BD8CD4  jmp         density::lifo_allocator<density::basic_default_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
         00007FF636BD8CD9  mov         qword ptr [rbx],rdx  
         00007FF636BD8CDC  mov         rbx,qword ptr [rsp+38h]
         ~~~~~~~~~~~~~~
@@ -1137,7 +1137,7 @@ namespace density
         00007FF636BD90B5  jb          <lambda_c7840347498da9fa856125956fe6e478>::operator()+57h (07FF636BD90C7h)  
         00007FF636BD90B7  mov         rdx,rdi  
         00007FF636BD90BA  mov         rcx,rbx  
-        00007FF636BD90BD  call        density::lifo_allocator<density::basic_void_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
+        00007FF636BD90BD  call        density::lifo_allocator<density::basic_default_allocator<65536>,8>::allocate_slow_path (07FF636BD9220h)  
         00007FF636BD90C2  mov         rdx,rax  
         00007FF636BD90C5  jmp         <lambda_c7840347498da9fa856125956fe6e478>::operator()+5Ah (07FF636BD90CAh)  
         00007FF636BD90C7  mov         qword ptr [rbx],r8  
@@ -1159,7 +1159,7 @@ namespace density
         00007FF636BD90F1  mov         rbx,qword ptr [rsp+38h]  
         00007FF636BD90F6  add         rsp,20h  
         00007FF636BD90FA  pop         rdi  
-        00007FF636BD90FB  jmp         density::lifo_allocator<density::basic_void_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
+        00007FF636BD90FB  jmp         density::lifo_allocator<density::basic_default_allocator<65536>,8>::deallocate_slow_path (07FF636BD9190h)  
         00007FF636BD9100  mov         qword ptr [rbx],rdx  
         00007FF636BD9103  mov         rbx,qword ptr [rsp+38h]
 

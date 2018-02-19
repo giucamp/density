@@ -71,7 +71,7 @@ DENSITY_NO_INLINE void sandbox()
 
     static_assert(std::is_trivially_destructible<runtime_type<>>::value, "");
 
-    //void_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
+    //default_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
 
     {
         heter_queue<> queue;
@@ -276,7 +276,7 @@ int run(int argc, char **argv)
     std::cout << "number of processors: " << density_tests::get_num_of_processors() << "\n";
     std::cout << "random seed: " << random_seed << "\n";
     std::cout << "density version: " << density::version << "\n";
-    std::cout << "default page size: " << density::void_allocator::page_size << "\n" << std::endl;
+    std::cout << "default page size: " << density::default_allocator::page_size << "\n" << std::endl;
 
     // check that density::version and DENSITY_VERSION are consistent
     std::ostringstream version_stream;

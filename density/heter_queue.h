@@ -8,7 +8,7 @@
 #include <iterator>
 #include <density/density_common.h>
 #include <density/runtime_type.h>
-#include <density/void_allocator.h>
+#include <density/default_allocator.h>
 
 namespace density
 {
@@ -64,7 +64,7 @@ namespace density
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
 
         \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
         \n <b>Exception safeness</b>: Any function of heter_queue is noexcept or provides the strong exception guarantee.
@@ -195,7 +195,7 @@ namespace density
 
         When a value is consumed, its size is added to the head pointer. Pages are not recycled: when the last
         value of a page is consumed (that is the head moves to another page), the empty page is deallocated.
-        The default allocator, that is \ref void_allocator, is designed to handle efficiently page allocations and
+        The default allocator, that is \ref default_allocator, is designed to handle efficiently page allocations and
         deallocations.
 
         Values are never moved by the queue, and are copied only in case of copy-construction or copy assignment
@@ -209,7 +209,7 @@ namespace density
             \ref heter_queue::dyn_push "dyn_push"), because they can do some computations at compile time,
             and because they don't use the <code>RUNTIME_TYPE</code> to construct the element.
     */
-    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
+    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = default_allocator >
         class heter_queue : private ALLOCATOR_TYPE
     {
         using ControlBlock = typename detail::QueueControl<COMMON_TYPE>;

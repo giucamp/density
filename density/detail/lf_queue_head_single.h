@@ -395,7 +395,7 @@ namespace density
 
                         bool const is_same_page = Base::same_page(control, prev_control);
                         DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(control, ALLOCATOR_TYPE::page_alignment));
-                        DENSITY_ASSERT_INTERNAL(!non_constant((bool)Base::s_needs_end_control) || is_same_page == (prev_control != Base::get_end_control_block(prev_control)));
+                        DENSITY_ASSERT_INTERNAL(!NonConstConditional(Base::s_needs_end_control) || is_same_page == (prev_control != Base::get_end_control_block(prev_control)));
                         if (DENSITY_LIKELY(is_same_page))
                         {
                             if (Base::s_deallocate_zeroed_pages)
@@ -437,7 +437,7 @@ namespace density
             }; // Consume
 
         private: // data members
-            alignas(concurrent_alignment) ControlBlock * m_head{nullptr};
+            alignas(destructive_interference_size) ControlBlock * m_head{nullptr};
         };
 
     } // namespace detail

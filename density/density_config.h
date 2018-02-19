@@ -79,9 +79,9 @@ namespace density
 
         If a C++17 compiler is available, this constant may be defined as
         [std::hardware_destructive_interference_size](http://en.cppreference.com/w/cpp/thread/hardware_destructive_interference_size). */
-    constexpr size_t concurrent_alignment = 64;
+    constexpr size_t destructive_interference_size = 64;
 
-    /** Capacity (in bytes) of the pages managed by density::void_allocator. Note: the actual usable size is slightly smaller.
+    /** Capacity (in bytes) of the pages managed by density::default_allocator. Note: the actual usable size is slightly smaller.
         This constant must be a power of 2.
 
         This is a configuration variable, intended to be customized by the user of the library. The default value is 1024 * 64. */
@@ -94,11 +94,11 @@ namespace density
     constexpr bool enable_relaxed_atomics = false;
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
-        class basic_void_allocator;
+        class basic_default_allocator;
 
     /** Allocator type the data stack is built upon. It must meet the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" */
-    using data_stack_underlying_allocator = basic_void_allocator<default_page_capacity>;
+    using data_stack_underlying_allocator = basic_default_allocator<default_page_capacity>;
 
     /** \def DENSITY_USER_DATA_STACK If defined enables the user data stack. */
     #ifdef DENSITY_USER_DATA_STACK

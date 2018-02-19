@@ -10,14 +10,14 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure ERASURE = function_standard_erasure >
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator, function_type_erasure ERASURE = function_standard_erasure >
         class conc_function_queue;
 
     /** Thread-safe heterogeneous FIFO pseudo-container specialized to hold callable objects. conc_function_queue is an adaptor for conc_heter_queue.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
 
         conc_function_queue is basically a function_queue protected from data-races by a mutex. Non-reentrant operations (put or
@@ -44,7 +44,7 @@ namespace density
         template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE, function_type_erasure ERASURE >
             class conc_function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, ERASURE>
     #else
-        template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator, function_type_erasure ERASURE = function_standard_erasure >
+        template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator, function_type_erasure ERASURE = function_standard_erasure >
                 class conc_function_queue
     #endif
     {

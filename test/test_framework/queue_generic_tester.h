@@ -13,7 +13,7 @@
 #include "histogram.h"
 #include "threading_extensions.h"
 #include "test_allocators.h"
-#include <density/density_common.h> // for density::concurrent_alignment
+#include <density/density_common.h> // for density::destructive_interference_size
 #include <vector>
 #include <thread>
 #include <unordered_map>
@@ -361,7 +361,7 @@ namespace density_tests
             }
         };
 
-        class alignas(density::concurrent_alignment) ThreadData
+        class alignas(density::destructive_interference_size) ThreadData
         {
         public:
 

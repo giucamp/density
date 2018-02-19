@@ -30,7 +30,7 @@ namespace density
         /** \internal
 
         */
-        class alignas(concurrent_alignment) PageAllocatorSlot
+        class alignas(destructive_interference_size) PageAllocatorSlot
         {
         private:
 
@@ -154,6 +154,8 @@ namespace density
             template <page_allocation_type ALLOCATION_TYPE>
                 void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
             {
+                process_pending_unpins();
+
                 // try from the private stack...
                 auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
                 if (new_page == nullptr)
@@ -178,6 +180,8 @@ namespace density
             template <page_allocation_type ALLOCATION_TYPE>
                 void deallocate_page(void * i_page) noexcept
             {
+                process_pending_unpins();
+
                 auto const page = get_footer(i_page);
 
                 // try to push the page once on every slot
@@ -203,17 +207,22 @@ namespace density
 
             size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
             {
+                t_instance.process_pending_unpins();
                 return m_global_state->sys_page_manager().try_reserve_region_memory(i_progress_guarantee, i_size);
             }
 
             static void pin_page(void * const i_address) noexcept
             {
+                t_instance.process_pending_unpins();
+                
                 auto const footer = get_footer(i_address);
                 footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
             }
             
             static bool try_pin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
             {
+                t_instance.process_pending_unpins();
+
                 auto const footer = get_footer(i_address);
                 if(i_progress_guarantee <= progress_guarantee::progress_lock_free)
                 {
@@ -229,6 +238,8 @@ namespace density
 
             static void unpin_page(void * const i_address) noexcept
             {
+                t_instance.process_pending_unpins();
+
                 auto const footer = get_footer(i_address);
                 auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
                 DENSITY_ASSERT(prev_pins > 0);
@@ -237,6 +248,8 @@ namespace density
 
             static void unpin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
             {
+                t_instance.process_pending_unpins();
+
                 if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
                 {
                     unpin_page(i_address);
@@ -396,6 +409,34 @@ namespace density
                 {
                     get_private_stack(i_allocation_type).push(i_page_stack);
                 }
+            }
+
+            void process_pending_unpins() noexcept
+            {
+                if (!m_pages_to_unpin.empty())
+                {
+                    process_pending_unpins();
+                }
+            }
+
+            DENSITY_NO_INLINE static void process_pending_unpins_impl() noexcept
+            {
+                auto & pages_to_unpin = t_instance.m_pages_to_unpin;
+                auto curr = pages_to_unpin.first();
+                DENSITY_ASSERT_INTERNAL(curr != nullptr);
+                
+                unsigned max_unpins = 16;
+                do {
+                    
+                    auto const prev_pins = curr->m_pin_count.fetch_sub(1, detail::mem_relaxed);
+                    DENSITY_ASSERT(prev_pins > 0);
+                    (void)prev_pins;
+
+                    curr = curr->m_next_page;
+                    max_unpins--;
+                } while(curr != nullptr && max_unpins > 0);
+
+                pages_to_unpin.truncate_to(curr);
             }
         };
 

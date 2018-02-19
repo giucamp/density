@@ -353,61 +353,10 @@ namespace density
 
         /** This function is used to suppress warnings about constant conditional expressions 
             without declaring useless variables. */
-        template <typename TYPE>
-            inline auto non_constant(TYPE && i_value) -> decltype(std::forward<TYPE>(i_value))
+        inline bool NonConstConditional(bool i_value) noexcept
         {
-            return std::forward<TYPE>(i_value);
+            return i_value;
         }
-
-        /** \internal Utility that provides RAII pinning\unpinning of a memory page */
-        template <typename ALLOCATOR_TYPE>
-            class PinGuard
-        {
-        private:
-            ALLOCATOR_TYPE * const m_allocator;
-            void * m_pinned_page = nullptr;
-
-        public:
-            PinGuard(ALLOCATOR_TYPE * i_allocator) noexcept
-                : m_allocator(i_allocator)
-            {
-            }
-
-            PinGuard(ALLOCATOR_TYPE * i_allocator, void * i_address) noexcept
-                : m_allocator(i_allocator), m_pinned_page(address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment))
-            {
-                if (m_pinned_page != nullptr)
-                    m_allocator->pin_page(m_pinned_page);
-            }
-
-            PinGuard(const PinGuard &) = delete;
-            PinGuard & operator = (const PinGuard &) = delete;
-
-            bool pin_new(void * i_address) noexcept
-            {
-                auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
-                if (page != m_pinned_page)
-                {
-                    if (m_pinned_page != nullptr)
-                        m_allocator->unpin_page(m_pinned_page);
-                    m_pinned_page = page;
-                    if (m_pinned_page != nullptr)
-                        m_allocator->pin_page(m_pinned_page);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            ~PinGuard()
-            {
-                if (m_pinned_page != nullptr)
-                    m_allocator->unpin_page(m_pinned_page);
-            }
-        };
-
 
         struct ExternalBlock
         {
@@ -462,7 +411,9 @@ namespace density
 
         A violation of any precondition results in undefined behavior.
 
-        \exception std::bad_alloc if the allocation fails
+        \n <b>Throws</b>: std::bad_alloc if the allocation fails
+        \n <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)
+
 
         The content of the newly allocated block is undefined. */
     inline void * aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
@@ -490,10 +441,8 @@ namespace density
         return user_block;
     }
 
-    /** Uses the global operator new to try to allocate a memory block with at least the specified size and alignment
-        Currently only blocking allocations are supported: if i_progress_guarantee is not progress_blocking, this function
-        always returns nullptr.
-            @param i_progress_guarantee progress guarantee to provide
+    /** Uses the global operator new to try to allocate a memory block with at least the specified size and alignment.
+        Returns nullptr in case of failure.
             @param i_size size of the requested memory block, in bytes
             @param i_alignment alignment of the requested memory block, in bytes
             @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset
@@ -507,19 +456,15 @@ namespace density
 
         A violation of any precondition results in undefined behavior.
 
-        \exception none
+        \n <b>Throws</b>: nothing
+        \n <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)
+
 
         The content of the newly allocated block is undefined. */
-    inline void * try_aligned_allocate(progress_guarantee i_progress_guarantee,
-        size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
+    inline void * try_aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         DENSITY_ASSERT(i_alignment_offset <= i_size);
-
-        if (i_progress_guarantee != progress_blocking)
-        {
-            return nullptr;
-        }
 
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
@@ -560,6 +505,8 @@ namespace density
                 - i_size, i_alignment and i_alignment_offset are not the same specified when the block was allocated
 
         \n <b>Throws</b>: nothing
+        \n <b>Progress guarantee</b>: the same of the builtin operator delete (usually blocking)
+
 
         If i_block is nullptr, the call has no effect. */
     inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
@@ -735,7 +682,7 @@ Internally, in manual-clean mode, the layout of a value in the function queue is
  - the eventual capture
 
 So if you put a captureless lambda or a pointer to a function, you are advancing the tail pointer by the space required by 2 pointers.
-Anyway lock-free queues and spin-locking queues align their values to [density::concurrent_alignment](namespacedensity.html#ae8f72b2dd386b61bf0bc4f30478c2941), so they are less dense than the other queues.
+Anyway lock-free queues and spin-locking queues align their values to [density::destructive_interference_size](namespacedensity.html#ae8f72b2dd386b61bf0bc4f30478c2941), so they are less dense than the other queues.
 
 All queues but `function_queue` and `heter_queue` are concurrency enabled. By default they allow multiple producers and multiple consumers.
 The class templates [lf_function_queue](classdensity_1_1lf__function__queue.html), [lf_hetr_queue](classdensity_1_1lf__heter__queue.html), [sp_function_queue](classdensity_1_1sp__function__queue.html) and [sp_hetr_queue](classdensity_1_1sp__heter__queue.html) allow to specify, with 2 independent template arguments of type [concurrency_cardinality](namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb), whether multiple threads are allowed to produce, and whether multiple threads are allowed to consume:
@@ -775,7 +722,7 @@ Template parameter            |Meaning  |Constraints|Default  |
 ------------------------------|---------|-----------|---------|
 typename `COMMON_TYPE`|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`|
 typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_concept.html)|[runtime_type](classdensity_1_1runtime__type.html)|
-typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
+typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
 An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
 The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
@@ -801,8 +748,8 @@ Concepts
 Concept     | Modeled in density by
 ------------|--------------
 [RuntimeType](RuntimeType_concept.html) | [runtime_type](classdensity_1_1runtime__type.html)
-[UntypedAllocator](UntypedAllocator_concept.html) | [void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](classdensity_1_1basic__void__allocator.html)
-[PagedAllocator](PagedAllocator_concept.html) | [void_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_void_allocator](classdensity_1_1basic__void__allocator.html)
+[UntypedAllocator](UntypedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[PagedAllocator](PagedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
 
 Benchmarks
 ----------

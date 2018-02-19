@@ -70,7 +70,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_void_allocator meets the requirements of UntypedAllocator concept.
+        basic_default_allocator meets the requirements of UntypedAllocator concept.
     */
 
 
@@ -144,21 +144,21 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_void_allocator meets the requirements of PagedAllocator.
+        basic_default_allocator meets the requirements of PagedAllocator.
     */
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
-        class basic_void_allocator;
+        class basic_default_allocator;
 
-    /** Specialization of basic_void_allocator that uses density::default_page_capacity as page capacity. */
-    using void_allocator = basic_void_allocator<default_page_capacity>;
+    /** Specialization of basic_default_allocator that uses density::default_page_capacity as page capacity. */
+    using default_allocator = basic_default_allocator<default_page_capacity>;
 
     /** Class template providing paged and legacy memory allocation. It models both the \ref UntypedAllocator_concept "UntypedAllocator"
         and \ref PagedAllocator_concept "PagedAllocator" concepts.
 
-        basic_void_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_void_allocator. */
+        basic_default_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_default_allocator. */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
-        class basic_void_allocator
+        class basic_default_allocator
     {
     private:
         using PageAllocator = detail::PageAllocator<typename detail::SystemPageManager<PAGE_CAPACITY_AND_ALIGNMENT>>;
@@ -172,19 +172,19 @@ namespace density
         static constexpr size_t page_alignment = PageAllocator::page_alignment;
 
         /** Trivial default constructor */
-        basic_void_allocator() noexcept = default;
+        constexpr basic_default_allocator() noexcept = default;
 
         /** Trivial copy constructor */
-        basic_void_allocator(const basic_void_allocator&) noexcept = default;
+        constexpr basic_default_allocator(const basic_default_allocator&) noexcept = default;
 
         /** Trivial move constructor */
-        basic_void_allocator(basic_void_allocator&&) noexcept = default;
+        constexpr basic_default_allocator(basic_default_allocator&&) noexcept = default;
 
         /** Trivial copy assignment */
-        basic_void_allocator & operator = (const basic_void_allocator&) noexcept = default;
+        constexpr basic_default_allocator & operator = (const basic_default_allocator&) noexcept = default;
 
         /** Trivial move assignment */
-        basic_void_allocator & operator = (basic_void_allocator&&) noexcept = default;
+        constexpr basic_default_allocator & operator = (basic_default_allocator&&) noexcept = default;
 
         /** Allocates a legacy memory block with the specified size and alignment.
                 @param i_size size of the requested memory block, in bytes
@@ -198,7 +198,7 @@ namespace density
                 - i_size is not a multiple of i_alignment
                 - i_alignment_offset is greater than i_size
 
-            \n <b>Progress guarantee</b>: the same of the built-in operator new
+            \n <b>Progress guarantee</b>: the same of the built-in operator new, usually blocking
             \n <b>Throws</b>: std::bad_alloc on failure
 
             The content of the newly allocated block is undefined. */
@@ -210,9 +210,6 @@ namespace density
         }
 
         /** Tries to allocates a legacy memory block with the specified size and alignment.
-            Currently only blocking allocations are supported: if i_progress_guarantee is not progress_blocking, this function
-            always returns nullptr.
-                @param i_progress_guarantee progress guarantee
                 @param i_size size of the requested memory block, in bytes
                 @param i_alignment alignment of the requested memory block, in bytes
                 @param i_alignment_offset offset of the block to be aligned, in bytes. The alignment is guaranteed only i_alignment_offset
@@ -224,17 +221,16 @@ namespace density
                 - i_size is not a multiple of i_alignment
                 - i_alignment_offset is greater than i_size
 
-            \n <b>Progress guarantee</b>: specified by the parameter
+            \n <b>Progress guarantee</b>: the same of the built-in operator new, usually blocking
             \n <b>Throws</b>: nothing
 
             The content of the newly allocated block is undefined. */
         void * try_allocate(
-            progress_guarantee i_progress_guarantee,
             size_t i_size,
             size_t i_alignment,
             size_t i_alignment_offset = 0) noexcept
         {
-            return density::try_aligned_allocate(i_progress_guarantee, i_size, i_alignment, i_alignment_offset);
+            return density::try_aligned_allocate(i_size, i_alignment, i_alignment_offset);
         }
 
         /** Deallocates a legacy memory block. After the call any access to the memory block results in undefined behavior.
@@ -248,7 +244,7 @@ namespace density
                 - i_block is not a memory block allocated by the function allocate
                 - i_size, i_alignment and i_alignment_offset are not the same specified when the block was allocated
 
-            \n <b>Progress guarantee</b>: the same of the built-in operator delete
+            \n <b>Progress guarantee</b>: the same of the built-in operator delete, usually blocking
             \n <b>Throws</b>: nothing
 
             If i_block is nullptr, the call has no effect. */
@@ -263,7 +259,7 @@ namespace density
         /** Allocates a memory page.
             @return address of the new memory page, always != nullptr
 
-            \n <b>Progress guarantee</b>: possibly blocking
+            \n <b>Progress guarantee</b>: blocking
             \n <b>Throws</b>: std::bad_alloc on failure.
 
             The content of the newly allocated page is undefined. */
@@ -291,7 +287,7 @@ namespace density
         /** Allocates a memory page.
             @return address of the new memory page, always != nullptr
 
-            \n <b>Progress guarantee</b>: possibly blocking
+            \n <b>Progress guarantee</b>: blocking
             \n <b>Throws</b>: std::bad_alloc on failure.
 
             The content of the newly allocated page is zeroed. */
@@ -359,7 +355,7 @@ namespace density
             fails, this function throw a std::bad_alloc. \n
             Note: some of this space may be already allocated as pages.
 
-            \n <b>Progress guarantee</b>: possibly blocking
+            \n <b>Progress guarantee</b>: blocking
             \n <b>Throws</b>: std::bad_alloc on failure. */
         static void reserve_lockfree_page_memory(size_t i_size, size_t * o_reserved_size = nullptr)
         {
@@ -415,7 +411,7 @@ namespace density
 
             \n <b>Progress guarantee</b>: lock-free
             \n <b>Throws</b>: nothing. */
-        void pin_page(void * i_page) noexcept
+        void pin_page(void * i_page) noexcept   
         {
             PageAllocator::pin_page(i_page);
         }
@@ -471,12 +467,12 @@ namespace density
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
             @return always true. */
-        bool operator == (const basic_void_allocator &) const noexcept
+        bool operator == (const basic_default_allocator &) const noexcept
             { return true; }
 
         /** Returns whether the right-side allocator cannot be used to deallocate block and pages allocated by this allocator.
             @return always false. */
-        bool operator != (const basic_void_allocator &) const noexcept
+        bool operator != (const basic_default_allocator &) const noexcept
             { return false; }
     };
 

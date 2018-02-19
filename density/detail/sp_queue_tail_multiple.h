@@ -89,13 +89,15 @@ namespace density
 
             constexpr static bool s_needs_end_control = true;
 
-            SpQueue_TailMultiple() noexcept
+            constexpr SpQueue_TailMultiple() 
+                    noexcept(std::is_nothrow_default_constructible<Base>::value)
                 : m_tail(invalid_control_block()),
                   m_initial_page(nullptr)
             {
             }
 
-            SpQueue_TailMultiple(ALLOCATOR_TYPE && i_allocator) noexcept
+            constexpr SpQueue_TailMultiple(ALLOCATOR_TYPE && i_allocator)
+                    noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
                 : Base(std::move(i_allocator)),
                   m_tail(invalid_control_block()),
                   m_initial_page(nullptr)
@@ -145,11 +147,11 @@ namespace density
             }
 
             /** Allocates a block of memory.
-            The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
-            @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
-            @param i_include_type true if this is an element value, false if it's a raw allocation
-            @param i_size it must be > 0 and a multiple of the alignment
-            @param i_alignment is must be > 0 and a power of two */
+                The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
+                @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
+                @param i_include_type true if this is an element value, false if it's a raw allocation
+                @param i_size it must a multiple of the alignment
+                @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
             Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
                 noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
@@ -164,8 +166,7 @@ namespace density
                     i_alignment = min_alignment;
                     i_size = uint_upper_align(i_size, min_alignment);
                 }
-
-
+                
                 std::unique_lock<decltype(m_mutex)> lock(m_mutex, std::defer_lock);
                 if (guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking)
                 {
@@ -230,9 +231,12 @@ namespace density
                         }
                         m_tail = tail;
                     }
-                    else
+                    else // this allocation would never fit in a page, allocate an external block
                     {
-                        // this allocation would never fit in a page, allocate an external block
+                        // legacy heap allocations can only be blocking 
+                        if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
+                            return Allocation();
+                        
                         lock.unlock(); // this avoids recursive locks
                         return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
@@ -244,102 +248,19 @@ namespace density
             Allocation try_inplace_allocate_impl()
                 noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
-                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
-
                 static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size = uint_upper_align(SIZE, alignment);
-                constexpr auto can_fit_in_a_page = size + (alignment - min_alignment) <= s_max_size_inpage;
-                constexpr auto over_aligned = alignment > min_alignment;
-
-                std::unique_lock<decltype(m_mutex)> lock(m_mutex, std::defer_lock);
-                if (guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking)
-                {
-                    lock.lock();
-                }
-                else
-                {
-                    if (!lock.try_lock())
-                        return Allocation{};
-                }
-
-                auto tail = m_tail;
-                for (;;)
-                {
-                    DENSITY_ASSERT_INTERNAL(tail != nullptr && address_is_aligned(tail, s_alloc_granularity));
-
-                    // allocate space for the control block (and possibly the runtime type)
-                    void * address = address_add(tail, INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
-
-                    // allocate space for the element
-                    if (over_aligned)
-                    {
-                        address = address_upper_align(address, alignment);
-                    }
-                    void * const user_storage = address;
-                    address = address_add(address, size);
-                    address = address_upper_align(address, s_alloc_granularity);
-                    auto const new_tail = static_cast<ControlBlock*>(address);
-
-                    // check for page overflow
-                    auto const new_tail_offset = address_diff(new_tail, address_lower_align(tail, ALLOCATOR_TYPE::page_alignment));
-                    if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-                    {
-                        /* note: while control_block->m_next is zero, no consumers may ever read this
-                        variable. So this does not need to be atomic store. */
-                        //new_tail->m_next = 0;
-                        /* edit: clang5 thread sanitizer has reported a data race between this write and the read:
-                        auto const next_uint = raw_atomic_load(&control->m_next, mem_relaxed);
-                        in start_consume_impl (detail\lf_queue_head_multiple.h).
-                        Making the store atomic.... */
-                        raw_atomic_store(&new_tail->m_next, uintptr_t(0));
-
-                        auto const control_block = tail;
-                        auto const next_ptr = reinterpret_cast<uintptr_t>(new_tail) + CONTROL_BITS;
-                        DENSITY_ASSERT_INTERNAL(raw_atomic_load(&control_block->m_next, mem_relaxed) == 0);
-                        raw_atomic_store(&control_block->m_next, next_ptr, mem_release);
-
-                        DENSITY_ASSERT_INTERNAL(control_block < get_end_control_block(tail));
-                        DENSITY_ASSERT_INTERNAL(new_tail != nullptr);
-                        m_tail = new_tail;
-
-                        return Allocation{ control_block, next_ptr, user_storage };
-                    }
-                    else if (can_fit_in_a_page) // if this allocation may fit in a page
-                    {
-                        tail = page_overflow(PROGRESS_GUARANTEE, tail);
-                        if (guarantee != LfQueue_Throwing)
-                        {
-                            if (tail == 0)
-                            {
-                                return Allocation();
-                            }
-                        }
-                        else
-                        {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
-                        }
-                        m_tail = tail;
-                    }
-                    else
-                    {
-                        // this allocation would never fit in a page, allocate an external block
-                        lock.unlock(); // this avoids recursive locks
-                        return Base::template external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, SIZE, ALIGNMENT);
-                    }
-                }
+                return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
             }
 
+            /** This function is used by the consume layer to initialize the head on the first allocated page*/
             ControlBlock * get_initial_page() const noexcept
             {
                 return m_initial_page.load();
             }
 
         private:
-
-
 
             /** Handles a page overflow of the tail. This function may allocate a new page.
                 @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function fails
@@ -435,7 +356,7 @@ namespace density
             }
 
         private: // data members
-            alignas(concurrent_alignment) SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
+            alignas(destructive_interference_size) SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
             ControlBlock * m_tail;
             std::atomic<ControlBlock*> m_initial_page;
         };

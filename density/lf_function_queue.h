@@ -10,7 +10,7 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator,
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
             function_type_erasure ERASURE = function_standard_erasure,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
@@ -21,7 +21,7 @@ namespace density
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
@@ -43,13 +43,13 @@ namespace density
 
         This class template uses lock-free algorithms for both put operations and consume operations. Anyway, for the overall
         put or consume to be lock-free, if a memory operation is necessary, it must be lock-free too. The default allocator,
-        density::void_allocator, can manage pages in lock freedom within its current capacity (i.e. the memory it has managed until
+        density::default_allocator, can manage pages in lock freedom within its current capacity (i.e. the memory it has managed until
         now). This capacity is composed by all the allocated, pinned, thread-owned and free pages.
-        If the capacity must exceed its previous peek, and all the memory regions are exhausted, void_allocator must request a
+        If the capacity must exceed its previous peek, and all the memory regions are exhausted, default_allocator must request a
         new memory region to the system. In this case it can't guarantee lock-freedom.
-        The static functions void_allocator::reserve_lockfree_page_memory and
-        void_allocator::try_reserve_lockfree_page_memory can be used to reserve a capacity in advance.
-        \n void_allocator delegates legacy memory operations to the system. Since the storage of elements whose
+        The static functions default_allocator::reserve_lockfree_page_memory and
+        default_allocator::try_reserve_lockfree_page_memory can be used to reserve a capacity in advance.
+        \n default_allocator delegates legacy memory operations to the system. Since the storage of elements whose
         size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
         can't be lock-free.
 
@@ -68,7 +68,7 @@ namespace density
                 consistency_model CONSISTENCY_MODEL>
             class lf_function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>
     #else
-        template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator,
+        template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
             function_type_erasure ERASURE = function_standard_erasure,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,

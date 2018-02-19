@@ -34,7 +34,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue push example 1]
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     queue.push( []{ std::cout << "Hello"; } );
     queue.push( []{ std::cout << " world"; } );
     queue.push( []{ std::cout << "!!!"; } );
@@ -50,7 +50,7 @@ namespace density_tests
         return last_val /= 2.;
     };
 
-    conc_function_queue<double(), void_allocator, ERASURE> queue;
+    conc_function_queue<double(), default_allocator, ERASURE> queue;
     for(int i = 0; i < 10; i++)
         queue.push(func);
 
@@ -119,7 +119,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     queue.template emplace<Func>(7);
 
     bool const invoked = queue.try_consume();
@@ -141,7 +141,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     auto transaction = queue.start_push(Func{});
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -169,7 +169,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     auto transaction = queue.template start_emplace<Func>();
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -193,7 +193,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue reentrant_push example 1]
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     queue.reentrant_push( []{ std::cout << "Hello"; } );
     queue.reentrant_push( []{ std::cout << " world"; } );
     queue.reentrant_push( []{ std::cout << "!!!"; } );
@@ -209,7 +209,7 @@ namespace density_tests
         return last_val /= 2.;
     };
 
-    conc_function_queue<double(), void_allocator, ERASURE> queue;
+    conc_function_queue<double(), default_allocator, ERASURE> queue;
     for(int i = 0; i < 10; i++)
         queue.reentrant_push(func);
 
@@ -239,7 +239,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
     queue.template reentrant_emplace<Func>(7);
 
     bool const invoked = queue.try_reentrant_consume();
@@ -261,7 +261,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
 
     auto transaction = queue.start_reentrant_push(Func{});
 
@@ -292,7 +292,7 @@ namespace density_tests
         }
     };
 
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
 
     auto transaction = queue.template start_reentrant_emplace<Func>();
 
@@ -315,7 +315,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue try_consume example 1]
-    conc_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE> queue;
+    conc_function_queue<int (std::vector<std::string> & vect), default_allocator, ERASURE> queue;
 
     queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
@@ -345,7 +345,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue try_consume example 2]
-    using Queue = conc_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE>;
+    using Queue = conc_function_queue<int (std::vector<std::string> & vect), default_allocator, ERASURE>;
     Queue queue;
 
     queue.push( [](std::vector<std::string> & vect) {
@@ -379,7 +379,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue try_reentrant_consume example 1]
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -404,7 +404,7 @@ namespace density_tests
             }
             {
                 //! [conc_function_queue try_reentrant_consume example 2]
-    conc_function_queue<void(), void_allocator, ERASURE> queue;
+    conc_function_queue<void(), default_allocator, ERASURE> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -438,14 +438,14 @@ namespace density_tests
 
             {
                 //! [conc_function_queue default construct example 1]
-    conc_function_queue<int (float, double), void_allocator, ERASURE> queue;
+    conc_function_queue<int (float, double), default_allocator, ERASURE> queue;
     assert(queue.empty());
                 //! [conc_function_queue default construct example 1]
             }
 
             {
                 //! [conc_function_queue move construct example 1]
-    conc_function_queue<int (), void_allocator, ERASURE> queue;
+    conc_function_queue<int (), default_allocator, ERASURE> queue;
     queue.push([] { return 6; });
 
     auto queue_1(std::move(queue));
@@ -458,7 +458,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue move assign example 1]
-    conc_function_queue<int (), void_allocator, ERASURE> queue, queue_1;
+    conc_function_queue<int (), default_allocator, ERASURE> queue, queue_1;
     queue.push([] { return 6; });
 
     queue_1 = std::move(queue);
@@ -471,7 +471,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue swap example 1]
-    conc_function_queue<int (), void_allocator, ERASURE> queue, queue_1;
+    conc_function_queue<int (), default_allocator, ERASURE> queue, queue_1;
     queue.push([] { return 6; });
 
     std::swap(queue, queue_1);
@@ -484,7 +484,7 @@ namespace density_tests
 
             {
                 //! [conc_function_queue clear example 1]
-        conc_function_queue<int (), void_allocator, function_standard_erasure> queue;
+        conc_function_queue<int (), default_allocator, function_standard_erasure> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());

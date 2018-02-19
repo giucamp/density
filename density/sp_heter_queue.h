@@ -8,7 +8,7 @@
 #include <density/density_common.h>
 #include <density/raw_atomic.h>
 #include <density/runtime_type.h>
-#include <density/void_allocator.h>
+#include <density/default_allocator.h>
 #include <type_traits>
 #include <limits>
 #include <thread>
@@ -19,7 +19,7 @@
     #pragma warning(disable:4324) // structure was padded due to alignment specifier
 #endif
 
-#include <density/detail/lf_queue_common.h>
+#include <density/detail/lf_queue_base.h>
 #include <density/detail/lf_queue_tail_single.h>
 #include <density/detail/sp_queue_tail_multiple.h>
 #include <density/detail/lf_queue_head_single.h>
@@ -58,7 +58,7 @@ namespace density
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
         @tparam BUSY_WAIT_FUNC callable object to be invoked (with an empty parameter list) in the body of the spin lock.
@@ -70,7 +70,7 @@ namespace density
                 If CONSUMER_CARDINALITY is concurrency_multiple, multiple threads are allowed to consume without any synchronization.
         \n <b>Exception safeness</b>: Any function of sp_heter_queue is noexcept or provides the strong exception guarantee.
 
-        The default allocator, void_allocator, delegates legacy memory operations to the system. Since the storage elements whose
+        The default allocator, default_allocator, delegates legacy memory operations to the system. Since the storage elements whose
         size exceeds a fixed limit can't be allocated in a page, they require a legacy memory allocation, and in this case the put
         can't be lock-free.
 
@@ -188,7 +188,7 @@ namespace density
         </tr>
         </table>
     */
-    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator,
+    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = default_allocator,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
             typename BUSY_WAIT_FUNC = default_busy_wait>

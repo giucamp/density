@@ -21,7 +21,7 @@ namespace density
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
 
         \n <b>Thread safeness</b>: Put and consumes can be executed concurrently. Lifetime function can't.
         \n <b>Exception safeness</b>: Any function of conc_heter_queue is noexcept or provides the strong exception guarantee.
@@ -34,7 +34,7 @@ namespace density
         Non-reentrant operations keep the mutex locked during the whole operation (until the operation is
         canceled or commited). Reentrant operations minimize the durations of the locks: the mutex is locked once when
         the operation starts, and another time to commit or cancel the operation. */
-    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = void_allocator >
+    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = default_allocator >
         class conc_heter_queue
     {
         using InnerQueue = heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE>;

@@ -1357,13 +1357,13 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 }
 {
     //! [heter_queue construct_copy_alloc example 1]
-    void_allocator allocator;
+    default_allocator allocator;
     heter_queue<> queue(allocator);
     //! [heter_queue construct_copy_alloc example 1]
 }
 {
     //! [heter_queue construct_move_alloc example 1]
-    void_allocator allocator;
+    default_allocator allocator;
     heter_queue<> queue(std::move(allocator));
     //! [heter_queue construct_move_alloc example 1]
 }
@@ -1403,20 +1403,20 @@ void heterogeneous_queue_samples(std::ostream & i_ostream)
 {
     //! [heter_queue get_allocator example 1]
     heter_queue<> queue;
-    assert(queue.get_allocator() == void_allocator());
+    assert(queue.get_allocator() == default_allocator());
     //! [heter_queue get_allocator example 1]
 }
 {
     //! [heter_queue get_allocator_ref example 1]
     heter_queue<> queue;
-    assert(queue.get_allocator_ref() == void_allocator());
+    assert(queue.get_allocator_ref() == default_allocator());
     //! [heter_queue get_allocator_ref example 1]
 }
 {
     //! [heter_queue get_allocator_ref example 2]
     heter_queue<> queue;
     auto const & queue_ref = queue;
-    assert(queue_ref.get_allocator_ref() == void_allocator());
+    assert(queue_ref.get_allocator_ref() == default_allocator());
     //! [heter_queue get_allocator_ref example 2]
     (void)queue_ref;
 }

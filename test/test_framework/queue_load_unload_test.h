@@ -181,7 +181,7 @@ namespace density_tests
             }
         };
 
-        struct alignas(density::concurrent_alignment) ThreadEntry
+        struct alignas(density::destructive_interference_size) ThreadEntry
         {
             Stats m_stats;
             std::thread m_thread;

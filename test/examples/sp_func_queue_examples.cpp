@@ -36,7 +36,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue push example 1]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.push( []{ std::cout << "Hello"; } );
     queue.push( []{ std::cout << " world"; } );
     queue.push( []{ std::cout << "!!!"; } );
@@ -91,7 +91,7 @@ namespace density_tests
         return last_val /= 2.;
     };
 
-    sp_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<double(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     for(int i = 0; i < 10; i++)
         queue.push(func);
 
@@ -121,7 +121,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.template emplace<Func>(7);
 
     bool const invoked = queue.try_consume();
@@ -143,7 +143,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     auto transaction = queue.start_push(Func{});
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -171,7 +171,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     auto transaction = queue.template start_emplace<Func>();
 
     // in case of exception here, since the transaction is not committed, it is discarded with no observable effects
@@ -195,7 +195,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue try_push example 1]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool const ok = queue.try_push(progress_lock_free, []{ std::cout << "Hello world!"; } );
 
@@ -226,7 +226,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     bool invoked = false;
     if (queue.template try_emplace<Func>(progress_lock_free, 7))
     {
@@ -250,7 +250,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.try_start_push(progress_lock_free, Func{}))
@@ -281,7 +281,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     bool invoked = false;
     if (auto transaction = queue.template try_start_emplace<Func>(progress_lock_free))
     {
@@ -307,7 +307,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue reentrant_push example 1]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.reentrant_push( []{ std::cout << "Hello"; } );
     queue.reentrant_push( []{ std::cout << " world"; } );
     queue.reentrant_push( []{ std::cout << "!!!"; } );
@@ -323,7 +323,7 @@ namespace density_tests
         return last_val /= 2.;
     };
 
-    sp_function_queue<double(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<double(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     for(int i = 0; i < 10; i++)
         queue.reentrant_push(func);
 
@@ -353,7 +353,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.template reentrant_emplace<Func>(7);
 
     bool const invoked = queue.try_reentrant_consume();
@@ -375,7 +375,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto transaction = queue.start_reentrant_push(Func{});
 
@@ -406,7 +406,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto transaction = queue.template start_reentrant_emplace<Func>();
 
@@ -431,7 +431,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue try_reentrant_push example 1]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     if (queue.try_reentrant_push(progress_lock_free, [] { std::cout << "Hello world"; }))
     {
         while( queue.try_reentrant_consume() );
@@ -460,7 +460,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (queue.template try_reentrant_emplace<Func>(progress_lock_free, 7))
@@ -485,7 +485,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.try_start_reentrant_push(progress_lock_free, Func{}))
@@ -518,7 +518,7 @@ namespace density_tests
         }
     };
 
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     bool invoked = false;
     if (auto transaction = queue.template try_start_reentrant_emplace<Func>(progress_lock_free))
@@ -543,7 +543,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue try_consume example 1]
-    sp_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<int (std::vector<std::string> & vect), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     queue.push( [](std::vector<std::string> & vect) {
         vect.push_back("Hello");
@@ -573,7 +573,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue try_consume example 2]
-    using Queue = sp_function_queue<int (std::vector<std::string> & vect), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+    using Queue = sp_function_queue<int (std::vector<std::string> & vect), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
     Queue queue;
 
     queue.push( [](std::vector<std::string> & vect) {
@@ -607,7 +607,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue try_reentrant_consume example 1]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -632,7 +632,7 @@ namespace density_tests
             }
             {
                 //! [sp_function_queue try_reentrant_consume example 2]
-    sp_function_queue<void(), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<void(), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
     auto func1 = [&queue] {
         std::cout << (queue.empty() ? "The queue is empty" : "The queue is not empty") << std::endl;
@@ -666,14 +666,14 @@ namespace density_tests
 
             {
                 //! [sp_function_queue default construct example 1]
-    sp_function_queue<int (float, double), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<int (float, double), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     assert(queue.empty());
                 //! [sp_function_queue default construct example 1]
             }
 
             {
                 //! [sp_function_queue move construct example 1]
-    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+    sp_function_queue<int (), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
     queue.push([] { return 6; });
 
     auto queue_1(std::move(queue));
@@ -686,7 +686,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue move assign example 1]
-    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
+    sp_function_queue<int (), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
     queue.push([] { return 6; });
 
     queue_1 = std::move(queue);
@@ -698,7 +698,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue swap example 1]
-    sp_function_queue<int (), void_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
+    sp_function_queue<int (), default_allocator, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue, queue_1;
     queue.push([] { return 6; });
 
     std::swap(queue, queue_1);
@@ -711,7 +711,7 @@ namespace density_tests
 
             {
                 //! [sp_function_queue clear example 1]
-        sp_function_queue<int (), void_allocator, function_standard_erasure, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
+        sp_function_queue<int (), default_allocator, function_standard_erasure, PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
         queue.push([] { return 6; });
         queue.clear();
         assert(queue.empty());

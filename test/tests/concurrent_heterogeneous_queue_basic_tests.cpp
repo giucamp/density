@@ -20,7 +20,7 @@ namespace density_tests
         using namespace density;
 
         {
-            void_allocator allocator;
+            default_allocator allocator;
             conc_heter_queue<> queue(allocator); // copy construct allocator
             queue.push(1);
             queue.push(2);

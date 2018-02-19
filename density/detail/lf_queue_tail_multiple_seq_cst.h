@@ -109,7 +109,7 @@ namespace density
                 @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
                 @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
                 @param i_include_type true if this is an element value, false if it's a raw block
-                @param i_size it must be > 0 and a multiple of the alignment
+                @param i_size it must a multiple of the alignment
                 @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
@@ -118,7 +118,7 @@ namespace density
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
                 DENSITY_ASSERT_INTERNAL((i_control_bits & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0);
-                DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && i_size > 0 && (i_size % i_alignment) == 0);
+                DENSITY_ASSERT_INTERNAL(is_power_of_2(i_alignment) && (i_size % i_alignment) == 0);
 
                 if (i_alignment < min_alignment)
                 {
@@ -131,7 +131,7 @@ namespace density
                 auto const required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
                 // this will pin a page when pin_new is called
-                PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
+                PinGuard<ALLOCATOR_TYPE> scoped_pin(ToDenGuarantee(guarantee), this);
 
                 bool const fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -198,8 +198,13 @@ namespace density
                             auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
                             auto const next = clean_tail + rest * s_alloc_granularity;
 
-                            if (scoped_pin.pin_new(incomplete_control))
+                            auto const pin_result = scoped_pin.pin_new(incomplete_control);
+                            if (pin_result != AlreadyPinned)
                             {
+                                if (pin_result == PinFailed)
+                                {
+                                    return Allocation{};
+                                }
                                 auto updated_tail = m_tail.load(mem_relaxed);
                                 if (updated_tail != tail)
                                 {
@@ -221,6 +226,10 @@ namespace density
                 }
                 else
                 {
+                    // legacy heap allocations can only be blocking 
+                    if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
+                        return Allocation();
+
                     return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                 }
             }
@@ -230,107 +239,10 @@ namespace density
                 Allocation try_inplace_allocate_impl()
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
-                auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
-
                 static_assert((CONTROL_BITS & ~(NbQueue_Busy | NbQueue_Dead | NbQueue_External)) == 0, "");
                 static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size = uint_upper_align(SIZE, alignment);
-                constexpr auto overhead = INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset;
-                constexpr auto required_size = overhead + size + (alignment - min_alignment);
-                constexpr auto required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
-
-                // this will pin a page when pin_new is called
-                PinGuard<ALLOCATOR_TYPE> scoped_pin(this);
-
-                bool fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
-                if (fits_in_page)
-                {
-                    auto tail = m_tail.load(mem_relaxed);
-                    for (;;)
-                    {
-                        auto const rest = tail & (s_alloc_granularity - 1);
-                        if (rest == 0)
-                        {
-                            // we can try the allocation
-                            auto const new_control = reinterpret_cast<ControlBlock*>(tail);
-                            auto const future_tail = tail + required_units * s_alloc_granularity;
-                            auto const future_tail_offset = future_tail - uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-                            auto transient_tail = tail + required_units;
-                            if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
-                            {
-                                if (m_tail.compare_exchange_weak(tail, transient_tail, mem_relaxed))
-                                {
-                                    raw_atomic_store(&new_control->m_next, future_tail + CONTROL_BITS, mem_relaxed);
-
-                                    m_tail.compare_exchange_strong(transient_tail, future_tail, mem_relaxed);
-
-                                    auto const user_storage = address_upper_align(address_add(new_control, overhead), alignment);
-                                    DENSITY_ASSERT_INTERNAL(reinterpret_cast<uintptr_t>(user_storage) + size <= future_tail);
-                                    return Allocation{ new_control, future_tail + CONTROL_BITS, user_storage };
-                                }
-                                else
-                                {
-                                    if (guarantee == LfQueue_WaitFree)
-                                    {
-                                        return Allocation{};
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                tail = page_overflow(guarantee, tail);
-
-                                if (guarantee != LfQueue_Throwing)
-                                {
-                                    if (tail == 0)
-                                    {
-                                        return Allocation();
-                                    }
-                                }
-                                else
-                                {
-                                    DENSITY_ASSERT_INTERNAL(tail != 0);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // the memory protection currently used (pinning) is based on an atomic increment, that is not wait-free
-                            if (guarantee == LfQueue_WaitFree)
-                            {
-                                return Allocation{};
-                            }
-
-                            // an allocation is in progress, we help it
-                            auto const clean_tail = tail - rest;
-                            auto const incomplete_control = reinterpret_cast<ControlBlock*>(clean_tail);
-                            auto const next = clean_tail + rest * s_alloc_granularity;
-
-                            if (scoped_pin.pin_new(incomplete_control))
-                            {
-                                auto updated_tail = m_tail.load(mem_relaxed);
-                                if (updated_tail != tail)
-                                {
-                                    tail = updated_tail;
-                                    continue;
-                                }
-                            }
-
-                            // Note: NEEDS ZEROED-PAGES
-                            uintptr_t expected_next = 0;
-                            raw_atomic_compare_exchange_weak(&incomplete_control->m_next, &expected_next,
-                                uintptr_t(next + NbQueue_Busy), mem_relaxed);
-                            if (m_tail.compare_exchange_weak(tail, next, mem_relaxed))
-                                tail = next;
-                        }
-                    }
-                }
-                else
-                {
-                    return Base::template external_allocate<PROGRESS_GUARANTEE>(CONTROL_BITS, size, alignment);
-                }
+                return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
             }
 
             ControlBlock * get_initial_page() const noexcept
@@ -403,7 +315,12 @@ namespace density
                 {
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    PinGuard<ALLOCATOR_TYPE> const end_block(this, i_end_control);
+                    PinGuard<ALLOCATOR_TYPE> end_block(progress_lock_free, this);
+                    auto const pin_result = end_block.pin_new(i_end_control);
+                    if (pin_result == PinFailed)
+                    {
+                        return nullptr;
+                    }
                     auto const updated_tail = reinterpret_cast<ControlBlock *>(m_tail.load(mem_relaxed));
                     if (updated_tail != i_end_control)
                     {
@@ -510,7 +427,7 @@ namespace density
             }
 
         private: // data members
-            alignas(concurrent_alignment) std::atomic<uintptr_t> m_tail;
+            alignas(destructive_interference_size) std::atomic<uintptr_t> m_tail;
             std::atomic<ControlBlock*> m_initial_page;
         };
 

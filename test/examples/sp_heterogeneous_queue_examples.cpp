@@ -37,7 +37,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue push example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             queue.push(12);
@@ -46,7 +46,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue emplace example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             queue.template emplace<int>();
@@ -55,7 +55,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue start_push example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             auto put = queue.start_push(12);
@@ -65,7 +65,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue start_emplace example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             auto put = queue.template start_emplace<std::string>(4, '*');
@@ -78,7 +78,7 @@ namespace density_tests
             //! [sp_heter_queue dyn_push example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             auto const type = MyRunTimeType::template make<int>();
@@ -89,7 +89,7 @@ namespace density_tests
             //! [sp_heter_queue dyn_push_copy example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string const source("Hello world!!");
@@ -101,7 +101,7 @@ namespace density_tests
             //! [sp_heter_queue dyn_push_move example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string source("Hello world!!");
@@ -114,7 +114,7 @@ namespace density_tests
             //! [sp_heter_queue start_dyn_push example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             auto const type = MyRunTimeType::make<int>();
@@ -126,7 +126,7 @@ namespace density_tests
             //! [sp_heter_queue start_dyn_push_copy example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string const source("Hello world!!");
@@ -139,7 +139,7 @@ namespace density_tests
             //! [sp_heter_queue start_dyn_push_move example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string source("Hello world!!");
@@ -155,7 +155,7 @@ namespace density_tests
             using namespace density;
 
         {
-            sp_heter_queue<void, runtime_type<>, void_allocator,
+            sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
         {
@@ -203,7 +203,7 @@ namespace density_tests
             //! [sp_heter_queue try_dyn_push example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             auto const type = MyRunTimeType::make<int>();
@@ -217,7 +217,7 @@ namespace density_tests
             //! [sp_heter_queue try_dyn_push_copy example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string const source("Hello world!!");
@@ -232,7 +232,7 @@ namespace density_tests
             //! [sp_heter_queue try_dyn_push_move example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string source("Hello world!!");
@@ -248,7 +248,7 @@ namespace density_tests
             //! [sp_heter_queue try_start_dyn_push example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<default_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             auto const type = MyRunTimeType::make<int>();
@@ -263,7 +263,7 @@ namespace density_tests
             //! [sp_heter_queue try_start_dyn_push_copy example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<copy_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string const source("Hello world!!");
@@ -279,7 +279,7 @@ namespace density_tests
             //! [sp_heter_queue try_start_dyn_push_move example 1]
             using namespace density::type_features;
             using MyRunTimeType = runtime_type<void, feature_list<move_construct, destroy, size, alignment>>;
-            sp_heter_queue<void, MyRunTimeType, void_allocator,
+            sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
 
             std::string source("Hello world!!");
@@ -301,7 +301,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue put_transaction default_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             typename SpQueue::template put_transaction<> transaction;
@@ -310,9 +310,9 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction copy_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, void_allocator,
+            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(!std::is_copy_constructible<typename SpQueue::template put_transaction<>>::value, "");
@@ -321,9 +321,9 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction copy_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, void_allocator,
+            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(!std::is_copy_assignable<typename SpQueue::template put_transaction<>>::value, "");
@@ -332,7 +332,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction move_construct example 1]
-            sp_heter_queue<void, runtime_type<>, void_allocator,
+            sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY> queue;
             auto transaction1 = queue.start_push(1);
 
@@ -348,7 +348,7 @@ namespace density_tests
             //! [sp_heter_queue put_transaction move_construct example 1]
 
             //! [sp_heter_queue put_transaction move_construct example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             // put_transaction<void> can be move constructed from any put_transaction<T>
@@ -363,7 +363,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction move_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -378,7 +378,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction move_assign example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             // put_transaction<void> can be move assigned from any put_transaction<T>
@@ -393,7 +393,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction raw_allocate example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             struct Msg
@@ -436,7 +436,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction raw_allocate_copy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -458,7 +458,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction raw_allocate_copy example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -477,7 +477,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction try_raw_allocate example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             struct Msg
@@ -526,7 +526,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction try_raw_allocate_copy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -553,7 +553,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction try_raw_allocate_copy example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -577,7 +577,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction empty example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -591,7 +591,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction operator_bool example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -605,7 +605,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction cancel example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -627,7 +627,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -648,7 +648,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction complete_type example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -661,7 +661,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue put_transaction destroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -672,7 +672,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue typed_put_transaction element example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -699,12 +699,12 @@ namespace density_tests
 
             {
             //! [sp_heter_queue consume_operation default_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
 
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             typename SpQueue::consume_operation consume;
@@ -713,7 +713,7 @@ namespace density_tests
             }
 
             //! [sp_heter_queue consume_operation copy_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(!std::is_copy_constructible<typename SpQueue::consume_operation>::value, "");
@@ -725,7 +725,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue consume_operation move_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -740,7 +740,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation move_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -757,7 +757,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation destroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -770,7 +770,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation empty example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -784,7 +784,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation operator_bool example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -797,7 +797,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation commit_nodestroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -812,7 +812,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation cancel example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -827,7 +827,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation complete_type example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -842,7 +842,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -856,7 +856,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation swap example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -878,7 +878,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation unaligned_element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -904,7 +904,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue consume_operation element example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -926,7 +926,7 @@ namespace density_tests
 
         {
         {
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -943,7 +943,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue start_reentrant_push example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -954,7 +954,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue start_reentrant_emplace example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1039,7 +1039,7 @@ namespace density_tests
             using namespace density;
 
         {
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1180,7 +1180,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue reentrant_put_transaction default_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             typename SpQueue::template reentrant_put_transaction<> transaction;
@@ -1189,9 +1189,9 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction copy_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, void_allocator,
+            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(!std::is_copy_constructible<typename SpQueue::template reentrant_put_transaction<>>::value, "");
@@ -1200,9 +1200,9 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction copy_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
-            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, void_allocator,
+            using SpQueueInt = sp_heter_queue<int, runtime_type<int>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(!std::is_copy_assignable<typename SpQueue::template reentrant_put_transaction<>>::value, "");
@@ -1211,7 +1211,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction move_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1230,7 +1230,7 @@ namespace density_tests
 
             //! [sp_heter_queue reentrant_put_transaction move_construct example 2]
 
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             // reentrant_put_transaction<void> can be move constructed from any reentrant_put_transaction<T>
@@ -1245,7 +1245,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction move_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1261,7 +1261,7 @@ namespace density_tests
         {
             //! [sp_heter_queue reentrant_put_transaction move_assign example 2]
             // reentrant_put_transaction<void> can be move assigned from any reentrant_put_transaction<T>
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                         PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             static_assert(std::is_assignable<typename SpQueue::template reentrant_put_transaction<void>, typename SpQueue::template reentrant_put_transaction<void> &&>::value, "");
@@ -1276,7 +1276,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction raw_allocate example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1320,7 +1320,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction raw_allocate_copy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1341,7 +1341,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction raw_allocate_copy example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1359,7 +1359,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction try_raw_allocate example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             struct Msg
@@ -1408,7 +1408,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1435,7 +1435,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1459,7 +1459,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction empty example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1472,7 +1472,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction operator_bool example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1486,7 +1486,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction queue example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1500,7 +1500,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction cancel example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1522,7 +1522,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1543,7 +1543,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction complete_type example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1556,7 +1556,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_put_transaction destroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1566,7 +1566,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_typed_put_transaction element example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1592,7 +1592,7 @@ namespace density_tests
 
             {
         //! [sp_heter_queue reentrant_consume_operation default_construct example 1]
-        using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+        using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
             PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         typename SpQueue::reentrant_consume_operation consume;
         assert(consume.empty());
@@ -1600,20 +1600,20 @@ namespace density_tests
             }
         {
             //! [sp_heter_queue reentrant_consume_operation copy_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             static_assert(!std::is_copy_constructible<typename SpQueue::reentrant_consume_operation>::value, "");
             //! [sp_heter_queue reentrant_consume_operation copy_construct example 1]
 
             //! [sp_heter_queue reentrant_consume_operation copy_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             static_assert(!std::is_copy_assignable<typename SpQueue::reentrant_consume_operation>::value, "");
             //! [sp_heter_queue reentrant_consume_operation copy_assign example 1]
         }
         {
             //! [sp_heter_queue reentrant_consume_operation move_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1628,7 +1628,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation move_assign example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1648,7 +1648,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation destroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1660,7 +1660,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation empty example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1674,7 +1674,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation operator_bool example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1688,7 +1688,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation queue example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1702,7 +1702,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation commit_nodestroy example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1717,7 +1717,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation swap example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1739,7 +1739,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation cancel example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1755,7 +1755,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation complete_type example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1771,7 +1771,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1785,7 +1785,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation unaligned_element_ptr example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1811,7 +1811,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue reentrant_consume_operation element example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1837,7 +1837,7 @@ namespace density_tests
                 contain functions or data (like in the case of size and alignment). */
             using MyRunTimeType = runtime_type<void, feature_list<
                 default_construct, copy_construct, destroy, size, alignment, ostream, istream, rtti>>;
-            using SpQueue = sp_heter_queue<void, MyRunTimeType, void_allocator,
+            using SpQueue = sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1888,7 +1888,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue put example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             queue.push(19); // the parameter can be an l-value or an r-value
@@ -1910,7 +1910,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue put example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
             struct MessageInABottle
@@ -1938,7 +1938,7 @@ namespace density_tests
 
         {
             //! [sp_heter_queue default_construct example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1961,18 +1961,18 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue construct_copy_alloc example 1]
-            void_allocator allocator;
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            default_allocator allocator;
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue(allocator);
             //! [sp_heter_queue construct_copy_alloc example 1]
         }
         {
             //! [sp_heter_queue construct_move_alloc example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
-            void_allocator allocator;
+            default_allocator allocator;
             SpQueue queue(std::move(allocator));
             //! [sp_heter_queue construct_move_alloc example 1]
         }
@@ -1980,7 +1980,7 @@ namespace density_tests
             //! [sp_heter_queue move_assign example 1]
             using MyRunTimeType = runtime_type<void, feature_list<default_construct, copy_construct, destroy, size, alignment, equals>>;
 
-            using SpQueue = sp_heter_queue<void, MyRunTimeType, void_allocator,
+            using SpQueue = sp_heter_queue<void, MyRunTimeType, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -1997,36 +1997,36 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue get_allocator example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
-            assert(queue.get_allocator() == void_allocator());
+            assert(queue.get_allocator() == default_allocator());
             //! [sp_heter_queue get_allocator example 1]
         }
         {
             //! [sp_heter_queue get_allocator_ref example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
-            assert(queue.get_allocator_ref() == void_allocator());
+            assert(queue.get_allocator_ref() == default_allocator());
             //! [sp_heter_queue get_allocator_ref example 1]
         }
         {
             //! [sp_heter_queue get_allocator_ref example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
             auto const & queue_ref = queue;
-            assert(queue_ref.get_allocator_ref() == void_allocator());
+            assert(queue_ref.get_allocator_ref() == default_allocator());
             //! [sp_heter_queue get_allocator_ref example 2]
             (void)queue_ref;
         }
         {
             //! [sp_heter_queue swap example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue, queue_1;
@@ -2039,7 +2039,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue swap example 2]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue, queue_1;
@@ -2054,7 +2054,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue empty example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -2065,7 +2065,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue clear example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -2076,7 +2076,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_pop example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -2097,7 +2097,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_start_consume example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -2114,7 +2114,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_start_consume_ example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
             SpQueue queue;
@@ -2138,7 +2138,7 @@ namespace density_tests
             //! [sp_heter_queue reentrant example 1]
             // start 3 reentrant put transactions
 
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
 
@@ -2168,7 +2168,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_reentrant_pop example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
 
@@ -2188,7 +2188,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_start_reentrant_consume example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
 
@@ -2205,7 +2205,7 @@ namespace density_tests
         }
         {
             //! [sp_heter_queue try_start_reentrant_consume_ example 1]
-            using SpQueue = sp_heter_queue<void, runtime_type<>, void_allocator,
+            using SpQueue = sp_heter_queue<void, runtime_type<>, default_allocator,
                 PROD_CARDINALITY, CONSUMER_CARDINALITY>;
             SpQueue queue;
 

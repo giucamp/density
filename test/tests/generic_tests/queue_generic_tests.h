@@ -543,7 +543,7 @@ namespace density_tests
             {
                 if(run_page_default)
                 {
-                    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, void_allocator,
+                    single_lf_queue_generic_test<lf_heter_queue<void, runtime_type<>, default_allocator,
                             PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>>(
                         i_flags, i_output, i_random, i_settings.m_queue_tests_cardinality, i_nonblocking_thread_counts);
                 }
@@ -577,7 +577,7 @@ namespace density_tests
             }
             else
             {
-                single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, void_allocator,
+                single_lf_queue_generic_test<sp_heter_queue<void, runtime_type<>, default_allocator,
                         PROD_CARDINALITY, CONSUMER_CARDINALITY>>(
                     i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
             }

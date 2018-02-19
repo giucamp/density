@@ -10,7 +10,7 @@
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator,
+    template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
             function_type_erasure ERASURE = function_standard_erasure,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
@@ -25,7 +25,7 @@ namespace density
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::void_allocator.
+                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.
@@ -57,7 +57,7 @@ namespace density
                 typename BUSY_WAIT_FUNC>
             class sp_function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC>
     #else
-        template < typename CALLABLE, typename ALLOCATOR_TYPE = void_allocator,
+        template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
             function_type_erasure ERASURE = function_standard_erasure,
             concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
             concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,

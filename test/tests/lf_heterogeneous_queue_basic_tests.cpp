@@ -20,17 +20,17 @@ namespace density_tests
         density::consistency_model CONSISTENCY_MODEL>
         struct NbQueueBasicTests
     {
-        template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::void_allocator>
+        template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::default_allocator>
             using LfHeterQueue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
                     PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
 
         static void lf_heterogeneous_queue_lifetime_tests()
         {
-            using density::void_allocator;
+            using density::default_allocator;
             using density::runtime_type;
 
             {
-                void_allocator allocator;
+                default_allocator allocator;
                 LfHeterQueue<> queue(allocator); // copy construct allocator
                 queue.push(1);
                 queue.push(2);
@@ -111,7 +111,7 @@ namespace density_tests
         {
             using namespace density::type_features;
             using density::runtime_type;
-            using density::void_allocator;
+            using density::default_allocator;
 
             using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
                 default_construct, move_construct, copy_construct, destroy, size, alignment>>;
@@ -149,7 +149,7 @@ namespace density_tests
         {
             using namespace density::type_features;
             using density::runtime_type;
-            using density::void_allocator;
+            using density::default_allocator;
 
             using RunTimeType = runtime_type<PolymorphicBase, feature_list<
                 default_construct, move_construct, copy_construct, destroy, size, alignment>>;
