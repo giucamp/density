@@ -45,7 +45,8 @@ namespace density
             /* This specialization of LFQueue_Tail does not need zeroed pages */
             constexpr static bool s_deallocate_zeroed_pages = false;
 
-            /* No need for the end-block synchronization */
+            /** Whether page switch happens only at the control block returned by get_end_control_block.
+                Used only for assertions. */
             constexpr static bool s_needs_end_control = false;
 
             constexpr LFQueue_Tail()
@@ -195,7 +196,7 @@ namespace density
                     {
                         // legacy heap allocations can only be blocking 
                         if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
-                            return Allocation();
+                            return Allocation{};
                         
                         return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
@@ -225,7 +226,7 @@ namespace density
                 @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function fails
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
-                @return the new tail, or nullptr in case of failure. */
+                @return the new tail, or 0 in case of failure. */
             DENSITY_NO_INLINE uintptr_t page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee)
             {
                 auto const new_page = static_cast<ControlBlock *>(

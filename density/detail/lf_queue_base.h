@@ -286,7 +286,7 @@ namespace density
                     external_block = ALLOCATOR_TYPE::try_allocate(i_size, i_alignment);
                     if (external_block == nullptr)
                     {
-                        return Allocation();
+                        return Allocation{};
                     }
                 }
 
@@ -299,7 +299,7 @@ namespace density
                     if (inplace_put.m_user_storage == nullptr)
                     {
                         ALLOCATOR_TYPE::deallocate(external_block, i_size, i_alignment);
-                        return Allocation();
+                        return Allocation{};
                     }
                     new(inplace_put.m_user_storage) ExternalBlock{external_block, i_size, i_alignment};
                     return Allocation{ inplace_put.m_control_block, inplace_put.m_next_ptr, external_block };
@@ -391,17 +391,16 @@ namespace density
         };
 
         /** \internal Utility that provides RAII pinning\unpinning of a memory page */
-        template <typename ALLOCATOR_TYPE>
+        template <typename ALLOCATOR_TYPE, progress_guarantee PROGRESS_GUARANTEE>
             class PinGuard
         {
         private:
-            progress_guarantee const m_progress_guarantee;
             ALLOCATOR_TYPE * const m_allocator;
             void * m_pinned_page = nullptr;
 
         public:
-            PinGuard(progress_guarantee const i_progress_guarantee, ALLOCATOR_TYPE * i_allocator) noexcept
-                : m_progress_guarantee(i_progress_guarantee), m_allocator(i_allocator)
+            PinGuard(ALLOCATOR_TYPE * i_allocator) noexcept
+                : m_allocator(i_allocator)
             {
             }
 
@@ -414,7 +413,7 @@ namespace density
                 auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
                 if (page != m_pinned_page)
                 {
-                    if(m_progress_guarantee == progress_wait_free)
+                    if(ConstConditional(PROGRESS_GUARANTEE == progress_wait_free))
                     {
                         if (page != nullptr)
                         {
@@ -423,8 +422,6 @@ namespace density
                         }
                         if (m_pinned_page != nullptr)
                             m_allocator->unpin_page(progress_wait_free, m_pinned_page);
-                        m_pinned_page = page;
-                        return PinSuccessfull;
                     }
                     else
                     {
@@ -432,9 +429,9 @@ namespace density
                             m_allocator->pin_page(page);
                         if (m_pinned_page != nullptr)
                             m_allocator->unpin_page(m_pinned_page);
-                        m_pinned_page = page;
-                        return PinSuccessfull;
                     }
+                    m_pinned_page = page;
+                    return PinSuccessfull;
                 }
                 else
                 {
@@ -451,7 +448,7 @@ namespace density
             {
                 if (m_pinned_page != nullptr)
                 {
-                    if (m_progress_guarantee == progress_wait_free)
+                    if (ConstConditional(PROGRESS_GUARANTEE == progress_wait_free))
                     {
                         m_allocator->unpin_page(progress_wait_free, m_pinned_page);
                     }

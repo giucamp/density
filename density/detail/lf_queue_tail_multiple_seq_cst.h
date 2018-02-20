@@ -43,36 +43,44 @@ namespace density
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
 
+            /** Whether page switch happens only at the control block returned by get_end_control_block.
+                Used only for assertions. */
             constexpr static bool s_needs_end_control = true;
 
-            LFQueue_Tail() noexcept
+            constexpr LFQueue_Tail()
+                    noexcept(std::is_nothrow_default_constructible<Base>::value)
                 : m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {
             }
 
-            LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept
+            constexpr LFQueue_Tail(ALLOCATOR_TYPE && i_allocator)
+                    noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
                 : Base(std::move(i_allocator)),
                   m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {
             }
 
-            LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
+            constexpr LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator)
+                    noexcept(std::is_nothrow_constructible<Base, const ALLOCATOR_TYPE &>::value)
                 : Base(i_allocator),
                   m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {
             }
 
-            LFQueue_Tail(LFQueue_Tail && i_source) noexcept
+            LFQueue_Tail(LFQueue_Tail && i_source)
+                    noexcept(std::is_nothrow_default_constructible<Base>::value) // this matches the the default ctor
                 : LFQueue_Tail()
             {
+                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 swap(i_source);
             }
 
             LFQueue_Tail & operator = (LFQueue_Tail && i_source) noexcept
             {
+                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 LFQueue_Tail::swap(i_source);
                 return *this;
             }
@@ -81,6 +89,9 @@ namespace density
             {
                 // swap the allocator
                 using std::swap;
+                static_assert(noexcept(
+                    swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other))
+                    ), "swap must be noexcept");
                 swap(static_cast<ALLOCATOR_TYPE&>(*this), static_cast<ALLOCATOR_TYPE&>(i_other));
 
                 // swap m_tail
@@ -100,17 +111,17 @@ namespace density
                 DENSITY_ASSERT(uint_is_aligned(tail, s_alloc_granularity)); // put in progress?
                 if (tail != s_invalid_control_block)
                 {
-                    ALLOCATOR_TYPE::deallocate_page(reinterpret_cast<ControlBlock*>(tail));
+                    ALLOCATOR_TYPE::deallocate_page(reinterpret_cast<void*>(tail));
                 }
             }
 
             /** Allocates a block of memory.
                 The block may be allocated in the pages or in a legacy memory block, depending on the size and the alignment.
-                @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
-                @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
-                @param i_include_type true if this is an element value, false if it's a raw block
-                @param i_size it must a multiple of the alignment
-                @param i_alignment is must be > 0 and a power of two */
+                    @tparam PROGRESS_GUARANTEE progress guarantee. If the function can't provide this guarantee, the function returns an empty Allocation
+                    @param i_control_bits flags to add to the control block. Only NbQueue_Busy, NbQueue_Dead and NbQueue_External are supported
+                    @param i_include_type true if this is an element value, false if it's a raw block
+                    @param i_size it must a multiple of the alignment
+                    @param i_alignment is must be > 0 and a power of two */
             template<LfQueue_ProgressGuarantee PROGRESS_GUARANTEE>
                 Allocation try_inplace_allocate_impl(uintptr_t i_control_bits, bool i_include_type, size_t i_size, size_t i_alignment)
                     noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
@@ -130,8 +141,8 @@ namespace density
                 auto const required_size = overhead + i_size + (i_alignment - min_alignment);
                 auto const required_units = (required_size + (s_alloc_granularity - 1)) / s_alloc_granularity;
 
-                // this will pin a page when pin_new is called
-                PinGuard<ALLOCATOR_TYPE> scoped_pin(ToDenGuarantee(guarantee), this);
+                // instantiate a pin-guard - we will use it only in case of contention
+                PinGuard<ALLOCATOR_TYPE, ToDenGuarantee(PROGRESS_GUARANTEE)> scoped_pin(this);
 
                 bool const fits_in_page = required_units < size_min(s_alloc_granularity, s_end_control_offset / s_alloc_granularity);
                 if (fits_in_page)
@@ -139,6 +150,7 @@ namespace density
                     auto tail = m_tail.load(mem_relaxed);
                     for (;;)
                     {
+                        static_assert(is_power_of_2(s_alloc_granularity), "");
                         auto const rest = tail & (s_alloc_granularity - 1);
                         if (rest == 0)
                         {
@@ -176,7 +188,7 @@ namespace density
                                 {
                                     if (tail == 0)
                                     {
-                                        return Allocation();
+                                        return Allocation{};
                                     }
                                 }
                                 else
@@ -228,7 +240,7 @@ namespace density
                 {
                     // legacy heap allocations can only be blocking 
                     if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
-                        return Allocation();
+                        return Allocation{};
 
                     return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                 }
@@ -315,7 +327,7 @@ namespace density
                 {
                     /* We are going to access the content of the end control, so we have to do a safe pin
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
-                    PinGuard<ALLOCATOR_TYPE> end_block(progress_lock_free, this);
+                    PinGuard<ALLOCATOR_TYPE, progress_lock_free> end_block(this);
                     auto const pin_result = end_block.pin_new(i_end_control);
                     if (pin_result == PinFailed)
                     {

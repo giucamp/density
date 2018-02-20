@@ -17,6 +17,7 @@ version 1.04.00 - changes:
     - renamed default_allocator and basic_void_allocator to default_allocator and basic_default_allocator
     - removed the progress_guarantee parameter from try_allocate of the UntypedAllocator concept
     - removed mixed atomic and non-atomic operations on the same location
+    - added clang thread sanitizer to the test matrix
 
 version 1.03.00 - changes:
     - polishing (removed many unnecessary detail::)

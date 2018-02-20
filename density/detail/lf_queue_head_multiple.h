@@ -57,6 +57,74 @@ namespace density
                 m_head.store(tmp);
             }
 
+            enum IterationResult
+            {
+                IterationSuccess,
+                IterationGivenUp,
+                IterationEndOfQueue
+            };
+
+            template <progress_guarantee PROGRESS_GUARANTEE>
+                struct Iterator
+            {
+                LFQueue_Head * m_queue = nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
+                ControlBlock * m_control = nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
+                uintptr_t m_next_ptr;
+
+                /*IterationResult begin_iteration(LFQueue_Head * i_queue) noexcept
+                {
+                    DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
+
+                    ControlBlock * head = i_queue->m_head.load();
+                    DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+
+                    if (head == nullptr)
+                    {
+                        head = init_head(i_queue);
+                        if (head == nullptr)
+                        {
+                            return EndOfQueue;
+                        }
+                    }
+
+                    while (!DENSITY_LIKELY(Base::same_page(m_control, head)))
+                    {
+                        DENSITY_ASSERT_INTERNAL(m_control != head);
+
+                        i_queue->ALLOCATOR_TYPE::pin_page(head);
+
+                        if (m_control != nullptr)
+                        {
+                            i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+                        }
+
+                        m_control = head;
+
+                        head = i_queue->m_head.load();
+                        DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                    }
+
+                    m_queue = i_queue;
+                    m_control = static_cast<ControlBlock*>(head);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, detail::mem_relaxed);
+                    return Success;
+                }
+
+                IterationResult move_next() noexcept
+                {
+                    auto next = reinterpret_cast<ControlBlock *>(m_next_ptr);
+                    if(Base::same_page(m_control, head))
+                    {
+                        
+                    }
+                    else
+                    {
+                        
+                    }
+                }*/
+            };
+
+
             struct Consume
             {
                 LFQueue_Head * m_queue = nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
@@ -420,7 +488,7 @@ namespace density
 
                         bool const is_same_page = Base::same_page(control, next);
                         DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-                        DENSITY_ASSERT_INTERNAL(!NonConstConditional(Base::s_needs_end_control) || is_same_page == (control != Base::get_end_control_block(control)));
+                        DENSITY_ASSERT_INTERNAL(!ConstConditional(Base::s_needs_end_control) || is_same_page == (control != Base::get_end_control_block(control)));
 
                         static_assert(offsetof(ControlBlock, m_next) == 0, "");
                         //std::memset(control, 0, address_diff(address_of_next, control));

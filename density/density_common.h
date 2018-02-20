@@ -353,7 +353,7 @@ namespace density
 
         /** This function is used to suppress warnings about constant conditional expressions 
             without declaring useless variables. */
-        inline bool NonConstConditional(bool i_value) noexcept
+        inline bool ConstConditional(bool i_value) noexcept
         {
             return i_value;
         }

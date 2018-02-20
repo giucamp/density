@@ -87,6 +87,8 @@ namespace density
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = false;
 
+            /** Whether page switch happens only at the control block returned by get_end_control_block.
+                Used only for assertions. */
             constexpr static bool s_needs_end_control = true;
 
             constexpr SpQueue_TailMultiple() 
@@ -222,7 +224,7 @@ namespace density
                         {
                             if (tail == 0)
                             {
-                                return Allocation();
+                                return Allocation{};
                             }
                         }
                         else
@@ -235,7 +237,7 @@ namespace density
                     {
                         // legacy heap allocations can only be blocking 
                         if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
-                            return Allocation();
+                            return Allocation{};
                         
                         lock.unlock(); // this avoids recursive locks
                         return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);

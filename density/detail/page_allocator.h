@@ -208,6 +208,7 @@ namespace density
             size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
             {
                 t_instance.process_pending_unpins(i_progress_guarantee);
+
                 return m_global_state->sys_page_manager().try_reserve_region_memory(i_progress_guarantee, i_size);
             }
 

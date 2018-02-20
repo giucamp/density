@@ -44,6 +44,8 @@ namespace density
             /** Whether the head should zero the content of pages before deallocating. */
             constexpr static bool s_deallocate_zeroed_pages = true;
 
+            /** Whether page switch happens only at the control block returned by get_end_control_block.
+                Used only for assertions. */
             constexpr static bool s_needs_end_control = true;
 
             constexpr LFQueue_Tail() 
@@ -183,7 +185,7 @@ namespace density
                             if (guarantee == LfQueue_WaitFree)
                             {
                                 // don't retry
-                                return Allocation();
+                                return Allocation{};
                             }
                         }
                     }
@@ -206,7 +208,7 @@ namespace density
                     {
                         // legacy heap allocations can only be blocking 
                         if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
-                            return Allocation();
+                            return Allocation{};
                         
                         return Base::template external_allocate<PROGRESS_GUARANTEE>(i_control_bits, i_size, i_alignment);
                     }
@@ -272,7 +274,7 @@ namespace density
                 @param i_progress_guarantee progress guarantee. If the function can't provide this guarantee, the function returns nullptr
                 @param i_tail the value read from m_tail. Note that other threads may have updated m_tail
                     in then meanwhile.
-                @return an updated value of tail that makes the current thread progress, or nullptr in case of failure. */
+                @return an updated value of tail that makes the current thread progress, or 0 in case of failure. */
             uintptr_t get_or_allocate_next_page(LfQueue_ProgressGuarantee const i_progress_guarantee, uintptr_t i_end_control)
             {
                 DENSITY_ASSERT_INTERNAL(i_end_control != 0 &&
@@ -285,7 +287,7 @@ namespace density
                         (that is, pin the presumed tail, and then check if the tail has changed in the meanwhile). */
 
                     // try pin
-                    PinGuard<ALLOCATOR_TYPE> end_block(progress_lock_free, this);
+                    PinGuard<ALLOCATOR_TYPE, progress_lock_free> end_block(this);
                     auto const pin_result = end_block.pin_new(i_end_control);
                     if (pin_result == PinFailed) // the pinning can fail only in wait-freedom
                     {
