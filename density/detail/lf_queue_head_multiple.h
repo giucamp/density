@@ -227,20 +227,7 @@ namespace density
                     for (;;)
                     {
                         DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
-
-                        /*
-
-                            - control and next are in the same page. In this case we continue iterating
-                                without any pin\unpin. This is the fast-path.
-
-                            - control and next are in distinct pages. In this case we have to switch the pinned page.
-
-                            - next is null. The head of the queue is to be initialized. If no put has been performed on this
-                                queue, no operation is done.
-
-                            - control is nullptr. This Consume has to be initialized
-
-                        */
+                        
                         if (DENSITY_LIKELY(Base::same_page(control, next)))
                         {
                             control = next;
@@ -259,7 +246,12 @@ namespace density
                                 }
                                 else
                                 {
-                                    /* We have found a zeroed ControlBlock */
+                                    /* we have found a zeroed control block
+                                        If the queue is sequential consistent (pages are not zeroed before beeing deallocated)
+                                        this may happen only at the end of the queue.
+                                        Otherwise it may happen at the beginning of the queue in case of concurrent consumers.
+                                        If the head is still in this page we can detect this case (control < new_head).
+                                    */
                                     next = i_queue->m_head.load(mem_relaxed);
                                     bool should_continue = false;
                                     if (Base::same_page(next, control))
@@ -306,20 +298,6 @@ namespace density
                     for (;;)
                     {
                         DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
-
-                        /*
-
-                            - control and next are in the same page. In this case we continue iterating
-                                without any pin\unpin. This is the fast-path.
-
-                            - control and next are in distinct pages. In this case we have to switch the pinned page.
-
-                            - next is null. The head of the queue is to be initialized. If no put has been performed on this
-                                queue, no operation is done.
-
-                            - control is nullptr. This Consume has to be initialized
-
-                        */
                         if (DENSITY_LIKELY(Base::same_page(control, next)))
                         {
                             control = next;
@@ -344,7 +322,12 @@ namespace density
                                 }
                                 else
                                 {
-                                    /* We have found a zeroed ControlBlock */
+                                    /* we have found a zeroed control block
+                                    If the queue is sequential consistent (pages are not zeroed before beeing deallocated)
+                                    this may happen only at the end of the queue.
+                                    Otherwise it may happen at the beginning of the queue in case of concurrent consumers.
+                                    If the head is still in this page we can detect this case (control < new_head).
+                                    */
                                     next = i_queue->m_head.load(mem_relaxed);
                                     bool should_continue = false;
                                     if (Base::same_page(next, control))

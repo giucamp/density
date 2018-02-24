@@ -153,7 +153,11 @@ namespace density
                     auto const page_start = uint_lower_align(m_tail, ALLOCATOR_TYPE::page_alignment);
                     DENSITY_ASSERT_INTERNAL(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-                    if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
+                    #ifdef DENSITY_LOCKFREE_DEBUG
+                        if (m_tail == page_start && new_tail_offset <= s_end_control_offset)
+                    #else
+                        if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
+                    #endif
                     {
                         /* null-terminate the next control-block before updating the new one, to prevent 
                             consumers from reaching an unitialized area. No memory ordering is required here */

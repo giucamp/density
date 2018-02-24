@@ -157,9 +157,14 @@ namespace density
                             // we can try the allocation
                             auto const new_control = reinterpret_cast<ControlBlock*>(tail);
                             auto const future_tail = tail + required_units * s_alloc_granularity;
-                            auto const future_tail_offset = future_tail - uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
+                            auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
+                            auto const future_tail_offset = future_tail - page_start;
                             auto transient_tail = tail + required_units;
-                            if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
+                            #ifdef DENSITY_LOCKFREE_DEBUG
+                                if (tail == page_start && DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
+                            #else
+                                if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
+                            #endif
                             {
                                 DENSITY_ASSERT_INTERNAL(required_units < s_alloc_granularity);
                                 if (m_tail.compare_exchange_weak(tail, transient_tail, mem_relaxed))

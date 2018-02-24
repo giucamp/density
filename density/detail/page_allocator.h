@@ -104,12 +104,14 @@ namespace density
             {
                 auto const first = PageAllocatorSlot::create(nullptr);
                 auto prev = first;
+                #if !defined(DENSITY_LOCKFREE_DEBUG)
                 for (int i = 0; i < 7; i++)
                 {
                     auto const curr = PageAllocatorSlot::create(nullptr);
                     prev->m_next_slot.store(curr);
                     prev = curr;
                 }
+                #endif
                 prev->m_next_slot.store(first);
                 m_first_slot.store(first);
                 m_last_assigned = first;
@@ -157,8 +159,12 @@ namespace density
                 process_pending_unpins(i_progress_guarantee);
 
                 // try from the private stack...
-                auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
-                if (new_page == nullptr)
+                #ifdef DENSITY_LOCKFREE_DEBUG
+                    auto new_page = static_cast<void*>(nullptr);
+                #else
+                    auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
+                    if (new_page == nullptr)
+                #endif
                 {
                     // ...then from the current slot...
                     new_page = m_current_slot->get_stack(ALLOCATION_TYPE).try_pop_unpinned();
