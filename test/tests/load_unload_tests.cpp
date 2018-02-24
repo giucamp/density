@@ -15,10 +15,12 @@ namespace density_tests
     {
         using namespace density;
 
-        density_tests::queue_load_unload_test<lf_heter_queue<>>(
+        using LfHeterQueue = lf_heter_queue<void, runtime_type<>, basic_default_allocator<256>>;
+
+        density_tests::queue_load_unload_test<LfHeterQueue>(
             300, 100, i_ostream);
 
-        density_tests::queue_load_unload_test<lf_heter_queue<>>(
+        density_tests::queue_load_unload_test<LfHeterQueue>(
             7, 4000, i_ostream);
 
         /*density_tests::queue_load_unload_test<conc_heter_queue<>>(
