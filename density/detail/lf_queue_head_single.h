@@ -67,6 +67,16 @@ namespace density
                 Consume(const Consume &) = delete;
                 Consume & operator = (const Consume &) = delete;
 
+                bool empty() const noexcept
+                {
+                    return m_next_ptr <= NbQueue_AllFlags;
+                }
+
+                bool external() const noexcept
+                {
+                    return (m_next_ptr & NbQueue_External) != 0;
+                }
+
                 Consume(Consume && i_source) noexcept
                     : m_queue(i_source.m_queue), m_control(i_source.m_control), m_next_ptr(i_source.m_next_ptr)
                 {

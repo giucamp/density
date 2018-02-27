@@ -893,7 +893,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation destroy example 1 */
             ~consume_operation()
             {
-                if (m_consume_data.m_next_ptr != 0)
+                if (!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
@@ -912,7 +912,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation empty example 1 */
             bool empty() const noexcept
             {
-                return m_consume_data.m_next_ptr == 0;
+                return m_consume_data.empty();
             }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty.
@@ -920,7 +920,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept
             {
-                return m_consume_data.m_next_ptr != 0;
+                return !m_consume_data.empty();
             }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
@@ -1020,7 +1020,7 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
+                return Base::get_unaligned_element(m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a pointer to the element being consumed.
@@ -1033,7 +1033,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
+                return Base::get_element(m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a reference to the element being consumed.
@@ -1047,7 +1047,7 @@ namespace density
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
                 return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control,
-                    (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0));
+                    m_consume_data.external()));
             }
 
             /** \internal - private function, usable only within the library */
@@ -1059,14 +1059,14 @@ namespace density
             /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
-                if(m_consume_data.m_next_ptr != 0)
+                if(!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
 
                 m_consume_data.start_consume_impl(i_queue);
 
-                return m_consume_data.m_next_ptr != 0;
+                return !m_consume_data.empty();
             }
 
         private:
@@ -2468,7 +2468,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation destroy example 1 */
             ~reentrant_consume_operation()
             {
-                if (m_consume_data.m_next_ptr != 0)
+                if (!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
@@ -2485,14 +2485,14 @@ namespace density
             /** Returns true whether this object does not hold the state of an operation.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation empty example 1 */
-            bool empty() const noexcept { return m_consume_data.m_next_ptr == 0; }
+            bool empty() const noexcept { return m_consume_data.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !reentrant_consume_operation::empty.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept
             {
-                return m_consume_data.m_next_ptr != 0;
+                return !m_consume_data.empty();
             }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
@@ -2589,7 +2589,7 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
+                return Base::get_unaligned_element(m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a pointer to the element being consumed.
@@ -2602,7 +2602,7 @@ namespace density
             COMMON_TYPE * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_element(m_consume_data.m_control, (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0);
+                return Base::get_element(m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a reference to the element being consumed.
@@ -2616,7 +2616,7 @@ namespace density
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
                 return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control,
-                    (m_consume_data.m_next_ptr & detail::NbQueue_External) != 0));
+                    m_consume_data.external()));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2628,14 +2628,14 @@ namespace density
             /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
-                if(m_consume_data.m_next_ptr != 0)
+                if(!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
 
                 m_consume_data.start_consume_impl(i_queue);
 
-                return m_consume_data.m_next_ptr != 0;
+                return !m_consume_data.empty();
             }
 
         private:

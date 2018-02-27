@@ -365,6 +365,13 @@ namespace density
             }
         };
 
+        enum IterationResult
+        {
+            IterationSuccess,
+            IterationGivenUp,
+            IterationEndOfQueue
+        };
+
         /** \internal Class template that implements the put layer. The primary template is not defined. Partial
                 specialization are defined in:
                     - lf_queue_tail_single.h
