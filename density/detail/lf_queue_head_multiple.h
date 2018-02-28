@@ -110,23 +110,24 @@ namespace density
                     swap(m_next_ptr, i_other.m_next_ptr);
                 }
 
-                IterationResult begin_iteration(LFQueue_Head * i_queue) noexcept
+                bool begin_iteration(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
+                    DENSITY_ASSERT_ALIGNED(m_control, Base::s_alloc_granularity);
 
                     ControlBlock * head = i_queue->m_head.load();
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                    DENSITY_ASSERT_ALIGNED(head, Base::s_alloc_granularity);
 
                     if (head == nullptr)
                     {
                         head = init_head(i_queue);
                         if (head == nullptr)
                         {
-                            return IterationEndOfQueue;
+                            m_next_ptr = 0;
+                            return true;
                         }
                     }
 
-                    while (!DENSITY_LIKELY(Base::same_page(m_control, head)))
+                    while (!Base::same_page(m_control, head))
                     {
                         DENSITY_ASSERT_INTERNAL(m_control != head);
 
@@ -146,22 +147,15 @@ namespace density
                     m_queue = i_queue;
                     m_control = static_cast<ControlBlock*>(head);
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
-                    
-                    if (m_next_ptr <= NbQueue_AllFlags)
-                    {
-                        return IterationEndOfQueue;
-                    }
-                    else
-                    {
-                        return IterationSuccess;
-                    }
+                    return true;
                 }
 
                 /** Attaches this Consume to a queue, pinning the head. The previously pinned page is unpinned.
                     @return true if a page was pinned, false if the queue is virgin. */
                 bool assign_queue(LFQueue_Head * i_queue) noexcept
                 {
-                    return begin_iteration(i_queue) == IterationSuccess;
+                    begin_iteration(i_queue);
+                    return !empty();
                 }
 
                 bool is_queue_empty(const LFQueue_Head * i_queue) noexcept
@@ -186,7 +180,7 @@ namespace density
                     return true;
                 }
 
-                IterationResult move_next() noexcept
+                bool move_next() noexcept
                 {
                     DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
 
@@ -195,20 +189,23 @@ namespace density
                     {
                         DENSITY_ASSERT_INTERNAL(next != nullptr);
                         m_queue->ALLOCATOR_TYPE::pin_page(next);
+
+                        auto const potentially_different_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+
                         m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+
+                        if (potentially_different_next_ptr == 0)
+                        {
+                            /* the control block has been zeroed in the meanwhile, we have to restart */
+                            m_control = next;
+                            begin_iteration(m_queue);
+                            return true;
+                        }
                     }
 
                     m_control = next;
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
-
-                    if (m_next_ptr <= NbQueue_AllFlags)
-                    {
-                        return IterationEndOfQueue;
-                    }
-                    else
-                    {
-                        return IterationSuccess;
-                    }
+                    return true;
                 }
 
                 /** Tries to start a consume operation. The Consume must be initially empty.
@@ -299,15 +296,12 @@ namespace density
 
                         static_assert(offsetof(ControlBlock, m_next) == 0, "");
 
-                        if (Base::s_deallocate_zeroed_pages)
-                        {
-                            raw_atomic_store(&m_control->m_next, uintptr_t(0));
-                        }
-
                         if (is_same_page)
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
+                                raw_atomic_store(&m_control->m_next, uintptr_t(0));
+
                                 auto const memset_dest = const_cast<atomic_uintptr_t*>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
                                 DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
@@ -317,6 +311,15 @@ namespace density
                         }
                         else
                         {
+                            /** the member m_next is zeroed even if s_deallocate_zeroed_pages is false, and before
+                                deallocating the page, to allow a safe-pinning to the other consumers.
+                                That is, if a consumers pins a page that is pointed by a m_next, and if after the pin
+                                the m_next is still not zeroed, it can be sure that the allocator will not reuse the
+                                page, even if it gets deallocated. If the consumer does not read again the member m_next
+                                after pinning, it can't be sure that the page is recycled between the read of m_next and 
+                                the pin. */
+                            raw_atomic_store(&m_control->m_next, uintptr_t(0));
+
                             if (Base::s_deallocate_zeroed_pages)
                                 m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
                             else
