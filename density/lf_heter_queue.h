@@ -5,24 +5,24 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <density/default_allocator.h>
 #include <density/density_common.h>
 #include <density/raw_atomic.h>
 #include <density/runtime_type.h>
-#include <density/default_allocator.h>
-#include <type_traits>
 #include <limits>
+#include <type_traits>
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4324) // structure was padded due to alignment specifier
+#pragma warning(push)
+#pragma warning(disable : 4324) // structure was padded due to alignment specifier
 #endif
 
 #include <density/detail/lf_queue_base.h>
-#include <density/detail/lf_queue_tail_single.h>
+#include <density/detail/lf_queue_head_multiple.h>
+#include <density/detail/lf_queue_head_single.h>
 #include <density/detail/lf_queue_tail_multiple_relaxed.h>
 #include <density/detail/lf_queue_tail_multiple_seq_cst.h>
-#include <density/detail/lf_queue_head_single.h>
-#include <density/detail/lf_queue_head_multiple.h>
+#include <density/detail/lf_queue_tail_single.h>
 
 namespace density
 {
@@ -175,39 +175,61 @@ namespace density
         </tr>
         </table>
     */
-    template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = default_allocator,
-            concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
-            concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
-            consistency_model CONSISTENCY_MODEL = consistency_sequential>
-        class lf_heter_queue : private detail::LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, CONSUMER_CARDINALITY,
-                detail::LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL> >
+    template <
+      typename COMMON_TYPE                         = void,
+      typename RUNTIME_TYPE                        = runtime_type<COMMON_TYPE>,
+      typename ALLOCATOR_TYPE                      = default_allocator,
+      concurrency_cardinality PROD_CARDINALITY     = concurrency_multiple,
+      concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
+      consistency_model       CONSISTENCY_MODEL    = consistency_sequential>
+    class lf_heter_queue : private detail::LFQueue_Head<
+                             COMMON_TYPE,
+                             RUNTIME_TYPE,
+                             ALLOCATOR_TYPE,
+                             CONSUMER_CARDINALITY,
+                             detail::LFQueue_Tail<
+                               COMMON_TYPE,
+                               RUNTIME_TYPE,
+                               ALLOCATOR_TYPE,
+                               PROD_CARDINALITY,
+                               CONSISTENCY_MODEL>>
     {
-    private:
-        using Base = detail::LFQueue_Head< COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, CONSUMER_CARDINALITY,
-                detail::LFQueue_Tail<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSISTENCY_MODEL> >;
-        using typename Base::ControlBlock;
+      private:
+        using Base = detail::LFQueue_Head<
+          COMMON_TYPE,
+          RUNTIME_TYPE,
+          ALLOCATOR_TYPE,
+          CONSUMER_CARDINALITY,
+          detail::LFQueue_Tail<
+            COMMON_TYPE,
+            RUNTIME_TYPE,
+            ALLOCATOR_TYPE,
+            PROD_CARDINALITY,
+            CONSISTENCY_MODEL>>;
+        using Base::inplace_allocate;
+        using Base::try_inplace_allocate;
         using typename Base::Allocation;
         using typename Base::Consume;
-        using Base::try_inplace_allocate;
-        using Base::inplace_allocate;
+        using typename Base::ControlBlock;
 
         /** This type is used to make some functions of the inner classes accessible only by the queue */
-        enum class PrivateType {};
+        enum class PrivateType
+        {
+        };
 
-    public:
-
+      public:
         /** Minimum alignment used for the storage of the elements. The storage of elements is always aligned according to the most-derived type. */
         constexpr static size_t min_alignment = Base::min_alignment;
 
-        using common_type = COMMON_TYPE;
-        using runtime_type = RUNTIME_TYPE;
-        using value_type = std::pair<const runtime_type &, common_type* const>;
-        using allocator_type = ALLOCATOR_TYPE;
-        using pointer = value_type *;
-        using const_pointer = const value_type *;
-        using reference = value_type;
-        using const_reference = const value_type&;
-        using size_type = std::size_t;
+        using common_type     = COMMON_TYPE;
+        using runtime_type    = RUNTIME_TYPE;
+        using value_type      = std::pair<const runtime_type &, common_type * const>;
+        using allocator_type  = ALLOCATOR_TYPE;
+        using pointer         = value_type *;
+        using const_pointer   = const value_type *;
+        using reference       = value_type;
+        using const_reference = const value_type &;
+        using size_type       = std::size_t;
         using difference_type = std::ptrdiff_t;
 
         /** Whether multiple threads can do put operations on the same queue without any further synchronization. */
@@ -223,18 +245,25 @@ namespace density
         /** Whether this queue is sequential consistent. */
         static constexpr bool is_seq_cst = CONSISTENCY_MODEL == consistency_sequential;
 
-        static_assert(std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
-            "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a type like heter_cont<A,runtime_type<B>>?)");
+        static_assert(
+          std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
+          "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a "
+          "type like heter_cont<A,runtime_type<B>>?)");
 
-        static_assert(std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
-            "COMMON_TYPE can't be cv-qualified, an array or a reference");
+        static_assert(
+          std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
+          "COMMON_TYPE can't be cv-qualified, an array or a reference");
 
-        static_assert(is_power_of_2(ALLOCATOR_TYPE::page_alignment) &&
+        static_assert(
+          is_power_of_2(ALLOCATOR_TYPE::page_alignment) &&
             ALLOCATOR_TYPE::page_alignment >= ALLOCATOR_TYPE::page_size &&
             (ALLOCATOR_TYPE::page_alignment % min_alignment) == 0,
-            "The alignment of the pages must be a power of 2, greater or equal to the size of the pages, and a multiple of min_alignment");
+          "The alignment of the pages must be a power of 2, greater or equal to the size of the "
+          "pages, and a multiple of min_alignment");
 
-        static_assert(ALLOCATOR_TYPE::page_size > (min_alignment + alignof(ControlBlock)) * 4, "Invalid page size");
+        static_assert(
+          ALLOCATOR_TYPE::page_size > (min_alignment + alignof(ControlBlock)) * 4,
+          "Invalid page size");
 
         /** Default constructor. The allocator is default-constructed.
 
@@ -257,8 +286,8 @@ namespace density
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue construct_copy_alloc example 1 */
-        lf_heter_queue(const ALLOCATOR_TYPE & i_source_allocator)
-                noexcept (std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
+        lf_heter_queue(const ALLOCATOR_TYPE & i_source_allocator) noexcept(
+          std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
             : Base(i_source_allocator)
         {
         }
@@ -302,7 +331,7 @@ namespace density
                 - The complexity is linear in the number of elements in this queue.
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue move_assign example 1 */
-        lf_heter_queue & operator = (lf_heter_queue && i_source) noexcept
+        lf_heter_queue & operator=(lf_heter_queue && i_source) noexcept
         {
             Base::swap(i_source);
             return *this;
@@ -311,7 +340,8 @@ namespace density
         /** Returns a copy of the allocator
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue get_allocator example 1 */
-        allocator_type get_allocator() noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
+        allocator_type
+          get_allocator() noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
         {
             return *this;
         }
@@ -319,18 +349,12 @@ namespace density
         /** Returns a reference to the allocator
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue get_allocator_ref example 1 */
-        allocator_type & get_allocator_ref() noexcept
-        {
-            return *this;
-        }
+        allocator_type & get_allocator_ref() noexcept { return *this; }
 
         /** Returns a const reference to the allocator
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue get_allocator_ref example 2 */
-        const allocator_type & get_allocator_ref() const noexcept
-        {
-            return *this;
-        }
+        const allocator_type & get_allocator_ref() const noexcept { return *this; }
 
         /** Swaps two queues.
 
@@ -362,10 +386,7 @@ namespace density
             \n <b>Throws</b>: Nothing.
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue empty example 1 */
-        bool empty() const noexcept
-        {
-            return Consume().is_queue_empty(this);
-        }
+        bool empty() const noexcept { return Consume().is_queue_empty(this); }
 
         /** Deletes all the elements in the queue.
 
@@ -377,7 +398,7 @@ namespace density
         void clear() noexcept
         {
             consume_operation consume;
-            while(try_start_consume(consume))
+            while (try_start_consume(consume))
             {
                 consume.commit();
             }
@@ -404,13 +425,15 @@ namespace density
 
             A void put_transaction can be move constructed/assigned from any put_transaction. A typed put_transaction
             can be move constructed/assigned only from a put_transaction with the same ELEMENT_COMPLETE_TYPE. */
-        template <typename ELEMENT_COMPLETE_TYPE = void>
-            class put_transaction
+        template <typename ELEMENT_COMPLETE_TYPE = void> class put_transaction
         {
-            static_assert(std::is_same<ELEMENT_COMPLETE_TYPE, typename std::decay<ELEMENT_COMPLETE_TYPE>::type>::value, "");
+            static_assert(
+              std::is_same<
+                ELEMENT_COMPLETE_TYPE,
+                typename std::decay<ELEMENT_COMPLETE_TYPE>::type>::value,
+              "");
 
-        public:
-
+          public:
             /** Constructs an empty put transaction */
             put_transaction() noexcept = default;
 
@@ -422,7 +445,7 @@ namespace density
             /** Copy assignment is not allowed.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction copy_assign example 1 */
-            put_transaction & operator = (const put_transaction &) = delete;
+            put_transaction & operator=(const put_transaction &) = delete;
 
             /** Move constructs a put_transaction, transferring the state from the source.
                     @param i_source source to move from. It is left in a valid but indeterminate state.
@@ -431,10 +454,13 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction move_construct example 1
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction move_construct example 2 */
-            template <typename OTHERTYPE, typename = typename std::enable_if<
-                    std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
-                put_transaction(put_transaction<OTHERTYPE> && i_source) noexcept
-                    : m_put(i_source.m_put), m_queue(i_source.m_queue)
+            template <
+              typename OTHERTYPE,
+              typename = typename std::enable_if<
+                std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value ||
+                std::is_void<ELEMENT_COMPLETE_TYPE>::value>::type>
+            put_transaction(put_transaction<OTHERTYPE> && i_source) noexcept
+                : m_put(i_source.m_put), m_queue(i_source.m_queue)
             {
                 i_source.m_put.m_user_storage = nullptr;
             }
@@ -444,9 +470,12 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction move_assign example 1
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction move_assign example 2 */
-            template <typename OTHERTYPE, typename = typename std::enable_if<
-                    std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
-                put_transaction & operator = (put_transaction<OTHERTYPE> && i_source) noexcept
+            template <
+              typename OTHERTYPE,
+              typename = typename std::enable_if<
+                std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value ||
+                std::is_void<ELEMENT_COMPLETE_TYPE>::value>::type>
+            put_transaction & operator=(put_transaction<OTHERTYPE> && i_source) noexcept
             {
                 using std::swap;
                 swap(m_put, i_source.m_put);
@@ -489,7 +518,8 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-                auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
+                auto push_data =
+                  m_queue->inplace_allocate(detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -518,20 +548,23 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
-                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
-                    raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
+            typename std::iterator_traits<INPUT_ITERATOR>::value_type *
+              raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                static_assert(
+                  std::is_trivially_destructible<ValueType>::value,
+                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
+                auto const count   = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
+                auto const elements = static_cast<ValueType *>(
+                  raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                    new(curr) ValueType(*i_begin);
+                    new (curr) ValueType(*i_begin);
                 return elements;
             }
 
@@ -558,8 +591,9 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
-                auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(std::declval<put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+            auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
+              -> decltype(std::declval<put_transaction>().raw_allocate_copy(
+                std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
@@ -594,10 +628,12 @@ namespace density
                 \n <b>Throws</b>: nothing.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate example 1*/
-            void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
+            void * try_raw_allocate(
+              progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
                 DENSITY_ASSERT(!empty());
-                auto push_data = m_queue->try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Dead, false, i_size, i_alignment);
+                auto push_data = m_queue->try_inplace_allocate(
+                  i_progress_guarantee, detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -635,23 +671,30 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
-                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
-                    try_raw_allocate_copy(progress_guarantee i_progress_guarantee, INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
-                        noexcept(std::is_nothrow_copy_constructible<typename std::iterator_traits<INPUT_ITERATOR>::value_type>::value)
+            typename std::iterator_traits<INPUT_ITERATOR>::value_type * try_raw_allocate_copy(
+              progress_guarantee i_progress_guarantee,
+              INPUT_ITERATOR     i_begin,
+              INPUT_ITERATOR
+                i_end) noexcept(std::
+                                  is_nothrow_copy_constructible<typename std::iterator_traits<
+                                    INPUT_ITERATOR>::value_type>::value)
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                static_assert(
+                  std::is_trivially_destructible<ValueType>::value,
+                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
+                auto const count   = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(try_raw_allocate(i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
+                auto const elements = static_cast<ValueType *>(try_raw_allocate(
+                  i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
                 if (elements != nullptr)
                 {
                     for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                        new(curr) ValueType(*i_begin);
+                        new (curr) ValueType(*i_begin);
                 }
                 return elements;
             }
@@ -688,12 +731,18 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
-                auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
-                    noexcept(noexcept(std::declval<put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
-                        -> decltype(std::declval<put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+            auto try_raw_allocate_copy(
+              progress_guarantee  i_progress_guarantee,
+              const INPUT_RANGE & i_source_range) noexcept(noexcept(std::declval<put_transaction>()
+                                                                      .try_raw_allocate_copy(
+                                                                        i_progress_guarantee,
+                                                                        std::begin(i_source_range),
+                                                                        std::end(i_source_range))))
+              -> decltype(std::declval<put_transaction>().try_raw_allocate_copy(
+                i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
-                return try_raw_allocate_copy(i_progress_guarantee,
-                    std::begin(i_source_range), std::end(i_source_range));
+                return try_raw_allocate_copy(
+                  i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.
@@ -731,18 +780,12 @@ namespace density
             /** Returns true whether this object is not currently bound to a transaction.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction empty example 1 */
-            bool empty() const noexcept
-            {
-                return m_put.m_user_storage == nullptr;
-            }
+            bool empty() const noexcept { return m_put.m_user_storage == nullptr; }
 
             /** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue put_transaction operator_bool example 1 */
-            explicit operator bool() const noexcept
-            {
-                return m_put.m_user_storage != nullptr;
-            }
+            explicit operator bool() const noexcept { return m_put.m_user_storage != nullptr; }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
@@ -773,7 +816,7 @@ namespace density
                 return m_put.m_user_storage;
             }
 
-            /** Returns a reference to the element being added. This function can be used to modify the element
+/** Returns a reference to the element being added. This function can be used to modify the element
                     before the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     put_transaction. The element is constructed at the begin of the transaction, so the
@@ -786,13 +829,15 @@ namespace density
                     - this transaction is empty
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue typed_put_transaction element example 1 */
-            #ifndef DOXYGEN_DOC_GENERATION
+#ifndef DOXYGEN_DOC_GENERATION
             template <typename EL = ELEMENT_COMPLETE_TYPE>
-                typename std::enable_if<!std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value, EL>::type &
-            #else
-                ELEMENT_COMPLETE_TYPE &
-            #endif
-                    element() const noexcept
+            typename std::enable_if<
+              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
+              EL>::type &
+#else
+            ELEMENT_COMPLETE_TYPE &
+#endif
+              element() const noexcept
             {
                 return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr());
             }
@@ -821,23 +866,31 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, lf_heter_queue * i_queue, const Allocation & i_put,
-                    std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
+            put_transaction(
+              PrivateType,
+              lf_heter_queue *   i_queue,
+              const Allocation & i_put,
+              std::false_type /*i_is_void*/,
+              COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
-                m_put.m_user_storage = i_element;
+                m_put.m_user_storage             = i_element;
                 m_put.m_control_block->m_element = i_element;
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(PrivateType, lf_heter_queue * i_queue, const Allocation & i_put,
-                    std::true_type /*i_is_void*/, void *) noexcept
+            put_transaction(
+              PrivateType,
+              lf_heter_queue *   i_queue,
+              const Allocation & i_put,
+              std::true_type /*i_is_void*/,
+              void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
 
-        private:
-            Allocation m_put;
+          private:
+            Allocation       m_put;
             lf_heter_queue * m_queue;
             template <typename OTHERTYPE> friend class put_transaction;
         };
@@ -861,8 +914,7 @@ namespace density
             an empty consume_operation triggers undefined behavior. */
         class consume_operation
         {
-        public:
-
+          public:
             /** Constructs an empty consume_operation
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation default_construct example 1 */
@@ -876,7 +928,7 @@ namespace density
             /** Copy assignment is not allowed
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation copy_assign example 1 */
-            consume_operation & operator = (const consume_operation &) = delete;
+            consume_operation & operator=(const consume_operation &) = delete;
 
             /** Move constructor. The source is left in a valid but indeterminate state.
 
@@ -886,7 +938,7 @@ namespace density
             /** Move assignment. The source is left in a valid but indeterminate state.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation move_assign example 1 */
-            consume_operation & operator = (consume_operation && i_source) noexcept = default;
+            consume_operation & operator=(consume_operation && i_source) noexcept = default;
 
             /** Destructor: cancel the operation (if any).
 
@@ -910,25 +962,19 @@ namespace density
             /** Returns true whether this object does not hold the state of an operation.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation empty example 1 */
-            bool empty() const noexcept
-            {
-                return m_consume_data.empty();
-            }
+            bool empty() const noexcept { return m_consume_data.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation operator_bool example 1 */
-            explicit operator bool() const noexcept
-            {
-                return !m_consume_data.empty();
-            }
+            explicit operator bool() const noexcept { return !m_consume_data.empty(); }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation queue example 1 */
             lf_heter_queue * queue() const noexcept
             {
-                return static_cast<lf_heter_queue*>(m_consume_data.m_queue);
+                return static_cast<lf_heter_queue *>(m_consume_data.m_queue);
             }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
@@ -943,8 +989,8 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
 
-                auto const & type = complete_type();
-                auto const element = element_ptr();
+                auto const & type    = complete_type();
+                auto const   element = element_ptr();
                 type.destroy(element);
 
                 type.RUNTIME_TYPE::~RUNTIME_TYPE();
@@ -983,7 +1029,7 @@ namespace density
                 m_consume_data.commit_consume_impl();
             }
 
-             /** Cancel the operation. This consume_operation becomes empty.
+            /** Cancel the operation. This consume_operation becomes empty.
 
                 \pre The behavior is undefined if either:
                     - this object is empty
@@ -1020,7 +1066,8 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control, m_consume_data.external());
+                return Base::get_unaligned_element(
+                  m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a pointer to the element being consumed.
@@ -1043,11 +1090,11 @@ namespace density
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
-                COMPLETE_ELEMENT_TYPE & element() const noexcept
+            COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control,
-                    m_consume_data.external()));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(
+                  Base::get_element(m_consume_data.m_control, m_consume_data.external()));
             }
 
             /** \internal - private function, usable only within the library */
@@ -1059,7 +1106,7 @@ namespace density
             /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
-                if(!m_consume_data.empty())
+                if (!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
@@ -1069,7 +1116,7 @@ namespace density
                 return !m_consume_data.empty();
             }
 
-        private:
+          private:
             Consume m_consume_data;
         };
 
@@ -1093,10 +1140,10 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue push example 1 */
-        template <typename ELEMENT_TYPE>
-            void push(ELEMENT_TYPE && i_source)
+        template <typename ELEMENT_TYPE> void push(ELEMENT_TYPE && i_source)
         {
-            return emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+            return emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
@@ -1119,9 +1166,10 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        void emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
+            start_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)
+              .commit();
         }
 
         /** Adds at the end of the queue an element of a type known at runtime, default-constructing it.
@@ -1140,10 +1188,7 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue dyn_push example 1 */
-        void dyn_push(const runtime_type & i_type)
-        {
-            start_dyn_push(i_type).commit();
-        }
+        void dyn_push(const runtime_type & i_type) { start_dyn_push(i_type).commit(); }
 
         /** Appends at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
 
@@ -1220,9 +1265,11 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_push(ELEMENT_TYPE && i_source)
+        put_transaction<typename std::decay<ELEMENT_TYPE>::type>
+          start_push(ELEMENT_TYPE && i_source)
         {
-            return start_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+            return start_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
@@ -1251,15 +1298,20 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
+            static_assert(
+              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
+              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<
+              detail::LfQueue_Busy,
+              true,
+              detail::size_of<ELEMENT_TYPE>::value,
+              alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1267,7 +1319,8 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                element = new (push_data.m_user_storage)
+                  ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
             {
@@ -1278,8 +1331,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<ELEMENT_TYPE>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<ELEMENT_TYPE>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1302,10 +1355,11 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1324,7 +1378,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
 
@@ -1349,12 +1404,14 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_dyn_push_copy example 1 */
-        put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction<>
+          start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1372,7 +1429,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, move-constructing it from the source..
@@ -1398,10 +1456,11 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data = Base::inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1419,7 +1478,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
@@ -1452,10 +1512,13 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_push example 1 */
         template <typename ELEMENT_TYPE>
-            bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source) noexcept(
+          noexcept(std::declval<lf_heter_queue>()
+                     .template try_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+                       i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return try_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return try_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
@@ -1487,12 +1550,13 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            bool try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee,
-                    std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
+        bool
+          try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
+            noexcept(std::declval<lf_heter_queue>().template try_start_emplace<ELEMENT_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
         {
-            auto tranasction = try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee,
-                std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            auto tranasction = try_start_emplace<ELEMENT_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             if (!tranasction)
                 return false;
             tranasction.commit();
@@ -1558,7 +1622,10 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_dyn_push_copy example 1 */
-        bool try_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
+        bool try_dyn_push_copy(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          const COMMON_TYPE *  i_source)
         {
             auto tranasction = try_start_dyn_push_copy(i_progress_guarantee, i_type, i_source);
             if (!tranasction)
@@ -1594,7 +1661,10 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_dyn_push_move example 1 */
-        bool try_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
+        bool try_dyn_push_move(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          COMMON_TYPE *        i_source)
         {
             auto tranasction = try_start_dyn_push_move(i_progress_guarantee, i_type, i_source);
             if (!tranasction)
@@ -1639,10 +1709,16 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_push example 1 */
         template <typename ELEMENT_TYPE>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_TYPE &&    i_source) noexcept(noexcept(std::declval<lf_heter_queue>()
+                                                        .template try_start_emplace<
+                                                          typename std::decay<ELEMENT_TYPE>::type>(
+                                                          i_progress_guarantee,
+                                                          std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return try_start_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
@@ -1679,24 +1755,31 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<ELEMENT_TYPE> try_start_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)) &&
-                    noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>())) )
+        put_transaction<ELEMENT_TYPE>
+          try_start_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
+            noexcept(ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)) &&
+            noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>())))
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
+            static_assert(
+              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
+              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>(i_progress_guarantee);
+            auto push_data = Base::template try_inplace_allocate<
+              detail::LfQueue_Busy,
+              true,
+              detail::size_of<ELEMENT_TYPE>::value,
+              alignof(ELEMENT_TYPE)>(i_progress_guarantee);
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<ELEMENT_TYPE>();
             }
 
-            bool is_noexcept = std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
-                noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
+            bool is_noexcept =
+              std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
+              noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
 
             if (is_noexcept)
             {
@@ -1705,7 +1788,8 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                element = new (push_data.m_user_storage)
+                  ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             else
             {
@@ -1713,10 +1797,12 @@ namespace density
                 {
                     auto const type_storage = Base::type_after_control(push_data.m_control_block);
                     DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-                    type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+                    type =
+                      new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                     DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                    element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                    element = new (push_data.m_user_storage)
+                      ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
                 catch (...)
                 {
@@ -1728,8 +1814,8 @@ namespace density
                 }
             }
 
-            return put_transaction<ELEMENT_TYPE>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<ELEMENT_TYPE>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1758,16 +1844,18 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push example 1 */
-        put_transaction<> try_start_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
+        put_transaction<>
+          try_start_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1786,7 +1874,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
 
@@ -1819,16 +1908,20 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push_copy example 1 */
-        put_transaction<> try_start_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction<> try_start_dyn_push_copy(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          const COMMON_TYPE *  i_source)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1846,7 +1939,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, move-constructing it from the source.
@@ -1878,16 +1972,20 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_dyn_push_move example 1 */
-        put_transaction<> try_start_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
+        put_transaction<> try_start_dyn_push_move(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          COMMON_TYPE *        i_source)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1905,7 +2003,8 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
@@ -1979,13 +2078,15 @@ namespace density
 
             A void reentrant_put_transaction can be move constructed/assigned from any reentrant_put_transaction. A typed reentrant_put_transaction
             can be move constructed/assigned only from a reentrant_put_transaction with the same ELEMENT_COMPLETE_TYPE. */
-        template <typename ELEMENT_COMPLETE_TYPE = void>
-            class reentrant_put_transaction
+        template <typename ELEMENT_COMPLETE_TYPE = void> class reentrant_put_transaction
         {
-            static_assert(std::is_same<ELEMENT_COMPLETE_TYPE, typename std::decay<ELEMENT_COMPLETE_TYPE>::type>::value, "");
+            static_assert(
+              std::is_same<
+                ELEMENT_COMPLETE_TYPE,
+                typename std::decay<ELEMENT_COMPLETE_TYPE>::type>::value,
+              "");
 
-        public:
-
+          public:
             /** Constructs an empty put transaction */
             reentrant_put_transaction() noexcept = default;
 
@@ -1997,7 +2098,7 @@ namespace density
             /** Copy assignment is not allowed.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction copy_assign example 1 */
-            reentrant_put_transaction & operator = (const reentrant_put_transaction &) = delete;
+            reentrant_put_transaction & operator=(const reentrant_put_transaction &) = delete;
 
             /** Move constructs a reentrant_put_transaction, transferring the state from the source.
                     @param i_source source to move from. It is left in a valid but indeterminate state.
@@ -2006,10 +2107,13 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction move_construct example 1
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction move_construct example 2 */
-            template <typename OTHERTYPE, typename = typename std::enable_if<
-                    std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
-                reentrant_put_transaction(reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
-                    : m_put(i_source.m_put), m_queue(i_source.m_queue)
+            template <
+              typename OTHERTYPE,
+              typename = typename std::enable_if<
+                std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value ||
+                std::is_void<ELEMENT_COMPLETE_TYPE>::value>::type>
+            reentrant_put_transaction(reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
+                : m_put(i_source.m_put), m_queue(i_source.m_queue)
             {
                 i_source.m_put.m_user_storage = nullptr;
             }
@@ -2019,9 +2123,13 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction move_assign example 1
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction move_assign example 2 */
-            template <typename OTHERTYPE, typename = typename std::enable_if<
-                    std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value || std::is_void<ELEMENT_COMPLETE_TYPE>::value >::type >
-                reentrant_put_transaction & operator = (reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
+            template <
+              typename OTHERTYPE,
+              typename = typename std::enable_if<
+                std::is_same<OTHERTYPE, ELEMENT_COMPLETE_TYPE>::value ||
+                std::is_void<ELEMENT_COMPLETE_TYPE>::value>::type>
+            reentrant_put_transaction &
+              operator=(reentrant_put_transaction<OTHERTYPE> && i_source) noexcept
             {
                 using std::swap;
                 swap(m_put, i_source.m_put);
@@ -2032,7 +2140,8 @@ namespace density
             /** Swaps two instances of reentrant_put_transaction.
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction swap example 1 */
-            friend void swap(reentrant_put_transaction & i_first, reentrant_put_transaction & i_second) noexcept
+            friend void swap(
+              reentrant_put_transaction & i_first, reentrant_put_transaction & i_second) noexcept
             {
                 using std::swap;
                 swap(i_first.m_put, i_second.m_put);
@@ -2064,7 +2173,8 @@ namespace density
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
-                auto push_data = m_queue->inplace_allocate(detail::NbQueue_Dead, false, i_size, i_alignment);
+                auto push_data =
+                  m_queue->inplace_allocate(detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -2093,20 +2203,23 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
-                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
-                    raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
+            typename std::iterator_traits<INPUT_ITERATOR>::value_type *
+              raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                static_assert(
+                  std::is_trivially_destructible<ValueType>::value,
+                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
+                auto const count   = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
+                auto const elements = static_cast<ValueType *>(
+                  raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
                 for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                    new(curr) ValueType(*i_begin);
+                    new (curr) ValueType(*i_begin);
                 return elements;
             }
 
@@ -2133,8 +2246,9 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
-                auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
-                    -> decltype(std::declval<reentrant_put_transaction>().raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range)))
+            auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
+              -> decltype(std::declval<reentrant_put_transaction>().raw_allocate_copy(
+                std::begin(i_source_range), std::end(i_source_range)))
             {
                 return raw_allocate_copy(std::begin(i_source_range), std::end(i_source_range));
             }
@@ -2169,10 +2283,12 @@ namespace density
                 \n <b>Throws</b>: nothing.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate example 1*/
-            void * try_raw_allocate(progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
+            void * try_raw_allocate(
+              progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
                 DENSITY_ASSERT(!empty());
-                auto push_data = m_queue->try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Dead, false, i_size, i_alignment);
+                auto push_data = m_queue->try_inplace_allocate(
+                  i_progress_guarantee, detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -2210,23 +2326,30 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
-                typename std::iterator_traits<INPUT_ITERATOR>::value_type *
-                    try_raw_allocate_copy(progress_guarantee i_progress_guarantee, INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
-                        noexcept(std::is_nothrow_copy_constructible<typename std::iterator_traits<INPUT_ITERATOR>::value_type>::value)
+            typename std::iterator_traits<INPUT_ITERATOR>::value_type * try_raw_allocate_copy(
+              progress_guarantee i_progress_guarantee,
+              INPUT_ITERATOR     i_begin,
+              INPUT_ITERATOR
+                i_end) noexcept(std::
+                                  is_nothrow_copy_constructible<typename std::iterator_traits<
+                                    INPUT_ITERATOR>::value_type>::value)
             {
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
-                static_assert(std::is_trivially_destructible<ValueType>::value,
-                    "raw_allocate_copy provides a raw memory inplace allocation that does not invoke destructors when deallocating");
+                static_assert(
+                  std::is_trivially_destructible<ValueType>::value,
+                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
-                auto const count = static_cast<size_t>(count_s);
+                auto const count   = static_cast<size_t>(count_s);
                 DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
 
-                auto const elements = static_cast<ValueType*>(try_raw_allocate(i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
+                auto const elements = static_cast<ValueType *>(try_raw_allocate(
+                  i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
                 if (elements != nullptr)
                 {
                     for (auto curr = elements; i_begin != i_end; ++i_begin, ++curr)
-                        new(curr) ValueType(*i_begin);
+                        new (curr) ValueType(*i_begin);
                 }
                 return elements;
             }
@@ -2263,12 +2386,19 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
-                auto try_raw_allocate_copy(progress_guarantee i_progress_guarantee, const INPUT_RANGE & i_source_range)
-                    noexcept(noexcept(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range))))
-                        -> decltype(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
+            auto try_raw_allocate_copy(
+              progress_guarantee i_progress_guarantee,
+              const INPUT_RANGE &
+                i_source_range) noexcept(noexcept(std::declval<reentrant_put_transaction>()
+                                                    .try_raw_allocate_copy(
+                                                      i_progress_guarantee,
+                                                      std::begin(i_source_range),
+                                                      std::end(i_source_range))))
+              -> decltype(std::declval<reentrant_put_transaction>().try_raw_allocate_copy(
+                i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range)))
             {
-                return try_raw_allocate_copy(i_progress_guarantee,
-                    std::begin(i_source_range), std::end(i_source_range));
+                return try_raw_allocate_copy(
+                  i_progress_guarantee, std::begin(i_source_range), std::end(i_source_range));
             }
 
             /** Makes the effects of the transaction observable. This object becomes empty.
@@ -2306,18 +2436,12 @@ namespace density
             /** Returns true whether this object does not hold the state of a transaction.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction empty example 1 */
-            bool empty() const noexcept
-            {
-                return m_put.m_user_storage == nullptr;
-            }
+            bool empty() const noexcept { return m_put.m_user_storage == nullptr; }
 
             /** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_put_transaction operator_bool example 1 */
-            explicit operator bool() const noexcept
-            {
-                return m_put.m_user_storage != nullptr;
-            }
+            explicit operator bool() const noexcept { return m_put.m_user_storage != nullptr; }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
@@ -2348,7 +2472,7 @@ namespace density
                 return m_put.m_user_storage;
             }
 
-            /** Returns a reference to the element being added. This function can be used to modify the element
+/** Returns a reference to the element being added. This function can be used to modify the element
                     before calling the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     reentrant_put_transaction. The element is constructed at the begin of the transaction, so the
@@ -2361,13 +2485,15 @@ namespace density
                     - this transaction is empty
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue typed_put_transaction element example 1 */
-            #ifndef DOXYGEN_DOC_GENERATION
+#ifndef DOXYGEN_DOC_GENERATION
             template <typename EL = ELEMENT_COMPLETE_TYPE>
-                typename std::enable_if<!std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value, EL>::type &
-            #else
-                ELEMENT_COMPLETE_TYPE &
-            #endif
-                    element() const noexcept
+            typename std::enable_if<
+              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
+              EL>::type &
+#else
+            ELEMENT_COMPLETE_TYPE &
+#endif
+              element() const noexcept
             {
                 return *static_cast<ELEMENT_COMPLETE_TYPE *>(element_ptr());
             }
@@ -2396,23 +2522,31 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, lf_heter_queue * i_queue, const Allocation & i_put,
-                    std::false_type /*i_is_void*/, COMMON_TYPE * i_element) noexcept
+            reentrant_put_transaction(
+              PrivateType,
+              lf_heter_queue *   i_queue,
+              const Allocation & i_put,
+              std::false_type /*i_is_void*/,
+              COMMON_TYPE * i_element) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
-                m_put.m_user_storage = i_element;
+                m_put.m_user_storage             = i_element;
                 m_put.m_control_block->m_element = i_element;
             }
 
             /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(PrivateType, lf_heter_queue * i_queue, const Allocation & i_put,
-                    std::true_type /*i_is_void*/, void *) noexcept
+            reentrant_put_transaction(
+              PrivateType,
+              lf_heter_queue *   i_queue,
+              const Allocation & i_put,
+              std::true_type /*i_is_void*/,
+              void *) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
 
-        private:
-            Allocation m_put;
+          private:
+            Allocation       m_put;
             lf_heter_queue * m_queue = nullptr;
             template <typename OTHERTYPE> friend class reentrant_put_transaction;
         };
@@ -2436,8 +2570,7 @@ namespace density
             an empty reentrant_consume_operation triggers undefined behavior. */
         class reentrant_consume_operation
         {
-        public:
-
+          public:
             /** Constructs an empty reentrant_consume_operation
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation default_construct example 1 */
@@ -2451,7 +2584,7 @@ namespace density
             /** Copy assignment is not allowed
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation copy_assign example 1 */
-            reentrant_consume_operation & operator = (const reentrant_consume_operation &) = delete;
+            reentrant_consume_operation & operator=(const reentrant_consume_operation &) = delete;
 
             /** Move constructor. It is left in a valid but indeterminate state.
 
@@ -2461,7 +2594,8 @@ namespace density
             /** Move assignment. It is left in a valid but indeterminate state.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation move_assign example 1 */
-            reentrant_consume_operation & operator = (reentrant_consume_operation && i_source) noexcept = default;
+            reentrant_consume_operation &
+              operator=(reentrant_consume_operation && i_source) noexcept = default;
 
             /** Destructor: cancel the operation (if any).
 
@@ -2477,7 +2611,9 @@ namespace density
             /** Swaps two instances of reentrant_consume_operation.
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation swap example 1 */
-            friend void swap(reentrant_consume_operation & i_first, reentrant_consume_operation & i_second) noexcept
+            friend void swap(
+              reentrant_consume_operation & i_first,
+              reentrant_consume_operation & i_second) noexcept
             {
                 i_first.m_consume_data.swap(i_second.m_consume_data);
             }
@@ -2490,15 +2626,15 @@ namespace density
             /** Returns true whether this object does not hold the state of an operation. Same to !reentrant_consume_operation::empty.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation operator_bool example 1 */
-            explicit operator bool() const noexcept
-            {
-                return !m_consume_data.empty();
-            }
+            explicit operator bool() const noexcept { return !m_consume_data.empty(); }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation queue example 1 */
-            lf_heter_queue * queue() const noexcept { return static_cast<lf_heter_queue*>(m_consume_data.m_queue); }
+            lf_heter_queue * queue() const noexcept
+            {
+                return static_cast<lf_heter_queue *>(m_consume_data.m_queue);
+            }
 
             /** Destroys the element, making the consume irreversible. This comnsume_operation becomes empty.
 
@@ -2512,8 +2648,8 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
 
-                auto const & type = complete_type();
-                auto const element = element_ptr();
+                auto const & type    = complete_type();
+                auto const   element = element_ptr();
                 type.destroy(element);
 
                 type.RUNTIME_TYPE::~RUNTIME_TYPE();
@@ -2552,7 +2688,7 @@ namespace density
                 m_consume_data.commit_consume_impl();
             }
 
-             /** Cancel the operation. This reentrant_consume_operation becomes empty.
+            /** Cancel the operation. This reentrant_consume_operation becomes empty.
 
                 \pre The behavior is undefined if either:
                     - this object is empty
@@ -2589,7 +2725,8 @@ namespace density
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
-                return Base::get_unaligned_element(m_consume_data.m_control, m_consume_data.external());
+                return Base::get_unaligned_element(
+                  m_consume_data.m_control, m_consume_data.external());
             }
 
             /** Returns a pointer to the element being consumed.
@@ -2612,11 +2749,11 @@ namespace density
 
                 \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
-                COMPLETE_ELEMENT_TYPE & element() const noexcept
+            COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE*>(Base::get_element(m_consume_data.m_control,
-                    m_consume_data.external()));
+                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(
+                  Base::get_element(m_consume_data.m_control, m_consume_data.external()));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2628,7 +2765,7 @@ namespace density
             /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, lf_heter_queue * i_queue)
             {
-                if(!m_consume_data.empty())
+                if (!m_consume_data.empty())
                 {
                     m_consume_data.cancel_consume_impl();
                 }
@@ -2638,7 +2775,7 @@ namespace density
                 return !m_consume_data.empty();
             }
 
-        private:
+          private:
             Consume m_consume_data;
         };
 
@@ -2647,10 +2784,10 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_push example 1 */
-        template <typename ELEMENT_TYPE>
-            void reentrant_push(ELEMENT_TYPE && i_source)
+        template <typename ELEMENT_TYPE> void reentrant_push(ELEMENT_TYPE && i_source)
         {
-            return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+            return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Same to lf_heter_queue::emplace, but allows reentrancy: during the construction of the element the queue is in a
@@ -2659,9 +2796,11 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
+        void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            start_reentrant_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...).commit();
+            start_reentrant_emplace<ELEMENT_TYPE>(
+              std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)
+              .commit();
         }
 
         /** Same to lf_heter_queue::dyn_push, but allows reentrancy: during the construction of the element the queue is in a
@@ -2700,9 +2839,11 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_push(ELEMENT_TYPE && i_source)
+        reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>
+          start_reentrant_push(ELEMENT_TYPE && i_source)
         {
-            return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(std::forward<ELEMENT_TYPE>(i_source));
+            return start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Same to lf_heter_queue::start_emplace, but allows reentrancy: during the construction of the element, and until the state of
@@ -2711,15 +2852,21 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        reentrant_put_transaction<ELEMENT_TYPE>
+          start_reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
+            static_assert(
+              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
+              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>();
+            auto push_data = Base::template inplace_allocate<
+              detail::LfQueue_Busy,
+              true,
+              detail::size_of<ELEMENT_TYPE>::value,
+              alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2727,7 +2874,8 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                element = new (push_data.m_user_storage)
+                  ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
             {
@@ -2737,8 +2885,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<ELEMENT_TYPE>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to lf_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
@@ -2748,10 +2896,11 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2769,8 +2918,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
 
@@ -2779,12 +2928,14 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_copy example 1 */
-        reentrant_put_transaction<> start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        reentrant_put_transaction<>
+          start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2802,8 +2953,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to lf_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
@@ -2811,12 +2962,14 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue start_reentrant_dyn_push_move example 1 */
-        reentrant_put_transaction<> start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        reentrant_put_transaction<>
+          start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data = inplace_allocate(detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data =
+              inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2834,8 +2987,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to lf_heter_queue::try_push, but allows reentrancy: during the construction of the element the queue is in a
@@ -2844,10 +2997,16 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            bool try_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        bool try_reentrant_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_TYPE &&    i_source) noexcept(noexcept(std::declval<lf_heter_queue>()
+                                                        .template try_reentrant_emplace<
+                                                          typename std::decay<ELEMENT_TYPE>::type>(
+                                                          i_progress_guarantee,
+                                                          std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return try_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Same to lf_heter_queue::try_emplace, but allows reentrancy: during the construction of the element the queue is in a
@@ -2856,12 +3015,14 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            bool try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee,
-                    std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
+        bool
+          try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
+            noexcept(
+              std::declval<lf_heter_queue>().template try_start_reentrant_emplace<ELEMENT_TYPE>(
+                i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
         {
-            auto tranasction = try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee,
-                std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            auto tranasction = try_start_reentrant_emplace<ELEMENT_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             if (!tranasction)
                 return false;
             tranasction.commit();
@@ -2873,7 +3034,8 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push example 1 */
-        bool try_reentrant_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
+        bool try_reentrant_dyn_push(
+          progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
             auto tranasction = try_start_reentrant_dyn_push(i_progress_guarantee, i_type);
             if (!tranasction)
@@ -2887,9 +3049,13 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push_copy example 1 */
-        bool try_reentrant_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
+        bool try_reentrant_dyn_push_copy(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          const COMMON_TYPE *  i_source)
         {
-            auto tranasction = try_start_reentrant_dyn_push_copy(i_progress_guarantee, i_type, i_source);
+            auto tranasction =
+              try_start_reentrant_dyn_push_copy(i_progress_guarantee, i_type, i_source);
             if (!tranasction)
                 return false;
             tranasction.commit();
@@ -2901,9 +3067,13 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_reentrant_dyn_push_move example 1 */
-        bool try_reentrant_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
+        bool try_reentrant_dyn_push_move(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          COMMON_TYPE *        i_source)
         {
-            auto tranasction = try_start_reentrant_dyn_push_move(i_progress_guarantee, i_type, i_source);
+            auto tranasction =
+              try_start_reentrant_dyn_push_move(i_progress_guarantee, i_type, i_source);
             if (!tranasction)
                 return false;
             tranasction.commit();
@@ -2916,10 +3086,16 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(std::declval<lf_heter_queue>().template try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_TYPE &&    i_source) noexcept(noexcept(std::declval<lf_heter_queue>()
+                                                        .template try_start_reentrant_emplace<
+                                                          typename std::decay<ELEMENT_TYPE>::type>(
+                                                          i_progress_guarantee,
+                                                          std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return try_start_reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
         /** Same to lf_heter_queue::try_start_emplace, but allows reentrancy: during the construction of the element the queue is in a
@@ -2928,24 +3104,31 @@ namespace density
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<ELEMENT_TYPE> try_start_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)) &&
-                    noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>())) )
+        reentrant_put_transaction<ELEMENT_TYPE>
+          try_start_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
+            noexcept(ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)) &&
+            noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>())))
         {
-            static_assert(std::is_convertible<ELEMENT_TYPE*, COMMON_TYPE*>::value,
-                "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
+            static_assert(
+              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
+              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template try_inplace_allocate<detail::NbQueue_Busy, true, detail::size_of<ELEMENT_TYPE>::value, alignof(ELEMENT_TYPE)>(i_progress_guarantee);
+            auto push_data = Base::template try_inplace_allocate<
+              detail::LfQueue_Busy,
+              true,
+              detail::size_of<ELEMENT_TYPE>::value,
+              alignof(ELEMENT_TYPE)>(i_progress_guarantee);
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<ELEMENT_TYPE>();
             }
 
-            bool is_noexcept = std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
-                noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
+            bool is_noexcept =
+              std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
+              noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
 
             if (is_noexcept)
             {
@@ -2954,7 +3137,8 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                element = new (push_data.m_user_storage)
+                  ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             else
             {
@@ -2962,10 +3146,12 @@ namespace density
                 {
                     auto const type_storage = Base::type_after_control(push_data.m_control_block);
                     DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
-                    type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+                    type =
+                      new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                     DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                    element = new (push_data.m_user_storage) ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+                    element = new (push_data.m_user_storage)
+                      ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
                 catch (...)
                 {
@@ -2977,8 +3163,8 @@ namespace density
                 }
             }
 
-            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(),
-                this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<ELEMENT_TYPE>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
@@ -2986,16 +3172,18 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push example 1 */
-        reentrant_put_transaction<> try_start_reentrant_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
+        reentrant_put_transaction<> try_start_reentrant_dyn_push(
+          progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3014,7 +3202,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
@@ -3022,16 +3211,20 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_copy example 1 */
-        reentrant_put_transaction<> try_start_reentrant_dyn_push_copy(progress_guarantee i_progress_guarantee, const runtime_type & i_type, const COMMON_TYPE * i_source)
+        reentrant_put_transaction<> try_start_reentrant_dyn_push_copy(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          const COMMON_TYPE *  i_source)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3049,7 +3242,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Same to lf_heter_queue::try_start_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
@@ -3057,16 +3251,20 @@ namespace density
 
             <b>Examples</b>
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_dyn_push_move example 1 */
-        reentrant_put_transaction<> try_start_reentrant_dyn_push_move(progress_guarantee i_progress_guarantee, const runtime_type & i_type, COMMON_TYPE * i_source)
+        reentrant_put_transaction<> try_start_reentrant_dyn_push_move(
+          progress_guarantee   i_progress_guarantee,
+          const runtime_type & i_type,
+          COMMON_TYPE *        i_source)
         {
-            auto push_data = try_inplace_allocate(i_progress_guarantee, detail::NbQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = try_inplace_allocate(
+              i_progress_guarantee, detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
             if (push_data.m_user_storage == nullptr)
             {
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE * element = nullptr;
-            runtime_type * type = nullptr;
+            COMMON_TYPE *  element = nullptr;
+            runtime_type * type    = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3084,7 +3282,8 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return reentrant_put_transaction<void>(
+              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
@@ -3119,7 +3318,7 @@ namespace density
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue try_start_reentrant_consume example 1 */
         reentrant_consume_operation try_start_reentrant_consume() noexcept
         {
-             return reentrant_consume_operation(PrivateType(), this);
+            return reentrant_consume_operation(PrivateType(), this);
         }
 
         /** Tries to start a consume operation using an existing consume_operation object.
@@ -3146,5 +3345,5 @@ namespace density
 } // namespace density
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
