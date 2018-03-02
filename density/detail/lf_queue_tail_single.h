@@ -52,7 +52,6 @@ namespace density
             using Base::external_allocate;
             using Base::get_element;
             using Base::get_unaligned_element;
-            using Base::invalid_control_block;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
             using Base::s_element_min_offset;

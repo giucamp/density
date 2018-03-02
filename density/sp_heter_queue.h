@@ -226,7 +226,6 @@ namespace density
             ALLOCATOR_TYPE,
             PROD_CARDINALITY,
             BUSY_WAIT_FUNC>>;
-        using Base::inplace_allocate;
         using Base::try_inplace_allocate;
         using typename Base::Allocation;
         using typename Base::Consume;
@@ -539,7 +538,8 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
                 auto push_data =
-                  m_queue->inplace_allocate(detail::LfQueue_Dead, false, i_size, i_alignment);
+                  m_queue->template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+                    detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -1324,7 +1324,8 @@ namespace density
               std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
               "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<
+            auto push_data = Base::template try_inplace_allocate_impl<
+              detail::LfQueue_Throwing,
               detail::LfQueue_Busy,
               true,
               detail::size_of<ELEMENT_TYPE>::value,
@@ -1375,8 +1376,8 @@ namespace density
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;
@@ -1427,8 +1428,8 @@ namespace density
         put_transaction<>
           start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;
@@ -1476,8 +1477,8 @@ namespace density
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;
@@ -2194,7 +2195,8 @@ namespace density
             {
                 DENSITY_ASSERT(!empty());
                 auto push_data =
-                  m_queue->inplace_allocate(detail::LfQueue_Dead, false, i_size, i_alignment);
+                  m_queue->template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+                    detail::LfQueue_Dead, false, i_size, i_alignment);
                 return push_data.m_user_storage;
             }
 
@@ -2879,7 +2881,8 @@ namespace density
               std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
               "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
 
-            auto push_data = Base::template inplace_allocate<
+            auto push_data = Base::template try_inplace_allocate_impl<
+              detail::LfQueue_Throwing,
               detail::LfQueue_Busy,
               true,
               detail::size_of<ELEMENT_TYPE>::value,
@@ -2916,8 +2919,8 @@ namespace density
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;
@@ -2951,8 +2954,8 @@ namespace density
         reentrant_put_transaction<>
           start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;
@@ -2985,8 +2988,8 @@ namespace density
         reentrant_put_transaction<>
           start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
         {
-            auto push_data =
-              Base::inplace_allocate(detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
+            auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
+              detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
             COMMON_TYPE *  element = nullptr;
             runtime_type * type    = nullptr;

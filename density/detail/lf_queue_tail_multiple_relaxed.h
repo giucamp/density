@@ -47,7 +47,6 @@ namespace density
             using Base::get_element;
             using Base::get_end_control_block;
             using Base::get_unaligned_element;
-            using Base::invalid_control_block;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
             using Base::s_element_min_offset;
@@ -246,7 +245,7 @@ namespace density
                 }
             }
 
-            /** Overload of inplace_allocate that can be used when all parameters are compile time constants */
+            /** Overload of try_inplace_allocate_impl that can be used when all parameters are compile time constants */
             template <
               LfQueue_ProgressGuarantee PROGRESS_GUARANTEE,
               uintptr_t                 CONTROL_BITS,

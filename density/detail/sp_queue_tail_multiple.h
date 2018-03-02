@@ -65,7 +65,6 @@ namespace density
             using Base::get_element;
             using Base::get_end_control_block;
             using Base::get_unaligned_element;
-            using Base::invalid_control_block;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
             using Base::s_element_min_offset;
@@ -85,6 +84,11 @@ namespace density
             /** Whether page switch happens only at the control block returned by get_end_control_block.
                 Used only for assertions. */
             constexpr static bool s_needs_end_control = true;
+
+            static ControlBlock * invalid_control_block() noexcept
+            {
+                return reinterpret_cast<ControlBlock *>(s_invalid_control_block);
+            }
 
             constexpr SpQueue_TailMultiple() noexcept(
               std::is_nothrow_default_constructible<Base>::value)

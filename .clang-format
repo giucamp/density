@@ -72,12 +72,8 @@ IndentWrappedFunctionNames: true
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: true
-MacroBlockBegin: "REFL_BEGIN_CLASS|\
-REFL_BEGIN_PROPERTIES|\
-REFL_BEGIN_ACTIONS"
-MacroBlockEnd: "REFL_END_CLASS|\
-REFL_END_PROPERTIES|\
-REFL_END_ACTIONS"
+MacroBlockBegin: ""
+MacroBlockEnd: ""
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All
 ObjCBlockIndentWidth: 2
