@@ -47,6 +47,7 @@ namespace density
             using Base::s_end_control_offset;
             using Base::s_invalid_control_block;
             using Base::s_rawblock_min_offset;
+            using Base::get_end_control_block;
             using typename Base::Allocation;
             using typename Base::ControlBlock;
 
