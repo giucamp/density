@@ -29,11 +29,16 @@ namespace density
           protected:
             using ControlBlock = typename Base::ControlBlock;
 
-            LFQueue_Head() noexcept {}
+            constexpr LFQueue_Head() noexcept {}
 
-            LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept : Base(std::move(i_allocator)) {}
+            constexpr LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept
+                : Base(std::move(i_allocator))
+            {
+            }
 
-            LFQueue_Head(const ALLOCATOR_TYPE & i_allocator) : Base(i_allocator) {}
+            constexpr LFQueue_Head(const ALLOCATOR_TYPE & i_allocator) noexcept : Base(i_allocator)
+            {
+            }
 
             LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head() { swap(i_source); }
 
@@ -255,9 +260,10 @@ namespace density
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr, mem_seq_cst);
-                    m_next_ptr = 0;
 
                     clean_dead_elements();
+
+                    m_next_ptr = 0;
                 }
 
                 void cancel_consume_impl() noexcept

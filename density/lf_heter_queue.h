@@ -373,7 +373,8 @@ namespace density
             clear();
 
             Consume consume;
-            if (consume.assign_queue(this))
+            consume.begin_iteration(this);
+            if (!consume.empty())
             {
                 consume.clean_dead_elements();
             }

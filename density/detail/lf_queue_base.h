@@ -140,12 +140,12 @@ namespace density
             constexpr static uintptr_t s_type_offset =
               uint_upper_align(sizeof(ControlBlock), alignof(RUNTIME_TYPE));
 
-            /** Minimum offset of the element in the layout of a value (The actual offset is
+            /** Minimum offset of the element in the layout of a value (the actual offset is
                 dependent on the alignment of the element). */
             constexpr static uintptr_t s_element_min_offset =
               uint_upper_align(s_type_offset + sizeof(RUNTIME_TYPE), min_alignment);
 
-            /** Minimum offset of a row block. (The actual offset is dependent on the alignment
+            /** Minimum offset of a row block. (the actual offset is dependent on the alignment
                 of the block). */
             constexpr static uintptr_t s_rawblock_min_offset = uint_upper_align(
               sizeof(ControlBlock), size_max(min_alignment, alignof(ExternalBlock)));
@@ -159,7 +159,7 @@ namespace density
 
             /** Value used to initialize the head and the tail.
                 This value is designed to always cause a page overflow in the fast path.
-                This mechanism allows the default constructor to be small, fast, and
+                This mechanism allows the default constructors to be fast, constexpr and
                 noexcept. */
             constexpr static uintptr_t s_invalid_control_block = s_end_control_offset;
 

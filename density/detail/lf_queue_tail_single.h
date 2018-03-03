@@ -46,12 +46,7 @@ namespace density
                 ALLOCATOR_TYPE,
                 concurrency_single,
                 CONSISTENCY_MODEL>>;
-            using Base::cancel_put_impl;
-            using Base::cancel_put_nodestroy_impl;
-            using Base::commit_put_impl;
-            using Base::external_allocate;
-            using Base::get_element;
-            using Base::get_unaligned_element;
+
             using Base::min_alignment;
             using Base::s_alloc_granularity;
             using Base::s_element_min_offset;
@@ -59,9 +54,6 @@ namespace density
             using Base::s_invalid_control_block;
             using Base::s_max_size_inpage;
             using Base::s_rawblock_min_offset;
-            using Base::s_type_offset;
-            using Base::same_page;
-            using Base::type_after_control;
             using typename Base::Allocation;
             using typename Base::ControlBlock;
 
@@ -72,20 +64,18 @@ namespace density
                 Used only for assertions. */
             constexpr static bool s_needs_end_control = false;
 
-            constexpr LFQueue_Tail() noexcept(std::is_nothrow_default_constructible<Base>::value)
+            constexpr LFQueue_Tail() noexcept
                 : m_tail(s_invalid_control_block), m_initial_page(nullptr)
             {
             }
 
-            constexpr LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept(
-              std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
+            constexpr LFQueue_Tail(ALLOCATOR_TYPE && i_allocator) noexcept
                 : Base(std::move(i_allocator)), m_tail(s_invalid_control_block),
                   m_initial_page(nullptr)
             {
             }
 
-            constexpr LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator) noexcept(
-              std::is_nothrow_constructible<Base, const ALLOCATOR_TYPE &>::value)
+            constexpr LFQueue_Tail(const ALLOCATOR_TYPE & i_allocator) noexcept
                 : Base(i_allocator), m_tail(s_invalid_control_block), m_initial_page(nullptr)
             {
             }
@@ -95,13 +85,11 @@ namespace density
                 Base>::value) // this matches the the default ctor
                 : LFQueue_Tail()
             {
-                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 swap(i_source);
             }
 
             LFQueue_Tail & operator=(LFQueue_Tail && i_source) noexcept
             {
-                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
                 swap(i_source);
                 return *this;
             }

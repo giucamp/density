@@ -5,24 +5,24 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <type_traits>
-#include <limits>
-#include <cstddef>
-#include <utility>
 #include <atomic> // for std::memory_order
+#include <cstddef>
+#include <limits>
 #include <new>
+#include <type_traits>
+#include <utility>
 
 #include <density/density_config.h>
 
 /*! \file */
 
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
-#define DENSITY_VERSION            0x00010400
+#define DENSITY_VERSION 0x00010400
 
 /** namespace density */
 namespace density
 {
-    /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions. 
+    /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions.
             Example of value: "7.240.22" */
     constexpr char version[] = "1.4.0";
 
@@ -76,10 +76,10 @@ namespace density
                                     without invocation is not supported.*/
     };
 
-                // address functions
+    // address functions
 
     /** Returns true whether the given unsigned integer number is a power of 2 (1, 2, 4, 8, ...)
-        @param i_number must be > 0, otherwise the behavior is undefined */
+    @param i_number must be > 0, otherwise the behavior is undefined */
     constexpr bool is_power_of_2(size_t i_number) noexcept
     {
         //DENSITY_ASSERT(i_number > 0);
@@ -98,10 +98,11 @@ namespace density
     /** Returns true whether the given unsigned integer has the specified alignment
         @param i_uint integer to be checked
         @param i_alignment must be > 0 and a power of 2 */
-    template <typename UINT>
-        inline bool uint_is_aligned(UINT i_uint, UINT i_alignment) noexcept
+    template <typename UINT> inline bool uint_is_aligned(UINT i_uint, UINT i_alignment) noexcept
     {
-        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT mus be an unsigned integer");
+        static_assert(
+          std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed,
+          "UINT mus be an unsigned integer");
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         return (i_uint & (i_alignment - 1)) == 0;
     }
@@ -110,54 +111,54 @@ namespace density
         @param i_address source address
         @param i_offset number to add to the address
         @return i_address plus i_offset */
-    inline void * address_add( void * i_address, size_t i_offset ) noexcept
+    inline void * address_add(void * i_address, size_t i_offset) noexcept
     {
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-        return reinterpret_cast< void * >( uint_pointer + i_offset );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
+        return reinterpret_cast<void *>(uint_pointer + i_offset);
     }
 
     /** Adds an offset to a pointer.
         @param i_address source address
         @param i_offset number to add to the address
         @return i_address plus i_offset */
-    inline const void * address_add( const void * i_address, size_t i_offset ) noexcept
+    inline const void * address_add(const void * i_address, size_t i_offset) noexcept
     {
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-        return reinterpret_cast< const void * >( uint_pointer + i_offset );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
+        return reinterpret_cast<const void *>(uint_pointer + i_offset);
     }
 
     /** Subtracts an offset from a pointer
         @param i_address source address
         @param i_offset number to subtract from the address
         @return i_address minus i_offset */
-    inline void * address_sub( void * i_address, size_t i_offset ) noexcept
+    inline void * address_sub(void * i_address, size_t i_offset) noexcept
     {
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-        DENSITY_ASSERT( uint_pointer >= i_offset );
-        return reinterpret_cast< void * >( uint_pointer - i_offset );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
+        DENSITY_ASSERT(uint_pointer >= i_offset);
+        return reinterpret_cast<void *>(uint_pointer - i_offset);
     }
 
     /** Subtracts an offset from a pointer
         @param i_address source address
         @param i_offset number to subtract from the address
         @return i_address minus i_offset */
-    inline const void * address_sub( const void * i_address, size_t i_offset ) noexcept
+    inline const void * address_sub(const void * i_address, size_t i_offset) noexcept
     {
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
-        DENSITY_ASSERT( uint_pointer >= i_offset );
-        return reinterpret_cast< const void * >( uint_pointer - i_offset );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
+        DENSITY_ASSERT(uint_pointer >= i_offset);
+        return reinterpret_cast<const void *>(uint_pointer - i_offset);
     }
 
     /** Computes the unsigned difference between two pointers. The first must be above or equal to the second.
         @param i_end_address first address
         @param i_start_address second address
         @return i_end_address minus i_start_address */
-    inline uintptr_t address_diff( const void * i_end_address, const void * i_start_address ) noexcept
+    inline uintptr_t address_diff(const void * i_end_address, const void * i_start_address) noexcept
     {
-        DENSITY_ASSERT( i_end_address >= i_start_address );
+        DENSITY_ASSERT(i_end_address >= i_start_address);
 
-        const uintptr_t end_uint_pointer = reinterpret_cast<uintptr_t>( i_end_address );
-        const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>( i_start_address );
+        const uintptr_t end_uint_pointer   = reinterpret_cast<uintptr_t>(i_end_address);
+        const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>(i_start_address);
 
         return end_uint_pointer - start_uint_pointer;
     }
@@ -166,30 +167,30 @@ namespace density
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
-    inline void * address_lower_align( void * i_address, size_t i_alignment ) noexcept
+    inline void * address_lower_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
         const size_t mask = i_alignment - 1;
 
-        return reinterpret_cast< void * >( uint_pointer & ~mask );
+        return reinterpret_cast<void *>(uint_pointer & ~mask);
     }
 
     /** Returns the biggest aligned address lesser than or equal to a given address
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
-    inline const void * address_lower_align( const void * i_address, size_t i_alignment ) noexcept
+    inline const void * address_lower_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
         const size_t mask = i_alignment - 1;
 
-        return reinterpret_cast< void * >( uint_pointer & ~mask );
+        return reinterpret_cast<void *>(uint_pointer & ~mask);
     }
 
     /** Returns the biggest address lesser than the first parameter, such that i_address + i_alignment_offset is aligned
@@ -197,13 +198,14 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
         @return the result address */
-    inline void * address_lower_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
+    inline void *
+      address_lower_align(void * i_address, size_t i_alignment, size_t i_alignment_offset) noexcept
     {
-        void * address = address_add( i_address, i_alignment_offset );
+        void * address = address_add(i_address, i_alignment_offset);
 
-        address = address_lower_align( address, i_alignment );
+        address = address_lower_align(address, i_alignment);
 
-        address = address_sub( address, i_alignment_offset );
+        address = address_sub(address, i_alignment_offset);
 
         return address;
     }
@@ -213,13 +215,14 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
         @return the result address */
-    inline const void * address_lower_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
+    inline const void * address_lower_align(
+      const void * i_address, size_t i_alignment, size_t i_alignment_offset) noexcept
     {
-        const void * address = address_add( i_address, i_alignment_offset );
+        const void * address = address_add(i_address, i_alignment_offset);
 
-        address = address_lower_align( address, i_alignment );
+        address = address_lower_align(address, i_alignment);
 
-        address = address_sub( address, i_alignment_offset );
+        address = address_sub(address, i_alignment_offset);
 
         return address;
     }
@@ -228,30 +231,30 @@ namespace density
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
-    inline void * address_upper_align( void * i_address, size_t i_alignment ) noexcept
+    inline void * address_upper_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
         const size_t mask = i_alignment - 1;
 
-        return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
+        return reinterpret_cast<void *>((uint_pointer + mask) & ~mask);
     }
 
     /** Returns the smallest aligned address greater than or equal to a given address
         @param i_address address to be aligned
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
-    inline const void * address_upper_align( const void * i_address, size_t i_alignment ) noexcept
+    inline const void * address_upper_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT( i_alignment > 0 && is_power_of_2( i_alignment ) );
+        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
-        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>( i_address );
+        const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
         const size_t mask = i_alignment - 1;
 
-        return reinterpret_cast< void * >( ( uint_pointer + mask ) & ~mask );
+        return reinterpret_cast<void *>((uint_pointer + mask) & ~mask);
     }
 
     /** Returns the smallest aligned integer greater than or equal to a given address
@@ -259,9 +262,11 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
     template <typename UINT>
-        constexpr UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
+    constexpr UINT uint_upper_align(UINT i_uint, size_t i_alignment) noexcept
     {
-        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT must be an unsigned integer");
+        static_assert(
+          std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed,
+          "UINT must be an unsigned integer");
         return (i_uint + (i_alignment - 1)) & ~(i_alignment - 1);
     }
 
@@ -271,9 +276,11 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2.
         @return the aligned address */
     template <typename UINT>
-        constexpr UINT uint_lower_align(UINT i_uint, size_t i_alignment) noexcept
+    constexpr UINT uint_lower_align(UINT i_uint, size_t i_alignment) noexcept
     {
-        static_assert(std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed, "UINT must be an unsigned integer");
+        static_assert(
+          std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed,
+          "UINT must be an unsigned integer");
         return i_uint & ~(i_alignment - 1);
     }
 
@@ -282,13 +289,14 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
         @return the result address */
-    inline void * address_upper_align( void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
+    inline void *
+      address_upper_align(void * i_address, size_t i_alignment, size_t i_alignment_offset) noexcept
     {
-        void * address = address_add( i_address, i_alignment_offset );
+        void * address = address_add(i_address, i_alignment_offset);
 
-        address = address_upper_align( address, i_alignment );
+        address = address_upper_align(address, i_alignment);
 
-        address = address_sub( address, i_alignment_offset );
+        address = address_sub(address, i_alignment_offset);
 
         return address;
     }
@@ -298,13 +306,14 @@ namespace density
         @param i_alignment alignment required from the pointer. It must be an integer power of 2
         @param i_alignment_offset alignment offset
         @return the result address */
-    inline const void * address_upper_align( const void * i_address, size_t i_alignment, size_t i_alignment_offset ) noexcept
+    inline const void * address_upper_align(
+      const void * i_address, size_t i_alignment, size_t i_alignment_offset) noexcept
     {
-        const void * address = address_add( i_address, i_alignment_offset );
+        const void * address = address_add(i_address, i_alignment_offset);
 
-        address = address_upper_align( address, i_alignment );
+        address = address_upper_align(address, i_alignment);
 
-        address = address_sub( address, i_alignment_offset );
+        address = address_sub(address, i_alignment_offset);
 
         return address;
     }
@@ -328,7 +337,8 @@ namespace density
         {
             return size_max(size_max(i_first, i_second), i_third);
         }
-        constexpr inline size_t size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
+        constexpr inline size_t
+          size_max(size_t i_first, size_t i_second, size_t i_third, size_t i_fourth) noexcept
         {
             return size_max(size_max(i_first, i_second), size_max(i_third, i_fourth));
         }
@@ -338,11 +348,16 @@ namespace density
             void * m_block;
         };
 
-        constexpr auto mem_relaxed = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
-        constexpr auto mem_acquire = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
-        constexpr auto mem_release = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
-        constexpr auto mem_acq_rel = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
-        constexpr auto mem_seq_cst = !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
+        constexpr auto mem_relaxed =
+          !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
+        constexpr auto mem_acquire =
+          !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acquire;
+        constexpr auto mem_release =
+          !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_release;
+        constexpr auto mem_acq_rel =
+          !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_acq_rel;
+        constexpr auto mem_seq_cst =
+          !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_seq_cst;
 
         /** Computes the base2 logarithm of a size_t. If the argument is zero or is
             not a power of 2, the behavior is undefined. */
@@ -351,12 +366,9 @@ namespace density
             return i_size <= 1 ? 0 : size_log2(i_size / 2) + 1;
         }
 
-        /** This function is used to suppress warnings about constant conditional expressions 
+        /** This function is used to suppress warnings about constant conditional expressions
             without declaring useless variables. */
-        inline bool ConstConditional(bool i_value) noexcept
-        {
-            return i_value;
-        }
+        inline bool ConstConditional(bool i_value) noexcept { return i_value; }
 
         struct ExternalBlock
         {
@@ -371,29 +383,25 @@ namespace density
         };
 
         // old versions of libstdc++ define max_align_t only outside std::
-        #if defined(__GLIBCXX__)
-            constexpr size_t MaxAlignment = alignof(max_align_t);
-        #else
-            constexpr size_t MaxAlignment = alignof(std::max_align_t);
-        #endif
+#if defined(__GLIBCXX__)
+        constexpr size_t MaxAlignment = alignof(max_align_t);
+#else
+        constexpr size_t MaxAlignment = alignof(std::max_align_t);
+#endif
 
         // internal macro - rethrows disabling the warning "function assumed not to throw an exception but does"
-        #ifdef _MSC_VER
-            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT \
-                __pragma(warning(push)) \
-                __pragma(warning(disable:4297)) \
-                throw; \
-                __pragma(warning(pop))
-        #elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
-            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT \
-                _Pragma("GCC diagnostic push") \
-                _Pragma("GCC diagnostic ignored \"-Wterminate\"") \
-                throw; \
-                _Pragma("GCC diagnostic pop")
-        #else
-            #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT throw;
-        #endif
-    }
+#ifdef _MSC_VER
+#define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT                                                     \
+    __pragma(warning(push)) __pragma(warning(disable : 4297)) throw;                               \
+    __pragma(warning(pop))
+#elif defined(__GNUG__) && __GNUG__ >= 6 && !defined(__clang__)
+#define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT                                                     \
+    _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wterminate\"") throw;        \
+    _Pragma("GCC diagnostic pop")
+#else
+#define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT throw;
+#endif
+    } // namespace detail
 
     /** \endcond */
 
@@ -424,19 +432,23 @@ namespace density
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
-            user_block = operator new (i_size);
+            user_block = operator new(i_size);
         }
         else
         {
             // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
-            size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-            size_t const actual_size = i_size + extra_size;
-            auto const complete_block = operator new (actual_size);
-            user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-            detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+            size_t const extra_size =
+              detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const actual_size  = i_size + extra_size;
+            auto const complete_block = operator new(actual_size);
+            user_block                = address_lower_align(
+              address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
+            detail::AlignmentHeader & header =
+              *(static_cast<detail::AlignmentHeader *>(user_block) - 1);
             header.m_block = complete_block;
-            DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
-                address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+            DENSITY_ASSERT_INTERNAL(
+              user_block >= complete_block &&
+              address_add(user_block, i_size) <= address_add(complete_block, actual_size));
         }
         return user_block;
     }
@@ -461,7 +473,8 @@ namespace density
 
 
         The content of the newly allocated block is undefined. */
-    inline void * try_aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
+    inline void * try_aligned_allocate(
+      size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
         DENSITY_ASSERT(i_alignment_offset <= i_size);
@@ -469,21 +482,25 @@ namespace density
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
-            user_block = operator new (i_size, std::nothrow);
+            user_block = operator new(i_size, std::nothrow);
         }
         else
         {
             // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
-            size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-            size_t const actual_size = i_size + extra_size;
-            auto const complete_block = operator new (actual_size, std::nothrow);
+            size_t const extra_size =
+              detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const actual_size  = i_size + extra_size;
+            auto const complete_block = operator new(actual_size, std::nothrow);
             if (complete_block != nullptr)
             {
-                user_block = address_lower_align(address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-                detail::AlignmentHeader & header = *(static_cast<detail::AlignmentHeader*>(user_block) - 1);
+                user_block = address_lower_align(
+                  address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
+                detail::AlignmentHeader & header =
+                  *(static_cast<detail::AlignmentHeader *>(user_block) - 1);
                 header.m_block = complete_block;
-                DENSITY_ASSERT_INTERNAL(user_block >= complete_block &&
-                    address_add(user_block, i_size) <= address_add(complete_block, actual_size));
+                DENSITY_ASSERT_INTERNAL(
+                  user_block >= complete_block &&
+                  address_add(user_block, i_size) <= address_add(complete_block, actual_size));
             }
             else
             {
@@ -509,32 +526,34 @@ namespace density
 
 
         If i_block is nullptr, the call has no effect. */
-    inline void aligned_deallocate(void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
+    inline void aligned_deallocate(
+      void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
         DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
 
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
-            #if __cplusplus >= 201402L
-                operator delete (i_block, i_size); // since C++14
-            #else
-                (void)i_size;
-                operator delete (i_block);
-            #endif
+#if __cplusplus >= 201402L
+            operator delete(i_block, i_size); // since C++14
+#else
+            (void)i_size;
+            operator delete(i_block);
+#endif
         }
         else
         {
-            if(i_block != nullptr)
+            if (i_block != nullptr)
             {
-                const auto & header = *( static_cast<detail::AlignmentHeader*>(i_block) - 1 );
-                #if __cplusplus >= 201402L // since C++14
-                    size_t const extra_size = detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-                    size_t const actual_size = i_size + extra_size;
-                    operator delete (header.m_block, actual_size);
-                #else
-                    (void)i_size;
-                    operator delete (header.m_block);
-                #endif
+                const auto & header = *(static_cast<detail::AlignmentHeader *>(i_block) - 1);
+#if __cplusplus >= 201402L // since C++14
+                size_t const extra_size =
+                  detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+                size_t const actual_size = i_size + extra_size;
+                             operator delete(header.m_block, actual_size);
+#else
+                (void)i_size;
+                operator delete(header.m_block);
+#endif
             }
         }
     }
@@ -574,13 +593,13 @@ reallocate or deallocate only the most recently allocated living block. A violat
 The data stack is actually composed by a set of memory pages and an internal thread-local pointer (the top of the stack).
 The underlying algorithm is very simple: allocations just add the requested size to the top pointer, and deallocations set the top
 pointer to the block to deallocate. In case of page switch, the execution jumps to a non-inlined slow path.
-The data stack has constant initialization, so it doesn't slow down thread creation or require dynamic any initialization guard 
+The data stack has constant initialization, so it doesn't slow down thread creation or require dynamic any initialization guard
 by the compiler on access. The first time a thread uses the data stack it allocates the first memory page.
 
 The data stack can be accessed only indirectly, with [lifo_array](\ref density::lifo_array) and [lifo_buffer](\ref density::lifo_buffer).
 
 <code>%lifo_array</code> is the easiest and safest way of using the data-stack. A <code>%lifo_array</code> is very
-similar to a raw array, but its size is not a compile time constant. The elements are allocated on the data-stack, rather than on the 
+similar to a raw array, but its size is not a compile time constant. The elements are allocated on the data-stack, rather than on the
 call-stack, so there is no risk of stack overflow. In case of out of system memory, a <code>std::bad_alloc</code> is thrown.
 
 \snippet lifo_examples.cpp lifo_array example 1
@@ -596,7 +615,7 @@ are constructed. Anyway this may be dangerous, so it's not recommended.
 \snippet lifo_examples.cpp lifo_array example 4
 
 Just like built-in arrays and <code>std::array</code>, <code>%lifo_array</code> does not initialize elements if they have
-[POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c), unless an explicit initialization value is provided to the constructor. 
+[POD type](https://stackoverflow.com/questions/146452/what-are-pod-types-in-c), unless an explicit initialization value is provided to the constructor.
 This is a big difference with <code>std::vector</code>.
 
 A <code>lifo_buffer</code> allocates on the data stack an untyped raw memory block with dynamic size. Unlike <code>%lifo_array</code> it supports
@@ -659,7 +678,7 @@ Consume operations have the `start_*` variant in heterogeneous queues (but not i
 Reentrancy
 ----------
 During a put or a consume operation an heterogeneous or function queue is not in a consistent state *for the caller thread*. So accessing the queue in any way,
-in the between of a start_* function and the cancel/commit, causes undefined behavior. 
+in the between of a start_* function and the cancel/commit, causes undefined behavior.
 Anyway, especially for consumers, reentrancy is sometimes necessary: a callable object, during the invocation, may need to push another callable object to the same queue.
 For every put or consume function, in every queue, there is a reentrant variant.
 
@@ -699,13 +718,13 @@ For all queues, the functions `try_consume` and `try_reentrant_consume` have 2 v
 - one returning a consume operation. If the queue was empty, an empty consume is returned.
 - one taking a reference to a consume as parameter and returning a boolean, raccomanded if a thread performs many consecutive consumes.
 
-There is no functional difference between the two consumes. Anyway, currently only for lock-free and spin-locking queues supporting multi-producers, 
+There is no functional difference between the two consumes. Anyway, currently only for lock-free and spin-locking queues supporting multi-producers,
 the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer
 is reading it.
 When a consumer needs to access a page, it increments a ref-count in the page (it *pins* the page), to notify to the allocator that it is using it.
-When it has finished, the consumer decrements the ref-count (it *unpins* the page). If a thread performs many consecutive consumes, it will ends up 
-doing many atomic increments and decrements of the same page (which is a somewhat expensive operation). Since the pin\unpin logic is encapsulated in 
-the <code>consume_operation</code>, if the consumer thread keeps the <code>consume_operation</code> alive, pinning and unpinning will be performed only in case of 
+When it has finished, the consumer decrements the ref-count (it *unpins* the page). If a thread performs many consecutive consumes, it will ends up
+doing many atomic increments and decrements of the same page (which is a somewhat expensive operation). Since the pin\unpin logic is encapsulated in
+the <code>consume_operation</code>, if the consumer thread keeps the <code>consume_operation</code> alive, pinning and unpinning will be performed only in case of
 page switch.
 Note: a forgotten <code>consume_operation</code> which has pinned a page prevents the page from being recycled by the page allocator, even if it was
 deallocated by another consumer.
@@ -819,7 +838,7 @@ Benchmarks
         The test program supports the following command-line parameters:
 
             - rand_seed:<32-bit unsigned integer> - default is zero. Seed used to initialize the main random generator.
-                If it is zero the random generator is initialized with <code>std::ranom_device</code>. In multi-thread test 
+                If it is zero the random generator is initialized with <code>std::ranom_device</code>. In multi-thread test
                 the random generator for the spawned threads is forked from the main one.
 
             - exceptions:<0 or 1> - default is 1. If non-zero enables the testing of exceptional execution paths. This is
@@ -828,9 +847,9 @@ Benchmarks
 
             - spare_one_cpu:<0 or 1> - default is 1. If non-zero in multi-thread tests the second logical processor is not used.
 
-            - print_progress:<0 or 1> - default is 1. If non-zero shows a percentage of the progress during queue test 
+            - print_progress:<0 or 1> - default is 1. If non-zero shows a percentage of the progress during queue test
 
-            - test_allocators:<0 or 1> - default is 1. If non-zero enables special allocators that detect bugs in the memory 
+            - test_allocators:<0 or 1> - default is 1. If non-zero enables special allocators that detect bugs in the memory
                 management. The tests with the normal allocators are executed in any case.
 
             - queue_tests_cardinality:<size_t> - default is 2000. Number of elements to push in every queue tests. In multi-thread

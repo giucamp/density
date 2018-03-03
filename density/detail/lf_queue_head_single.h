@@ -29,11 +29,16 @@ namespace density
           protected:
             using ControlBlock = typename Base::ControlBlock;
 
-            LFQueue_Head() noexcept {}
+            constexpr LFQueue_Head() noexcept {}
 
-            LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept : Base(std::move(i_allocator)) {}
+            constexpr LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept
+                : Base(std::move(i_allocator))
+            {
+            }
 
-            LFQueue_Head(const ALLOCATOR_TYPE & i_allocator) : Base(i_allocator) {}
+            constexpr LFQueue_Head(const ALLOCATOR_TYPE & i_allocator) noexcept : Base(i_allocator)
+            {
+            }
 
             LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head() { swap(i_source); }
 
@@ -112,6 +117,12 @@ namespace density
                         }
                     }
                     m_queue = i_queue;
+                    return true;
+                }
+
+                bool begin_iteration(LFQueue_Head * i_queue) noexcept
+                {
+                    assign_queue(i_queue);
                     return true;
                 }
 

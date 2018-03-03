@@ -58,13 +58,8 @@ namespace density
               RUNTIME_TYPE,
               ALLOCATOR_TYPE,
               SpQueue_TailMultiple<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC>>;
-            using Base::cancel_put_impl;
-            using Base::cancel_put_nodestroy_impl;
-            using Base::commit_put_impl;
-            using Base::external_allocate;
-            using Base::get_element;
+
             using Base::get_end_control_block;
-            using Base::get_unaligned_element;
             using Base::min_alignment;
             using Base::s_alloc_granularity;
             using Base::s_element_min_offset;
@@ -72,9 +67,6 @@ namespace density
             using Base::s_invalid_control_block;
             using Base::s_max_size_inpage;
             using Base::s_rawblock_min_offset;
-            using Base::s_type_offset;
-            using Base::same_page;
-            using Base::type_after_control;
             using typename Base::Allocation;
             using typename Base::ControlBlock;
 
