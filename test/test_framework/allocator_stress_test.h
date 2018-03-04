@@ -21,9 +21,11 @@ namespace density_tests
             std::chrono::microseconds m_allocation_timeout = std::chrono::microseconds(1000);
             uintptr_t                 m_max_memory_per_cpu = 1024 * 1024 * 4;
             uint64_t                  m_num_processors     = std::numeric_limits<uint64_t>::max();
+
+            config() noexcept {}
         };
 
-        allocator_stress_test(config i_config = config{});
+        allocator_stress_test(config i_config = config());
         ~allocator_stress_test();
 
         allocator_stress_test(const allocator_stress_test &) = delete;

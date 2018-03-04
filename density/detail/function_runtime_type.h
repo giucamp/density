@@ -7,6 +7,7 @@
 #pragma once
 #include <density/density_common.h>
 #include <type_traits>
+#include <functional>
 
 namespace density
 {
