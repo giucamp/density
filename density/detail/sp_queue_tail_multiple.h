@@ -95,35 +95,36 @@ namespace density
             {
             }
 
-            SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator)
+            SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator) noexcept
                 : Base(i_allocator), m_tail(invalid_control_block()), m_initial_page(nullptr)
             {
             }
 
             SpQueue_TailMultiple(SpQueue_TailMultiple && i_source) noexcept : SpQueue_TailMultiple()
             {
-                swap(i_source);
+                swap(*this, i_source);
             }
 
             SpQueue_TailMultiple & operator=(SpQueue_TailMultiple && i_source) noexcept
             {
-                SpQueue_TailMultiple::swap(i_source);
+                swap(*this, i_source);
                 return *this;
             }
 
-            void swap(SpQueue_TailMultiple & i_other) noexcept
+            // this function is not required to be threadsafe
+            friend void
+              swap(SpQueue_TailMultiple & i_first, SpQueue_TailMultiple & i_second) noexcept
             {
-                // swap the allocator
-                using std::swap;
-                swap(static_cast<ALLOCATOR_TYPE &>(*this), static_cast<ALLOCATOR_TYPE &>(i_other));
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap m_tail
-                swap(m_tail, i_other.m_tail);
+                std::swap(i_first.m_tail, i_second.m_tail);
 
                 // swap m_initial_page
-                auto const tmp1 = i_other.m_initial_page.load();
-                i_other.m_initial_page.store(m_initial_page.load());
-                m_initial_page.store(tmp1);
+                auto const tmp1 = i_second.m_initial_page.load();
+                i_second.m_initial_page.store(i_first.m_initial_page.load());
+                i_first.m_initial_page.store(tmp1);
             }
 
             ~SpQueue_TailMultiple()

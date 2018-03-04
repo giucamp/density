@@ -40,22 +40,27 @@ namespace density
             {
             }
 
-            LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head() { swap(i_source); }
+            LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head()
+            {
+                swap(*this, i_source);
+            }
 
             LFQueue_Head & operator=(LFQueue_Head && i_source) noexcept
             {
-                swap(i_source);
+                swap(*this, i_source);
                 return *this;
             }
 
-            void swap(LFQueue_Head & i_other) noexcept
+            // this function is not required to be threadsafe
+            friend void swap(LFQueue_Head & i_first, LFQueue_Head & i_second) noexcept
             {
-                Base::swap(i_other);
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap the head
-                auto const tmp = i_other.m_head.load();
-                i_other.m_head.store(m_head.load());
-                m_head.store(tmp);
+                auto const tmp = i_second.m_head.load();
+                i_second.m_head.store(i_first.m_head.load());
+                i_first.m_head.store(tmp);
             }
 
             struct Consume
@@ -64,11 +69,9 @@ namespace density
                   nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
                 ControlBlock * m_control =
                   nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
-
-              private:
                 uintptr_t m_next_ptr =
                   0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and only if m_next_ptr == 0 */
-              public:
+
                 Consume() noexcept = default;
 
                 Consume(const Consume &) = delete;
@@ -147,14 +150,6 @@ namespace density
                     m_control  = static_cast<ControlBlock *>(head);
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
                     return true;
-                }
-
-                /** Attaches this Consume to a queue, pinning the head. The previously pinned page is unpinned.
-                    @return true if a page was pinned, false if the queue is virgin. */
-                bool assign_queue(LFQueue_Head * i_queue) noexcept
-                {
-                    begin_iteration(i_queue);
-                    return !empty();
                 }
 
                 bool is_queue_empty(const LFQueue_Head * i_queue) noexcept

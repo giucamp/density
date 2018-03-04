@@ -40,20 +40,25 @@ namespace density
             {
             }
 
-            LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head() { swap(i_source); }
+            LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head()
+            {
+                swap(*this, i_source);
+            }
 
             LFQueue_Head & operator=(LFQueue_Head && i_source) noexcept
             {
-                swap(i_source);
+                swap(*this, i_source);
                 return *this;
             }
 
-            void swap(LFQueue_Head & i_other) noexcept
+            // this function is not required to be threadsafe
+            friend void swap(LFQueue_Head & i_first, LFQueue_Head & i_second) noexcept
             {
-                Base::swap(i_other);
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap the head
-                std::swap(m_head, i_other.m_head);
+                std::swap(i_first.m_head, i_second.m_head);
             }
 
             struct Consume

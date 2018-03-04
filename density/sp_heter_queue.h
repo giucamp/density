@@ -293,7 +293,7 @@ namespace density
                 This constructor does not allocate memory and never throws.
 
         \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue default_construct example 1 */
-        sp_heter_queue() noexcept = default;
+        constexpr sp_heter_queue() noexcept = default;
 
         /** Constructor with allocator parameter. The allocator is copy-constructed.
             @param i_source_allocator source used to copy-construct the allocator.
@@ -305,8 +305,7 @@ namespace density
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 1 */
-        sp_heter_queue(const ALLOCATOR_TYPE & i_source_allocator) noexcept(
-          std::is_nothrow_copy_constructible<ALLOCATOR_TYPE>::value)
+        constexpr explicit sp_heter_queue(const ALLOCATOR_TYPE & i_source_allocator) noexcept
             : Base(i_source_allocator)
         {
         }
@@ -321,7 +320,7 @@ namespace density
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
         \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 1 */
-        sp_heter_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
+        constexpr explicit sp_heter_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
             : Base(std::move(i_source_allocator))
         {
             static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
@@ -352,7 +351,7 @@ namespace density
         \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue move_assign example 1 */
         sp_heter_queue & operator=(sp_heter_queue && i_source) noexcept
         {
-            Base::swap(i_source);
+            swap(*this, i_source);
             return *this;
         }
 
@@ -380,7 +379,7 @@ namespace density
         \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue swap example 1 */
         friend void swap(sp_heter_queue & i_first, sp_heter_queue & i_second) noexcept
         {
-            i_first.Base::swap(i_second);
+            swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
         }
 
         /** Destructor.

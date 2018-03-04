@@ -73,41 +73,32 @@ namespace density
             {
             }
 
-            LFQueue_Tail(LFQueue_Tail && i_source) noexcept(
-              std::is_nothrow_default_constructible<
-                Base>::value) // this matches the the default ctor
-                : LFQueue_Tail()
+            LFQueue_Tail(LFQueue_Tail && i_source) noexcept : LFQueue_Tail()
             {
-                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
-                swap(i_source);
+                swap(*this, i_source);
             }
 
             LFQueue_Tail & operator=(LFQueue_Tail && i_source) noexcept
             {
-                static_assert(noexcept(swap(i_source)), "swap must be noexcept");
-                LFQueue_Tail::swap(i_source);
+                LFQueue_Tail::swap(*this, i_source);
                 return *this;
             }
 
-            void swap(LFQueue_Tail & i_other) noexcept
+            // this function is not required to be threadsafe
+            friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
-                // swap the allocator
-                using std::swap;
-                static_assert(
-                  noexcept(swap(
-                    static_cast<ALLOCATOR_TYPE &>(*this), static_cast<ALLOCATOR_TYPE &>(i_other))),
-                  "swap must be noexcept");
-                swap(static_cast<ALLOCATOR_TYPE &>(*this), static_cast<ALLOCATOR_TYPE &>(i_other));
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap m_tail
-                auto const tmp = i_other.m_tail.load();
-                i_other.m_tail.store(m_tail.load());
-                m_tail.store(tmp);
+                auto const tmp = i_second.m_tail.load();
+                i_second.m_tail.store(i_first.m_tail.load());
+                i_first.m_tail.store(tmp);
 
                 // swap m_initial_page
-                auto const tmp1 = i_other.m_initial_page.load();
-                i_other.m_initial_page.store(m_initial_page.load());
-                m_initial_page.store(tmp1);
+                auto const tmp1 = i_second.m_initial_page.load();
+                i_second.m_initial_page.store(i_first.m_initial_page.load());
+                i_first.m_initial_page.store(tmp1);
             }
 
             ~LFQueue_Tail()
@@ -315,7 +306,7 @@ namespace density
 
                     // try pin
                     PinGuard<ALLOCATOR_TYPE, progress_lock_free> end_block(this);
-                    auto const pin_result = end_block.pin_new(i_end_control);
+                    auto const pin_result = end_block.pin(i_end_control);
                     if (pin_result == PinFailed) // the pinning can fail only in wait-freedom
                     {
                         return 0;

@@ -17,7 +17,7 @@ namespace density
            block, and a pointer to the user element. */
         template <typename COMMON_TYPE> struct LfQueueControl
         {
-            atomic_uintptr_t m_next; /*< pointer to the next control block, bitwise-or-ed
+            atomic_uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
               with some flags (see LfQueue_State). LfQueueControl's are aligned so that
               the first 3 bits of the address are zeroes.
               The end of a queue is indicated by a m_next set to zero or to LfQueue_InvalidNextPage. */
@@ -82,6 +82,8 @@ namespace density
                                                                  : progress_wait_free);
         }
 
+        /** \internal Common base for all lock-free and spin-locking queues.
+            This class (and all the derived) is move-only. */
         template <
           typename COMMON_TYPE,
           typename RUNTIME_TYPE,
@@ -176,6 +178,9 @@ namespace density
               std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value)
                 : ALLOCATOR_TYPE()
             {
+                static_assert(
+                  noexcept(ALLOCATOR_TYPE()),
+                  "ALLOCATOR_TYPE must be nothrow default constructible");
             }
 
             constexpr LFQueue_Base(ALLOCATOR_TYPE && i_allocator) noexcept
@@ -192,6 +197,24 @@ namespace density
                 static_assert(
                   noexcept(ALLOCATOR_TYPE(i_allocator)),
                   "ALLOCATOR_TYPE must be nothrow copy constructible");
+            }
+
+            LFQueue_Base & operator=(LFQueue_Base && i_source) noexcept = default;
+
+            LFQueue_Base & operator=(const LFQueue_Base & i_source) = delete;
+
+            // this function is not required to be threadsafe
+            friend void swap(LFQueue_Base & i_first, LFQueue_Base & i_second) noexcept
+            {
+                // swap the allocator
+                using std::swap;
+                static_assert(
+                  noexcept(swap(
+                    static_cast<ALLOCATOR_TYPE &>(i_first),
+                    static_cast<ALLOCATOR_TYPE &>(i_second))),
+                  "the allocator must be nowthrow swappable");
+                swap(
+                  static_cast<ALLOCATOR_TYPE &>(i_first), static_cast<ALLOCATOR_TYPE &>(i_second));
             }
 
             /** Returns whether the input addresses belong to the same page or they are
@@ -306,7 +329,7 @@ namespace density
             }
 
             /** Overload of inplace_allocate that can be used when all parameters are
-             * compile time constants */
+                compile time constants */
             template <uintptr_t CONTROL_BITS, bool INCLUDE_TYPE, size_t SIZE, size_t ALIGNMENT>
             Allocation try_inplace_allocate(progress_guarantee i_progress_guarantee) noexcept
             {
@@ -493,14 +516,17 @@ namespace density
           typename QUEUE_TAIL>
         class LFQueue_Head;
 
+        /** \internal Result of a scoped pin operation */
         enum PinResult
         {
-            PinSuccessfull,
-            AlreadyPinned,
-            PinFailed
+            PinSuccessfull, /**< the page was succesfully pinned */
+            AlreadyPinned, /**< the caller has already pinned the page, so no pinning was necessary */
+            PinFailed      /**< a wait-free pin request has failed */
         };
 
-        /** \internal Utility that provides RAII pinning\unpinning of a memory page */
+        /** \internal Utility that provides RAII pinning\unpinning of a memory page. If the 
+            progress guranteee is progress_wait_free, the pin function may fail (and return 
+            PinFailed) in case of contention. */
         template <typename ALLOCATOR_TYPE, progress_guarantee PROGRESS_GUARANTEE> class PinGuard
         {
           private:
@@ -513,41 +539,39 @@ namespace density
             PinGuard(const PinGuard &) = delete;
             PinGuard & operator=(const PinGuard &) = delete;
 
-            /** Trie to pin the page containing the provided addresss */
-            PinResult pin_new(void * i_address) noexcept
+            /** Tries to pin the page containing the provided addresss */
+            PinResult pin(void * i_address) noexcept
             {
                 auto const page = address_lower_align(i_address, ALLOCATOR_TYPE::page_alignment);
-                if (page != m_pinned_page)
-                {
-                    if (ConstConditional(PROGRESS_GUARANTEE == progress_wait_free))
-                    {
-                        if (page != nullptr)
-                        {
-                            if (!m_allocator->try_pin_page(progress_wait_free, page))
-                                return PinFailed;
-                        }
-                        if (m_pinned_page != nullptr)
-                            m_allocator->unpin_page(progress_wait_free, m_pinned_page);
-                    }
-                    else
-                    {
-                        if (page != nullptr)
-                            m_allocator->pin_page(page);
-                        if (m_pinned_page != nullptr)
-                            m_allocator->unpin_page(m_pinned_page);
-                    }
-                    m_pinned_page = page;
-                    return PinSuccessfull;
-                }
-                else
+                if (page == m_pinned_page)
                 {
                     return AlreadyPinned;
                 }
+                if (ConstConditional(PROGRESS_GUARANTEE == progress_wait_free))
+                {
+                    if (page != nullptr)
+                    {
+                        if (!m_allocator->try_pin_page(progress_wait_free, page))
+                            return PinFailed;
+                    }
+                    if (m_pinned_page != nullptr)
+                        m_allocator->unpin_page(progress_wait_free, m_pinned_page);
+                }
+                else
+                {
+                    if (page != nullptr)
+                        m_allocator->pin_page(page);
+                    if (m_pinned_page != nullptr)
+                        m_allocator->unpin_page(m_pinned_page);
+                }
+                m_pinned_page = page;
+                return PinSuccessfull;
             }
 
-            PinResult pin_new(uintptr_t i_address) noexcept
+            /** Tries to pin the page containing the provided uint addresss */
+            PinResult pin(uintptr_t i_address) noexcept
             {
-                return pin_new(reinterpret_cast<void *>(i_address));
+                return pin(reinterpret_cast<void *>(i_address));
             }
 
             ~PinGuard()

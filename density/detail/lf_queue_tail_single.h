@@ -80,38 +80,32 @@ namespace density
             {
             }
 
-            LFQueue_Tail(LFQueue_Tail && i_source) noexcept(
-              std::is_nothrow_default_constructible<
-                Base>::value) // this matches the the default ctor
-                : LFQueue_Tail()
+            // move constructor
+            LFQueue_Tail(LFQueue_Tail && i_source) noexcept : LFQueue_Tail()
             {
-                swap(i_source);
+                swap(*this, i_source);
             }
 
+            // move assignment
             LFQueue_Tail & operator=(LFQueue_Tail && i_source) noexcept
             {
-                swap(i_source);
+                swap(*this, i_source);
                 return *this;
             }
 
             // this function is not required to be threadsafe
-            void swap(LFQueue_Tail & i_other) noexcept
+            friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
-                // swap the allocator
-                using std::swap;
-                static_assert(
-                  noexcept(swap(
-                    static_cast<ALLOCATOR_TYPE &>(*this), static_cast<ALLOCATOR_TYPE &>(i_other))),
-                  "swap must be noexcept");
-                swap(static_cast<ALLOCATOR_TYPE &>(*this), static_cast<ALLOCATOR_TYPE &>(i_other));
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap m_tail
-                swap(m_tail, i_other.m_tail);
+                std::swap(i_first.m_tail, i_second.m_tail);
 
                 // swap m_initial_page
-                auto const tmp1 = i_other.m_initial_page.load();
-                i_other.m_initial_page.store(m_initial_page.load());
-                m_initial_page.store(tmp1);
+                auto const tmp1 = i_second.m_initial_page.load();
+                i_second.m_initial_page.store(i_first.m_initial_page.load());
+                i_first.m_initial_page.store(tmp1);
             }
 
             ~LFQueue_Tail()
@@ -247,7 +241,7 @@ namespace density
                   CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
             }
 
-            /** This function is used by the consume layer to initialize the head on the first allocated page*/
+            /** This function is used by the consume layer to initialize the head on the first allocated page */
             ControlBlock * get_initial_page() const noexcept { return m_initial_page.load(); }
 
           private:
