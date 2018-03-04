@@ -176,9 +176,9 @@ namespace density
                           uintptr_t(0),
                           mem_relaxed);
                         /* to investigate: this may probably be a non-atomic operation, because consumers can only
-                                read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
-                                has reported it has a data race. Furthermore atomicity in this case should have no 
-                                consequences on the generated code. */
+                            read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
+                            has reported it has a data race. Furthermore atomicity in this case should have no 
+                            consequences on the generated code. */
 
                         /* setup the new control block. Here we use release ordering so that consumers
                             acquiring this control block can see the previous write. */
@@ -233,12 +233,99 @@ namespace density
               size_t                    ALIGNMENT>
             Allocation try_inplace_allocate_impl() noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
-                static_assert(
-                  (CONTROL_BITS & ~(LfQueue_Busy | LfQueue_Dead | LfQueue_External)) == 0, "");
-                static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
+                auto guarantee =
+                  PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(
-                  CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
+                static_assert(
+                  (CONTROL_BITS & ~(LfQueue_Dead | LfQueue_External | LfQueue_Busy)) == 0,
+                  "internal error");
+                static_assert(
+                  is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "internal error");
+
+                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
+                constexpr auto size      = uint_upper_align(SIZE, alignment);
+                constexpr auto can_fit_in_a_page =
+                  size + (alignment - min_alignment) <= s_max_size_inpage;
+                constexpr auto over_aligned = alignment > min_alignment;
+
+                for (;;)
+                {
+                    DENSITY_ASSERT_INTERNAL(
+                      m_tail != 0 && uint_is_aligned(m_tail, s_alloc_granularity));
+
+                    // allocate space for the control block (and possibly the runtime type)
+                    auto new_tail =
+                      m_tail + (INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
+
+                    // allocate the user space
+                    if (over_aligned)
+                        new_tail = uint_upper_align(new_tail, alignment);
+                    DENSITY_ASSERT_UINT_ALIGNED(new_tail, alignment);
+                    auto const user_storage = reinterpret_cast<void *>(new_tail);
+                    new_tail = uint_upper_align(new_tail + size, s_alloc_granularity);
+
+                    // check for page overflow
+                    auto const page_start =
+                      uint_lower_align(m_tail, ALLOCATOR_TYPE::page_alignment);
+                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    auto const new_tail_offset = new_tail - page_start;
+#ifdef DENSITY_LOCKFREE_DEBUG
+                    if (m_tail == page_start && new_tail_offset <= s_end_control_offset)
+#else
+                    if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
+#endif
+                    {
+                        /* null-terminate the next control-block before updating the new one, to prevent
+                        consumers from reaching an unitialized area. No memory ordering is required here */
+                        raw_atomic_store(
+                          &reinterpret_cast<ControlBlock *>(new_tail)->m_next,
+                          uintptr_t(0),
+                          mem_relaxed);
+                        /* to investigate: this may probably be a non-atomic operation, because consumers can only
+                            read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
+                            has reported it has a data race. Furthermore atomicity in this case should have no
+                            consequences on the generated code. */
+
+                        /* setup the new control block. Here we use release ordering so that consumers
+                            acquiring this control block can see the previous write. */
+                        auto const new_block = reinterpret_cast<ControlBlock *>(m_tail);
+                        auto const next_ptr  = new_tail + CONTROL_BITS;
+                        DENSITY_ASSERT_INTERNAL(
+                          raw_atomic_load(&new_block->m_next, mem_relaxed) == 0);
+                        raw_atomic_store(&new_block->m_next, next_ptr, mem_release);
+
+                        // commit the allocation
+                        m_tail = new_tail;
+                        return {new_block, next_ptr, user_storage};
+                    }
+                    else if (can_fit_in_a_page) // if this allocation may fit in a page
+                    {
+                        /* allocate another page. Note: on success page_overflow sets m_tail to the beginning of
+                            the new page */
+                        auto const result = page_overflow(PROGRESS_GUARANTEE);
+                        if (guarantee != LfQueue_Throwing)
+                        {
+                            if (result == 0)
+                            {
+                                return Allocation{};
+                            }
+                        }
+                        else
+                        {
+                            // with LfQueue_Throwing page_overflow throws on failure
+                            DENSITY_ASSERT_INTERNAL(result != 0);
+                        }
+                    }
+                    else // this allocation would never fit in a page, allocate an external block
+                    {
+                        // legacy heap allocations can only be blocking
+                        if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
+                            return Allocation{};
+
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(
+                          CONTROL_BITS, size, alignment);
+                    }
+                }
             }
 
             /** This function is used by the consume layer to initialize the head on the first allocated page */
@@ -270,11 +357,14 @@ namespace density
 
                 if (m_tail == s_invalid_control_block)
                 {
+                    /* virgin queue: this happens only once in the entire lifetime of the queue */
                     DENSITY_ASSERT_INTERNAL(m_initial_page.load() == nullptr);
                     m_initial_page.store(new_page, mem_release);
                 }
                 else
                 {
+                    /* Setup a dead block with the pointer to the new page. Unlike the multiple-producer cases,
+                        this block is not allocated at a fixed position, and no padding dead blocks are necessary. */
                     auto const prev_block = reinterpret_cast<ControlBlock *>(m_tail);
                     DENSITY_ASSERT_INTERNAL(
                       m_tail + sizeof(ControlBlock) <=
@@ -286,6 +376,7 @@ namespace density
                       mem_release);
                 }
 
+                // done
                 m_tail = reinterpret_cast<uintptr_t>(new_page);
                 return m_tail;
             }

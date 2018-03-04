@@ -469,7 +469,7 @@ namespace density
                 return m_put_transaction.element_ptr();
             }
 
-/** Returns a reference to the element being added. This function can be used to modify the element
+            /** Returns a reference to the element being added. This function can be used to modify the element
                     before calling the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     put_transaction. The element is constructed at the begin of the transaction, so the
@@ -483,10 +483,10 @@ namespace density
 
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
-            template <typename EL = ELEMENT_COMPLETE_TYPE>
-            typename std::enable_if<
-              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
-              EL>::type &
+            template <
+              typename EL                                               = ELEMENT_COMPLETE_TYPE,
+              typename std::enable_if<!std::is_void<EL>::value>::type * = nullptr>
+            EL &
 #else
             ELEMENT_COMPLETE_TYPE &
 #endif
@@ -1335,7 +1335,7 @@ namespace density
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue reentrant_put_transaction element_ptr example 2 */
             common_type * element_ptr() const noexcept { return m_put_transaction.element_ptr(); }
 
-/** Returns a reference to the element being added. This function can be used to modify the element
+            /** Returns a reference to the element being added. This function can be used to modify the element
                     before calling the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     reentrant_put_transaction. The element is constructed at the begin of the transaction, so the
@@ -1349,10 +1349,10 @@ namespace density
 
             \snippet concurrent_heterogeneous_queue_examples.cpp conc_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
-            template <typename EL = ELEMENT_COMPLETE_TYPE>
-            typename std::enable_if<
-              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
-              EL>::type &
+            template <
+              typename EL                                               = ELEMENT_COMPLETE_TYPE,
+              typename std::enable_if<!std::is_void<EL>::value>::type * = nullptr>
+            EL &
 #else
             ELEMENT_COMPLETE_TYPE &
 #endif

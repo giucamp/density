@@ -61,6 +61,7 @@ add_executable(density_test
 	test_framework/test_allocators.cpp
 	test_framework/test_objects.cpp
 	test_framework/threading_extensions.cpp
+	test_framework/allocator_stress_test.cpp
     test_settings.cpp
 	main.cpp )
 

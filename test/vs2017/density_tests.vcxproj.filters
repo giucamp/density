@@ -102,6 +102,9 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\test_settings.cpp" />
+    <ClCompile Include="..\test_framework\allocator_stress_test.cpp">
+      <Filter>test_framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">
@@ -120,9 +123,6 @@
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\runtime_type.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\void_allocator.h">
       <Filter>density</Filter>
     </ClInclude>
     <ClInclude Include="..\..\density\detail\system_page_manager.h">
@@ -212,9 +212,6 @@
     <ClInclude Include="..\..\density\detail\page_allocator.h">
       <Filter>density\detail</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_common.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\density\sp_heter_queue.h">
       <Filter>density</Filter>
     </ClInclude>
@@ -235,6 +232,15 @@
     </ClInclude>
     <ClInclude Include="..\test_settings.h" />
     <ClInclude Include="..\test_framework\statistics.h">
+      <Filter>test_framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\detail\lf_queue_base.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\density\default_allocator.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test_framework\allocator_stress_test.h">
       <Filter>test_framework</Filter>
     </ClInclude>
   </ItemGroup>

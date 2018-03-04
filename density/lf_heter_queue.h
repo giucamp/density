@@ -266,11 +266,9 @@ namespace density
 
         /** Default constructor. The allocator is default-constructed.
 
-            <b>Complexity</b>: constant.
             \n <b>Throws</b>: nothing.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
-                This constructor does not allocate memory and never throws.
+                - This constructor does not allocate memory.
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue default_construct example 1 */
         constexpr lf_heter_queue() noexcept = default;
@@ -278,11 +276,9 @@ namespace density
         /** Constructor with allocator parameter. The allocator is copy-constructed.
             @param i_source_allocator source used to copy-construct the allocator.
 
-            <b>Complexity</b>: constant.
-            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            \n <b>Throws</b>: nothing.
             \n <i>Implementation notes</i>:
-                This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
+                - This constructor does not allocate memory.
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue construct_copy_alloc example 1 */
         constexpr explicit lf_heter_queue(const ALLOCATOR_TYPE & i_source_allocator) noexcept
@@ -293,11 +289,9 @@ namespace density
         /** Constructor with allocator parameter. The allocator is move-constructed.
             @param i_source_allocator source used to move-construct the allocator.
 
-            <b>Complexity</b>: constant.
             \n <b>Throws</b>: nothing.
-            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
             \n <i>Implementation notes</i>:
-                This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
+                - This constructor does not allocate memory.
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue construct_move_alloc example 1 */
         constexpr explicit lf_heter_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
@@ -325,8 +319,7 @@ namespace density
             \n <b>Throws</b>: Nothing.
 
             \n <i>Implementation notes</i>:
-                - After the call the source is left empty.
-                - The complexity is linear in the number of elements in this queue.
+                - This function actually performs a swap
 
         \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue move_assign example 1 */
         lf_heter_queue & operator=(lf_heter_queue && i_source) noexcept
@@ -338,11 +331,7 @@ namespace density
         /** Returns a copy of the allocator
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue get_allocator example 1 */
-        allocator_type
-          get_allocator() noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
-        {
-            return *this;
-        }
+        allocator_type get_allocator() noexcept { return *this; }
 
         /** Returns a reference to the allocator
 
@@ -816,7 +805,7 @@ namespace density
                 return m_put.m_user_storage;
             }
 
-/** Returns a reference to the element being added. This function can be used to modify the element
+            /** Returns a reference to the element being added. This function can be used to modify the element
                     before the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     put_transaction. The element is constructed at the begin of the transaction, so the
@@ -830,10 +819,10 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
-            template <typename EL = ELEMENT_COMPLETE_TYPE>
-            typename std::enable_if<
-              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
-              EL>::type &
+            template <
+              typename EL                                               = ELEMENT_COMPLETE_TYPE,
+              typename std::enable_if<!std::is_void<EL>::value>::type * = nullptr>
+            EL &
 #else
             ELEMENT_COMPLETE_TYPE &
 #endif
@@ -2474,7 +2463,7 @@ namespace density
                 return m_put.m_user_storage;
             }
 
-/** Returns a reference to the element being added. This function can be used to modify the element
+            /** Returns a reference to the element being added. This function can be used to modify the element
                     before calling the commit.
                 \n <i>Note</i>: An element is observable in the queue only after commit has been called on the
                     reentrant_put_transaction. The element is constructed at the begin of the transaction, so the
@@ -2488,10 +2477,10 @@ namespace density
 
             \snippet lf_heterogeneous_queue_examples.cpp lf_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
-            template <typename EL = ELEMENT_COMPLETE_TYPE>
-            typename std::enable_if<
-              !std::is_void<EL>::value && std::is_same<EL, ELEMENT_COMPLETE_TYPE>::value,
-              EL>::type &
+            template <
+              typename EL                                               = ELEMENT_COMPLETE_TYPE,
+              typename std::enable_if<!std::is_void<EL>::value>::type * = nullptr>
+            EL &
 #else
             ELEMENT_COMPLETE_TYPE &
 #endif

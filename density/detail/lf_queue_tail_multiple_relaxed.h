@@ -137,6 +137,8 @@ namespace density
                     i_size      = uint_upper_align(i_size, min_alignment);
                 }
 
+                /* Operations on m_tail are mostly relaxed, because the ordering is done when accessing
+                    the member m_next of the control blocks. */
                 auto tail = m_tail.load(mem_relaxed);
                 for (;;)
                 {
@@ -234,12 +236,109 @@ namespace density
               size_t                    ALIGNMENT>
             Allocation try_inplace_allocate_impl() noexcept(PROGRESS_GUARANTEE != LfQueue_Throwing)
             {
-                static_assert(
-                  (CONTROL_BITS & ~(LfQueue_Busy | LfQueue_Dead | LfQueue_External)) == 0, "");
-                static_assert(is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "");
+                auto guarantee =
+                  PROGRESS_GUARANTEE; // used to avoid warnings about constant conditional expressions
 
-                return try_inplace_allocate_impl<PROGRESS_GUARANTEE>(
-                  CONTROL_BITS, INCLUDE_TYPE, SIZE, ALIGNMENT);
+                static_assert(
+                  (CONTROL_BITS & ~(LfQueue_Busy | LfQueue_Dead | LfQueue_External)) == 0,
+                  "internal error");
+                static_assert(
+                  is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "internal error");
+
+                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
+                constexpr auto size      = uint_upper_align(SIZE, alignment);
+                constexpr auto can_fit_in_a_page =
+                  size + (alignment - min_alignment) <= s_max_size_inpage;
+                constexpr auto over_aligned = alignment > min_alignment;
+
+                /* Operations on m_tail are mostly relaxed, because the ordering is done when accessing
+                the member m_next of the control blocks. */
+                auto tail = m_tail.load(mem_relaxed);
+                for (;;)
+                {
+                    DENSITY_ASSERT_INTERNAL(
+                      tail != 0 && uint_is_aligned(tail, s_alloc_granularity));
+
+                    // allocate space for the control block (and possibly the runtime type)
+                    auto new_tail =
+                      tail + (INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
+
+                    // allocate the user space
+                    if (over_aligned)
+                        new_tail = uint_upper_align(new_tail, alignment);
+                    DENSITY_ASSERT_UINT_ALIGNED(new_tail, alignment);
+                    auto const user_storage = reinterpret_cast<void *>(new_tail);
+                    new_tail = uint_upper_align(new_tail + SIZE, s_alloc_granularity);
+
+                    // check for page overflow
+                    auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
+                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    auto const new_tail_offset = new_tail - page_start;
+#ifdef DENSITY_LOCKFREE_DEBUG
+                    if (tail == page_start && new_tail_offset <= s_end_control_offset)
+#else
+                    if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
+#endif
+                    {
+                        /* No page overflow occurs with the new tail we have computed. */
+                        if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
+                        {
+                            /* At this point this thread has truncated the queue, because it has allocated
+                            an element, but the member m_next of its control point is still zeroed (the
+                            initial content of a newly allocated page).
+                            Other threads may still put elements, but they will be not visible to the consumers
+                            until the next store is completed. This is one of the reasons why this class
+                            is not sequential consistent.
+
+                            The next store is safe because the zeroed block is a barrier that consumers will
+                            not get over, so this page can't be deallocated. If this block does not have the
+                            dead 'flag', the access to this page is safe until the element is commited or canceled. */
+
+                            // initialize the control block
+                            auto const new_block = reinterpret_cast<ControlBlock *>(tail);
+                            DENSITY_ASSERT_INTERNAL(
+                              raw_atomic_load(&new_block->m_next, mem_relaxed) == 0);
+                            auto const next_ptr = new_tail + CONTROL_BITS;
+                            raw_atomic_store(&new_block->m_next, next_ptr, mem_relaxed);
+
+                            // succesfull
+                            DENSITY_ASSERT_INTERNAL(new_block < get_end_control_block(new_block));
+                            return {new_block, next_ptr, user_storage};
+                        }
+                        else
+                        {
+                            if (guarantee == LfQueue_WaitFree)
+                            {
+                                // don't retry
+                                return Allocation{};
+                            }
+                        }
+                    }
+                    else if (can_fit_in_a_page) // if this allocation may fit in a page
+                    {
+                        tail = page_overflow(guarantee, tail);
+                        if (guarantee != LfQueue_Throwing)
+                        {
+                            if (tail == 0)
+                            {
+                                return Allocation{};
+                            }
+                        }
+                        else
+                        {
+                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                        }
+                    }
+                    else // this allocation would never fit in a page, allocate an external block
+                    {
+                        // legacy heap allocations can only be blocking
+                        if (guarantee == LfQueue_LockFree || guarantee == LfQueue_WaitFree)
+                            return Allocation{};
+
+                        return Base::template external_allocate<PROGRESS_GUARANTEE>(
+                          CONTROL_BITS, SIZE, ALIGNMENT);
+                    }
+                }
             }
 
             /** This function is used by the consume layer to initialize the head on the first allocated page*/

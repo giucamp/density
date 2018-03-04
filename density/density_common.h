@@ -389,7 +389,8 @@ namespace density
         constexpr size_t MaxAlignment = alignof(std::max_align_t);
 #endif
 
-        // internal macro - rethrows disabling the warning "function assumed not to throw an exception but does"
+        /** internal macro - rethrows disabling the warning "function assumed not to throw an exception but does" 
+            This macro is used by functions conditionally noexcept that has to hook and passthrough exceptions. */
 #ifdef _MSC_VER
 #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT                                                     \
     __pragma(warning(push)) __pragma(warning(disable : 4297)) throw;                               \
