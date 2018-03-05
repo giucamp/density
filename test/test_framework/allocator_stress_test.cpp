@@ -7,11 +7,13 @@
 #include "allocator_stress_test.h"
 #include "density_test_common.h"
 #include "easy_random.h"
+#include "statistics.h"
 #include "threading_extensions.h"
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <density/default_allocator.h>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -134,6 +136,11 @@ namespace density_tests
 
             ~page_warehouse() { deallocation_loop(); }
 
+            uintptr_t allocated_memory() const noexcept
+            {
+                return m_allocated_pages.size() * density::default_allocator::page_size;
+            }
+
           private:
             std::vector<void *>   m_allocated_pages;
             size_t const          m_max_pages;
@@ -146,9 +153,12 @@ namespace density_tests
     {
         std::atomic<bool> m_should_exit{false};
 
-        struct ThreadData
+        struct alignas(density::destructive_interference_size) ThreadData
         {
             std::thread m_thread;
+            Statistics  m_used_memory;     // in megabytes
+            Statistics  m_inactivity_time; // in seconds
+            Statistics  m_activity_time;   // in seconds
         };
         config const            m_config;
         std::vector<ThreadData> m_thread_datas;
@@ -161,8 +171,9 @@ namespace density_tests
             m_thread_datas.resize(static_cast<size_t>(processor_count));
             for (uint64_t index = 0; index < processor_count; index++)
             {
-                auto & thread_data   = m_thread_datas[index];
-                thread_data.m_thread = std::thread(&Impl::run_busier, this, index);
+                auto & thread_data = m_thread_datas[index];
+                thread_data.m_thread =
+                  std::thread([this, index, &thread_data] { run(thread_data, index); });
             }
 
             m_started_threads.wait_to(processor_count);
@@ -170,11 +181,27 @@ namespace density_tests
 
         ~Impl()
         {
+            Statistics used_memory;
+            Statistics inactivity_time;
+            Statistics activity_time;
+
             m_should_exit.store(true);
             for (auto & thread : m_thread_datas)
             {
                 thread.m_thread.join();
+                used_memory.merge_with(thread.m_used_memory);
+                inactivity_time.merge_with(thread.m_inactivity_time);
+                activity_time.merge_with(thread.m_activity_time);
             }
+
+            std::cout << "\nstopped " << m_thread_datas.size() << " parallel allocator stresser";
+            std::cout << "\nused memory (Mb): ";
+            used_memory.to_stream_ex(std::cout);
+            std::cout << "\ninactivity time (secs): " << inactivity_time;
+            inactivity_time.to_stream_ex(std::cout);
+            std::cout << "\nactivity time (secs): " << activity_time;
+            activity_time.to_stream_ex(std::cout);
+            std::cout << std::endl;
         }
 
         static std::chrono::microseconds random_duration(
@@ -185,8 +212,7 @@ namespace density_tests
             return std::chrono::microseconds{
               i_rand.get_int<std::chrono::microseconds::rep>(i_min.count(), i_max.count())};
         }
-
-        void run_busier(uint64_t i_cpu_index)
+        void run(ThreadData & i_data, uint64_t i_cpu_index)
         {
             set_thread_affinity(uint64_t(1) << i_cpu_index);
             set_thread_priority(thread_priority::critical);
@@ -196,19 +222,43 @@ namespace density_tests
 
             m_started_threads.increment();
 
+            auto micro_to_seconds = [](std::chrono::microseconds i_microseconds) {
+                double const mult = 1. / (1000. * 1000.);
+                return static_cast<double>(i_microseconds.count()) * mult;
+            };
+
+            auto nano_to_seconds = [](std::chrono::nanoseconds i_nanoseconds) {
+                double const mult = 1. / (1000. * 1000. * 1000.);
+                return static_cast<double>(i_nanoseconds.count()) * mult;
+            };
+
             bool should_allocate = false;
             while (!m_should_exit.load())
             {
                 auto const wait_duration =
                   random_duration(rand, m_config.m_min_wait, m_config.m_max_wait);
 
+                i_data.m_inactivity_time.sample(micro_to_seconds(wait_duration));
+
                 std::this_thread::sleep_for(wait_duration);
+
+                auto const activity_start = std::chrono::steady_clock::now();
 
                 should_allocate = !should_allocate;
                 if (should_allocate)
+                {
                     warehouse.allocation_loop();
+                }
                 else
+                {
+                    double const bytes_to_mb = 1. / (1024. * 1024.);
+                    i_data.m_used_memory.sample(warehouse.allocated_memory() * bytes_to_mb);
                     warehouse.deallocation_loop();
+                }
+
+                auto const activity_duration = std::chrono::steady_clock::now() - activity_start;
+
+                i_data.m_activity_time.sample(nano_to_seconds(activity_duration));
             }
         }
     };
