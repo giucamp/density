@@ -5,6 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "allocator_stress_test.h"
+#include "aligned_containers.h"
 #include "density_test_common.h"
 #include "easy_random.h"
 #include "statistics.h"
@@ -160,9 +161,9 @@ namespace density_tests
             Statistics  m_inactivity_time; // in seconds
             Statistics  m_activity_time;   // in seconds
         };
-        config const            m_config;
-        std::vector<ThreadData> m_thread_datas;
-        wait_counter            m_started_threads;
+        config const               m_config;
+        aligned_vector<ThreadData> m_thread_datas;
+        wait_counter               m_started_threads;
 
         Impl(config i_config) : m_config(i_config)
         {
