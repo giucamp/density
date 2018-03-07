@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <iterator>
 #include <random>
+#include <functional>
 
 namespace density_tests
 {
