@@ -1,31 +1,29 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <ostream>
-#include <string>
-#include <vector>
+#include "density_test_common.h"
 #include <algorithm>
-#include <sstream>
-#include <iomanip>
 #include <cmath>
+#include <iomanip>
+#include <ostream>
+#include <sstream>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
-#include "density_test_common.h"
+#include <vector>
 
 namespace density_tests
 {
-    template <typename TYPE>
-        TYPE clamp(TYPE i_value, TYPE i_min, TYPE i_max)
+    template <typename TYPE> TYPE clamp(TYPE i_value, TYPE i_min, TYPE i_max)
     {
         return std::min(std::max(i_value, i_min), i_max);
     }
 
-    template <typename TYPE, bool ARITHMETIC = std::is_arithmetic<TYPE>::value>
-        class histogram;
+    template <typename TYPE, bool ARITHMETIC = std::is_arithmetic<TYPE>::value> class histogram;
 
     /** This class template allows to construct an histogram and write it in textual format to an std::ostream.
 
@@ -53,11 +51,9 @@ Throwing two dices 2000 times:         2|*                        |97.6
                                       12|                         |79.2
         \endcode
     */
-    template <typename TYPE>
-        class histogram<TYPE, true>
+    template <typename TYPE> class histogram<TYPE, true>
     {
-    public:
-
+      public:
         /** Constructor that may assign the title.
             Content may be appended to the title later using the function title. */
         histogram(const char * i_title = "", size_t i_row_length = 25, size_t i_row_count = 8)
@@ -70,14 +66,14 @@ Throwing two dices 2000 times:         2|*                        |97.6
         std::ostream & title() { return m_title; }
 
         /** Puts a single value on the histogram */
-        histogram & operator << (const TYPE & i_value)
+        histogram & operator<<(const TYPE & i_value)
         {
             m_values.push_back(i_value);
             return *this;
         }
 
         /** Puts a vector of values on the histogram */
-        histogram & operator << (const std::vector<TYPE> & i_values)
+        histogram & operator<<(const std::vector<TYPE> & i_values)
         {
             m_values.insert(m_values.end(), i_values.begin(), i_values.end());
             return *this;
@@ -99,7 +95,7 @@ Throwing two dices 2000 times:         2|*                        |97.6
             m_row_length = i_row_length;
         }
 
-        friend std::ostream & operator << (std::ostream & i_ostream, const histogram & i_histogram)
+        friend std::ostream & operator<<(std::ostream & i_ostream, const histogram & i_histogram)
         {
             i_histogram.write(i_ostream);
             return i_ostream;
@@ -110,7 +106,7 @@ Throwing two dices 2000 times:         2|*                        |97.6
             std::vector<double> rows(m_row_count);
 
             std::string histogram_str("  [histogram]");
-            auto title = m_title.str();
+            auto        title = m_title.str();
             if (title.length() > 0)
                 title += ':';
 
@@ -132,8 +128,8 @@ Throwing two dices 2000 times:         2|*                        |97.6
             else
             {
                 auto const minmax_its = std::minmax_element(m_values.begin(), m_values.end());
-                auto const min = *minmax_its.first;
-                auto const max = *minmax_its.second;
+                auto const min        = *minmax_its.first;
+                auto const max        = *minmax_its.second;
 
                 if (max - min < 0.0000001)
                 {
@@ -145,7 +141,8 @@ Throwing two dices 2000 times:         2|*                        |97.6
                 }
                 else
                 {
-                    auto const value_to_row_index_factor = static_cast<double>(m_row_count - 1) / (max - min);
+                    auto const value_to_row_index_factor =
+                      static_cast<double>(m_row_count - 1) / (max - min);
                     for (const auto & value : m_values)
                     {
                         if (value == min)
@@ -160,8 +157,10 @@ Throwing two dices 2000 times:         2|*                        |97.6
                         {
                             auto const row_index_float = (value - min) * value_to_row_index_factor;
                             auto const row_index_floor = floor(row_index_float);
-                            auto const row_index_fract = clamp(row_index_float - row_index_floor, 0., 1.);
-                            auto const index64 = clamp<int64_t>(static_cast<int64_t>(row_index_floor + 0.2), 0, m_row_count - 1);
+                            auto const row_index_fract =
+                              clamp(row_index_float - row_index_floor, 0., 1.);
+                            auto const index64 = clamp<int64_t>(
+                              static_cast<int64_t>(row_index_floor + 0.2), 0, m_row_count - 1);
                             auto const index = static_cast<size_t>(index64);
 
                             if (index < m_row_count - 1)
@@ -178,10 +177,11 @@ Throwing two dices 2000 times:         2|*                        |97.6
 
                     // write on the stream
                     std::string stars, padding;
-                    auto const minmax_rowlen_its = std::minmax_element(rows.begin(), rows.end());
-                    auto const min_row_len = *minmax_rowlen_its.first;
-                    auto const max_row_len = *minmax_rowlen_its.second;
-                    auto const row_to_value_factor = static_cast<double>(max - min) / (m_row_count - 1);
+                    auto const  minmax_rowlen_its = std::minmax_element(rows.begin(), rows.end());
+                    auto const  min_row_len       = *minmax_rowlen_its.first;
+                    auto const  max_row_len       = *minmax_rowlen_its.second;
+                    auto const  row_to_value_factor =
+                      static_cast<double>(max - min) / (m_row_count - 1);
 
                     for (size_t i = 0; i < rows.size(); i++)
                     {
@@ -201,9 +201,12 @@ Throwing two dices 2000 times:         2|*                        |97.6
                             row_value = static_cast<TYPE>(min + i * row_to_value_factor);
                         i_ostream << std::setw(10) << row_value << "|";
 
-                        double row_length_float = m_row_length * (rows[i] - min_row_len) / (max_row_len - min_row_len);
-                        auto row_length = clamp<int64_t>(static_cast<int64_t>(row_length_float + 0.5), 0,
-                            static_cast<int64_t>(m_row_length));
+                        double row_length_float =
+                          m_row_length * (rows[i] - min_row_len) / (max_row_len - min_row_len);
+                        auto row_length = clamp<int64_t>(
+                          static_cast<int64_t>(row_length_float + 0.5),
+                          0,
+                          static_cast<int64_t>(m_row_length));
 
                         stars.resize(static_cast<size_t>(row_length), '*');
                         i_ostream << stars;
@@ -215,22 +218,19 @@ Throwing two dices 2000 times:         2|*                        |97.6
             }
         }
 
-    private:
+      private:
         std::ostringstream m_title;
-        std::vector<TYPE> m_values;
-        size_t m_row_count = 8;
-        size_t m_row_length = 10;
+        std::vector<TYPE>  m_values;
+        size_t             m_row_count  = 8;
+        size_t             m_row_length = 10;
     };
 
-    template <typename TYPE>
-        class histogram<TYPE, false>
+    template <typename TYPE> class histogram<TYPE, false>
     {
-    public:
-
+      public:
         /** Constructor that may assign the title.
             Content may be appended to the title later using the function title. */
-        histogram(const char * i_title = "", size_t i_row_length = 25)
-            : m_row_length(i_row_length)
+        histogram(const char * i_title = "", size_t i_row_length = 25) : m_row_length(i_row_length)
         {
             m_title << i_title;
         }
@@ -240,14 +240,14 @@ Throwing two dices 2000 times:         2|*                        |97.6
         std::ostream & title() { return m_title; }
 
         /** Puts a single value on the histogram */
-        histogram & operator << (const TYPE & i_value)
+        histogram & operator<<(const TYPE & i_value)
         {
             m_values[i_value]++;
             return *this;
         }
 
         /** Puts a vector of values on the histogram */
-        histogram & operator << (const std::vector<TYPE> & i_values)
+        histogram & operator<<(const std::vector<TYPE> & i_values)
         {
             for (const auto & value : i_values)
             {
@@ -270,7 +270,7 @@ Throwing two dices 2000 times:         2|*                        |97.6
             m_row_length = i_row_length;
         }
 
-        friend std::ostream & operator << (std::ostream & i_ostream, const histogram & i_histogram)
+        friend std::ostream & operator<<(std::ostream & i_ostream, const histogram & i_histogram)
         {
             i_histogram.write(i_ostream);
             return i_ostream;
@@ -279,7 +279,7 @@ Throwing two dices 2000 times:         2|*                        |97.6
         void write(std::ostream & i_ostream) const
         {
             std::string histogram_str("  [histogram]");
-            auto title = m_title.str();
+            auto        title = m_title.str();
             if (title.length() > 0)
                 title += ':';
             auto const strings_len = title.size();
@@ -301,10 +301,10 @@ Throwing two dices 2000 times:         2|*                        |97.6
             }
             else
             {
-                auto const minmax_rowlen_its = std::minmax_element(rows.begin(), rows.end(),
-                    [](const Row & i_first, const Row & i_second) {
-                    return i_first.second < i_second.second;
-                });
+                auto const minmax_rowlen_its = std::minmax_element(
+                  rows.begin(), rows.end(), [](const Row & i_first, const Row & i_second) {
+                      return i_first.second < i_second.second;
+                  });
                 auto const min_count = minmax_rowlen_its.first->second;
                 auto const max_count = minmax_rowlen_its.second->second;
 
@@ -325,8 +325,10 @@ Throwing two dices 2000 times:         2|*                        |97.6
                     i_ostream << std::setw(10) << rows[i].first << "|";
 
                     double row_length_float = (rows[i].second - min_count) * factor;
-                    auto row_length = clamp<int64_t>(static_cast<int64_t>(row_length_float + 0.5), 0,
-                        static_cast<int64_t>(m_row_length));
+                    auto   row_length       = clamp<int64_t>(
+                      static_cast<int64_t>(row_length_float + 0.5),
+                      0,
+                      static_cast<int64_t>(m_row_length));
 
                     stars.resize(static_cast<size_t>(row_length), '*');
                     i_ostream << stars;
@@ -337,15 +339,15 @@ Throwing two dices 2000 times:         2|*                        |97.6
             }
         }
 
-    private:
-        std::ostringstream m_title;
+      private:
+        std::ostringstream               m_title;
         std::unordered_map<TYPE, size_t> m_values;
-        size_t m_row_count = 8;
-        size_t m_row_length = 10;
+        size_t                           m_row_count  = 8;
+        size_t                           m_row_length = 10;
     };
 
     template <typename TYPE>
-        histogram<TYPE> make_histogram(const char * i_label, const std::vector<TYPE> & i_values)
+    histogram<TYPE> make_histogram(const char * i_label, const std::vector<TYPE> & i_values)
     {
         histogram<TYPE> hist(i_label);
         hist << i_values;
@@ -353,9 +355,10 @@ Throwing two dices 2000 times:         2|*                        |97.6
     }
 
     template <typename STRUCT_TYPE, typename VALUE_TYPE>
-        histogram<VALUE_TYPE> make_member_histogram(const char * i_label,
-            const std::vector<STRUCT_TYPE> & i_structs,
-            VALUE_TYPE(STRUCT_TYPE::*i_member))
+    histogram<VALUE_TYPE> make_member_histogram(
+      const char *                     i_label,
+      const std::vector<STRUCT_TYPE> & i_structs,
+      VALUE_TYPE(STRUCT_TYPE::*i_member))
     {
         histogram<VALUE_TYPE> hist(i_label);
         for (auto const & element : i_structs)
@@ -365,4 +368,4 @@ Throwing two dices 2000 times:         2|*                        |97.6
         return hist;
     }
 
-} // namespace density_test
+} // namespace density_tests

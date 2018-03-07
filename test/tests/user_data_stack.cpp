@@ -1,37 +1,33 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../test_framework/density_test_common.h"
-#include "../test_framework/test_allocators.h"
 #include "../test_framework/exception_tests.h"
 #include "../test_framework/statistics.h"
-#include <density/lifo.h>
-#include <vector>
-#include <iostream>
+#include "../test_framework/test_allocators.h"
 #include <algorithm>
 #include <chrono>
+#include <density/lifo.h>
+#include <iostream>
+#include <vector>
 
 namespace density_tests
 {
     /** Decorator to lifo_allocator that adds debug checks to detect violations of the LIFO order, wrong size passed
         to deallocate or reallocate and leaks of lifo blocks. Functions that can throw call exception_checkpoint()
         to allow exception testing. */
-    template <size_t ALIGNMENT = alignof(void*)>
-        class DebugDataStack
+    template <size_t ALIGNMENT = alignof(void *)> class DebugDataStack
     {
-    public:
-
+      public:
         using underlying_allocator = density_tests::DeepTestAllocator<>;
 
         /** same to lifo_allocator::alignment */
         static constexpr size_t alignment = ALIGNMENT;
 
-        DebugDataStack()
-        {
-        }
+        DebugDataStack() {}
 
         /** same to lifo_allocator::allocate */
         void * allocate(size_t i_size)
@@ -67,10 +63,7 @@ namespace density_tests
             m_allocator.deallocate(i_block, i_size);
         }
 
-        ~DebugDataStack()
-        {
-            DENSITY_TEST_ASSERT(m_lifo_blocks.empty());
-        }
+        ~DebugDataStack() { DENSITY_TEST_ASSERT(m_lifo_blocks.empty()); }
 
         struct Stats
         {
@@ -82,16 +75,17 @@ namespace density_tests
 
             Statistics m_external_block_count;
             Statistics m_external_block_size;
-            size_t m_sample_count = 0;
+            size_t     m_sample_count = 0;
 
-            std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point const m_start_time =
+              std::chrono::high_resolution_clock::now();
 
             constexpr static size_t s_table_cell_width = 20;
 
             static void write_stats_header(std::ostream & i_stream)
             {
                 std::string const separator_line(s_table_cell_width * 3 + 4, '-');
-                
+
                 i_stream << separator_line << '\n';
                 i_stream << '|' << format_fixed("thread", s_table_cell_width);
                 i_stream << '|' << format_fixed("page_count", s_table_cell_width);
@@ -112,7 +106,8 @@ namespace density_tests
             void write_stats(std::ostream & i_stream, const char * i_thread_name) const
             {
                 using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-                auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
+                auto const elapsed =
+                  static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
 
                 std::string const separator_line(s_table_cell_width * 3 + 4, '-');
 
@@ -133,28 +128,26 @@ namespace density_tests
             }
         };
 
-        const Stats & stats() const noexcept
-        {
-            return m_stats;
-        }
+        const Stats & stats() const noexcept { return m_stats; }
 
         void stat_sample()
         {
             // construct pages, a vector of pages sorted by age
             struct Page
             {
-                void * m_page = nullptr;
+                void * m_page        = nullptr;
                 size_t m_progressive = 0;
-                size_t m_used_size = 0;
-                size_t m_blocks = 0;
+                size_t m_used_size   = 0;
+                size_t m_blocks      = 0;
             };
             std::vector<Page> pages;
-            m_allocator.underlying_allocator_ref().for_each_page([&pages](void * i_page, size_t i_progressive) {
-                Page page;
-                page.m_page = i_page;
-                page.m_progressive = i_progressive;
-                pages.push_back(page);
-            });
+            m_allocator.underlying_allocator_ref().for_each_page(
+              [&pages](void * i_page, size_t i_progressive) {
+                  Page page;
+                  page.m_page        = i_page;
+                  page.m_progressive = i_progressive;
+                  pages.push_back(page);
+              });
             std::sort(pages.begin(), pages.end(), [](const Page & i_first, const Page & i_second) {
                 return i_first.m_progressive < i_second.m_progressive;
             });
@@ -162,19 +155,23 @@ namespace density_tests
             // construct external_blocks, a vector of external blocks sorted by age
             struct ExternalBlock
             {
-                void * m_block = nullptr;
+                void *                          m_block = nullptr;
                 underlying_allocator::BlockInfo m_block_info;
             };
             std::vector<ExternalBlock> external_blocks;
-            m_allocator.underlying_allocator_ref().for_each_block([&external_blocks](void * i_block, const underlying_allocator::BlockInfo & i_info) {
-                ExternalBlock block;
-                block.m_block = i_block;
-                block.m_block_info = i_info;
-                external_blocks.push_back(block);
-            });
-            std::sort(external_blocks.begin(), external_blocks.end(), [](const ExternalBlock & i_first, const ExternalBlock & i_second) {
-                return i_first.m_block_info.m_progressive < i_second.m_block_info.m_progressive;
-            });
+            m_allocator.underlying_allocator_ref().for_each_block(
+              [&external_blocks](void * i_block, const underlying_allocator::BlockInfo & i_info) {
+                  ExternalBlock block;
+                  block.m_block      = i_block;
+                  block.m_block_info = i_info;
+                  external_blocks.push_back(block);
+              });
+            std::sort(
+              external_blocks.begin(),
+              external_blocks.end(),
+              [](const ExternalBlock & i_first, const ExternalBlock & i_second) {
+                  return i_first.m_block_info.m_progressive < i_second.m_block_info.m_progressive;
+              });
 
             // update stats about counts
             m_stats.m_sample_count++;
@@ -184,27 +181,32 @@ namespace density_tests
 
             // check the consistency
             void * const current_top = get_top_pointer();
-            void * const virgin_top = get_virgin_top();
+            void * const virgin_top  = get_virgin_top();
             if (current_top == virgin_top)
             {
                 /* virgin data-stack: only external blocks must exist. external_blocks and m_lifo_blocks must 
                     match exactly (after stripping virgin blocks from m_lifo_blocks */
                 auto non_virgin_lifo_blocks = m_lifo_blocks;
                 non_virgin_lifo_blocks.erase(
-                    std::remove_if(non_virgin_lifo_blocks.begin(), non_virgin_lifo_blocks.end(), 
-                        [virgin_top](const Block & i_block){ return i_block.m_block == virgin_top; }),
-                    non_virgin_lifo_blocks.end());
+                  std::remove_if(
+                    non_virgin_lifo_blocks.begin(),
+                    non_virgin_lifo_blocks.end(),
+                    [virgin_top](const Allocation & i_block) {
+                        return i_block.m_block == virgin_top;
+                    }),
+                  non_virgin_lifo_blocks.end());
 
                 DENSITY_TEST_ASSERT(pages.size() == 0);
                 DENSITY_TEST_ASSERT(external_blocks.size() == non_virgin_lifo_blocks.size());
                 for (size_t index = 0; index < external_blocks.size(); index++)
                 {
-                    auto const & lifo_block = non_virgin_lifo_blocks[index];
+                    auto const & lifo_block     = non_virgin_lifo_blocks[index];
                     auto const & external_block = external_blocks[index];
                     DENSITY_TEST_ASSERT(external_block.m_block == lifo_block.m_block);
                     DENSITY_TEST_ASSERT(external_block.m_block_info.m_size == lifo_block.m_size);
 
-                    m_stats.m_external_block_size.sample(size_percentage(external_block.m_block_info.m_size));
+                    m_stats.m_external_block_size.sample(
+                      size_percentage(external_block.m_block_info.m_size));
                 }
             }
             else
@@ -212,9 +214,10 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(!pages.empty()); // at least one page must exist
 
                 // iterate m_lifo_blocks
-                Block prev_inpage_block;
-                size_t page_index = 0, external_block_index = 0;
-                for(size_t lifo_block_index = 0; lifo_block_index < m_lifo_blocks.size(); lifo_block_index++)
+                Allocation prev_inpage_block;
+                size_t     page_index = 0, external_block_index = 0;
+                for (size_t lifo_block_index = 0; lifo_block_index < m_lifo_blocks.size();
+                     lifo_block_index++)
                 {
                     const auto & block = m_lifo_blocks[lifo_block_index];
                     if (block.m_block == virgin_top)
@@ -222,11 +225,16 @@ namespace density_tests
                         // empty virgin blocks can appear only before the first in-page block
                         DENSITY_TEST_ASSERT(prev_inpage_block.m_block == nullptr);
                     }
-                    else if (external_block_index < external_blocks.size() && external_blocks[external_block_index].m_block == block.m_block)
+                    else if (
+                      external_block_index < external_blocks.size() &&
+                      external_blocks[external_block_index].m_block == block.m_block)
                     {
                         // consume an external block
-                        DENSITY_TEST_ASSERT(external_blocks[external_block_index].m_block_info.m_size == block.m_size);
-                        m_stats.m_external_block_size.sample(size_percentage(external_blocks[external_block_index].m_block_info.m_size));
+                        DENSITY_TEST_ASSERT(
+                          external_blocks[external_block_index].m_block_info.m_size ==
+                          block.m_size);
+                        m_stats.m_external_block_size.sample(size_percentage(
+                          external_blocks[external_block_index].m_block_info.m_size));
                         external_block_index++;
                     }
                     else
@@ -237,8 +245,10 @@ namespace density_tests
                             if (prev_inpage_block.m_block != nullptr)
                             {
                                 // not first page
-                                m_stats.m_page_block_count.sample(static_cast<double>(pages[page_index].m_blocks));
-                                m_stats.m_page_used_space.sample(size_percentage(pages[page_index].m_used_size));
+                                m_stats.m_page_block_count.sample(
+                                  static_cast<double>(pages[page_index].m_blocks));
+                                m_stats.m_page_used_space.sample(
+                                  size_percentage(pages[page_index].m_used_size));
                                 page_index++;
                                 DENSITY_TEST_ASSERT(page_index < pages.size());
                             }
@@ -246,9 +256,12 @@ namespace density_tests
                         else
                         {
                             // no page switch, this block must begin at the end of the previous in-page block
-                            DENSITY_TEST_ASSERT(block.m_block == density::address_add(prev_inpage_block.m_block, prev_inpage_block.m_size));
+                            DENSITY_TEST_ASSERT(
+                              block.m_block ==
+                              density::address_add(
+                                prev_inpage_block.m_block, prev_inpage_block.m_size));
                         }
-                        DENSITY_TEST_ASSERT(same_page(block.m_block, pages[page_index].m_page));                        
+                        DENSITY_TEST_ASSERT(same_page(block.m_block, pages[page_index].m_page));
 
                         // update the page
                         pages[page_index].m_blocks++;
@@ -264,8 +277,7 @@ namespace density_tests
             }
         }
 
-    private:
-
+      private:
         static int size_percentage(size_t i_size)
         {
             auto const factor = 100. / static_cast<double>(underlying_allocator::page_size);
@@ -275,14 +287,15 @@ namespace density_tests
         static bool same_page(const void * i_first, const void * i_second) noexcept
         {
             auto const page_mask = underlying_allocator::page_alignment - 1;
-            return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
+            return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
+                    ~page_mask) == 0;
         }
 
         void * get_top_pointer() const
         {
             /* this function makes the assumption that allocate_empty just returns the top pointer
                 without altering the state of the allocator. */
-            return const_cast<DebugDataStack*>(this)->m_allocator.allocate_empty();
+            return const_cast<DebugDataStack *>(this)->m_allocator.allocate_empty();
         }
 
         void * get_virgin_top() const
@@ -294,99 +307,91 @@ namespace density_tests
 
         void notify_alloc(void * i_block, size_t i_size)
         {
-            Block new_block;
+            Allocation new_block;
             new_block.m_block = i_block;
-            new_block.m_size = i_size;
+            new_block.m_size  = i_size;
             m_lifo_blocks.push_back(new_block);
         }
 
         void notify_dealloc(void * i_block, size_t i_size)
         {
-            DENSITY_TEST_ASSERT(!m_lifo_blocks.empty() &&
-                m_lifo_blocks.back().m_block == i_block &&
-                m_lifo_blocks.back().m_size == i_size);
+            DENSITY_TEST_ASSERT(
+              !m_lifo_blocks.empty() && m_lifo_blocks.back().m_block == i_block &&
+              m_lifo_blocks.back().m_size == i_size);
             m_lifo_blocks.pop_back();
         }
 
-    private:
-
-        struct Block
+      private:
+        struct Allocation
         {
             void * m_block = nullptr;
-            size_t m_size = 0;
+            size_t m_size  = 0;
 
             bool belongs_to_page(void * i_page) const noexcept
             {
-                auto const page_start = density::address_lower_align(i_page, underlying_allocator::page_alignment);
-                auto const page_end = density::address_add(page_start, underlying_allocator::page_size);
+                auto const page_start =
+                  density::address_lower_align(i_page, underlying_allocator::page_alignment);
+                auto const page_end =
+                  density::address_add(page_start, underlying_allocator::page_size);
                 auto const block_end = density::address_add(m_block, m_size);
                 return m_block >= page_start && block_end < page_end;
             }
         };
-        std::vector<Block> m_lifo_blocks; /**< used to check the LIFO order */        
+        std::vector<Allocation> m_lifo_blocks; /**< used to check the LIFO order */
         density::lifo_allocator<underlying_allocator, ALIGNMENT> m_allocator;
-        Stats m_stats;
+        Stats                                                    m_stats;
     };
 
 } // namespace density_tests
 
 #ifdef DENSITY_USER_DATA_STACK
-    /** Override the data stack with a debug user defined data stack that:
+/** Override the data stack with a debug user defined data stack that:
             - detects violations of the LIFO constraint and leaks of lifo blocks
             - detects wrong sizes passed to deallocate or reallocate
             - detects leaks of pages or external blocks
             - allows testing the exceptional paths */
-    namespace density
+namespace density
+{
+    namespace user_data_stack
     {
-        namespace user_data_stack
+        namespace
         {
-            namespace
-            {
-                thread_local density_tests::DebugDataStack<alignment> user_data_stack;
-                    // alignment is defined in density_config.h (density::user_data_stack::alignment)
-            }
+            thread_local density_tests::DebugDataStack<alignment> user_data_stack;
+            // alignment is defined in density_config.h (density::user_data_stack::alignment)
+        } // namespace
 
-            void * allocate(size_t i_size)
-            {
-                return user_data_stack.allocate(i_size);
-            }
+        void * allocate(size_t i_size) { return user_data_stack.allocate(i_size); }
 
-            void * allocate_empty() noexcept
-            {
-                return user_data_stack.allocate_empty();
-            }
+        void * allocate_empty() noexcept { return user_data_stack.allocate_empty(); }
 
-            void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
-            {
-                return user_data_stack.reallocate(i_block, i_old_size, i_new_size);
-            }
+        void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+        {
+            return user_data_stack.reallocate(i_block, i_old_size, i_new_size);
+        }
 
-            void deallocate(void * i_block, size_t i_size) noexcept
-            {
-                user_data_stack.deallocate(i_block, i_size);
-            }
+        void deallocate(void * i_block, size_t i_size) noexcept
+        {
+            user_data_stack.deallocate(i_block, i_size);
+        }
 
 
-            /* If DENSITY_USER_DATA_STACK is defined, this test program implements this function
+        /* If DENSITY_USER_DATA_STACK is defined, this test program implements this function
                 that make a complete check of the data-stack, and updates the internal statistics. */
-            void stat_sample()
-            {
-                user_data_stack.stat_sample();
-            }
+        void stat_sample() { user_data_stack.stat_sample(); }
 
-            void stats_header(std::ostream & i_dest)
-            {
-                user_data_stack.stats().write_stats_header(i_dest);
-            }
+        void stats_header(std::ostream & i_dest)
+        {
+            user_data_stack.stats().write_stats_header(i_dest);
+        }
 
-            /* Prints the internal statistics. */
-            void stats_print(std::ostream & i_dest, const char * i_thread_name)
-            {
-                user_data_stack.stats().write_stats(i_dest, i_thread_name);
-            }
+        /* Prints the internal statistics. */
+        void stats_print(std::ostream & i_dest, const char * i_thread_name)
+        {
+            user_data_stack.stats().write_stats(i_dest, i_thread_name);
+        }
 
-        } // namespace user_data_stack
+    } // namespace user_data_stack
 
-    } // namespace density
+} // namespace density
 
 #endif // #ifdef DENSITY_USER_DATA_STACK

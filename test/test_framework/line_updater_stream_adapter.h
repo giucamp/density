@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -7,9 +7,9 @@
 #pragma once
 #include <ostream>
 #include <sstream>
-#include <utility>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace density_tests
 {
@@ -30,24 +30,22 @@ namespace density_tests
     */
     class LineUpdaterStreamAdapter
     {
-    public:
-
+      public:
         LineUpdaterStreamAdapter(std::ostream & i_dest_stream);
 
         LineUpdaterStreamAdapter(const LineUpdaterStreamAdapter &) = delete;
 
-        LineUpdaterStreamAdapter & operator = (const LineUpdaterStreamAdapter &) = delete;
+        LineUpdaterStreamAdapter & operator=(const LineUpdaterStreamAdapter &) = delete;
 
         ~LineUpdaterStreamAdapter();
 
-        template <typename TYPE>
-            LineUpdaterStreamAdapter & operator << (TYPE && i_object)
+        template <typename TYPE> LineUpdaterStreamAdapter & operator<<(TYPE && i_object)
         {
             m_line << std::forward<TYPE>(i_object);
             return *this;
         }
 
-        LineUpdaterStreamAdapter & operator << (std::ostream & (*i_manipulator)(std::ostream &))
+        LineUpdaterStreamAdapter & operator<<(std::ostream & (*i_manipulator)(std::ostream &))
         {
             if (i_manipulator == &std::endl<char, std::char_traits<char>>)
                 end_line_impl();
@@ -56,13 +54,13 @@ namespace density_tests
             return *this;
         }
 
-    private:
+      private:
         void end_line_impl();
 
-    private:
-        std::ostream & m_dest_stream;
-        std::string m_spaces;
+      private:
+        std::ostream &     m_dest_stream;
+        std::string        m_spaces;
         std::ostringstream m_line;
-        size_t m_prev_line_len = 0;
+        size_t             m_prev_line_len = 0;
     };
-}
+} // namespace density_tests

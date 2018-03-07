@@ -1,40 +1,43 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include "test_framework/allocator_stress_test.h"
 #include "test_framework/density_test_common.h"
 #include "test_framework/progress.h"
 #include "test_framework/threading_extensions.h"
-#include "tests/generic_tests/queue_generic_tests.h"
 #include "test_settings.h"
-#include <iostream>
+#include "tests/generic_tests/queue_generic_tests.h"
 #include <cstdlib>
-#include <random>
-#include <sstream>
 #include <density/heter_queue.h>
 #include <density/lf_heter_queue.h>
+#include <iostream>
+#include <memory>
+#include <random>
+#include <sstream>
 
 #if defined(__linux__) && !defined(__ANDROID__)
-    #include <execinfo.h>
-    #include <signal.h>
-    #include <stdlib.h>
-    #include <unistd.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 #endif
 
 #if defined(__linux__) && !defined(__ANDROID__)
-    // https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
-    void seg_fault_handler(int sig) {
+// https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
+void seg_fault_handler(int sig)
+{
 
-      void *array[256];
-      size_t size = backtrace(array, 256);
+    void * array[256];
+    size_t size = backtrace(array, 256);
 
-      // print out all the frames to stderr
-      fprintf(stderr, "Error: signal %d:\n", sig);
-      backtrace_symbols_fd(array, size, STDERR_FILENO);
-      exit(1);
-    }
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
+}
 #endif
 
 namespace density_tests
@@ -61,9 +64,13 @@ namespace density_tests
     void sp_func_queue_samples(std::ostream &);
 
     void lifo_examples();
-    void lifo_tests(QueueTesterFlags i_flags, std::ostream & i_output, uint32_t i_random_seed,
-        size_t i_depth, size_t i_fork_depth);
-}
+    void lifo_tests(
+      QueueTesterFlags i_flags,
+      std::ostream &   i_output,
+      uint32_t         i_random_seed,
+      size_t           i_depth,
+      size_t           i_fork_depth);
+} // namespace density_tests
 
 DENSITY_NO_INLINE void sandbox()
 {
@@ -71,7 +78,7 @@ DENSITY_NO_INLINE void sandbox()
 
     static_assert(std::is_trivially_destructible<runtime_type<>>::value, "");
 
-    //void_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
+    //default_allocator::reserve_lockfree_page_memory(1024 * 1024 * 32);
 
     {
         heter_queue<> queue;
@@ -83,7 +90,7 @@ DENSITY_NO_INLINE void sandbox()
     }
     {
         lf_heter_queue<> q;
-        int i;
+        int              i;
         for (i = 0; i < 1000; i++)
             q.push(i);
 
@@ -98,7 +105,7 @@ DENSITY_NO_INLINE void sandbox()
     }
     {
         lf_heter_queue<> q;
-        int i;
+        int              i;
         for (i = 0; i < 1000; i++)
             q.push(i);
 
@@ -123,9 +130,9 @@ DENSITY_NO_INLINE void sandbox()
         assert(!queue.empty());
     }
     {
-    lf_heter_queue<> queue;
-    queue.push(42);
-    assert(queue.try_start_consume().element<int>() == 42);
+        lf_heter_queue<> queue;
+        queue.push(42);
+        assert(queue.try_start_consume().element<int>() == 42);
     }
 }
 
@@ -137,6 +144,9 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
 
     PrintScopeDuration dur(i_ostream, "all tests");
 
+    auto const alloc_test = std::unique_ptr<allocator_stress_test>{
+      i_settings.m_allocator_stress_test ? new allocator_stress_test{} : nullptr};
+
     auto flags = QueueTesterFlags::eNone;
     if (i_settings.m_spare_one_cpu)
     {
@@ -147,26 +157,44 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         flags = flags | QueueTesterFlags::ePrintProgress;
     }
 
-    lifo_examples();
-    lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
-    if (i_settings.m_exceptions)
+    if (i_settings.should_run("lifo"))
     {
-        lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
+        lifo_examples();
+        lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
+        if (i_settings.m_exceptions)
+        {
+            lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
+        }
     }
 
-    misc_examples();
+    if (i_settings.should_run("misc_examples"))
+    {
+        misc_examples();
+    }
 
-    heterogeneous_queue_samples(i_ostream);
-    heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("queue"))
+    {
+        heterogeneous_queue_samples(i_ostream);
+        heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    conc_heterogeneous_queue_samples(i_ostream);
-    conc_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("conc_queue"))
+    {
+        conc_heterogeneous_queue_samples(i_ostream);
+        conc_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    lf_heter_queue_samples(i_ostream);
-    lf_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("lf_queue"))
+    {
+        lf_heter_queue_samples(i_ostream);
+        lf_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
-    spinlocking_heterogeneous_queue_samples(i_ostream);
-    spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+    if (i_settings.should_run("sp_queue"))
+    {
+        spinlocking_heterogeneous_queue_samples(i_ostream);
+        spinlocking_heterogeneous_queue_basic_tests(i_ostream);
+    }
 
     func_queue_samples(i_ostream);
     conc_func_queue_samples(i_ostream);
@@ -174,23 +202,31 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     sp_func_queue_samples(i_ostream);
 
     i_ostream << "\n*** executing generic tests..." << std::endl;
-    all_queues_generic_tests(flags, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+
+    all_queues_generic_tests(i_settings, flags, i_ostream, i_random_seed);
 
     if (i_settings.m_exceptions)
     {
         i_ostream << "\n*** executing generic tests with exceptions..." << std::endl;
-        all_queues_generic_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+        all_queues_generic_tests(
+          i_settings, flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed);
     }
 
     if (i_settings.m_test_allocators)
     {
         i_ostream << "\n*** executing generic tests with test allocators..." << std::endl;
-        all_queues_generic_tests(flags | QueueTesterFlags::eUseTestAllocators, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+        all_queues_generic_tests(
+          i_settings, flags | QueueTesterFlags::eUseTestAllocators, i_ostream, i_random_seed);
 
         if (i_settings.m_exceptions)
         {
-            i_ostream << "\n*** executing generic tests with test allocators and exceptions..." << std::endl;
-            all_queues_generic_tests(flags | QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, i_settings.m_queue_tests_cardinality);
+            i_ostream << "\n*** executing generic tests with test allocators and exceptions..."
+                      << std::endl;
+            all_queues_generic_tests(
+              i_settings,
+              flags | QueueTesterFlags::eUseTestAllocators | QueueTesterFlags::eTestExceptions,
+              i_ostream,
+              i_random_seed);
         }
     }
 
@@ -200,7 +236,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     i_ostream.flags(prev_stream_flags);
 }
 
-int run(int argc, char **argv)
+int run(int argc, char ** argv)
 {
     std::ostream & out = std::cout;
 
@@ -210,33 +246,47 @@ int run(int argc, char **argv)
         out << "\t" << *parameter << std::endl;
     }
 
-    #if defined(DENSITY_DEBUG)
-        out << "DENSITY_DEBUG: defined" << std::endl;
-    #else
-        out << "DENSITY_DEBUG: not defined" << std::endl;
-    #endif
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+    out << "Thread-sanitizer is ON" << std::endl;
+#endif
+#endif
 
-    #if defined(DENSITY_DEBUG_INTERNAL)
-        out << "DENSITY_DEBUG_INTERNAL: defined" << std::endl;
-    #else
-        out << "DENSITY_DEBUG_INTERNAL: not defined" << std::endl;
-    #endif
+    out << "sizeof(void*): " << sizeof(void *) << std::endl;
 
-    #if defined(NDEBUG)
-        out << "NDEBUG: defined" << std::endl;
-    #else
-        out << "NDEBUG: not defined" << std::endl;
-    #endif
+#if defined(DENSITY_DEBUG)
+    out << "DENSITY_DEBUG: defined" << std::endl;
+#else
+    out << "DENSITY_DEBUG: not defined" << std::endl;
+#endif
 
-    #if defined(DENSITY_USER_DATA_STACK)
-        out << "DENSITY_USER_DATA_STACK: defined" << std::endl;
-    #else
-        out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
-    #endif
+#if defined(DENSITY_DEBUG_INTERNAL)
+    out << "DENSITY_DEBUG_INTERNAL: defined" << std::endl;
+#else
+    out << "DENSITY_DEBUG_INTERNAL: not defined" << std::endl;
+#endif
 
-    #if defined(__linux__) && !defined(__ANDROID__)
-        signal(SIGSEGV, seg_fault_handler);
-    #endif
+#if defined(NDEBUG)
+    out << "NDEBUG: defined" << std::endl;
+#else
+    out << "NDEBUG: not defined" << std::endl;
+#endif
+
+#if defined(DENSITY_USER_DATA_STACK)
+    out << "DENSITY_USER_DATA_STACK: defined" << std::endl;
+#else
+    out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
+#endif
+
+#if defined(DENSITY_LOCKFREE_DEBUG)
+    out << "DENSITY_LOCKFREE_DEBUG: defined" << std::endl;
+#else
+    out << "DENSITY_LOCKFREE_DEBUG: not defined" << std::endl;
+#endif
+
+#if defined(__linux__) && !defined(__ANDROID__)
+    signal(SIGSEGV, seg_fault_handler);
+#endif
 
     auto const settings = parse_settings(argc, argv);
 
@@ -249,7 +299,8 @@ int run(int argc, char **argv)
     std::cout << "number of processors: " << density_tests::get_num_of_processors() << "\n";
     std::cout << "random seed: " << random_seed << "\n";
     std::cout << "density version: " << density::version << "\n";
-    std::cout << "default page size: " << density::void_allocator::page_size << "\n" << std::endl;
+    std::cout << "default page size: " << density::default_allocator::page_size << "\n"
+              << std::endl;
 
     // check that density::version and DENSITY_VERSION are consistent
     std::ostringstream version_stream;
@@ -265,8 +316,5 @@ int run(int argc, char **argv)
 }
 
 #if !defined(__ANDROID__)
-int main(int argc, char **argv)
-{
-    return run(argc, argv);
-}
+int main(int argc, char ** argv) { return run(argc, argv); }
 #endif

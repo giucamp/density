@@ -1,20 +1,20 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <new>
-#include <cstring>
 #include <atomic>
+#include <cstring>
 #include <density/density_common.h>
-#include <density/detail/wf_page_stack.h>
 #include <density/detail/singleton_ptr.h>
+#include <density/detail/wf_page_stack.h>
+#include <new>
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4324) // structure was padded due to alignment specifier
+#pragma warning(push)
+#pragma warning(disable : 4324) // structure was padded due to alignment specifier
 #endif
 
 namespace density
@@ -30,36 +30,37 @@ namespace density
         /** \internal
 
         */
-        class alignas(concurrent_alignment) PageAllocatorSlot
+        class alignas(destructive_interference_size) PageAllocatorSlot
         {
-        private:
-
-            PageAllocatorSlot(PageAllocatorSlot * i_next_slot) noexcept
-                : m_next_slot(i_next_slot)
+          private:
+            PageAllocatorSlot(PageAllocatorSlot * i_next_slot) noexcept : m_next_slot(i_next_slot)
             {
             }
 
             ~PageAllocatorSlot() noexcept = default;
 
-        public:
-
-            WF_PageStack m_page_stack;
-            WF_PageStack m_zeroed_page_stack;
-            std::atomic<PageAllocatorSlot*> m_next_slot;
+          public:
+            WF_PageStack                     m_page_stack;
+            WF_PageStack                     m_zeroed_page_stack;
+            std::atomic<PageAllocatorSlot *> m_next_slot;
 
             WF_PageStack & get_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(i_allocation_type == page_allocation_type::uninitialized || i_allocation_type == page_allocation_type::zeroed);
-                return i_allocation_type == page_allocation_type::zeroed ? m_zeroed_page_stack : m_page_stack;
+                DENSITY_ASSERT_INTERNAL(
+                  i_allocation_type == page_allocation_type::uninitialized ||
+                  i_allocation_type == page_allocation_type::zeroed);
+                return i_allocation_type == page_allocation_type::zeroed ? m_zeroed_page_stack
+                                                                         : m_page_stack;
             }
 
             /** Creates a new thread slot.
                 May throw an std::bad_alloc. */
             static PageAllocatorSlot * create(PageAllocatorSlot * const i_next_slot)
             {
-                auto const block = aligned_allocate(sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
+                auto const block =
+                  aligned_allocate(sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
                 DENSITY_ASSERT_INTERNAL(block != nullptr);
-                return new(block) PageAllocatorSlot(i_next_slot);
+                return new (block) PageAllocatorSlot(i_next_slot);
             }
 
             /** Destroy a thread slot */
@@ -67,22 +68,21 @@ namespace density
             {
                 DENSITY_ASSERT_INTERNAL(i_slot != nullptr);
                 i_slot->~PageAllocatorSlot();
-                return aligned_deallocate(i_slot, sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
+                return aligned_deallocate(
+                  i_slot, sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
             }
         };
 
-        template <typename SYSTYEM_PAGE_MANAGER>
-            class GlobalState
+        template <typename SYSTYEM_PAGE_MANAGER> class GlobalState
         {
-        private:
-            SYSTYEM_PAGE_MANAGER m_sys_page_manager;
-            std::atomic<PageAllocatorSlot*> m_last_assigned{ nullptr };
-            std::atomic<PageAllocatorSlot*> m_first_slot{ nullptr };
+          private:
+            SYSTYEM_PAGE_MANAGER             m_sys_page_manager;
+            std::atomic<PageAllocatorSlot *> m_last_assigned{nullptr};
+            std::atomic<PageAllocatorSlot *> m_first_slot{nullptr};
 
-        public:
-
+          public:
             GlobalState(const GlobalState &) = delete;
-            GlobalState & operator = (const GlobalState &) = delete;
+            GlobalState & operator=(const GlobalState &) = delete;
 
             PageAllocatorSlot * assign_slot() noexcept
             {
@@ -91,25 +91,23 @@ namespace density
                 return result;
             }
 
-            SYSTYEM_PAGE_MANAGER & sys_page_manager() noexcept
-            {
-                return m_sys_page_manager;
-            }
+            SYSTYEM_PAGE_MANAGER & sys_page_manager() noexcept { return m_sys_page_manager; }
 
-        private:
-
+          private:
             friend class SingletonPtr<GlobalState>;
 
             GlobalState()
             {
                 auto const first = PageAllocatorSlot::create(nullptr);
-                auto prev = first;
+                auto       prev  = first;
+#if !defined(DENSITY_LOCKFREE_DEBUG)
                 for (int i = 0; i < 7; i++)
                 {
                     auto const curr = PageAllocatorSlot::create(nullptr);
                     prev->m_next_slot.store(curr);
                     prev = curr;
                 }
+#endif
                 prev->m_next_slot.store(first);
                 m_first_slot.store(first);
                 m_last_assigned = first;
@@ -118,8 +116,9 @@ namespace density
             ~GlobalState()
             {
                 auto const first = m_first_slot.load();
-                auto curr = first;
-                do {
+                auto       curr  = first;
+                do
+                {
                     auto const next = curr->m_next_slot.load();
                     PageAllocatorSlot::destroy(curr);
                     curr = next;
@@ -127,35 +126,38 @@ namespace density
             }
         };
 
-        template <typename SYSTYEM_PAGE_MANAGER>
-            class PageAllocator
+        template <typename SYSTYEM_PAGE_MANAGER> class PageAllocator
         {
-        private:
-            PageAllocatorSlot * m_current_slot, * m_victim_slot;
-            PageStack m_private_page_stack, m_private_zeroed_page_stack;
+          private:
+            PageAllocatorSlot *m_current_slot, *m_victim_slot;
+            PageStack          m_private_page_stack, m_private_zeroed_page_stack;
             SingletonPtr<GlobalState<SYSTYEM_PAGE_MANAGER>> m_global_state;
+            PageStack                                       m_pages_to_unpin;
 
             static thread_local PageAllocator t_instance;
 
-        public:
-
+          public:
             /** Alignment guaranteed for the pages */
             static constexpr size_t page_alignment = SYSTYEM_PAGE_MANAGER::page_alignment_and_size;
 
             /** Usable size of the pages, in bytes. */
-            static constexpr size_t page_size = SYSTYEM_PAGE_MANAGER::page_alignment_and_size - sizeof(PageFooter);
+            static constexpr size_t page_size =
+              SYSTYEM_PAGE_MANAGER::page_alignment_and_size - sizeof(PageFooter);
 
-            static PageAllocator & thread_local_instance()
-            {
-                return t_instance;
-            }
+            static PageAllocator & thread_local_instance() { return t_instance; }
 
             template <page_allocation_type ALLOCATION_TYPE>
-                void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
+            void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
             {
-                // try from the private stack...
+                process_pending_unpins(i_progress_guarantee);
+
+// try from the private stack...
+#ifdef DENSITY_LOCKFREE_DEBUG
+                auto new_page = static_cast<void *>(nullptr);
+#else
                 auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
                 if (new_page == nullptr)
+#endif
                 {
                     // ...then from the current slot...
                     new_page = m_current_slot->get_stack(ALLOCATION_TYPE).try_pop_unpinned();
@@ -167,7 +169,8 @@ namespace density
                         // if still do not have a page, we go to the next 2nd level
                         if (new_page == nullptr)
                         {
-                            new_page = allocate_page_slow_path(ALLOCATION_TYPE, i_progress_guarantee);
+                            new_page =
+                              allocate_page_slow_path(ALLOCATION_TYPE, i_progress_guarantee);
                         }
                     }
                 }
@@ -175,14 +178,17 @@ namespace density
             }
 
             template <page_allocation_type ALLOCATION_TYPE>
-                void deallocate_page(void * i_page) noexcept
+            void deallocate_page(void * i_page) noexcept
             {
+                process_pending_unpins(progress_wait_free);
+
                 auto const page = get_footer(i_page);
 
                 // try to push the page once on every slot
                 auto * const original_slot = m_current_slot;
-                bool done = false;
-                do {
+                bool         done          = false;
+                do
+                {
 
                     if (m_current_slot->get_stack(ALLOCATION_TYPE).try_push(page))
                     {
@@ -200,23 +206,73 @@ namespace density
                 }
             }
 
-            size_t try_reserve_lockfree_memory(progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
+            size_t try_reserve_lockfree_memory(
+              progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
             {
-                return m_global_state->sys_page_manager().try_reserve_region_memory(i_progress_guarantee, i_size);
+                t_instance.process_pending_unpins(i_progress_guarantee);
+
+                return m_global_state->sys_page_manager().try_reserve_region_memory(
+                  i_progress_guarantee, i_size);
             }
 
             static void pin_page(void * const i_address) noexcept
             {
+                t_instance.process_pending_unpins(progress_lock_free);
+
                 auto const footer = get_footer(i_address);
                 footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
             }
 
+            static bool
+              try_pin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
+            {
+                t_instance.process_pending_unpins(i_progress_guarantee);
+
+                auto const footer = get_footer(i_address);
+                if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
+                {
+                    footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
+                    return true;
+                }
+                else
+                {
+                    auto curr_value = footer->m_pin_count.load(detail::mem_relaxed);
+                    return footer->m_pin_count.compare_exchange_weak(
+                      curr_value, curr_value + 1, detail::mem_relaxed);
+                }
+            }
+
             static void unpin_page(void * const i_address) noexcept
             {
-                auto const footer = get_footer(i_address);
-                auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_acq_rel);
+                t_instance.process_pending_unpins(progress_lock_free);
+
+                auto const footer    = get_footer(i_address);
+                auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_relaxed);
                 DENSITY_ASSERT(prev_pins > 0);
                 (void)prev_pins;
+            }
+
+            static void
+              unpin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
+            {
+                t_instance.process_pending_unpins(progress_lock_free);
+
+                if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
+                {
+                    unpin_page(i_address);
+                }
+                else
+                {
+                    auto const footer     = get_footer(i_address);
+                    auto       curr_value = footer->m_pin_count.load(detail::mem_relaxed);
+                    DENSITY_ASSERT(curr_value > 0);
+                    if (!footer->m_pin_count.compare_exchange_weak(
+                          curr_value, curr_value - 1, detail::mem_relaxed))
+                    {
+                        // failed due to contention, we must retry later
+                        t_instance.m_pages_to_unpin.push(footer);
+                    }
+                }
             }
 
             static uintptr_t get_pin_count(const void * const i_address) noexcept
@@ -224,16 +280,16 @@ namespace density
                 return get_footer(i_address)->m_pin_count.load(detail::mem_relaxed);
             }
 
-        private:
-
+          private:
             PageAllocator() noexcept
             {
                 m_current_slot = m_global_state->assign_slot();
-                m_victim_slot = m_current_slot->m_next_slot.load();
+                m_victim_slot  = m_current_slot->m_next_slot.load();
             }
 
             ~PageAllocator()
             {
+                process_pending_unpins(progress_blocking);
                 dump_private_stack(page_allocation_type::uninitialized);
                 dump_private_stack(page_allocation_type::zeroed);
             }
@@ -241,40 +297,46 @@ namespace density
             static PageFooter * get_footer(void * const i_address) noexcept
             {
                 auto const page = address_lower_align(i_address, page_alignment);
-                return static_cast<PageFooter*>(address_add(page, page_size));
+                return static_cast<PageFooter *>(address_add(page, page_size));
             }
 
             static const PageFooter * get_footer(const void * const i_address) noexcept
             {
                 auto const page = address_lower_align(i_address, page_alignment);
-                return static_cast<const PageFooter*>(address_add(page, page_size));
+                return static_cast<const PageFooter *>(address_add(page, page_size));
             }
 
-            PageFooter * try_steal_and_allocate(page_allocation_type const i_allocation_type) noexcept
+            PageFooter *
+              try_steal_and_allocate(page_allocation_type const i_allocation_type) noexcept
             {
-                PageStack stolen_pages = m_victim_slot->get_stack(i_allocation_type).try_remove_all();
+                PageStack stolen_pages =
+                  m_victim_slot->get_stack(i_allocation_type).try_remove_all();
 
                 auto new_page = stolen_pages.pop_unpinned();
 
                 // try to push the stolen stack to the current slot
-                if (!stolen_pages.empty() && !m_current_slot->get_stack(i_allocation_type).try_push(stolen_pages))
+                if (
+                  !stolen_pages.empty() &&
+                  !m_current_slot->get_stack(i_allocation_type).try_push(stolen_pages))
                 {
                     /* try_push may fail in case of concurrency. Anyway we have a stack of page, and we
                         have to push it somewhere.
                         The following function will loop m_current_slot around all the slot, trying to push
                         the stack. As last resort it will prepend stolen_pages to the private stack */
-                    disccard_page_stack(i_allocation_type, stolen_pages);
+                    discard_page_stack(i_allocation_type, stolen_pages);
                 }
 
                 return new_page;
             }
 
-            static PageFooter * initialize_page(page_allocation_type const i_allocation_type, void * const i_page_mem) noexcept
+            static PageFooter * initialize_page(
+              page_allocation_type const i_allocation_type, void * const i_page_mem) noexcept
             {
                 DENSITY_ASSERT_ALIGNED(i_page_mem, page_alignment);
-                auto const new_page = new(get_footer(i_page_mem)) PageFooter();
+                auto const new_page = new (get_footer(i_page_mem)) PageFooter();
 
-                bool should_zero = !SYSTYEM_PAGE_MANAGER::pages_are_zeroed && i_allocation_type == page_allocation_type::zeroed;
+                bool should_zero = !SYSTYEM_PAGE_MANAGER::pages_are_zeroed &&
+                                   i_allocation_type == page_allocation_type::zeroed;
                 if (should_zero)
                 {
                     std::memset(i_page_mem, 0, page_size); // the page footer is not touched
@@ -283,12 +345,15 @@ namespace density
                 return new_page;
             }
 
-            DENSITY_NO_INLINE PageFooter * allocate_page_slow_path(page_allocation_type const i_allocation_type, progress_guarantee const i_progress_guarantee) noexcept
+            DENSITY_NO_INLINE PageFooter * allocate_page_slow_path(
+              page_allocation_type const i_allocation_type,
+              progress_guarantee const   i_progress_guarantee) noexcept
             {
                 PageFooter * new_page = nullptr;
 
                 // First we try to use the memory already allocated from the system...
-                void * new_page_mem = m_global_state->sys_page_manager().try_allocate_page(progress_wait_free);
+                void * new_page_mem =
+                  m_global_state->sys_page_manager().try_allocate_page(progress_wait_free);
                 if (new_page_mem != nullptr)
                 {
                     new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -297,7 +362,8 @@ namespace density
                 {
                     // ...then try to steal from m_victim_slot, looping all the slots...
                     auto const starting_victim_slot = m_victim_slot;
-                    do {
+                    do
+                    {
 
                         new_page = try_steal_and_allocate(i_allocation_type);
                         if (new_page != nullptr)
@@ -310,7 +376,8 @@ namespace density
                     if (new_page == nullptr && i_progress_guarantee == progress_blocking)
                     {
                         // ...last chance, try possibly allocating new memory from the system
-                        new_page_mem = m_global_state->sys_page_manager().try_allocate_page(progress_blocking);
+                        new_page_mem =
+                          m_global_state->sys_page_manager().try_allocate_page(progress_blocking);
                         if (new_page_mem != nullptr)
                         {
                             new_page = initialize_page(i_allocation_type, new_page_mem);
@@ -334,18 +401,24 @@ namespace density
 
             PageStack & get_private_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(i_allocation_type == page_allocation_type::uninitialized || i_allocation_type == page_allocation_type::zeroed);
-                return i_allocation_type == page_allocation_type::zeroed ? m_private_zeroed_page_stack : m_private_page_stack;
+                DENSITY_ASSERT_INTERNAL(
+                  i_allocation_type == page_allocation_type::uninitialized ||
+                  i_allocation_type == page_allocation_type::zeroed);
+                return i_allocation_type == page_allocation_type::zeroed
+                         ? m_private_zeroed_page_stack
+                         : m_private_page_stack;
             }
 
-            void disccard_page_stack(page_allocation_type const i_allocation_type, PageStack & i_page_stack) noexcept
+            void discard_page_stack(
+              page_allocation_type const i_allocation_type, PageStack & i_page_stack) noexcept
             {
-                DENSITY_ASSERT(!i_page_stack.empty());
+                DENSITY_ASSERT_INTERNAL(!i_page_stack.empty());
 
                 // try to push the page once on every slot
                 auto * const original_slot = m_current_slot;
-                bool done = false;
-                do {
+                bool         done          = false;
+                do
+                {
 
                     if (m_current_slot->get_stack(i_allocation_type).try_push(i_page_stack))
                     {
@@ -362,16 +435,70 @@ namespace density
                     get_private_stack(i_allocation_type).push(i_page_stack);
                 }
             }
+
+            void process_pending_unpins(progress_guarantee i_progress_guarantee) noexcept
+            {
+                if (!m_pages_to_unpin.empty())
+                {
+                    process_pending_unpins_impl(i_progress_guarantee);
+                }
+            }
+
+            DENSITY_NO_INLINE static void
+              process_pending_unpins_impl(progress_guarantee i_progress_guarantee) noexcept
+            {
+                auto & pages_to_unpin = t_instance.m_pages_to_unpin;
+                auto   curr           = pages_to_unpin.first();
+
+                if (curr != nullptr)
+                {
+                    if (i_progress_guarantee <= progress_lock_free)
+                    {
+                        // process all the pending unpins in lock-freedom
+                        do
+                        {
+                            auto const prev_pins =
+                              curr->m_pin_count.fetch_sub(1, detail::mem_relaxed);
+                            DENSITY_ASSERT_INTERNAL(prev_pins > 0);
+                            (void)prev_pins;
+
+                            curr = curr->m_next_page;
+                        } while (curr != nullptr);
+
+                        pages_to_unpin.clear();
+                    }
+                    else
+                    {
+                        // process a bounded count of pending unpins in wait-freedom
+                        unsigned max_unpins = 16;
+                        do
+                        {
+
+                            // try to unpin
+                            auto prev_pins = curr->m_pin_count.load(detail::mem_relaxed);
+                            DENSITY_ASSERT_INTERNAL(prev_pins > 0);
+                            if (!curr->m_pin_count.compare_exchange_weak(
+                                  prev_pins, prev_pins - 1, detail::mem_relaxed))
+                                break;
+
+                            curr = curr->m_next_page;
+                            max_unpins--;
+                        } while (curr != nullptr && max_unpins > 0);
+
+                        pages_to_unpin.truncate_to(curr);
+                    }
+                }
+            }
         };
 
         template <typename SYSTYEM_PAGE_MANAGER>
-            thread_local PageAllocator<SYSTYEM_PAGE_MANAGER>
-                PageAllocator<SYSTYEM_PAGE_MANAGER>::t_instance;
+        thread_local PageAllocator<SYSTYEM_PAGE_MANAGER>
+          PageAllocator<SYSTYEM_PAGE_MANAGER>::t_instance;
 
     } // namespace detail
 
 } // namespace density
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif

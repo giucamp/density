@@ -1,17 +1,17 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <type_traits>
-#include <limits>
-#include <utility>
-#include <typeinfo>
-#include <functional> // for std::hash
-#include <stdexcept>
 #include <density/density_common.h>
+#include <functional> // for std::hash
+#include <limits>
+#include <stdexcept>
+#include <type_traits>
+#include <typeinfo>
+#include <utility>
 
 namespace density
 {
@@ -48,7 +48,7 @@ namespace density
             static const size_t size = sizeof...(FEATURES);
         };
 
-        /** This template concatenates two feature_list, or a feature_list and a feature.
+/** This template concatenates two feature_list, or a feature_list and a feature.
             @tparam FIRST feature_list to prepend
             @tparam SECOND feature_list or feature to append
 
@@ -66,27 +66,26 @@ namespace density
 
             \snippet misc_examples.cpp feature_concat example 1
         */
-        #ifndef DOXYGEN_DOC_GENERATION
-            template <typename...> struct feature_concat;
-            template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
-                struct feature_concat<feature_list<FIRST_FEATURES...>, feature_list<SECOND_FEATURES...>>
-        #else
-            template <typename FIRST, typename SECOND>
-                struct feature_concat
-        #endif
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename...> struct feature_concat;
+        template <typename... FIRST_FEATURES, typename... SECOND_FEATURES>
+        struct feature_concat<feature_list<FIRST_FEATURES...>, feature_list<SECOND_FEATURES...>>
+#else
+        template <typename FIRST, typename SECOND> struct feature_concat
+#endif
         {
             using type = feature_list<FIRST_FEATURES..., SECOND_FEATURES...>;
         };
         template <typename... FIRST_FEATURES, typename SECOND_FEATURE>
-            struct feature_concat<feature_list<FIRST_FEATURES...>, SECOND_FEATURE>
+        struct feature_concat<feature_list<FIRST_FEATURES...>, SECOND_FEATURE>
         {
             using type = feature_list<FIRST_FEATURES..., SECOND_FEATURE>;
         };
 
         template <typename FIRST, typename SECOND>
-            using feature_concat_t = typename feature_concat<FIRST, SECOND>::type;
+        using feature_concat_t = typename feature_concat<FIRST, SECOND>::type;
 
-    } // type_features
+    } // namespace type_features
 
     namespace detail
     {
@@ -96,16 +95,22 @@ namespace density
                 its return type must be size_t.
             - Otherwise std::hash<TYPE> is used to compute the hash
         see http://stackoverflow.com/questions/257288/is-it-possible-to-write-a-c-template-to-check-for-a-functions-existence */
-        template <typename> struct sfinae_true : std::true_type { };
-        template <typename TYPE> static sfinae_true<decltype(hash_func(std::declval<TYPE>()))> has_hash_func_impl(int);
-        template <typename TYPE> static std::false_type has_hash_func_impl(long);
-        template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type)
+        template <typename> struct sfinae_true : std::true_type
         {
-            static_assert(std::is_same< decltype(hash_func(i_object)), size_t >::value,
-                "if the hash_func() exits for this type, then it must return a size_t");
+        };
+        template <typename TYPE>
+        static sfinae_true<decltype(hash_func(std::declval<TYPE>()))> has_hash_func_impl(int);
+        template <typename TYPE> static std::false_type               has_hash_func_impl(long);
+        template <typename TYPE>
+        inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type)
+        {
+            static_assert(
+              std::is_same<decltype(hash_func(i_object)), size_t>::value,
+              "if the hash_func() exits for this type, then it must return a size_t");
             return hash_func(i_object);
         }
-        template <typename TYPE> inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type)
+        template <typename TYPE>
+        inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type)
         {
             return std::hash<TYPE>()(i_object);
         }
@@ -117,68 +122,93 @@ namespace density
         /* DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - down cast from a base class to a derived, assuming
             that the cast is legal. A static_cast is used if it is possible. Otherwise, if a virtual base is
             involved, dynamic_cast is used. */
-        template <typename DERIVED, typename BASE> static sfinae_true<decltype(
-            static_cast<DERIVED>(std::declval<BASE>()))> can_static_cast_impl(int);
-        template <typename DERIVED, typename BASE> static std::false_type can_static_cast_impl(long);
         template <typename DERIVED, typename BASE>
-            inline DERIVED down_cast_impl(BASE i_base_ptr, std::true_type)
+        static sfinae_true<decltype(static_cast<DERIVED>(std::declval<BASE>()))>
+          can_static_cast_impl(int);
+        template <typename DERIVED, typename BASE>
+        static std::false_type can_static_cast_impl(long);
+        template <typename DERIVED, typename BASE>
+        inline DERIVED down_cast_impl(BASE i_base_ptr, std::true_type)
         {
             return static_cast<DERIVED>(i_base_ptr);
         }
         template <typename DERIVED, typename BASE>
-            inline DERIVED down_cast_impl(BASE i_base_ptr, std::false_type)
+        inline DERIVED down_cast_impl(BASE i_base_ptr, std::false_type)
         {
             return dynamic_cast<DERIVED>(i_base_ptr);
         }
-        template <typename DERIVED, typename BASE>
-            inline DERIVED down_cast(BASE i_base_ptr)
+        template <typename DERIVED, typename BASE> inline DERIVED down_cast(BASE i_base_ptr)
         {
             static_assert(std::is_pointer<DERIVED>::value, "DERIVED must be a pointer");
             static_assert(std::is_pointer<BASE>::value, "BASE must be a pointer");
 
             using BaseNaked = typename std::decay<typename std::remove_pointer<BASE>::type>::type;
-            using DerivedNaked = typename std::decay<typename std::remove_pointer<DERIVED>::type>::type;
-            static_assert(std::is_same< BaseNaked, void >::value || std::is_same< BaseNaked, DerivedNaked >::value ||
-                std::is_base_of< BaseNaked, DerivedNaked >::value, "*BASE must be void, DERIVED or a base of *DERIVED");
+            using DerivedNaked =
+              typename std::decay<typename std::remove_pointer<DERIVED>::type>::type;
+            static_assert(
+              std::is_same<BaseNaked, void>::value ||
+                std::is_same<BaseNaked, DerivedNaked>::value ||
+                std::is_base_of<BaseNaked, DerivedNaked>::value,
+              "*BASE must be void, DERIVED or a base of *DERIVED");
 
-            return down_cast_impl<DERIVED>(i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))());
+            return down_cast_impl<DERIVED>(
+              i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))());
         }
 
         /* FeatureTable<TYPE, feature_list<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
         template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
         template <typename BASE, typename TYPE, typename... FEATURES>
-            struct FeatureTable< BASE, TYPE, type_features::feature_list<FEATURES...> >
+        struct FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>
         {
             static void * const s_table[sizeof...(FEATURES)];
         };
         template <typename BASE, typename TYPE, typename... FEATURES>
-            void * const FeatureTable< BASE, TYPE, type_features::feature_list<FEATURES...> >::s_table[sizeof...(FEATURES)]
-                = { reinterpret_cast<void *>( FEATURES::template Impl<BASE, TYPE>::value )... };
+        void * const
+          FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>::s_table[sizeof...(
+            FEATURES)] = {reinterpret_cast<void *>(FEATURES::template Impl<BASE, TYPE>::value)...};
 
         /* IndexOfFeature<0, TARGET_FEATURE, feature_list<FEATURES...> >::value is the index of TARGET_FEATURE in feature_list<FEATURES...>,
             or feature_list<FEATURES...>::size if TARGET_FEATURE is not present */
         template <size_t START_INDEX, typename TARGET_FEATURE, typename FEATURE_LIST>
-            struct IndexOfFeature;
+        struct IndexOfFeature;
         template <size_t START_INDEX, typename TARGET_FEATURE, typename... OTHER_FEATURES>
-            struct IndexOfFeature<START_INDEX, TARGET_FEATURE, type_features::feature_list<OTHER_FEATURES...> >
+        struct IndexOfFeature<
+          START_INDEX,
+          TARGET_FEATURE,
+          type_features::feature_list<OTHER_FEATURES...>>
         {
             static const size_t value = START_INDEX;
         };
-        template <size_t START_INDEX, typename TARGET_FEATURE, typename FIRST_FEATURE, typename... OTHER_FEATURES>
-            struct IndexOfFeature<START_INDEX, TARGET_FEATURE, type_features::feature_list<FIRST_FEATURE, OTHER_FEATURES...> >
+        template <
+          size_t START_INDEX,
+          typename TARGET_FEATURE,
+          typename FIRST_FEATURE,
+          typename... OTHER_FEATURES>
+        struct IndexOfFeature<
+          START_INDEX,
+          TARGET_FEATURE,
+          type_features::feature_list<FIRST_FEATURE, OTHER_FEATURES...>>
         {
-            static const size_t value = std::is_same<TARGET_FEATURE, FIRST_FEATURE>::value ?
-                START_INDEX : IndexOfFeature<START_INDEX + 1, TARGET_FEATURE, type_features::feature_list<OTHER_FEATURES...> >::value;
+            static const size_t value =
+              std::is_same<TARGET_FEATURE, FIRST_FEATURE>::value
+                ? START_INDEX
+                : IndexOfFeature<
+                    START_INDEX + 1,
+                    TARGET_FEATURE,
+                    type_features::feature_list<OTHER_FEATURES...>>::value;
         };
 
         // CopyConstructImpl<COMPLETE_TYPE>::invoke
-        template <typename COMPLETE_TYPE, bool CAN = std::is_copy_constructible<COMPLETE_TYPE>::value> struct CopyConstructImpl;
+        template <
+          typename COMPLETE_TYPE,
+          bool CAN = std::is_copy_constructible<COMPLETE_TYPE>::value>
+        struct CopyConstructImpl;
         template <typename COMPLETE_TYPE> struct CopyConstructImpl<COMPLETE_TYPE, true>
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
                 DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
-                return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE*>(i_second));
+                return new (i_first) COMPLETE_TYPE(*static_cast<const COMPLETE_TYPE *>(i_second));
             }
         };
         template <typename COMPLETE_TYPE> struct CopyConstructImpl<COMPLETE_TYPE, false>
@@ -190,13 +220,17 @@ namespace density
         };
 
         // MoveConstructImpl<COMPLETE_TYPE>::invoke
-        template <typename COMPLETE_TYPE, bool CAN = std::is_nothrow_move_constructible<COMPLETE_TYPE>::value > struct MoveConstructImpl;
+        template <
+          typename COMPLETE_TYPE,
+          bool CAN = std::is_nothrow_move_constructible<COMPLETE_TYPE>::value>
+        struct MoveConstructImpl;
         template <typename COMPLETE_TYPE> struct MoveConstructImpl<COMPLETE_TYPE, true>
         {
             static void * invoke(void * i_first, void * i_second) noexcept
             {
                 DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
-                return new (i_first) COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE*>(i_second)));
+                return new (i_first)
+                  COMPLETE_TYPE(std::move(*static_cast<COMPLETE_TYPE *>(i_second)));
             }
         };
         template <typename COMPLETE_TYPE> struct MoveConstructImpl<COMPLETE_TYPE, false>
@@ -218,8 +252,9 @@ namespace density
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static_assert(sizeof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
-                    "Type with size >= 1/4 of the address space are not supported");
+                static_assert(
+                  sizeof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
+                  "Type with size >= 1/4 of the address space are not supported");
                 // constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
                 static const uintptr_t value = sizeof(TYPE);
             };
@@ -232,8 +267,9 @@ namespace density
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static_assert(alignof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
-                    "Type with alignment >= 1/4 of the address space are not supported");
+                static_assert(
+                  alignof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
+                  "Type with alignment >= 1/4 of the address space are not supported");
                 // constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
                 static const uintptr_t value = alignof(TYPE);
             };
@@ -246,7 +282,7 @@ namespace density
             - Otherwise std::hash<TYPE> is used to compute the hash */
         struct hash
         {
-            using type = size_t(*) (const void * i_source);
+            using type = size_t (*)(const void * i_source);
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -255,19 +291,19 @@ namespace density
                 static size_t invoke(const void * i_source)
                 {
                     DENSITY_ASSERT(i_source != nullptr);
-                    auto const base_ptr = static_cast<const BASE*>(i_source);
-                    return detail::invoke_hash(*detail::down_cast<const TYPE*>(base_ptr));
+                    auto const base_ptr = static_cast<const BASE *>(i_source);
+                    return detail::invoke_hash(*detail::down_cast<const TYPE *>(base_ptr));
                 }
             };
         };
 
         template <typename BASE, typename TYPE>
-            const uintptr_t hash::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t hash::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to a std::type_info associated to a type in the table of the type */
         struct rtti
         {
-            using type = const std::type_info*;
+            using type = const std::type_info *;
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -275,7 +311,7 @@ namespace density
             };
         };
         template <typename BASE, typename TYPE>
-            const uintptr_t rtti::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
+        const uintptr_t rtti::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
 
         /** This feature stores a pointer to the default constructor in the table of the type.
             The effect of the feature is default-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -283,14 +319,14 @@ namespace density
                 @return pointer to a subobject (of type BASE) of the new object. */
         struct default_construct
         {
-            using type = void * (*) (void * i_complete_dest);
+            using type = void * (*)(void * i_complete_dest);
 
             template <typename BASE, typename TYPE> struct Impl
             {
                 static void * invoke(void * i_complete_dest)
                 {
                     DENSITY_ASSERT(i_complete_dest != nullptr);
-                    BASE * const base_result = new(i_complete_dest) TYPE();
+                    BASE * const base_result = new (i_complete_dest) TYPE();
                     return base_result;
                 }
 
@@ -298,7 +334,8 @@ namespace density
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t default_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t
+          default_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to the copy constructor in the table of the type.
             The effect of the feature is copy-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -308,16 +345,17 @@ namespace density
                 @return pointer to a subobject (of type BASE) of the new object. */
         struct copy_construct
         {
-            using type = void * (*) (void * i_complete_dest, const void * i_base_source);
+            using type = void * (*)(void * i_complete_dest, const void * i_base_source);
 
             template <typename BASE, typename TYPE> struct Impl
             {
                 static void * invoke(void * i_complete_dest, const void * i_base_source)
                 {
                     DENSITY_ASSERT(i_base_source != nullptr);
-                    auto const base_source = static_cast<const BASE*>(i_base_source);
+                    auto const base_source = static_cast<const BASE *>(i_base_source);
                     // DENSITY_ASSERT( dynamic_cast<const TYPE*>(base_source) != nullptr ); to do: implement a detail::IsInstanceOf
-                    BASE * const base_result = new(i_complete_dest) TYPE(*detail::down_cast<const TYPE*>(base_source));
+                    BASE * const base_result =
+                      new (i_complete_dest) TYPE(*detail::down_cast<const TYPE *>(base_source));
                     return base_result;
                 }
 
@@ -325,7 +363,8 @@ namespace density
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t copy_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t
+          copy_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to the move constructor in the table of the type.
             The effect of this feature move-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -343,86 +382,90 @@ namespace density
                 {
                     DENSITY_ASSERT(i_complete_dest != nullptr && i_base_source != nullptr);
 
-                    BASE * base_source = static_cast<BASE*>(i_base_source);
+                    BASE * base_source = static_cast<BASE *>(i_base_source);
                     // DENSITY_ASSERT(dynamic_cast<const TYPE*>(base_source) != nullptr); to do: implement a detail::IsInstanceOf
-                    BASE * base_result = new(i_complete_dest) TYPE(std::move(*detail::down_cast<TYPE*>(base_source)));
+                    BASE * base_result = new (i_complete_dest)
+                      TYPE(std::move(*detail::down_cast<TYPE *>(base_source)));
                     return base_result;
                 }
                 static const uintptr_t value;
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t move_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t
+          move_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature invokes a function object. The template parameter must be a callable type.
+/** This feature invokes a function object. The template parameter must be a callable type.
                 @tparam CALLABLE signature of the object function
 
             Example:
             \snippet misc_examples.cpp type_features::invoke example 1
         */
-        #ifndef DOXYGEN_DOC_GENERATION
-            template <typename> struct invoke;
-            template <typename RET, typename... PARAMS>
-                struct invoke<RET(PARAMS...)>
-        #else
-            template <typename CALLABLE>
-                struct invoke
-        #endif
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename> struct invoke;
+        template <typename RET, typename... PARAMS> struct invoke<RET(PARAMS...)>
+#else
+        template <typename CALLABLE> struct invoke
+#endif
         {
-            using type = RET(*)(void * i_base_dest, PARAMS... i_params);
+            using type = RET (*)(void * i_base_dest, PARAMS... i_params);
 
             template <typename BASE, typename TYPE> struct Impl
             {
                 static RET invoke(void * i_base_dest, PARAMS... i_params)
                 {
                     DENSITY_ASSERT(i_base_dest != nullptr);
-                    const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    return (*detail::down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
+                    const auto base_dest = static_cast<BASE *>(i_base_dest);
+                    return (*detail::down_cast<TYPE *>(base_dest))(
+                      std::forward<PARAMS>(i_params)...);
                 }
                 static const uintptr_t value;
             };
         };
         template <typename RET, typename... PARAMS>
         template <typename TYPE, typename BASE>
-        const uintptr_t invoke<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t
+          invoke<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-        /** This feature invokes and destroys a function object. The template parameter must be a callable type.
+/** This feature invokes and destroys a function object. The template parameter must be a callable type.
             The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
             it is faster than using the latter features in sequence.
                 @tparam CALLABLE signature of the object function.
             \sa type_features::invoke
             \sa type_features::destroy */
-        #ifndef DOXYGEN_DOC_GENERATION
-            template <typename> struct invoke_destroy;
-            template <typename RET, typename... PARAMS>
-            struct invoke_destroy<RET(PARAMS...)>
-        #else
-            template <typename CALLABLE>
-                struct invoke_destroy
-        #endif
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename> struct invoke_destroy;
+        template <typename RET, typename... PARAMS> struct invoke_destroy<RET(PARAMS...)>
+#else
+        template <typename CALLABLE> struct invoke_destroy
+#endif
         {
-            using type = RET(*)(void * i_base_dest, PARAMS... i_params);
+            using type = RET (*)(void * i_base_dest, PARAMS... i_params);
 
             template <typename BASE, typename TYPE> struct Impl
             {
                 static RET invoke_and_destroy(void * i_base_dest, PARAMS... i_params)
                 {
-                    return invoke_and_destroy_impl(i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
+                    return invoke_and_destroy_impl(
+                      i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
                 }
                 static const uintptr_t value;
 
-            private:
-                static RET invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
+              private:
+                static RET
+                  invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
                 {
-                    const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    auto && result = (*detail::down_cast<TYPE*>(base_dest))(std::forward<PARAMS>(i_params)...);
-                    detail::down_cast<TYPE*>(base_dest)->TYPE::~TYPE();
+                    const auto base_dest = static_cast<BASE *>(i_base_dest);
+                    auto &&    result =
+                      (*detail::down_cast<TYPE *>(base_dest))(std::forward<PARAMS>(i_params)...);
+                    detail::down_cast<TYPE *>(base_dest)->TYPE::~TYPE();
                     return result;
                 }
-                static void invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
+                static void
+                  invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
                 {
-                    auto const base_dest = static_cast<BASE*>(i_base_dest);
-                    auto const ptr = detail::down_cast<TYPE*>(base_dest);
+                    auto const base_dest = static_cast<BASE *>(i_base_dest);
+                    auto const ptr       = detail::down_cast<TYPE *>(base_dest);
                     (*ptr)(std::forward<PARAMS>(i_params)...);
                     ptr->TYPE::~TYPE();
                 }
@@ -430,49 +473,52 @@ namespace density
         };
         template <typename RET, typename... PARAMS>
         template <typename TYPE, typename BASE>
-            const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke_and_destroy);
+        const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value =
+          reinterpret_cast<uintptr_t>(invoke_and_destroy);
 
 
-        /** This feature aligns, invokes and destroys a function object. The template parameter must be a callable type.
+/** This feature aligns, invokes and destroys a function object. The template parameter must be a callable type.
             The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
             it is faster than using the latter features in sequence.
                 @tparam CALLABLE signature of the object function.
             \sa type_features::invoke
             \sa type_features::destroy */
-        #ifndef DOXYGEN_DOC_GENERATION
-            template <typename> struct align_invoke_destroy;
-            template <typename RET, typename... PARAMS>
-            struct align_invoke_destroy<RET(PARAMS...)>
-        #else
-            template <typename CALLABLE>
-                struct align_invoke_destroy
-        #endif
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename> struct align_invoke_destroy;
+        template <typename RET, typename... PARAMS> struct align_invoke_destroy<RET(PARAMS...)>
+#else
+        template <typename CALLABLE> struct align_invoke_destroy
+#endif
         {
-            using type = RET(*)(void * i_base_dest, PARAMS... i_params);
+            using type = RET (*)(void * i_base_dest, PARAMS... i_params);
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static_assert(std::is_void<BASE>::value, "align_invoke_destroy: BASE must be a void type");
+                static_assert(
+                  std::is_void<BASE>::value, "align_invoke_destroy: BASE must be a void type");
 
                 static RET align_and_invoke_and_destroy(void * i_base_dest, PARAMS... i_params)
                 {
-                    return align_and_invoke_and_destroy_impl(i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
+                    return align_and_invoke_and_destroy_impl(
+                      i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
                 }
                 static const uintptr_t value;
 
-            private:
-                static RET align_and_invoke_and_destroy_impl(void * i_base_dest, std::false_type, PARAMS... i_params)
+              private:
+                static RET align_and_invoke_and_destroy_impl(
+                  void * i_base_dest, std::false_type, PARAMS... i_params)
                 {
                     auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
-                    auto const derived = detail::down_cast<TYPE*>(base_dest);
-                    auto && result = (*derived)(std::forward<PARAMS>(i_params)...);
+                    auto const derived   = detail::down_cast<TYPE *>(base_dest);
+                    auto &&    result    = (*derived)(std::forward<PARAMS>(i_params)...);
                     derived->TYPE::~TYPE();
                     return result;
                 }
-                static void align_and_invoke_and_destroy_impl(void * i_base_dest, std::true_type, PARAMS... i_params)
+                static void align_and_invoke_and_destroy_impl(
+                  void * i_base_dest, std::true_type, PARAMS... i_params)
                 {
                     auto const base_dest = address_upper_align(i_base_dest, alignof(TYPE));
-                    auto const ptr = detail::down_cast<TYPE*>(base_dest);
+                    auto const ptr       = detail::down_cast<TYPE *>(base_dest);
                     (*ptr)(std::forward<PARAMS>(i_params)...);
                     ptr->TYPE::~TYPE();
                 }
@@ -480,7 +526,8 @@ namespace density
         };
         template <typename RET, typename... PARAMS>
         template <typename TYPE, typename BASE>
-            const uintptr_t align_invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(align_and_invoke_and_destroy);
+        const uintptr_t align_invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value =
+          reinterpret_cast<uintptr_t>(align_and_invoke_and_destroy);
 
 
         /** This feature stores a pointer to the destructor of a type.
@@ -493,8 +540,8 @@ namespace density
             {
                 static void * invoke(void * i_base_dest) noexcept
                 {
-                    const auto base_dest = static_cast<BASE*>(i_base_dest);
-                    const auto derived = detail::down_cast<TYPE*>(base_dest);
+                    const auto base_dest = static_cast<BASE *>(i_base_dest);
+                    const auto derived   = detail::down_cast<TYPE *>(base_dest);
                     derived->TYPE::~TYPE();
                     return derived;
                 }
@@ -502,7 +549,7 @@ namespace density
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to a function that compares two object of the type-erased type.
                 @param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
@@ -512,17 +559,20 @@ namespace density
                 @return whether the objects compares equal. */
         struct equals
         {
-            using type = bool (*) (const void * i_first_base_object, const void * i_second_base_object);
+            using type =
+              bool (*)(const void * i_first_base_object, const void * i_second_base_object);
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
+                static bool
+                  invoke(const void * i_first_base_object, const void * i_second_base_object)
                 {
-                    DENSITY_ASSERT(i_first_base_object != nullptr && i_second_base_object != nullptr);
-                    auto const base_first = static_cast<const BASE*>(i_first_base_object);
-                    auto const base_second = static_cast<const BASE*>(i_second_base_object);
-                    auto const complete_first = detail::down_cast<const TYPE*>(base_first);
-                    auto const complete_second = detail::down_cast<const TYPE*>(base_second);
+                    DENSITY_ASSERT(
+                      i_first_base_object != nullptr && i_second_base_object != nullptr);
+                    auto const base_first      = static_cast<const BASE *>(i_first_base_object);
+                    auto const base_second     = static_cast<const BASE *>(i_second_base_object);
+                    auto const complete_first  = detail::down_cast<const TYPE *>(base_first);
+                    auto const complete_second = detail::down_cast<const TYPE *>(base_second);
                     return *complete_first == *complete_second;
                 }
 
@@ -530,7 +580,7 @@ namespace density
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t equals::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t equals::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to a function that compares two object of the type-erased type.
                 @param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
@@ -540,17 +590,20 @@ namespace density
                 @return whether the first object compares less than the first object. */
         struct less
         {
-            using type = bool (*) (const void * i_first_base_object, const void * i_second_base_object);
+            using type =
+              bool (*)(const void * i_first_base_object, const void * i_second_base_object);
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static bool invoke(const void * i_first_base_object, const void * i_second_base_object)
+                static bool
+                  invoke(const void * i_first_base_object, const void * i_second_base_object)
                 {
-                    DENSITY_ASSERT(i_first_base_object != nullptr && i_second_base_object != nullptr);
-                    auto const base_first = static_cast<const BASE*>(i_first_base_object);
-                    auto const base_second = static_cast<const BASE*>(i_second_base_object);
-                    auto const complete_first = detail::down_cast<const TYPE*>(base_first);
-                    auto const complete_second = detail::down_cast<const TYPE*>(base_second);
+                    DENSITY_ASSERT(
+                      i_first_base_object != nullptr && i_second_base_object != nullptr);
+                    auto const base_first      = static_cast<const BASE *>(i_first_base_object);
+                    auto const base_second     = static_cast<const BASE *>(i_second_base_object);
+                    auto const complete_first  = detail::down_cast<const TYPE *>(base_first);
+                    auto const complete_second = detail::down_cast<const TYPE *>(base_second);
                     return *complete_first < *complete_second;
                 }
 
@@ -558,36 +611,55 @@ namespace density
             };
         };
         template <typename TYPE, typename BASE>
-            const uintptr_t less::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+        const uintptr_t less::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
     } // namespace type_features
 
     namespace detail
     {
         /* GetDefaultFeatures<TYPE>::type. Implementation of default_type_features */
-        template <typename TYPE,
-            bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_void<TYPE>::value,
-            bool CAN_MOVE = std::is_nothrow_move_constructible<TYPE>::value || std::is_void<void>::value
-        > struct GetDefaultFeatures;
+        template <
+          typename TYPE,
+          bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_void<TYPE>::value,
+          bool CAN_MOVE =
+            std::is_nothrow_move_constructible<TYPE>::value || std::is_void<void>::value>
+        struct GetDefaultFeatures;
 
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, false >
+        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, false>
         {
-            using type = type_features::feature_list<type_features::size, type_features::alignment, type_features::rtti, type_features::destroy>;
+            using type = type_features::feature_list<
+              type_features::size,
+              type_features::alignment,
+              type_features::rtti,
+              type_features::destroy>;
         };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, false >
+        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, false>
         {
-            using type = type_features::feature_list<type_features::size, type_features::alignment, type_features::rtti, type_features::destroy,
-                type_features::copy_construct>;
+            using type = type_features::feature_list<
+              type_features::size,
+              type_features::alignment,
+              type_features::rtti,
+              type_features::destroy,
+              type_features::copy_construct>;
         };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, true >
+        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, true>
         {
-            using type = type_features::feature_list<type_features::size, type_features::alignment, type_features::rtti, type_features::destroy,
-                type_features::move_construct>;
+            using type = type_features::feature_list<
+              type_features::size,
+              type_features::alignment,
+              type_features::rtti,
+              type_features::destroy,
+              type_features::move_construct>;
         };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, true >
+        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, true>
         {
-            using type = type_features::feature_list<type_features::size, type_features::alignment, type_features::rtti, type_features::destroy,
-                type_features::move_construct, type_features::copy_construct>;
+            using type = type_features::feature_list<
+              type_features::size,
+              type_features::alignment,
+              type_features::rtti,
+              type_features::destroy,
+              type_features::move_construct,
+              type_features::copy_construct>;
         };
 
     } // namespace detail
@@ -595,7 +667,7 @@ namespace density
     namespace type_features
     {
 
-        /** \class default_type_features
+/** \class default_type_features
             This type alias template gives a feature_list for a given type.
                 @tparam COMMON_TYPE type to use to select the features to include. \n
 
@@ -613,20 +685,19 @@ namespace density
 
             Note: A feature_list does not depend on a type. The template argument is used only to decide which features to include.
         */
-        #ifndef DOXYGEN_DOC_GENERATION
-            template <typename COMMON_TYPE>
-                using default_type_features = typename detail::GetDefaultFeatures<COMMON_TYPE>;
-        #else
-            template <typename COMMON_TYPE>
-                struct default_type_features
-            {
-                using type = default_type_features_t<COMMON_TYPE>;
-            };
-        #endif
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename COMMON_TYPE>
+        using default_type_features = typename detail::GetDefaultFeatures<COMMON_TYPE>;
+#else
+        template <typename COMMON_TYPE> struct default_type_features
+        {
+            using type = default_type_features_t<COMMON_TYPE>;
+        };
+#endif
 
         /** Alias for default_type_features<COMMON_TYPE>::type */
         template <typename COMMON_TYPE>
-            using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
+        using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
 
     } // namespace type_features
 
@@ -749,11 +820,12 @@ namespace density
         ObjectB::update(0.0166667)
         ~~~~~~~~~~~~~~
     */
-template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::default_type_features_t<COMMON_TYPE> >
+    template <
+      typename COMMON_TYPE  = void,
+      typename FEATURE_LIST = type_features::default_type_features_t<COMMON_TYPE>>
     class runtime_type
     {
-    public:
-
+      public:
         /** Alias for the template argument COMMON_TYPE */
         using common_type = COMMON_TYPE;
 
@@ -762,29 +834,28 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
 
         /** Creates a runtime_type associated with the specified type. The latter is the target type.
                 @tparam TYPE target type that is type-erased by the returned runtime_type. */
-        template <typename TYPE>
-            static runtime_type make() noexcept
+        template <typename TYPE> static runtime_type make() noexcept
         {
-            return runtime_type(detail::FeatureTable<common_type,
-                typename std::decay<TYPE>::type, FEATURE_LIST>::s_table);
+            return runtime_type(
+              detail::FeatureTable<common_type, typename std::decay<TYPE>::type, FEATURE_LIST>::
+                s_table);
         }
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior. */
-        runtime_type() noexcept
-            : m_table(nullptr) { }
+        runtime_type() noexcept : m_table(nullptr) {}
 
         /** Move-constructs a runtime_type */
-        runtime_type(runtime_type && ) noexcept = default;
+        runtime_type(runtime_type &&) noexcept = default;
 
         /** Copy-constructs a runtime_type */
         runtime_type(const runtime_type &) noexcept = default;
 
         /** Move-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        runtime_type & operator = (runtime_type &&) noexcept = default;
+        runtime_type & operator=(runtime_type &&) noexcept = default;
 
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        runtime_type & operator = (const runtime_type &) noexcept = default;
+        runtime_type & operator=(const runtime_type &) noexcept = default;
 
         /** Destructor */
         ~runtime_type() noexcept = default;
@@ -793,10 +864,7 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
         bool empty() const noexcept { return m_table == nullptr; }
 
         /** Unbind from a target. If the runtime_type was already empty this function has no effect. */
-        void clear() noexcept
-        {
-            m_table = nullptr;
-        }
+        void clear() noexcept { m_table = nullptr; }
 
         /** Returns the size (in bytes) of the target type, which is always > 0. \n
             The effect of this function is the same of this code:
@@ -855,7 +923,8 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
         common_type * default_construct(void * i_dest) const
         {
             DENSITY_ASSERT(!empty());
-            return static_cast<common_type*>( get_feature<type_features::default_construct>()(i_dest) );
+            return static_cast<common_type *>(
+              get_feature<type_features::default_construct>()(i_dest));
         }
 
         /** Copy constructs an instance of the target type on the specified uninitialized storage. \n
@@ -879,7 +948,8 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
         common_type * copy_construct(void * i_dest, const common_type * i_source) const
         {
             DENSITY_ASSERT(!empty());
-            return static_cast<common_type*>(get_feature<type_features::copy_construct>()(i_dest, i_source));
+            return static_cast<common_type *>(
+              get_feature<type_features::copy_construct>()(i_dest, i_source));
         }
 
         /** Move constructs an instance of the target type on the specified uninitialized storage. \n
@@ -902,7 +972,8 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
         common_type * move_construct(void * i_dest, common_type * i_source) const
         {
             DENSITY_ASSERT(!empty());
-            return static_cast<common_type*>(get_feature<type_features::move_construct>()(i_dest, i_source));
+            return static_cast<common_type *>(
+              get_feature<type_features::move_construct>()(i_dest, i_source));
         }
 
         /** Destroys an object of the target type through a pointer to the subobject common_type.
@@ -966,12 +1037,12 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. */
-        template <typename FEATURE>
-            typename FEATURE::type get_feature() const noexcept
+        template <typename FEATURE> typename FEATURE::type get_feature() const noexcept
         {
             DENSITY_ASSERT(!empty());
             const size_t feature_index = detail::IndexOfFeature<0, FEATURE, FEATURE_LIST>::value;
-            static_assert(feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
+            static_assert(
+              feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
             return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
         }
 
@@ -980,7 +1051,7 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
             \n\b Requires: nothing
 
             \n\b Throws: nothing. */
-        bool operator == (const runtime_type & i_other) const noexcept
+        bool operator==(const runtime_type & i_other) const noexcept
         {
             return m_table == i_other.m_table;
         }
@@ -990,45 +1061,45 @@ template <typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::de
             \n\b Requires: nothing
 
             \n\b Throws: nothing. */
-        bool operator != (const runtime_type & i_other) const noexcept
+        bool operator!=(const runtime_type & i_other) const noexcept
         {
             return m_table != i_other.m_table;
         }
 
         /** Returns whether the target type of this runtime_type is exactly the one specified in the
             template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
-        template <typename TYPE>
-            bool is() const noexcept
+        template <typename TYPE> bool is() const noexcept
         {
-            return m_table == detail::FeatureTable<common_type,
-                typename std::decay<TYPE>::type, FEATURE_LIST>::s_table;
+            return m_table == detail::FeatureTable<
+                                common_type,
+                                typename std::decay<TYPE>::type,
+                                FEATURE_LIST>::s_table;
         }
 
         /** Returns an hash. This function is used for the partial specialization of std::hash
             for runtime_type. */
-        size_t hash() const noexcept
-        {
-            return std::hash<const void*>()(m_table);
-        }
+        size_t hash() const noexcept { return std::hash<const void *>()(m_table); }
 
-    private:
-        runtime_type(void * const * i_table) : m_table(i_table) { }
+      private:
+        runtime_type(void * const * i_table) : m_table(i_table) {}
 
-    private:
+      private:
         void * const * m_table;
     };
-}
+} // namespace density
 
 namespace std
 {
     /** Partial specialization of std::hash to allow the use of density::runtime_type as key
         for unordered associative containers. */
     template <typename COMMON_TYPE, typename FEATURE_LIST>
-        struct hash< density::runtime_type<COMMON_TYPE, FEATURE_LIST> >
+    struct hash<density::runtime_type<COMMON_TYPE, FEATURE_LIST>>
     {
-        size_t operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const noexcept
+        size_t
+          operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const
+          noexcept
         {
             return i_runtime_type.hash();
         }
     };
-}
+} // namespace std

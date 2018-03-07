@@ -1,17 +1,17 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include <algorithm>
+#include <cstring>
 #include <density/lifo.h>
 #include <iostream>
-#include <cstring>
-#include <string>
-#include <algorithm>
 #include <numeric>
-#include <vector>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace density_tests
 {
@@ -45,10 +45,10 @@ namespace density_tests
 
         auto mem = buffer_2.resize(sizeof(int));
         assert(mem == buffer_2.data());
-        *static_cast<int*>(mem) = 5;
+        *static_cast<int *>(mem) = 5;
 
         mem = buffer_2.resize(sizeof(int) * 20);
-        assert(*static_cast<int*>(mem) == 5);
+        assert(*static_cast<int *>(mem) == 5);
 
         lifo_array<int> other_numbers(7);
         // buffer_2.resize(20); <---- violation of the lifo constraint, other_numbers is more recent!
@@ -67,90 +67,94 @@ namespace density_tests
 
 
         {
-    //! [lifo_array example 2]
-    // uninitialized array of doubles
-    lifo_array<double> numbers(7);
+            //! [lifo_array example 2]
+            // uninitialized array of doubles
+            lifo_array<double> numbers(7);
 
-    // initialize the array
-    for (auto & num : numbers)
-        num = 1.;
+            // initialize the array
+            for (auto & num : numbers)
+                num = 1.;
 
-    // compute the sum
-    auto const sum = std::accumulate(numbers.begin(), numbers.end(), 0.);
-    assert(sum == 7.);
+            // compute the sum
+            auto const sum = std::accumulate(numbers.begin(), numbers.end(), 0.);
+            assert(sum == 7.);
 
-    // initialized array
-    lifo_array<double> other_numbers(7, 1.);
-    auto const other_sum = std::accumulate(other_numbers.begin(), other_numbers.end(), 0.);
-    assert(other_sum == 7.);
+            // initialized array
+            lifo_array<double> other_numbers(7, 1.);
+            auto const other_sum = std::accumulate(other_numbers.begin(), other_numbers.end(), 0.);
+            assert(other_sum == 7.);
 
-    // array of class objects - they are initialized by the default constructor
-    lifo_array<std::string> strings(10);
-    bool all_empty = std::all_of(strings.begin(), strings.end(), [](const std::string & i_str) {
-        return i_str.empty();
-    });
-    assert(all_empty);
-    //! [lifo_array example 2]
-    (void)sum;
-    (void)other_sum;
-    (void)all_empty;
+            // array of class objects - they are initialized by the default constructor
+            lifo_array<std::string> strings(10);
+            bool                    all_empty =
+              std::all_of(strings.begin(), strings.end(), [](const std::string & i_str) {
+                  return i_str.empty();
+              });
+            assert(all_empty);
+            //! [lifo_array example 2]
+            (void)sum;
+            (void)other_sum;
+            (void)all_empty;
         }
 
         {
-    //! [lifo_array example 3]
-    struct MyStruct
-    {
-        lifo_array<std::string> m_strings{ 6 };
-        lifo_array<std::string> m_other_strings{ 6 };
-    };
+            //! [lifo_array example 3]
+            struct MyStruct
+            {
+                lifo_array<std::string> m_strings{6};
+                lifo_array<std::string> m_other_strings{6};
+            };
 
-    // In C++ array elements and struct members have lifo-compliant lifetime
-    lifo_array<MyStruct> structs{ 10 };
-    lifo_array<MyStruct> other_structs{ 10 };
-    //! [lifo_array example 3]
+            // In C++ array elements and struct members have lifo-compliant lifetime
+            lifo_array<MyStruct> structs{10};
+            lifo_array<MyStruct> other_structs{10};
+            //! [lifo_array example 3]
         }
         {
-    //! [lifo_array example 4]
-    struct MyStruct
-    {
-        lifo_array<std::string> m_strings{ 6 };
-        lifo_array<std::string> m_other_strings{ 6 };
-    };
+            //! [lifo_array example 4]
+            struct MyStruct
+            {
+                lifo_array<std::string> m_strings{6};
+                lifo_array<std::string> m_other_strings{6};
+            };
 
-    struct MyStruct1
-    {
-        lifo_array<MyStruct> m_structs{ 6 };
-        lifo_array<MyStruct> m_other_structs{ 6 };
-    };
+            struct MyStruct1
+            {
+                lifo_array<MyStruct> m_structs{6};
+                lifo_array<MyStruct> m_other_structs{6};
+            };
 
-    // In C++ array elements and struct members have lifo-compliant lifetime
-    lifo_array<MyStruct> structs{ 10 };
+            // In C++ array elements and struct members have lifo-compliant lifetime
+            lifo_array<MyStruct> structs{10};
 
-    // Still legal, but don't go too far
-    lifo_array<std::unique_ptr<MyStruct1>> other_structs{ 10 };
-    std::generate(other_structs.begin(), other_structs.end(), [] () { return std::unique_ptr<MyStruct1>(new MyStruct1); });
-    //! [lifo_array example 4]
+            // Still legal, but don't go too far
+            lifo_array<std::unique_ptr<MyStruct1>> other_structs{10};
+            std::generate(other_structs.begin(), other_structs.end(), []() {
+                return std::unique_ptr<MyStruct1>(new MyStruct1);
+            });
+            //! [lifo_array example 4]
         }
         {
-    //! [lifo_array constructor 2]
-    std::vector<int> vect{ 1, 2, 3 };
-    lifo_array<int> array(vect.cbegin(), vect.cend());
-    auto int_sum = std::accumulate(array.begin(), array.end(), 0);
-    assert(int_sum == 6);
-    //! [lifo_array constructor 2]
-    (void)int_sum;
+            //! [lifo_array constructor 2]
+            std::vector<int> vect{1, 2, 3};
+            lifo_array<int>  array(vect.cbegin(), vect.cend());
+            auto             int_sum = std::accumulate(array.begin(), array.end(), 0);
+            assert(int_sum == 6);
+            //! [lifo_array constructor 2]
+            (void)int_sum;
         }
 
         {
-    //! [lifo_array constructor 3]
-    lifo_array<std::string> strings(10, 4, '*');
-    assert(strings.size() == 10);
-    bool all_stars = std::all_of(strings.begin(), strings.end(), [](const std::string & i_str) {
-        return i_str == "****";
-    });
-    assert(all_stars);
-    //! [lifo_array constructor 3]
-    (void)all_stars;
+            //! [lifo_array constructor 3]
+            lifo_array<std::string> strings(10, 4, '*');
+            assert(strings.size() == 10);
+            bool all_stars =
+              std::all_of(strings.begin(), strings.end(), [](const std::string & i_str) {
+                  return i_str == "****";
+              });
+            assert(all_stars);
+            //! [lifo_array constructor 3]
+            (void)all_stars;
         }
 
         auto lifo_allocator_example_1 = [] {
@@ -172,7 +176,7 @@ namespace density_tests
             {
                 //! [lifo_allocator allocate_empty 2]
                 lifo_allocator<> allocator;
-                constexpr auto alignment = decltype(allocator)::alignment;
+                constexpr auto   alignment = decltype(allocator)::alignment;
 
                 auto block = allocator.allocate_empty();
                 assert(address_is_aligned(block, alignment));
@@ -202,23 +206,24 @@ namespace density_tests
 
     //! [lifo_buffer example 1]
     // concatenate and print a null terminated array of strings
-    void concat_and_print(const char * * i_strings)
+    void concat_and_print(const char ** i_strings)
     {
         using namespace density;
 
         lifo_buffer buff;
         while (*i_strings != nullptr)
         {
-            auto const curr_len = buff.size() > 0 ? buff.size() - 1 : 0; // discard the previous null char, if any
+            auto const curr_len =
+              buff.size() > 0 ? buff.size() - 1 : 0; // discard the previous null char, if any
             auto const additional_len = strlen(*i_strings);
 
             buff.resize(curr_len + additional_len + 1);
-            memcpy(static_cast<char*>(buff.data()) + curr_len, *i_strings, additional_len + 1);
+            memcpy(static_cast<char *>(buff.data()) + curr_len, *i_strings, additional_len + 1);
 
             i_strings++;
         }
 
-        std::cout << static_cast<char*>(buff.data())  << std::endl;
+        std::cout << static_cast<char *>(buff.data()) << std::endl;
     }
     //! [lifo_buffer example 1]
 
@@ -228,7 +233,16 @@ namespace density_tests
 
         lifo_array_example_2();
 
-        const char * strings[] = {"Oh, ", "Hello ", "world: ", "this ", "is ", "an ", "array ", "of ", "strings!!", nullptr};
+        const char * strings[] = {"Oh, ",
+                                  "Hello ",
+                                  "world: ",
+                                  "this ",
+                                  "is ",
+                                  "an ",
+                                  "array ",
+                                  "of ",
+                                  "strings!!",
+                                  nullptr};
         concat_and_print(strings);
     }
 

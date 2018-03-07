@@ -1,17 +1,17 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../test_framework/density_test_common.h"
-#include "../test_framework/test_objects.h"
-#include "../test_framework/test_allocators.h"
 #include "../test_framework/progress.h"
+#include "../test_framework/test_allocators.h"
+#include "../test_framework/test_objects.h"
 #include "complex_polymorphism.h"
 #include <density/conc_heter_queue.h>
-#include <type_traits>
 #include <iterator>
+#include <type_traits>
 
 namespace density_tests
 {
@@ -20,7 +20,7 @@ namespace density_tests
         using namespace density;
 
         {
-            void_allocator allocator;
+            default_allocator  allocator;
             conc_heter_queue<> queue(allocator); // copy construct allocator
             queue.push(1);
             queue.push(2);
@@ -42,8 +42,9 @@ namespace density_tests
             DENSITY_TEST_ASSERT(other_queue.empty());
 
             // test allocator getters
-            move_only_void_allocator movable_alloc(5);
-            conc_heter_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+            move_only_void_allocator                                         movable_alloc(5);
+            conc_heter_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(
+              std::move(movable_alloc));
 
             auto allocator_copy = other_queue.get_allocator();
             (void)allocator_copy;
@@ -61,8 +62,7 @@ namespace density_tests
     }
 
     /** Basic tests conc_heter_queue<void, ...> with a non-polymorphic base */
-    template <typename QUEUE>
-        void conc_heterogeneous_queue_basic_void_tests()
+    template <typename QUEUE> void conc_heterogeneous_queue_basic_void_tests()
     {
         static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -84,8 +84,7 @@ namespace density_tests
         }
     }
 
-    template<typename ELEMENT, typename QUEUE>
-        void dynamic_push_3(QUEUE & i_queue)
+    template <typename ELEMENT, typename QUEUE> void dynamic_push_3(QUEUE & i_queue)
     {
         auto const type = QUEUE::runtime_type::template make<ELEMENT>();
 
@@ -103,8 +102,15 @@ namespace density_tests
     {
         using namespace density;
         using namespace type_features;
-        using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
-            default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+        using RunTimeType = runtime_type<
+          NonPolymorphicBase,
+          feature_list<
+            default_construct,
+            move_construct,
+            copy_construct,
+            destroy,
+            size,
+            alignment>>;
         conc_heter_queue<NonPolymorphicBase, RunTimeType> queue;
 
         queue.push(NonPolymorphicBase());
@@ -139,8 +145,15 @@ namespace density_tests
     {
         using namespace density;
         using namespace type_features;
-        using RunTimeType = runtime_type<PolymorphicBase, feature_list<
-            default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+        using RunTimeType = runtime_type<
+          PolymorphicBase,
+          feature_list<
+            default_construct,
+            move_construct,
+            copy_construct,
+            destroy,
+            size,
+            alignment>>;
         conc_heter_queue<PolymorphicBase, RunTimeType> queue;
 
         queue.push(PolymorphicBase());
@@ -161,15 +174,15 @@ namespace density_tests
         polymorphic_consume<Derived2>(queue.try_start_reentrant_consume());
         polymorphic_consume<MultipleDerived>(queue.try_start_consume());
 
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             polymorphic_consume<PolymorphicBase>(queue.try_start_reentrant_consume());
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             polymorphic_consume<SingleDerived>(queue.try_start_consume());
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             polymorphic_consume<Derived1>(queue.try_start_reentrant_consume());
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             polymorphic_consume<Derived2>(queue.try_start_consume());
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             polymorphic_consume<MultipleDerived>(queue.try_start_reentrant_consume());
 
         DENSITY_TEST_ASSERT(queue.empty());
@@ -190,8 +203,10 @@ namespace density_tests
 
         conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<>>();
 
-        conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+        conc_heterogeneous_queue_basic_void_tests<
+          conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-        conc_heterogeneous_queue_basic_void_tests<conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+        conc_heterogeneous_queue_basic_void_tests<
+          conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
     }
-}
+} // namespace density_tests

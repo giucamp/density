@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -16,11 +16,11 @@ namespace density
         struct PageFooter
         {
             /** Pointer to the next page when the page is inside a stack, undefined otherwise. */
-            PageFooter * m_next_page{ nullptr };
+            PageFooter * m_next_page{nullptr};
 
             /* Number of times the page has been pinned. The allocator can't modify the content
                 of a page while the pin count is greater than zero. */
-            std::atomic<uintptr_t> m_pin_count{ 0 };
+            std::atomic<uintptr_t> m_pin_count{0};
         };
 
         /** \internal Non-concurrent stack of pages. This is not a general purpose
@@ -28,13 +28,13 @@ namespace density
             \n PageStack is not a strict stack: pop_unpinned removes the first unpinned page, if any. */
         class PageStack
         {
-        private:
-            PageFooter * m_first{ nullptr }; /**< root of the null-terminated linked list. */
-            PageFooter * m_cached_last{ nullptr }; /**< pointer to the last page, if known, or nullptr. This variable is redundant, and
+          private:
+            PageFooter * m_first{nullptr}; /**< root of the null-terminated linked list. */
+            PageFooter * m_cached_last{
+              nullptr}; /**< pointer to the last page, if known, or nullptr. This variable is redundant, and
                                                     is used just to optimize the function find_last. */
 
-        public:
-
+          public:
             /** Constructs a stack from a null-terminated linked-list of pages. If the argument is nullptr the stack is empty */
             PageStack(PageFooter * i_first = nullptr) noexcept
                 : m_first(i_first), m_cached_last(nullptr)
@@ -45,13 +45,13 @@ namespace density
             PageStack(const PageStack &) = delete;
 
             /** Copy assignment not allowed */
-            PageStack & operator = (const PageStack &) = delete;
+            PageStack & operator=(const PageStack &) = delete;
 
             /** Move constructor. A moved-from PageStack can only be destroyed. Using it in any other way causes undefined behavior. */
             PageStack(PageStack &&) noexcept = default;
 
             /** Move assignment. A moved-from PageStack can only be destroyed. Using it in any other way causes undefined behavior. */
-            PageStack & operator = (PageStack &&) noexcept = default;
+            PageStack & operator=(PageStack &&) noexcept = default;
 
             /** Prepends a page to this stack.
 
@@ -62,7 +62,7 @@ namespace density
             {
                 DENSITY_ASSERT_INTERNAL(i_page != nullptr);
                 i_page->m_next_page = m_first;
-                m_first = i_page;
+                m_first             = i_page;
             }
 
             /** Prepends another PageStack to this stack. The argument may be modified because find_last is called on it.
@@ -74,20 +74,14 @@ namespace density
             {
                 DENSITY_ASSERT_INTERNAL(!i_stack.empty());
                 i_stack.find_last()->m_next_page = m_first;
-                m_first = i_stack.first();
+                m_first                          = i_stack.first();
             }
 
             /** Returns the top of the stack */
-            PageFooter * first() const noexcept
-            {
-                return m_first;
-            }
+            PageFooter * first() const noexcept { return m_first; }
 
             /** Returns whether the stack is empty */
-            bool empty() const noexcept
-            {
-                return m_first == nullptr;
-            }
+            bool empty() const noexcept { return m_first == nullptr; }
 
             /** Returns the page at the bottom of the stack. This function uses a cache pointer to avoid the linear scan from the 2nd invocation on.
 
@@ -119,7 +113,8 @@ namespace density
 
                     PageFooter * curr = m_first;
                     PageFooter * prev = nullptr;
-                    do {
+                    do
+                    {
                         DENSITY_ASSERT_INTERNAL((prev == nullptr) == (curr == m_first));
 
                         // note: probably this may be a non-atomic read
@@ -140,6 +135,18 @@ namespace density
                     m_cached_last = prev;
                 }
                 return nullptr;
+            }
+
+            void clear() noexcept
+            {
+                m_first       = nullptr;
+                m_cached_last = nullptr;
+            }
+
+            void truncate_to(PageFooter * i_new_first) noexcept
+            {
+                m_first       = i_new_first;
+                m_cached_last = nullptr;
             }
         };
 

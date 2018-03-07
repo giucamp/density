@@ -1,14 +1,14 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
 #include <density/density_common.h>
+#include <density/raw_atomic.h>
 #include <thread>
 #include <type_traits>
-#include <density/raw_atomic.h>
 
 namespace density
 {
@@ -36,11 +36,9 @@ namespace density
             The singleton class should be uncopyable, unmovable, and should have private constructor and destructor. SingletonPtr<T>
             should be declared friend of the singleton class. To exploit the emptyness of SingletonPtr the user may use the empty
             base class optimization. */
-        template <typename SINGLETON>
-            class SingletonPtr
+        template <typename SINGLETON> class SingletonPtr
         {
-        public:
-
+          public:
             /** Constructs the SingletonPtr, possibly constructing the singleton. */
             SingletonPtr() noexcept(std::is_nothrow_default_constructible<SINGLETON>::value)
             {
@@ -50,46 +48,27 @@ namespace density
             }
 
             /** Copy constructs the SingletonPt. This function will never construct the singleton. */
-            SingletonPtr(const SingletonPtr &) noexcept
-            {
-                add_ref_noconstruct();
-            }
+            SingletonPtr(const SingletonPtr &) noexcept { add_ref_noconstruct(); }
 
             /** Copy assigns the SingletonPt. This is actually a no-operation. */
-            SingletonPtr & operator = (const SingletonPtr &) noexcept
-            {
-                return *this;
-            }
+            SingletonPtr & operator=(const SingletonPtr &) noexcept { return *this; }
 
             /** Destroys the SingletonPt, possibly destroying the singleton. */
-            ~SingletonPtr()
-            {
-                release();
-            }
+            ~SingletonPtr() { release(); }
 
             /** Provides access to the singleton. */
-            SINGLETON * operator -> () const noexcept
-            {
-                return get_singleton();
-            }
+            SINGLETON * operator->() const noexcept { return get_singleton(); }
 
             /** Provides access to the singleton. */
-            SINGLETON & operator * () const noexcept
-            {
-                return *get_singleton();
-            }
+            SINGLETON & operator*() const noexcept { return *get_singleton(); }
 
             /** Provides access to the singleton. */
-            SINGLETON get() const noexcept
-            {
-                return get_singleton();
-            }
+            SINGLETON get() const noexcept { return get_singleton(); }
 
-        private:
-
+          private:
             static SINGLETON * get_singleton() noexcept
             {
-                return reinterpret_cast<SINGLETON*>(&s_singleton_storage);
+                return reinterpret_cast<SINGLETON *>(&s_singleton_storage);
             }
 
             static void add_ref() noexcept(std::is_nothrow_default_constructible<SINGLETON>::value)
@@ -100,9 +79,10 @@ namespace density
                     if (ref_count == 0)
                     {
                         // the singleton must be constructed
-                        if (raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, static_cast<uintptr_t>(1)))
+                        if (raw_atomic_compare_exchange_weak(
+                              &s_ref_count, &ref_count, static_cast<uintptr_t>(1)))
                         {
-                            new(&s_singleton_storage) SINGLETON();
+                            new (&s_singleton_storage) SINGLETON();
 
                             raw_atomic_store(&s_ref_count, 2);
                             break;
@@ -117,7 +97,8 @@ namespace density
                     else
                     {
                         // just increment the refcount
-                        if (raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, ref_count + 1))
+                        if (raw_atomic_compare_exchange_weak(
+                              &s_ref_count, &ref_count, ref_count + 1))
                         {
                             break;
                         }
@@ -128,7 +109,8 @@ namespace density
             static void add_ref_noconstruct() noexcept
             {
                 auto ref_count = raw_atomic_load(&s_ref_count);
-                while (!raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, ref_count + 1));
+                while (!raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, ref_count + 1))
+                    ;
             }
 
             static void release() noexcept
@@ -140,7 +122,8 @@ namespace density
                     if (ref_count == 2)
                     {
                         // the singleton must be destroyed
-                        if (raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, static_cast<uintptr_t>(1)))
+                        if (raw_atomic_compare_exchange_weak(
+                              &s_ref_count, &ref_count, static_cast<uintptr_t>(1)))
                         {
                             get_singleton()->~SINGLETON();
 
@@ -157,7 +140,8 @@ namespace density
                     else
                     {
                         // just decrement the refcount
-                        if (raw_atomic_compare_exchange_weak(&s_ref_count, &ref_count, ref_count - 1))
+                        if (raw_atomic_compare_exchange_weak(
+                              &s_ref_count, &ref_count, ref_count - 1))
                         {
                             break;
                         }
@@ -165,20 +149,21 @@ namespace density
                 }
             }
 
-        private:
-            static typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type s_singleton_storage;
-            static uintptr_t s_ref_count;
+          private:
+            static typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type
+                                           s_singleton_storage;
+            static uintptr_t               s_ref_count;
             static SingletonPtr<SINGLETON> s_global_ptr_instance;
         };
 
         template <typename SINGLETON>
-            typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type SingletonPtr<SINGLETON>::s_singleton_storage;
+        typename std::aligned_storage<sizeof(SINGLETON), alignof(SINGLETON)>::type
+          SingletonPtr<SINGLETON>::s_singleton_storage;
+
+        template <typename SINGLETON> uintptr_t SingletonPtr<SINGLETON>::s_ref_count;
 
         template <typename SINGLETON>
-            uintptr_t SingletonPtr<SINGLETON>::s_ref_count;
-
-        template <typename SINGLETON>
-            SingletonPtr<SINGLETON> SingletonPtr<SINGLETON>::s_global_ptr_instance;
+        SingletonPtr<SINGLETON> SingletonPtr<SINGLETON>::s_global_ptr_instance;
 
     } // namespace detail
 

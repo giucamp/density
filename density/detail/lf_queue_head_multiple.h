@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -11,75 +11,90 @@ namespace density
     namespace detail
     {
         /** \internal Class template that implements consume operations with multiple producers */
-        template < typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename QUEUE_TAIL >
-            class LFQueue_Head<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, QUEUE_TAIL> : protected QUEUE_TAIL
+        template <
+          typename COMMON_TYPE,
+          typename RUNTIME_TYPE,
+          typename ALLOCATOR_TYPE,
+          typename QUEUE_TAIL>
+        class LFQueue_Head<
+          COMMON_TYPE,
+          RUNTIME_TYPE,
+          ALLOCATOR_TYPE,
+          concurrency_multiple,
+          QUEUE_TAIL> : protected QUEUE_TAIL
         {
-        private:
+          private:
             using Base = QUEUE_TAIL;
 
-        protected:
-
+          protected:
             using ControlBlock = typename Base::ControlBlock;
 
-            LFQueue_Head() noexcept
-            {
-            }
+            constexpr LFQueue_Head() noexcept {}
 
-            LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept
+            constexpr LFQueue_Head(ALLOCATOR_TYPE && i_allocator) noexcept
                 : Base(std::move(i_allocator))
             {
             }
 
-            LFQueue_Head(const ALLOCATOR_TYPE & i_allocator)
-                : Base(i_allocator)
+            constexpr LFQueue_Head(const ALLOCATOR_TYPE & i_allocator) noexcept : Base(i_allocator)
             {
             }
 
-            LFQueue_Head(LFQueue_Head && i_source) noexcept
-                : LFQueue_Head()
+            LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head()
             {
-                swap(i_source);
+                swap(*this, i_source);
             }
 
-            LFQueue_Head & operator = (LFQueue_Head && i_source) noexcept
+            LFQueue_Head & operator=(LFQueue_Head && i_source) noexcept
             {
-                swap(i_source);
+                swap(*this, i_source);
                 return *this;
             }
 
-            void swap(LFQueue_Head & i_other) noexcept
+            // this function is not required to be threadsafe
+            friend void swap(LFQueue_Head & i_first, LFQueue_Head & i_second) noexcept
             {
-                Base::swap(i_other);
+                // swap the base
+                swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap the head
-                auto const tmp = i_other.m_head.load();
-                i_other.m_head.store(m_head.load());
-                m_head.store(tmp);
+                auto const tmp = i_second.m_head.load();
+                i_second.m_head.store(i_first.m_head.load());
+                i_first.m_head.store(tmp);
             }
 
             struct Consume
             {
-                LFQueue_Head * m_queue = nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
-                ControlBlock * m_control = nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
-                uintptr_t m_next_ptr = 0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and only if m_next_ptr == 0 */
+                LFQueue_Head * m_queue =
+                  nullptr; /**< Owning queue if the Consume is not empty, undefined otherwise. */
+                ControlBlock * m_control =
+                  nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
+                uintptr_t m_next_ptr =
+                  0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and 
+                          only if m_next_ptr <= LfQueue_AllFlags */
 
                 Consume() noexcept = default;
 
                 Consume(const Consume &) = delete;
-                Consume & operator = (const Consume &) = delete;
+                Consume & operator=(const Consume &) = delete;
 
                 Consume(Consume && i_source) noexcept
-                    : m_queue(i_source.m_queue), m_control(i_source.m_control), m_next_ptr(i_source.m_next_ptr)
+                    : m_queue(i_source.m_queue), m_control(i_source.m_control),
+                      m_next_ptr(i_source.m_next_ptr)
                 {
-                    i_source.m_control = nullptr;
+                    i_source.m_control  = nullptr;
                     i_source.m_next_ptr = 0;
                 }
 
-                Consume & operator = (Consume && i_source) noexcept
+                Consume & operator=(Consume && i_source) noexcept
                 {
                     swap(i_source);
                     return *this;
                 }
+
+                bool empty() const noexcept { return m_next_ptr <= LfQueue_AllFlags; }
+
+                bool external() const noexcept { return (m_next_ptr & LfQueue_External) != 0; }
 
                 ~Consume()
                 {
@@ -97,25 +112,24 @@ namespace density
                     swap(m_next_ptr, i_other.m_next_ptr);
                 }
 
-                /** Attaches this Consume to a queue, pinning the head. The previously pinned page is unpinned.
-                    @return true if a page was pinned, false if the queue is virgin. */
-                bool assign_queue(LFQueue_Head * i_queue) noexcept
+                bool begin_iteration(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(m_control, Base::s_alloc_granularity));
+                    DENSITY_ASSERT_ALIGNED(m_control, Base::s_alloc_granularity);
 
                     ControlBlock * head = i_queue->m_head.load();
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                    DENSITY_ASSERT_ALIGNED(head, Base::s_alloc_granularity);
 
                     if (head == nullptr)
                     {
                         head = init_head(i_queue);
                         if (head == nullptr)
                         {
-                            return false;
+                            m_next_ptr = 0;
+                            return true;
                         }
                     }
 
-                    while (!DENSITY_LIKELY(Base::same_page(m_control, head)))
+                    while (!Base::same_page(m_control, head))
                     {
                         DENSITY_ASSERT_INTERNAL(m_control != head);
 
@@ -129,11 +143,13 @@ namespace density
                         m_control = head;
 
                         head = i_queue->m_head.load();
-                        DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                        DENSITY_ASSERT_INTERNAL(
+                          address_is_aligned(head, Base::s_alloc_granularity));
                     }
 
-                    m_control = static_cast<ControlBlock*>(head);
-                    m_queue = i_queue;
+                    m_queue    = i_queue;
+                    m_control  = static_cast<ControlBlock *>(head);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
                     return true;
                 }
 
@@ -147,201 +163,188 @@ namespace density
                 {
                     DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 
-                    if (!assign_queue(i_queue))
+                    begin_iteration(i_queue);
+                    while (!empty())
                     {
-                        return true;
-                    }
-
-                    bool is_empty = true;
-                    auto control = m_control;
-                    auto next = control;
-
-                    for (;;)
-                    {
-                        DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
-
-                        /*
-
-                            - control and next are in the same page. In this case we continue iterating
-                                without any pin\unpin. This is the fast-path.
-
-                            - control and next are in distinct pages. In this case we have to switch the pinned page.
-
-                            - next is null. The head of the queue is to be initialized. If no put has been performed on this
-                                queue, no operation is done.
-
-                            - control is nullptr. This Consume has to be initialized
-
-                        */
-                        if (DENSITY_LIKELY(Base::same_page(control, next)))
+                        if (
+                          (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
+                          0)
                         {
-                            control = next;
-
-                            // We do an initial relaxed read. We will do a memory acquire in the CAS
-                            auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
-                            next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
-
-                            /** Check if this element is ready to be consumed */
-                            if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
-                            {
-                                if ((next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
-                                {
-                                    is_empty = false;
-                                    break;
-                                }
-                                else
-                                {
-                                    /* We have found a zeroed ControlBlock */
-                                    next = i_queue->m_head.load(mem_relaxed);
-                                    bool should_continue = false;
-                                    if (Base::same_page(next, control))
-                                        should_continue = control < next;
-
-                                    if (!should_continue)
-                                    {
-                                        // the queue is empty
-                                        break;
-                                    }
-                                }
-                            }
+                            return false;
                         }
-                        else
+                        move_next();
+                    }
+                    return true;
+                }
+
+                bool move_next() noexcept
+                {
+                    DENSITY_ASSERT_INTERNAL(
+                      address_is_aligned(m_control, Base::s_alloc_granularity));
+
+                    auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
+                    if (!Base::same_page(m_control, next))
+                    {
+                        DENSITY_ASSERT_INTERNAL(next != nullptr);
+                        m_queue->ALLOCATOR_TYPE::pin_page(next);
+
+                        auto const potentially_different_next_ptr =
+                          raw_atomic_load(&m_control->m_next, mem_relaxed);
+
+                        m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+
+                        if (potentially_different_next_ptr == 0)
                         {
-                            // page switch - we don't update next, we just fix the pinning and set control = next
-                            DENSITY_ASSERT_INTERNAL(next != nullptr);
-                            i_queue->ALLOCATOR_TYPE::pin_page(next);
-                            i_queue->ALLOCATOR_TYPE::unpin_page(control);
-                            control = next;
+                            /* the control block has been zeroed in the meanwhile, we have to restart */
+                            m_control = next;
+                            begin_iteration(m_queue);
+                            return true;
                         }
                     }
 
-                    m_control = control;
-
-                    return is_empty;
+                    m_control  = next;
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    return true;
                 }
 
                 /** Tries to start a consume operation. The Consume must be initially empty.
                     If there are no consumable elements, the Consume remains empty (m_next_ptr == 0).
                     Otherwise m_next_ptr is the value to set on the ControlBox to commit the consume
-                    (it has the NbQueue_Dead flag). */
+                    (it has the LfQueue_Dead flag). */
                 void start_consume_impl(LFQueue_Head * i_queue) noexcept
                 {
                     DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
 
-                    if (!assign_queue(i_queue))
+                    begin_iteration(i_queue);
+                    while (!empty())
                     {
-                        return;
-                    }
-                    auto control = m_control;
-                    auto next = control;
-
-                    for (;;)
-                    {
-                        DENSITY_ASSERT_INTERNAL(address_is_aligned(control, Base::s_alloc_granularity));
-
-                        /*
-
-                            - control and next are in the same page. In this case we continue iterating
-                                without any pin\unpin. This is the fast-path.
-
-                            - control and next are in distinct pages. In this case we have to switch the pinned page.
-
-                            - next is null. The head of the queue is to be initialized. If no put has been performed on this
-                                queue, no operation is done.
-
-                            - control is nullptr. This Consume has to be initialized
-
-                        */
-                        if (DENSITY_LIKELY(Base::same_page(control, next)))
+                        if (
+                          (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
+                          0)
                         {
-                            control = next;
-
-                            // We do an initial relaxed read. We will do a memory acquire in the CAS
-                            auto const next_uint = raw_atomic_load(&control->m_next, detail::mem_relaxed);
-                            next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
-
-                            /** Check if this element is ready to be consumed */
-                            if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == 0)
+                            /* We try to set the flag LfQueue_Busy on it */
+                            if (raw_atomic_compare_exchange_strong(
+                                  &m_control->m_next,
+                                  &m_next_ptr,
+                                  m_next_ptr | LfQueue_Busy,
+                                  mem_acquire,
+                                  mem_relaxed))
                             {
-                                if ((next_uint & ~detail::NbQueue_InvalidNextPage) != 0)
-                                {
-                                    /* We try to set the flag NbQueue_Busy on it */
-                                    auto expected = next_uint;
-                                    if (raw_atomic_compare_exchange_strong(&control->m_next, &expected, next_uint | detail::NbQueue_Busy,
-                                        detail::mem_acquire, detail::mem_relaxed))
-                                    {
-                                        m_next_ptr = next_uint | NbQueue_Dead;
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    /* We have found a zeroed ControlBlock */
-                                    next = i_queue->m_head.load(mem_relaxed);
-                                    bool should_continue = false;
-                                    if (Base::same_page(next, control))
-                                        should_continue = control < next;
-
-                                    if (!should_continue)
-                                    {
-                                        // the queue is empty
-                                        break;
-                                    }
-                                }
-                            }
-                            else if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Dead)
-                            {
-                                // clean up
-                                cleanup_step(control, next_uint, next);
+                                m_next_ptr |= LfQueue_Dead;
+                                break;
                             }
                         }
-                        else
+                        else if ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
                         {
-                            // page switch - we don't update next, we just fix the pinning and set control = next
-                            DENSITY_ASSERT_INTERNAL(next != nullptr);
-                            i_queue->ALLOCATOR_TYPE::pin_page(next);
-                            i_queue->ALLOCATOR_TYPE::unpin_page(control);
-                            control = next;
+                            advance_head();
                         }
+                        move_next();
                     }
-
-                    m_control = control;
                 }
 
-                /** If m_head equals to i_control_block advance it, zeroing the memory. No pin\unpin is performed. */
-                bool cleanup_step(ControlBlock * const i_control_block, uintptr_t const i_next_uint, ControlBlock * const i_next)
+                /** Commits a consumed element. After the call the Consume is empty. */
+                void commit_consume_impl() noexcept
                 {
-                    auto expected = i_control_block;
-                    if (m_queue->m_head.compare_exchange_strong(expected, i_next,
-                        detail::mem_seq_cst, detail::mem_relaxed))
+                    DENSITY_ASSERT_INTERNAL(!empty());
+                    DENSITY_ASSERT_INTERNAL(
+                      (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
+                      LfQueue_Dead);
+                    DENSITY_ASSERT_INTERNAL(
+                      raw_atomic_load(&m_control->m_next, mem_relaxed) ==
+                      m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+
+                    // remove LfQueue_Busy and add LfQueue_Dead
+                    raw_atomic_store(&m_control->m_next, m_next_ptr, mem_release);
+
+                    clean_dead_elements();
+
+                    m_next_ptr = 0;
+                }
+
+                void cancel_consume_impl() noexcept
+                {
+                    DENSITY_ASSERT_INTERNAL(!empty());
+                    DENSITY_ASSERT_INTERNAL(
+                      (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
+                      LfQueue_Dead);
+                    DENSITY_ASSERT_INTERNAL(
+                      raw_atomic_load(&m_control->m_next, mem_relaxed) ==
+                      m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+
+                    // remove LfQueue_Busy and add LfQueue_Dead
+                    raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_release);
+                    m_next_ptr = 0;
+                }
+
+                void clean_dead_elements() noexcept
+                {
+                    while ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
                     {
-                        if (i_next_uint & detail::NbQueue_External)
+                        advance_head();
+                        move_next();
+                    }
+                }
+
+                /** If m_head equals to m_control advance it to the next block, zeroing the memory.
+                    This function assumes that the current block is dead. */
+                bool advance_head()
+                {
+                    auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
+
+                    auto expected = m_control;
+                    if (m_queue->m_head.compare_exchange_strong(
+                          expected, next, mem_seq_cst, mem_relaxed))
+                    {
+                        if (m_next_ptr & LfQueue_External)
                         {
-                            auto const external_block = static_cast<ExternalBlock*>(
-                                address_add(i_control_block, Base::s_element_min_offset));
-                            m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
+                            auto const external_block = static_cast<ExternalBlock *>(
+                              address_add(m_control, Base::s_element_min_offset));
+                            m_queue->ALLOCATOR_TYPE::deallocate(
+                              external_block->m_block,
+                              external_block->m_size,
+                              external_block->m_alignment);
                         }
 
-                        if (Base::s_deallocate_zeroed_pages)
-                        {
-                            raw_atomic_store(&i_control_block->m_next, 0);
-                        }
+                        bool const is_same_page = Base::same_page(m_control, next);
+                        DENSITY_ASSERT_INTERNAL(
+                          is_same_page != address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
+                        DENSITY_ASSERT_INTERNAL(
+                          !ConstConditional(Base::s_needs_end_control) ||
+                          is_same_page == (m_control != Base::get_end_control_block(m_control)));
 
-                        if (Base::same_page(i_control_block, i_next))
+                        static_assert(offsetof(ControlBlock, m_next) == 0, "");
+
+                        if (is_same_page)
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                auto const memset_dest = const_cast<uintptr_t*>(&i_control_block->m_next) + 1;
-                                auto const memset_size = address_diff(i_next, memset_dest);
+                                raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
+
+                                auto const memset_dest =
+                                  const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
+                                auto const memset_size = address_diff(next, memset_dest);
+                                DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
+                                DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
                                 std::memset(memset_dest, 0, memset_size);
                             }
                         }
                         else
                         {
+                            /** the member m_next is zeroed even if s_deallocate_zeroed_pages is false, and before
+                                deallocating the page, to allow a safe-pinning to the other consumers.
+                                That is, if a consumers pins a page that is pointed by a m_next, and if after the pin
+                                the m_next is still not zeroed, it can be sure that the allocator will not reuse the
+                                page, even if it gets deallocated. If the consumer does not read again the member m_next
+                                after pinning, it can't be sure that the page is recycled between the read of m_next and 
+                                the pin. */
+                            raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
+
                             if (Base::s_deallocate_zeroed_pages)
-                                m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(i_control_block);
+                                m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
                             else
-                                m_queue->ALLOCATOR_TYPE::deallocate_page(i_control_block);
+                                m_queue->ALLOCATOR_TYPE::deallocate_page(m_control);
                         }
                         return true;
                     }
@@ -370,123 +373,10 @@ namespace density
                     return head;
                 }
 
-                /** Commits a consumed element. After the call the Consume is empty. */
-                void commit_consume_impl() noexcept
-                {
-                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
-
-                    // we expect to have NbQueue_Busy and not NbQueue_Dead...
-                    DENSITY_ASSERT_INTERNAL((raw_atomic_load(&m_control->m_next, detail::mem_relaxed) &
-                        (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                    // remove NbQueue_Busy and add NbQueue_Dead
-                    DENSITY_ASSERT_INTERNAL((m_next_ptr & (detail::NbQueue_Dead | detail::NbQueue_Busy | detail::NbQueue_InvalidNextPage)) == detail::NbQueue_Dead);
-                    raw_atomic_store(&m_control->m_next, m_next_ptr, detail::mem_seq_cst);
-                    m_next_ptr = 0;
-
-                    clean_dead_elements();
-                }
-
-                void clean_dead_elements() noexcept
-                {
-                    auto control = m_control;
-
-                    DENSITY_ASSERT_INTERNAL(control != nullptr);
-                    for (;;)
-                    {
-                        auto const next_uint = raw_atomic_load(&control->m_next);
-                        auto const next = reinterpret_cast<ControlBlock*>(next_uint & ~detail::NbQueue_AllFlags);
-                        if ((next_uint & (detail::NbQueue_Busy | detail::NbQueue_Dead)) != detail::NbQueue_Dead)
-                        {
-                            // the element is not dead
-                            break;
-                        }
-
-                        auto expected = control;
-                        if (!m_queue->m_head.compare_exchange_strong(expected, next,
-                            detail::mem_seq_cst, detail::mem_relaxed))
-                        {
-                            // another thread is advancing the head, give up
-                            break;
-                        }
-
-                        if (next_uint & detail::NbQueue_External)
-                        {
-                            auto const external_block = static_cast<ExternalBlock*>(
-                                address_add(control, Base::s_element_min_offset));
-                            m_queue->ALLOCATOR_TYPE::deallocate(external_block->m_block, external_block->m_size, external_block->m_alignment);
-                        }
-
-                        bool const is_same_page = Base::same_page(control, next);
-                        DENSITY_ASSERT_INTERNAL(!is_same_page == address_is_aligned(next, ALLOCATOR_TYPE::page_alignment));
-                        DENSITY_ASSERT_INTERNAL(is_same_page == (control != Base::get_end_control_block(control)));
-
-                        static_assert(offsetof(ControlBlock, m_next) == 0, "");
-                        //std::memset(control, 0, address_diff(address_of_next, control));
-
-                        if (DENSITY_LIKELY(is_same_page))
-                        {
-                            if (Base::s_deallocate_zeroed_pages)
-                            {
-                                raw_atomic_store(&control->m_next, 0);
-
-                                auto const memset_dest = const_cast<uintptr_t*>(&control->m_next) + 1;
-                                auto const memset_size = address_diff(next, memset_dest);
-                                DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
-                                DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
-                                std::memset(memset_dest, 0, memset_size);
-                            }
-                            control = next;
-                        }
-                        else
-                        {
-                            m_queue->ALLOCATOR_TYPE::pin_page(next);
-
-                            #if defined(DENSITY_DEBUG_INTERNAL)
-                                auto const updated_next_uint = raw_atomic_load(&control->m_next);
-                                auto const updated_next = reinterpret_cast<ControlBlock*>(updated_next_uint & ~detail::NbQueue_AllFlags);
-                                DENSITY_ASSERT_INTERNAL(updated_next == next);
-                            #endif
-
-                            if (Base::s_deallocate_zeroed_pages)
-                            {
-                                raw_atomic_store(&control->m_next, 0);
-                            }
-
-                            if (Base::s_deallocate_zeroed_pages)
-                                m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(control);
-                            else
-                                m_queue->ALLOCATOR_TYPE::deallocate_page(control);
-
-                            m_queue->ALLOCATOR_TYPE::unpin_page(control);
-                            control = next;
-                        }
-                    }
-
-                    m_control = control;
-                }
-
-                void cancel_consume_impl() noexcept
-                {
-                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr != 0);
-
-                    // we expect to have NbQueue_Busy and not NbQueue_Dead...
-                    DENSITY_ASSERT_INTERNAL((raw_atomic_load(&m_control->m_next, detail::mem_relaxed) &
-                        (detail::NbQueue_Busy | detail::NbQueue_Dead)) == detail::NbQueue_Busy);
-
-                    DENSITY_ASSERT_INTERNAL((m_next_ptr & (detail::NbQueue_Dead | detail::NbQueue_Busy | detail::NbQueue_InvalidNextPage)) == detail::NbQueue_Dead);
-                    raw_atomic_store(&m_control->m_next, m_next_ptr - detail::NbQueue_Dead, detail::mem_seq_cst);
-                    m_next_ptr = 0;
-
-                    clean_dead_elements();
-                }
-
             }; // Consume
 
-        private: // data members
-            alignas(concurrent_alignment) std::atomic<ControlBlock*> m_head{nullptr};
+          private: // data members
+            alignas(destructive_interference_size) std::atomic<ControlBlock *> m_head{nullptr};
         };
 
     } // namespace detail

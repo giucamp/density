@@ -1,14 +1,14 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "performance_test.h"
-#include <fstream>
-#include <iostream>
-#include <ios>
 #include <algorithm>
+#include <fstream>
+#include <ios>
+#include <iostream>
 
 namespace density_bench
 {
@@ -21,12 +21,15 @@ namespace density_bench
         {
             s_source_dir.resize(s_source_dir.size() - 1);
         }
-        if(!s_source_dir.empty())
+        if (!s_source_dir.empty())
             s_source_dir += '/';
     }
 
-    void PerformanceTestGroup::add_test(const char * i_source_file, int i_start_line,
-        PerformanceTest::TestFunction i_function, int i_end_line)
+    void PerformanceTestGroup::add_test(
+      const char *                  i_source_file,
+      int                           i_start_line,
+      PerformanceTest::TestFunction i_function,
+      int                           i_end_line)
     {
         auto const source_file = s_source_dir + i_source_file;
 
@@ -38,7 +41,7 @@ namespace density_bench
             std::cerr << error_message << std::endl;
             throw std::ios_base::failure(error_message);
         }
-        int curr_line = 0;
+        int                      curr_line = 0;
         std::vector<std::string> lines;
         while (!stream.eof() && curr_line < i_end_line - 1)
         {
@@ -53,10 +56,10 @@ namespace density_bench
 
         // find the longest white-char prefix common to all the lines
         size_t white_prefix_length = 0;
-        bool match = lines.size() > 0;
+        bool   match               = lines.size() > 0;
         while (match)
         {
-            bool first = true;
+            bool first       = true;
             char target_char = 0;
             for (const auto & line : lines)
             {
@@ -70,7 +73,7 @@ namespace density_bench
                     else if (first)
                     {
                         target_char = curr_char;
-                        first = false;
+                        first       = false;
                     }
                     else
                     {

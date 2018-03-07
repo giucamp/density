@@ -1,14 +1,14 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
 #include "density_test_common.h"
-#include <memory>
 #include <atomic>
 #include <functional>
+#include <memory>
 
 namespace density_tests
 {
@@ -24,8 +24,7 @@ namespace density_tests
                 and then register the new block with register_block. */
     class SharedBlockRegistry
     {
-    public:
-
+      public:
         SharedBlockRegistry();
 
         SharedBlockRegistry(const SharedBlockRegistry &);
@@ -35,9 +34,9 @@ namespace density_tests
         /** Destructor. If this instance is the only one pointing to the shared registry, it must be empty, and it is destroyed. */
         ~SharedBlockRegistry();
 
-        SharedBlockRegistry & operator = (const SharedBlockRegistry &);
+        SharedBlockRegistry & operator=(const SharedBlockRegistry &);
 
-        SharedBlockRegistry & operator = (SharedBlockRegistry &&) noexcept;
+        SharedBlockRegistry & operator=(SharedBlockRegistry &&) noexcept;
 
         /** Registers a block. This call temporary locks an instance mutex.
                 @param i_category user-defined category of the block.
@@ -45,7 +44,12 @@ namespace density_tests
                 @param i_size size in bytes of the block.
                 @param i_alignment alignment in bytes of the block. It may be zero, or an integer power of 2.
                 @param i_alignment_offset offset in bytes from the beginning of the block where the alignment is satisfied. */
-        void register_block(int i_category, void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
+        void register_block(
+          int    i_category,
+          void * i_block,
+          size_t i_size,
+          size_t i_alignment,
+          size_t i_alignment_offset);
 
         /** Unregisters a block. If any of the parameters does not match exactly the value passed to a register_block,
             a DENSITY_TEST_ASSERT fails.  This call temporary locks an instance mutex.
@@ -54,41 +58,48 @@ namespace density_tests
                 @param i_size size in bytes of the block.
                 @param i_alignment alignment in bytes of the block. It may be zero, or an integer power of 2.
                 @param i_alignment_offset offset in bytes from the beginning of the block where the alignment is satisfied. */
-        void unregister_block(int i_category, void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset);
+        void unregister_block(
+          int    i_category,
+          void * i_block,
+          size_t i_size,
+          size_t i_alignment,
+          size_t i_alignment_offset);
 
         /** Returns whether two instances share the same registry. */
-        bool operator == (const SharedBlockRegistry & i_other) const
+        bool operator==(const SharedBlockRegistry & i_other) const
         {
             return m_data == i_other.m_data;
         }
 
         /** Returns whether two instances don't share the same registry. */
-        bool operator != (const SharedBlockRegistry & i_other) const
+        bool operator!=(const SharedBlockRegistry & i_other) const
         {
             return m_data != i_other.m_data;
         }
 
         struct BlockInfo
         {
-            int m_category = 0;
-            size_t m_progressive = 0;
-            size_t m_size = 0;
-            size_t m_alignment = 0;
+            int    m_category         = 0;
+            size_t m_progressive      = 0;
+            size_t m_size             = 0;
+            size_t m_alignment        = 0;
             size_t m_alignment_offset = 0;
         };
 
         /** Calls the provided function for each living block.  This call temporary locks an instance mutex. */
-        void for_each_block(const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
+        void for_each_block(
+          const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
 
         /** Calls the provided function for each living block with the specified category.  This call temporary locks an instance mutex. */
-        void for_each_block(int i_category, const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
+        void for_each_block(
+          int                                                            i_category,
+          const std::function<void(void * i_block, const BlockInfo &)> & i_callback) const;
 
-    private:
+      private:
         struct Data;
 
-    private:
+      private:
         std::shared_ptr<Data> m_data;
     };
 
 } // namespace density_tests
-

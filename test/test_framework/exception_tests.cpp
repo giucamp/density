@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -17,8 +17,8 @@ namespace density_tests
             StaticData() : m_current_counter(0), m_except_at(-1) {}
         };
 
-        thread_local StaticData  * st_static_data;
-    }
+        thread_local StaticData * st_static_data;
+    } // namespace
 
     void exception_checkpoint()
     {
@@ -35,21 +35,23 @@ namespace density_tests
 
     int64_t run_exception_test(std::function<void()> i_test)
     {
-        DENSITY_TEST_ASSERT(st_static_data == nullptr); // "run_exception_test does no support recursion"
+        DENSITY_TEST_ASSERT(
+          st_static_data == nullptr); // "run_exception_test does no support recursion"
 
         StaticData static_data;
-        st_static_data = &static_data;
+        st_static_data         = &static_data;
         int64_t curr_iteration = 0;
         try
         {
             bool exception_occurred;
-            do {
+            do
+            {
                 exception_occurred = false;
 
                 try
                 {
                     static_data.m_current_counter = 0;
-                    static_data.m_except_at = curr_iteration;
+                    static_data.m_except_at       = curr_iteration;
                     i_test();
                 }
                 catch (TestException)

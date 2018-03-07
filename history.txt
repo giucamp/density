@@ -12,6 +12,15 @@
                        revision history
 ***************************************
 
+version 1.04.00 - changes:
+    - lifo_array: iterators are now classes (and not pointers)    
+    - renamed default_allocator and basic_void_allocator to default_allocator and basic_default_allocator
+    - removed the progress_guarantee parameter from try_allocate of the UntypedAllocator concept
+    - removed mixed atomic and non-atomic operations on the same location
+    - added clang thread sanitizer to the test matrix
+    - lock-free queues review, many bugs fixed
+    - using clang-format
+
 version 1.03.00 - changes:
     - polishing (removed many unnecessary detail::)
     - fixed *::consume_operation::element not compiling in case of virtual inheritance (and added test cases)
