@@ -154,6 +154,11 @@ namespace density_tests
     {
         std::atomic<bool> m_should_exit{false};
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4324) // structure was padded due to alignment specifier
+#endif
+
         struct alignas(density::destructive_interference_size) ThreadData
         {
             std::thread m_thread;
@@ -161,6 +166,11 @@ namespace density_tests
             Statistics  m_inactivity_time; // in seconds
             Statistics  m_activity_time;   // in seconds
         };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
         config const               m_config;
         aligned_vector<ThreadData> m_thread_datas;
         wait_counter               m_started_threads;
