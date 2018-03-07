@@ -102,7 +102,7 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__function__queue.html">conc_function_queue</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,13 +133,22 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a16d9d4d1e664ac136c7f1aa2818c3716"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a16d9d4d1e664ac136c7f1aa2818c3716">data_stack_underlying_allocator</a> = <a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a>&lt; <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a> &gt;</td></tr>
-<tr class="separator:a16d9d4d1e664ac136c7f1aa2818c3716"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adeb11d97131a6de72c7b1d4b6c10f342"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a> = <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a>&lt; <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a> &gt;</td></tr>
+<tr class="separator:adeb11d97131a6de72c7b1d4b6c10f342"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5ee8bdf26d1e5d8103f530bf47fc29c"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ab5ee8bdf26d1e5d8103f530bf47fc29c">data_stack_underlying_allocator</a> = <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a>&lt; <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a> &gt;</td></tr>
+<tr class="separator:ab5ee8bdf26d1e5d8103f530bf47fc29c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae750738f85fce3a63cae7c9f3f0f2e80"><td class="memTemplParams" colspan="2">template&lt;typename TYPE &gt; </td></tr>
 <tr class="memitem:ae750738f85fce3a63cae7c9f3f0f2e80"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ae750738f85fce3a63cae7c9f3f0f2e80">optional</a> = builtin_optional&lt; TYPE &gt;</td></tr>
 <tr class="separator:ae750738f85fce3a63cae7c9f3f0f2e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06c6ce21f0d3cede79e2b503a90b731e"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e">void_allocator</a> = <a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a>&lt; <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a> &gt;</td></tr>
-<tr class="separator:a06c6ce21f0d3cede79e2b503a90b731e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42947028afd830c9adcb4337fb877589"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a42947028afd830c9adcb4337fb877589"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>atomic_uintptr_t</b> = strong_raw_atomic&lt; uintptr_t &gt;</td></tr>
+<tr class="separator:a42947028afd830c9adcb4337fb877589"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0719e4653fac65872c898d5a1c1b5894"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0719e4653fac65872c898d5a1c1b5894"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>atomic_uint32_t</b> = strong_raw_atomic&lt; uint32_t &gt;</td></tr>
+<tr class="separator:a0719e4653fac65872c898d5a1c1b5894"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3b92ae7841c61cd3f84f19bad460848"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af3b92ae7841c61cd3f84f19bad460848"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>atomic_uint64_t</b> = strong_raw_atomic&lt; uint64_t &gt;</td></tr>
+<tr class="separator:af3b92ae7841c61cd3f84f19bad460848"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -205,8 +214,8 @@ Functions</h2></td></tr>
 <tr class="separator:a5ed3bf212bfddc1d7b0573ff95bba996"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf57ef4d1f1e8932b5b5fd824f42e292"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#aaf57ef4d1f1e8932b5b5fd824f42e292">aligned_allocate</a> (size_t i_size, size_t i_alignment, size_t i_alignment_offset=0)</td></tr>
 <tr class="separator:aaf57ef4d1f1e8932b5b5fd824f42e292"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c10687271431a4548dc517dc2d7c8db"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a8c10687271431a4548dc517dc2d7c8db">try_aligned_allocate</a> (<a class="el" href="namespacedensity.html#a457b018b32da6a356fb3a90d75526ca9">progress_guarantee</a> i_progress_guarantee, size_t i_size, size_t i_alignment, size_t i_alignment_offset=0) noexcept</td></tr>
-<tr class="separator:a8c10687271431a4548dc517dc2d7c8db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a413c30a8084cc1d5aa939eb76bcf4b74"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a413c30a8084cc1d5aa939eb76bcf4b74">try_aligned_allocate</a> (size_t i_size, size_t i_alignment, size_t i_alignment_offset=0) noexcept</td></tr>
+<tr class="separator:a413c30a8084cc1d5aa939eb76bcf4b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5422c080ea9996803f500e7c4323e3f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ae5422c080ea9996803f500e7c4323e3f">aligned_deallocate</a> (void *i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset=0) noexcept</td></tr>
 <tr class="separator:ae5422c080ea9996803f500e7c4323e3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aabc78d66265930b19703dba64546f682"><td class="memTemplParams" colspan="2">template&lt;typename TYPE &gt; </td></tr>
@@ -227,13 +236,37 @@ Functions</h2></td></tr>
 <tr class="memitem:a8ab15db9b8d5887879bb1b21e20cecb3"><td class="memTemplParams" colspan="2">template&lt;typename TYPE &gt; </td></tr>
 <tr class="memitem:a8ab15db9b8d5887879bb1b21e20cecb3"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a8ab15db9b8d5887879bb1b21e20cecb3">raw_atomic_compare_exchange_weak</a> (TYPE *i_atomic, TYPE *i_expected, TYPE i_desired, std::memory_order i_memory_order=std::memory_order_seq_cst) noexcept</td></tr>
 <tr class="separator:a8ab15db9b8d5887879bb1b21e20cecb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a7b5ff70af5eb3fd5952f097d50b7c9"><td class="memTemplParams" colspan="2"><a class="anchor" id="a0a7b5ff70af5eb3fd5952f097d50b7c9"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:a0a7b5ff70af5eb3fd5952f097d50b7c9"><td class="memTemplItemLeft" align="right" valign="top">TYPE&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_load</b> (strong_raw_atomic&lt; TYPE &gt; const *i_atomic, std::memory_order i_memory_order=std::memory_order_seq_cst) noexcept</td></tr>
+<tr class="separator:a0a7b5ff70af5eb3fd5952f097d50b7c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc3470c3292ae2f4fc2d953d41e50f14"><td class="memTemplParams" colspan="2"><a class="anchor" id="acc3470c3292ae2f4fc2d953d41e50f14"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:acc3470c3292ae2f4fc2d953d41e50f14"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_store</b> (strong_raw_atomic&lt; TYPE &gt; *i_atomic, TYPE i_value, std::memory_order i_memory_order=std::memory_order_seq_cst) noexcept</td></tr>
+<tr class="separator:acc3470c3292ae2f4fc2d953d41e50f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65fcda9118f7a067c76f8bcfe106fff8"><td class="memTemplParams" colspan="2"><a class="anchor" id="a65fcda9118f7a067c76f8bcfe106fff8"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:a65fcda9118f7a067c76f8bcfe106fff8"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_compare_exchange_strong</b> (strong_raw_atomic&lt; TYPE &gt; *i_atomic, TYPE *i_expected, TYPE i_desired, std::memory_order i_memory_order=std::memory_order_seq_cst) noexcept</td></tr>
+<tr class="separator:a65fcda9118f7a067c76f8bcfe106fff8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6707c01013b2da2d12b0bbb0d7ff26e3"><td class="memTemplParams" colspan="2"><a class="anchor" id="a6707c01013b2da2d12b0bbb0d7ff26e3"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:a6707c01013b2da2d12b0bbb0d7ff26e3"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_compare_exchange_weak</b> (strong_raw_atomic&lt; TYPE &gt; *i_atomic, TYPE *i_expected, TYPE i_desired, std::memory_order i_memory_order=std::memory_order_seq_cst) noexcept</td></tr>
+<tr class="separator:a6707c01013b2da2d12b0bbb0d7ff26e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc63f4bc45604118418684774d19012c"><td class="memTemplParams" colspan="2"><a class="anchor" id="afc63f4bc45604118418684774d19012c"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:afc63f4bc45604118418684774d19012c"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_compare_exchange_strong</b> (strong_raw_atomic&lt; TYPE &gt; *i_atomic, TYPE *i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept</td></tr>
+<tr class="separator:afc63f4bc45604118418684774d19012c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29316233a6a8c66a7bdd09bc14a6e1f9"><td class="memTemplParams" colspan="2"><a class="anchor" id="a29316233a6a8c66a7bdd09bc14a6e1f9"></a>
+template&lt;typename TYPE &gt; </td></tr>
+<tr class="memitem:a29316233a6a8c66a7bdd09bc14a6e1f9"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><b>raw_atomic_compare_exchange_weak</b> (strong_raw_atomic&lt; TYPE &gt; *i_atomic, TYPE *i_expected, TYPE i_desired, std::memory_order i_success, std::memory_order i_failure) noexcept</td></tr>
+<tr class="separator:a29316233a6a8c66a7bdd09bc14a6e1f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ac09005525772b29354f214d788288f60"><td class="memItemLeft" align="right" valign="top">constexpr char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ac09005525772b29354f214d788288f60">version</a> [] = &quot;1.3.1&quot;</td></tr>
+<tr class="memitem:ac09005525772b29354f214d788288f60"><td class="memItemLeft" align="right" valign="top">constexpr char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ac09005525772b29354f214d788288f60">version</a> [] = &quot;1.4.0&quot;</td></tr>
 <tr class="separator:ac09005525772b29354f214d788288f60"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8f72b2dd386b61bf0bc4f30478c2941"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ae8f72b2dd386b61bf0bc4f30478c2941">concurrent_alignment</a> = 64</td></tr>
-<tr class="separator:ae8f72b2dd386b61bf0bc4f30478c2941"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f1198a6370cf4b59b9d24e3d8b0e25a"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#a2f1198a6370cf4b59b9d24e3d8b0e25a">destructive_interference_size</a> = 64</td></tr>
+<tr class="separator:a2f1198a6370cf4b59b9d24e3d8b0e25a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab19ae70876c9e02bad37c4da644696cd"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a> = 1024 * 64</td></tr>
 <tr class="separator:ab19ae70876c9e02bad37c4da644696cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7a789d9f7bd2d4d8bd895bafc24f840"><td class="memItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedensity.html#ab7a789d9f7bd2d4d8bd895bafc24f840">enable_relaxed_atomics</a> = false</td></tr>
@@ -242,12 +275,25 @@ Variables</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>namespace density </p>
 </div><h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="a16d9d4d1e664ac136c7f1aa2818c3716"></a>
+<a class="anchor" id="adeb11d97131a6de72c7b1d4b6c10f342"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="namespacedensity.html#a16d9d4d1e664ac136c7f1aa2818c3716">data_stack_underlying_allocator</a> =  <a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a>&lt;<a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a>&gt;</td>
+          <td class="memname">using <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a> =  <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a>&lt;<a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Specialization of <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a> that uses <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">density::default_page_capacity</a> as page capacity. </p>
+
+</div>
+</div>
+<a class="anchor" id="ab5ee8bdf26d1e5d8103f530bf47fc29c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="namespacedensity.html#ab5ee8bdf26d1e5d8103f530bf47fc29c">data_stack_underlying_allocator</a> =  <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a>&lt;<a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a>&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -265,19 +311,6 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Alias to an implementation of optional. By default a minimal implementation of optional is used, but it can be replaced by the C++17 standard one, if available. </p>
-
-</div>
-</div>
-<a class="anchor" id="a06c6ce21f0d3cede79e2b503a90b731e"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e">void_allocator</a> =  <a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a>&lt;<a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">default_page_capacity</a>&gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Specialization of <a class="el" href="classdensity_1_1basic__void__allocator.html">basic_void_allocator</a> that uses <a class="el" href="namespacedensity.html#ab19ae70876c9e02bad37c4da644696cd">density::default_page_capacity</a> as page capacity. </p>
 
 </div>
 </div>
@@ -1199,17 +1232,14 @@ Variables</h2></td></tr>
 </ul>
 </dd></dl>
 <p>A violation of any precondition results in undefined behavior.</p>
-<dl class="exception"><dt>Exceptions</dt><dd>
-  <table class="exception">
-    <tr><td class="paramname">std::bad_alloc</td><td>if the allocation fails</td></tr>
-  </table>
-  </dd>
-</dl>
+<p><br />
+ <b>Throws</b>: std::bad_alloc if the allocation fails <br />
+ <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)</p>
 <p>The content of the newly allocated block is undefined. </p>
 
 </div>
 </div>
-<a class="anchor" id="a8c10687271431a4548dc517dc2d7c8db"></a>
+<a class="anchor" id="a413c30a8084cc1d5aa939eb76bcf4b74"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1219,12 +1249,6 @@ Variables</h2></td></tr>
         <tr>
           <td class="memname">void* density::try_aligned_allocate </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespacedensity.html#a457b018b32da6a356fb3a90d75526ca9">progress_guarantee</a>&#160;</td>
-          <td class="paramname"><em>i_progress_guarantee</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">size_t&#160;</td>
           <td class="paramname"><em>i_size</em>, </td>
         </tr>
@@ -1252,9 +1276,8 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Uses the global operator new to try to allocate a memory block with at least the specified size and alignment Currently only blocking allocations are supported: if i_progress_guarantee is not progress_blocking, this function always returns nullptr. </p><dl class="params"><dt>Parameters</dt><dd>
+<p>Uses the global operator new to try to allocate a memory block with at least the specified size and alignment. Returns nullptr in case of failure. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to provide </td></tr>
     <tr><td class="paramname">i_size</td><td>size of the requested memory block, in bytes </td></tr>
     <tr><td class="paramname">i_alignment</td><td>alignment of the requested memory block, in bytes </td></tr>
     <tr><td class="paramname">i_alignment_offset</td><td>offset of the block to be aligned, in bytes. The alignment is guaranteed only at i_alignment_offset from the beginning of the block. </td></tr>
@@ -1269,12 +1292,10 @@ Variables</h2></td></tr>
 </ul>
 </dd></dl>
 <p>A violation of any precondition results in undefined behavior.</p>
-<dl class="exception"><dt>Exceptions</dt><dd>
-  <table class="exception">
-    <tr><td class="paramname">none</td><td>The content of the newly allocated block is undefined. </td></tr>
-  </table>
-  </dd>
-</dl>
+<p><br />
+ <b>Throws</b>: nothing <br />
+ <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)</p>
+<p>The content of the newly allocated block is undefined. </p>
 
 </div>
 </div>
@@ -1336,7 +1357,8 @@ Variables</h2></td></tr>
 </ul>
 </dd></dl>
 <p><br />
- <b>Throws</b>: nothing</p>
+ <b>Throws</b>: nothing <br />
+ <b>Progress guarantee</b>: the same of the builtin operator delete (usually blocking)</p>
 <p>If i_block is nullptr, the call has no effect. </p>
 
 </div>
@@ -1695,7 +1717,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">constexpr char version[] = &quot;1.3.1&quot;</td>
+          <td class="memname">constexpr char version[] = &quot;1.4.0&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1703,12 +1725,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ae8f72b2dd386b61bf0bc4f30478c2941"></a>
+<a class="anchor" id="a2f1198a6370cf4b59b9d24e3d8b0e25a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">constexpr size_t concurrent_alignment = 64</td>
+          <td class="memname">constexpr size_t destructive_interference_size = 64</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1727,7 +1749,7 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Capacity (in bytes) of the pages managed by <a class="el" href="namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e">density::void_allocator</a>. Note: the actual usable size is slightly smaller. This constant must be a power of 2.</p>
+<p>Capacity (in bytes) of the pages managed by <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>. Note: the actual usable size is slightly smaller. This constant must be a power of 2.</p>
 <p>This is a configuration variable, intended to be customized by the user of the library. The default value is 1024 * 64. </p>
 
 </div>

@@ -139,7 +139,7 @@ Static Public Attributes</h2></td></tr>
 <tr class="separator:ac15e6b5f88a94c672b70f8a914798517"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename UNDERLYING_ALLOCATOR = void_allocator, size_t ALIGNMENT = alignof(void*)&gt;<br />
+<div class="textblock"><h3>template&lt;typename UNDERLYING_ALLOCATOR = default_allocator, size_t ALIGNMENT = alignof(void *)&gt;<br />
 class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt;</h3>
 
 <p>Class template that provides LIFO memory management.</p>
@@ -383,7 +383,7 @@ class density::lifo_allocator&lt; UNDERLYING_ALLOCATOR, ALIGNMENT &gt;</h3>
 <p>This function is useful to initialize block owners to an empty state in a noexcept context, without introducing the nullptr special case. The implementation of the default constructor of <a class="el" href="classdensity_1_1lifo__buffer.html">lifo_buffer</a> uses this function.</p>
 <p><b>Throws:</b> nothing.</p>
 <p><em>Implementation notes</em>: this function just returns the top of the stack, without altering the state of the allocator.</p>
-<div class="fragment"><div class="line">                lifo_allocator&lt;&gt; allocator;</div><div class="line">                constexpr <span class="keyword">auto</span> <a class="code" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a> = decltype(allocator)::alignment;</div><div class="line"></div><div class="line">                <span class="keyword">auto</span> block = allocator.allocate_empty();</div><div class="line">                assert(<a class="code" href="namespacedensity.html#abd5fec5a58abed06cfb780ff147814a7">address_is_aligned</a>(block, alignment));</div><div class="line"></div><div class="line">                block = allocator.reallocate(block, 0, alignment * 2);</div><div class="line">                assert(<a class="code" href="namespacedensity.html#abd5fec5a58abed06cfb780ff147814a7">address_is_aligned</a>(block, alignment));</div><div class="line"></div><div class="line">                allocator.deallocate(block, alignment * 2);</div></div><!-- fragment -->
+<div class="fragment"><div class="line">                lifo_allocator&lt;&gt; allocator;</div><div class="line">                constexpr <span class="keyword">auto</span>   <a class="code" href="classdensity_1_1lifo__allocator.html#ac15e6b5f88a94c672b70f8a914798517">alignment</a> = decltype(allocator)::alignment;</div><div class="line"></div><div class="line">                <span class="keyword">auto</span> block = allocator.allocate_empty();</div><div class="line">                assert(<a class="code" href="namespacedensity.html#abd5fec5a58abed06cfb780ff147814a7">address_is_aligned</a>(block, alignment));</div><div class="line"></div><div class="line">                block = allocator.reallocate(block, 0, alignment * 2);</div><div class="line">                assert(<a class="code" href="namespacedensity.html#abd5fec5a58abed06cfb780ff147814a7">address_is_aligned</a>(block, alignment));</div><div class="line"></div><div class="line">                allocator.deallocate(block, alignment * 2);</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="aa838620e2eb35205f72223152774eeb4"></a>
