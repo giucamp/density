@@ -70,7 +70,8 @@ namespace density
                 ControlBlock * m_control =
                   nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
                 uintptr_t m_next_ptr =
-                  0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and only if m_next_ptr == 0 */
+                  0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and 
+                          only if m_next_ptr <= LfQueue_AllFlags */
 
                 Consume() noexcept = default;
 
@@ -254,7 +255,7 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 
                     // remove LfQueue_Busy and add LfQueue_Dead
-                    raw_atomic_store(&m_control->m_next, m_next_ptr, mem_seq_cst);
+                    raw_atomic_store(&m_control->m_next, m_next_ptr, mem_release);
 
                     clean_dead_elements();
 
@@ -273,7 +274,7 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 
                     // remove LfQueue_Busy and add LfQueue_Dead
-                    raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_seq_cst);
+                    raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_release);
                     m_next_ptr = 0;
                 }
 
@@ -319,7 +320,7 @@ namespace density
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
-                                raw_atomic_store(&m_control->m_next, uintptr_t(0));
+                                raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
 
                                 auto const memset_dest =
                                   const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
@@ -338,7 +339,7 @@ namespace density
                                 page, even if it gets deallocated. If the consumer does not read again the member m_next
                                 after pinning, it can't be sure that the page is recycled between the read of m_next and 
                                 the pin. */
-                            raw_atomic_store(&m_control->m_next, uintptr_t(0));
+                            raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
 
                             if (Base::s_deallocate_zeroed_pages)
                                 m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
@@ -363,7 +364,7 @@ namespace density
                         auto const initial_page = i_queue->Base::get_initial_page();
 
                         /* If this CAS succeeds, we have to update our local variable head. Otherwise
-                        after the call we have the value of m_head stored by another concurrent consumer. */
+                            after the call we have the value of m_head stored by another concurrent consumer. */
                         if (i_queue->m_head.compare_exchange_strong(head, initial_page))
                             head = initial_page;
                     }
