@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -2569,7 +2569,7 @@ namespace density
             - the i-th element in the first queue is equal to the i-th element in the second queue
 
 
-        Raw block are not relevant for comparison.
+            Raw block are not relevant for comparison.
 
             <b>Requires</b>:
                 - the runtime type must support the feature <code>type_features::are_equal</code>
@@ -2601,7 +2601,7 @@ namespace density
             - the i-th element in the first queue is equal to the i-th element in the second queue
 
 
-        Raw block are not relevant for comparison.
+            Raw block are not relevant for comparison.
 
             <b>Requires</b>:
                 - the runtime type must support the feature <code>type_features::are_equal</code>

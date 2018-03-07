@@ -1,19 +1,19 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "progress.h"
-#include <iterator>
 #include <cmath>
+#include <iterator>
 
 namespace density_tests
 {
     Progress::Progress(size_t i_target_count) noexcept
-        : m_target_count(i_target_count), m_target_count_reciprocal_times_100(100.0 / i_target_count)
+        : m_target_count(i_target_count),
+          m_target_count_reciprocal_times_100(100.0 / i_target_count)
     {
-
     }
 
     Progress::Progress(size_t i_target_count, size_t i_current_count) noexcept
@@ -30,13 +30,15 @@ namespace density_tests
 
         // compute the elapsed time (is seconds)
         using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-        auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
+        auto const elapsed =
+          static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
 
         if (curr_count < m_target_count)
         {
             /* compute a linear estimate of the remaining time, based on the equation:
                     percentage / 100 = elapsed / (remaining + elapsed)                        */
-            auto const remaining = (percentage < 0.0001) ? -1. : elapsed.count() * (100. / percentage - 1.);
+            auto const remaining =
+              (percentage < 0.0001) ? -1. : elapsed.count() * (100. / percentage - 1.);
 
             // actual write
             i_ostream << percentage;
@@ -65,7 +67,8 @@ namespace density_tests
     {
         // compute the elapsed time (is seconds)
         using FpSeconds = std::chrono::duration<double, std::chrono::seconds::period>;
-        auto const elapsed = static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
+        auto const elapsed =
+          static_cast<FpSeconds>(std::chrono::high_resolution_clock::now() - m_start_time);
 
         // write to the stream
         m_ostream << m_label << " completed in ";
@@ -77,13 +80,13 @@ namespace density_tests
     {
         static const struct Unit
         {
-            double m_seconds;
+            double       m_seconds;
             const char * m_name;
         } units[] = {
-            {60. * 60. * 24. * 365., " years"},
-            {60. * 60. * 24., " days"},
-            {60. * 60., " hours"},
-            {60., " mins"},
+          {60. * 60. * 24. * 365., " years"},
+          {60. * 60. * 24., " days"},
+          {60. * 60., " hours"},
+          {60., " mins"},
         };
 
         bool done = false;

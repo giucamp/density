@@ -1,21 +1,23 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <density/sp_heter_queue.h>
 #include <density/detail/function_runtime_type.h>
+#include <density/sp_heter_queue.h>
 
 namespace density
 {
-    template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
-            function_type_erasure ERASURE = function_standard_erasure,
-            concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
-            concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
-            typename BUSY_WAIT_FUNC = default_busy_wait >
-        class sp_function_queue;
+    template <
+      typename CALLABLE,
+      typename ALLOCATOR_TYPE                      = default_allocator,
+      function_type_erasure   ERASURE              = function_standard_erasure,
+      concurrency_cardinality PROD_CARDINALITY     = concurrency_multiple,
+      concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
+      typename BUSY_WAIT_FUNC                      = default_busy_wait>
+    class sp_function_queue;
 
     /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. sp_function_queue is an adaptor for sp_heter_queue.
 
@@ -49,29 +51,44 @@ namespace density
             requested, but it requires a memory operation that the allocator is not able to complete in lock-freedom, the put fails.
             In the current implementation, wait-free put operation may fail even in isolation, because page pinning is lock-free but not wait-free.
     */
-    #ifndef DOXYGEN_DOC_GENERATION
-        template < typename RET_VAL, typename... PARAMS, typename ALLOCATOR_TYPE,
-                function_type_erasure ERASURE,
-                concurrency_cardinality PROD_CARDINALITY,
-                concurrency_cardinality CONSUMER_CARDINALITY,
-                typename BUSY_WAIT_FUNC>
-            class sp_function_queue<RET_VAL (PARAMS...), ALLOCATOR_TYPE, ERASURE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC>
-    #else
-        template < typename CALLABLE, typename ALLOCATOR_TYPE = default_allocator,
-            function_type_erasure ERASURE = function_standard_erasure,
-            concurrency_cardinality PROD_CARDINALITY = concurrency_multiple,
-            concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
-            typename BUSY_WAIT_FUNC = default_busy_wait>
-                class sp_function_queue
-    #endif
+#ifndef DOXYGEN_DOC_GENERATION
+    template <
+      typename RET_VAL,
+      typename... PARAMS,
+      typename ALLOCATOR_TYPE,
+      function_type_erasure   ERASURE,
+      concurrency_cardinality PROD_CARDINALITY,
+      concurrency_cardinality CONSUMER_CARDINALITY,
+      typename BUSY_WAIT_FUNC>
+    class sp_function_queue<
+      RET_VAL(PARAMS...),
+      ALLOCATOR_TYPE,
+      ERASURE,
+      PROD_CARDINALITY,
+      CONSUMER_CARDINALITY,
+      BUSY_WAIT_FUNC>
+#else
+    template <
+      typename CALLABLE,
+      typename ALLOCATOR_TYPE                      = default_allocator,
+      function_type_erasure   ERASURE              = function_standard_erasure,
+      concurrency_cardinality PROD_CARDINALITY     = concurrency_multiple,
+      concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple,
+      typename BUSY_WAIT_FUNC                      = default_busy_wait>
+    class sp_function_queue
+#endif
     {
-    private:
-        using UnderlyingQueue = sp_heter_queue<void, detail::FunctionRuntimeType<ERASURE, RET_VAL (PARAMS...)>,
-            ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC>;
+      private:
+        using UnderlyingQueue = sp_heter_queue<
+          void,
+          detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>,
+          ALLOCATOR_TYPE,
+          PROD_CARDINALITY,
+          CONSUMER_CARDINALITY,
+          BUSY_WAIT_FUNC>;
         UnderlyingQueue m_queue;
 
-    public:
-
+      public:
         /** Whether multiple threads can do put operations on the same queue without any further synchronization. */
         static constexpr bool concurrent_puts = PROD_CARDINALITY == concurrency_multiple;
 
@@ -98,7 +115,7 @@ namespace density
         /** Move assignment.
 
         \snippet sp_func_queue_examples.cpp sp_function_queue move assign example 1 */
-        sp_function_queue & operator = (sp_function_queue && i_source) noexcept = default;
+        sp_function_queue & operator=(sp_function_queue && i_source) noexcept = default;
 
         /** Swaps two function queues.
 
@@ -121,11 +138,13 @@ namespace density
 
         /** Alias to sp_heter_queue::put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
-            using put_transaction = typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>;
+        using put_transaction =
+          typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>;
 
         /** Alias to sp_heter_queue::reentrant_put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
-            using reentrant_put_transaction = typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>;
+        using reentrant_put_transaction =
+          typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>;
 
         /** Alias to lf_heter_queue::consume_operation. */
         using consume_operation = typename UnderlyingQueue::consume_operation;
@@ -140,8 +159,7 @@ namespace density
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 1
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 2
         \snippet sp_func_queue_examples.cpp sp_function_queue push example 3 */
-        template <typename ELEMENT_COMPLETE_TYPE>
-            void push(ELEMENT_COMPLETE_TYPE && i_source)
+        template <typename ELEMENT_COMPLETE_TYPE> void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
@@ -154,9 +172,10 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
-            void emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        void emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            m_queue.template emplace<ELEMENT_COMPLETE_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            m_queue.template emplace<ELEMENT_COMPLETE_TYPE>(
+              std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
         }
 
         /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
@@ -167,7 +186,8 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_push(ELEMENT_TYPE && i_source)
+        put_transaction<typename std::decay<ELEMENT_TYPE>::type>
+          start_push(ELEMENT_TYPE && i_source)
         {
             return m_queue.start_push(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -181,9 +201,10 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            return m_queue.template start_emplace<ELEMENT_TYPE>(std::forward<ELEMENT_TYPE>(i_construction_params)...);
+            return m_queue.template start_emplace<ELEMENT_TYPE>(
+              std::forward<ELEMENT_TYPE>(i_construction_params)...);
         }
 
         /** Adds at the end of the queue a callable object.
@@ -192,7 +213,7 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue reentrant_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
-            void reentrant_push(ELEMENT_COMPLETE_TYPE && i_source)
+        void reentrant_push(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_queue.reentrant_push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
@@ -205,9 +226,10 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue reentrant_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
-            void reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            m_queue.template reentrant_emplace<ELEMENT_COMPLETE_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            m_queue.template reentrant_emplace<ELEMENT_COMPLETE_TYPE>(
+              std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
         }
 
         /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
@@ -218,7 +240,8 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> start_reentrant_push(ELEMENT_TYPE && i_source)
+        reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>
+          start_reentrant_push(ELEMENT_TYPE && i_source)
         {
             return m_queue.start_reentrant_push(std::forward<ELEMENT_TYPE>(i_source));
         }
@@ -232,9 +255,11 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<ELEMENT_TYPE> start_reentrant_emplace(CONSTRUCTION_PARAMS && ... i_construction_params)
+        reentrant_put_transaction<ELEMENT_TYPE>
+          start_reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            return m_queue.template start_reentrant_emplace<ELEMENT_TYPE>(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            return m_queue.template start_reentrant_emplace<ELEMENT_TYPE>(
+              std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
         }
 
         /** Tries to add at the end of the queue a callable object respecting a progress guarantee.
@@ -243,10 +268,16 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue try_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
-            bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_COMPLETE_TYPE && i_source)
-                noexcept(noexcept(m_queue.try_push(i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source))))
+        bool try_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_COMPLETE_TYPE &&
+            i_source) noexcept(noexcept(m_queue
+                                          .try_push(
+                                            i_progress_guarantee,
+                                            std::forward<ELEMENT_COMPLETE_TYPE>(i_source))))
         {
-            return m_queue.try_push(i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+            return m_queue.try_push(
+              i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
         /** Tries to add at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code> respecting a progress guarantee,
@@ -257,10 +288,13 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue try_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
-            bool try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(m_queue.template try_emplace<ELEMENT_COMPLETE_TYPE>(i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
+        bool
+          try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
+            noexcept(m_queue.template try_emplace<ELEMENT_COMPLETE_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
         {
-            return m_queue.template try_emplace<ELEMENT_COMPLETE_TYPE>(i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            return m_queue.template try_emplace<ELEMENT_COMPLETE_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
         }
 
         /** Tries to begin a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
@@ -271,10 +305,15 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue try_start_push example 1 */
         template <typename ELEMENT_TYPE>
-            put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(m_queue.try_start_push(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_TYPE &&    i_source) noexcept(noexcept(m_queue
+                                                        .try_start_push(
+                                                          i_progress_guarantee,
+                                                          std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return m_queue.try_start_push(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return m_queue.try_start_push(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
 
@@ -286,10 +325,18 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue try_start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            put_transaction<ELEMENT_TYPE> try_start_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(m_queue.template try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...)))
+        put_transaction<ELEMENT_TYPE> try_start_emplace(
+          progress_guarantee i_progress_guarantee,
+          CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(noexcept(m_queue
+                                                                               .template try_start_emplace<
+                                                                                 ELEMENT_TYPE>(
+                                                                                 i_progress_guarantee,
+                                                                                 std::forward<
+                                                                                   ELEMENT_TYPE>(
+                                                                                   i_construction_params)...)))
         {
-            return m_queue.template try_start_emplace<ELEMENT_TYPE>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...);
+            return m_queue.template try_start_emplace<ELEMENT_TYPE>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...);
         }
 
         /** Tries to add at the end of the queue a callable object.
@@ -298,10 +345,16 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
-            bool try_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_COMPLETE_TYPE && i_source)
-                noexcept(noexcept(m_queue.try_reentrant_push(i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source))))
+        bool try_reentrant_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_COMPLETE_TYPE &&
+            i_source) noexcept(noexcept(m_queue
+                                          .try_reentrant_push(
+                                            i_progress_guarantee,
+                                            std::forward<ELEMENT_COMPLETE_TYPE>(i_source))))
         {
-            return m_queue.try_reentrant_push(i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
+            return m_queue.try_reentrant_push(
+              i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
         /** Tries to add at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
@@ -312,10 +365,18 @@ namespace density
 
         \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
-            bool try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(m_queue.template try_reentrant_emplace<ELEMENT_COMPLETE_TYPE>(i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...)))
+        bool try_reentrant_emplace(
+          progress_guarantee i_progress_guarantee,
+          CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(noexcept(m_queue
+                                                                               .template try_reentrant_emplace<
+                                                                                 ELEMENT_COMPLETE_TYPE>(
+                                                                                 i_progress_guarantee,
+                                                                                 std::forward<
+                                                                                   CONSTRUCTION_PARAMS>(
+                                                                                   i_construction_params)...)))
         {
-            return m_queue.template try_reentrant_emplace<ELEMENT_COMPLETE_TYPE>(i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
+            return m_queue.template try_reentrant_emplace<ELEMENT_COMPLETE_TYPE>(
+              i_progress_guarantee, std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
         }
 
         /** Tries to begin a transaction appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
@@ -326,10 +387,15 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue try_start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
-            reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source)
-                noexcept(noexcept(m_queue.try_start_reentrant_push(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source))))
+        reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(
+          progress_guarantee i_progress_guarantee,
+          ELEMENT_TYPE &&    i_source) noexcept(noexcept(m_queue
+                                                        .try_start_reentrant_push(
+                                                          i_progress_guarantee,
+                                                          std::forward<ELEMENT_TYPE>(i_source))))
         {
-            return m_queue.try_start_reentrant_push(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
+            return m_queue.try_start_reentrant_push(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
 
@@ -341,10 +407,18 @@ namespace density
             <b>Examples</b>
             \snippet sp_func_queue_examples.cpp sp_function_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
-            reentrant_put_transaction<ELEMENT_TYPE> try_start_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS && ... i_construction_params)
-                noexcept(noexcept(m_queue.template try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...)))
+        reentrant_put_transaction<ELEMENT_TYPE> try_start_reentrant_emplace(
+          progress_guarantee i_progress_guarantee,
+          CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(noexcept(m_queue
+                                                                               .template try_start_reentrant_emplace<
+                                                                                 ELEMENT_TYPE>(
+                                                                                 i_progress_guarantee,
+                                                                                 std::forward<
+                                                                                   ELEMENT_TYPE>(
+                                                                                   i_construction_params)...)))
         {
-            return m_queue.template try_start_reentrant_emplace<ELEMENT_TYPE>(i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...);
+            return m_queue.template try_start_reentrant_emplace<ELEMENT_TYPE>(
+              i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_construction_params)...);
         }
 
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it
@@ -362,8 +436,9 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type
-            try_consume(PARAMS... i_params)
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::
+          type
+          try_consume(PARAMS... i_params)
         {
             return try_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
@@ -389,9 +464,10 @@ namespace density
 
             \snippet sp_func_queue_examples.cpp sp_function_queue try_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
-            try_consume(consume_operation & i_consume, PARAMS... i_params)
+          try_consume(consume_operation & i_consume, PARAMS... i_params)
         {
-            return try_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
+            return try_consume_impl_cached(
+              std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it
@@ -408,10 +484,12 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 1 */
-        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::type
-            try_reentrant_consume(PARAMS... i_params)
+        typename std::conditional<std::is_void<RET_VAL>::value, bool, density::optional<RET_VAL>>::
+          type
+          try_reentrant_consume(PARAMS... i_params)
         {
-            return try_reentrant_consume_impl(std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
+            return try_reentrant_consume_impl(
+              std::is_void<RET_VAL>(), std::forward<PARAMS>(i_params)...);
         }
 
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it
@@ -434,9 +512,10 @@ namespace density
 
             \snippet sp_func_queue_examples.cpp sp_function_queue try_reentrant_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
-            try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
+          try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
-            return try_reentrant_consume_impl_cached(std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
+            return try_reentrant_consume_impl_cached(
+              std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
         /** Deletes all the callable objects in the queue. This function is disabled at conpile-time if ERASURE is function_manual_clear.
@@ -446,7 +525,9 @@ namespace density
             \n\b Complexity: linear.
 
         \snippet sp_func_queue_examples.cpp sp_function_queue clear example 1 */
-        template <function_type_erasure ERASURE_ = ERASURE, typename std::enable_if<ERASURE_ != function_manual_clear>::type * = nullptr>
+        template <
+          function_type_erasure ERASURE_                                     = ERASURE,
+          typename std::enable_if<ERASURE_ != function_manual_clear>::type * = nullptr>
         void clear() noexcept
         {
             auto erasure = ERASURE;
@@ -461,20 +542,16 @@ namespace density
         }
 
         /** Returns whether this container is empty */
-        bool empty() noexcept
-        {
-            return m_queue.empty();
-        }
+        bool empty() noexcept { return m_queue.empty(); }
 
-    private:
-
+      private:
         /** \internal - try_consume_impl - non-void return type, temporary consume_operation */
         optional<RET_VAL> try_consume_impl(std::false_type, PARAMS... i_params)
         {
             if (auto cons = m_queue.try_start_consume())
             {
                 auto && result = cons.complete_type().align_invoke_destroy(
-                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
                 return optional<RET_VAL>(std::move(result));
             }
@@ -490,7 +567,7 @@ namespace density
             if (auto cons = m_queue.try_start_consume())
             {
                 cons.complete_type().align_invoke_destroy(
-                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
                 return true;
             }
@@ -501,12 +578,13 @@ namespace density
         }
 
         /** \internal - try_consume_impl_cached - non-void return type, cached consume_operation */
-        optional<RET_VAL> try_consume_impl_cached(std::false_type, consume_operation & i_consume, PARAMS... i_params)
+        optional<RET_VAL> try_consume_impl_cached(
+          std::false_type, consume_operation & i_consume, PARAMS... i_params)
         {
             if (m_queue.try_start_consume(i_consume))
             {
                 auto && result = i_consume.complete_type().align_invoke_destroy(
-                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 i_consume.commit_nodestroy();
                 return optional<RET_VAL>(std::move(result));
             }
@@ -517,12 +595,13 @@ namespace density
         }
 
         /** \internal - try_consume_impl_cached - void return type, cached consume_operation */
-        bool try_consume_impl_cached(std::true_type, consume_operation & i_consume, PARAMS... i_params)
+        bool
+          try_consume_impl_cached(std::true_type, consume_operation & i_consume, PARAMS... i_params)
         {
             if (m_queue.try_start_consume(i_consume))
             {
                 i_consume.complete_type().align_invoke_destroy(
-                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 i_consume.commit_nodestroy();
                 return true;
             }
@@ -538,7 +617,7 @@ namespace density
             if (auto cons = m_queue.try_start_reentrant_consume())
             {
                 auto && result = cons.complete_type().align_invoke_destroy(
-                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
                 return optional<RET_VAL>(std::move(result));
             }
@@ -554,7 +633,7 @@ namespace density
             if (auto cons = m_queue.try_start_reentrant_consume())
             {
                 cons.complete_type().align_invoke_destroy(
-                    cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  cons.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 cons.commit_nodestroy();
                 return true;
             }
@@ -565,12 +644,13 @@ namespace density
         }
 
         /** \internal - try_reentrant_consume_impl_cached - non-void return type, cached consume_operation */
-        optional<RET_VAL> try_reentrant_consume_impl_cached(std::false_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
+        optional<RET_VAL> try_reentrant_consume_impl_cached(
+          std::false_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
             if (m_queue.try_start_reentrant_consume(i_consume))
             {
                 auto && result = i_consume.complete_type().align_invoke_destroy(
-                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 i_consume.commit_nodestroy();
                 return optional<RET_VAL>(std::move(result));
             }
@@ -581,12 +661,13 @@ namespace density
         }
 
         /** \internal - try_reentrant_consume_impl_cached - void return type, cached consume_operation */
-        bool try_reentrant_consume_impl_cached(std::true_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
+        bool try_reentrant_consume_impl_cached(
+          std::true_type, reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
             if (m_queue.try_start_reentrant_consume(i_consume))
             {
                 i_consume.complete_type().align_invoke_destroy(
-                    i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
+                  i_consume.unaligned_element_ptr(), std::forward<PARAMS>(i_params)...);
                 i_consume.commit_nodestroy();
                 return true;
             }

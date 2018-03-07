@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -16,7 +16,7 @@ namespace density
       function_type_erasure ERASURE = function_standard_erasure>
     class function_queue;
 
-/** Heterogeneous FIFO pseudo-container specialized to hold callable objects. function_queue is an adaptor for heter_queue.
+    /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. function_queue is an adaptor for heter_queue.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept

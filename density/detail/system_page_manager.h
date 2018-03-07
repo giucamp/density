@@ -1,13 +1,13 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <new>
 #include <atomic>
 #include <density/density_common.h>
+#include <new>
 
 namespace density
 {
@@ -39,13 +39,13 @@ namespace density
 
             To avoid internal fragmentation, it is recommended to create only one instance of every
             specialization SystemPageManager for every program run. */
-        template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
-            class SystemPageManager
+        template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class SystemPageManager
         {
-        public:
-
-            static_assert(PAGE_CAPACITY_AND_ALIGNMENT > sizeof(void*) * 4 && is_power_of_2(PAGE_CAPACITY_AND_ALIGNMENT),
-                "PAGE_CAPACITY_AND_ALIGNMENT too small or not a power of 2");
+          public:
+            static_assert(
+              PAGE_CAPACITY_AND_ALIGNMENT > sizeof(void *) * 4 &&
+                is_power_of_2(PAGE_CAPACITY_AND_ALIGNMENT),
+              "PAGE_CAPACITY_AND_ALIGNMENT too small or not a power of 2");
 
             /** Alignment of all the pages, in bytes. Alignments are always integer power of 2. */
             static constexpr size_t page_alignment_and_size = PAGE_CAPACITY_AND_ALIGNMENT;
@@ -60,17 +60,18 @@ namespace density
             static constexpr size_t region_default_size_bytes = (4 * 1024 * 1024);
 
             /** Minimum size (in bytes) of a memory region. */
-            static constexpr size_t region_min_size_bytes = detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
+            static constexpr size_t region_min_size_bytes =
+              detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
 
             SystemPageManager() noexcept
             {
-                /** The first region is always empty, so it will be skipped soon */
-                #if defined(__GLIBCXX__)
-                    // some versions of libstdc++ lack std::atomic_init
-                    m_curr_region.store(&m_first_region);
-                #else
-                    std::atomic_init(&m_curr_region, &m_first_region);
-                #endif
+/** The first region is always empty, so it will be skipped soon */
+#if defined(__GLIBCXX__)
+                // some versions of libstdc++ lack std::atomic_init
+                m_curr_region.store(&m_first_region);
+#else
+                std::atomic_init(&m_curr_region, &m_first_region);
+#endif
             }
 
             ~SystemPageManager()
@@ -85,7 +86,7 @@ namespace density
             }
 
             SystemPageManager(const SystemPageManager &) = delete;
-            SystemPageManager & operator = (const SystemPageManager &) = delete;
+            SystemPageManager & operator=(const SystemPageManager &) = delete;
 
             /** Allocates a new page from the system. This function never throws.
                 @param i_progress_guarantee Progress guarantee. If it is progress_blocking, a failure indicates an out of memory.
@@ -93,13 +94,15 @@ namespace density
             void * try_allocate_page(progress_guarantee const i_progress_guarantee) noexcept
             {
                 Region * unused_region = nullptr;
-                auto curr_region = m_curr_region.load(std::memory_order_acquire);
+                auto     curr_region   = m_curr_region.load(std::memory_order_acquire);
 
                 // Regions that enter the list are destroyed only at destruction time, so the following iteration is always safe
                 void * new_page;
-                while ( (new_page = allocate_page_from_region(i_progress_guarantee, curr_region)) == nullptr)
+                while ((new_page = allocate_page_from_region(i_progress_guarantee, curr_region)) ==
+                       nullptr)
                 {
-                    curr_region = get_next_region(i_progress_guarantee, curr_region, &unused_region);
+                    curr_region =
+                      get_next_region(i_progress_guarantee, curr_region, &unused_region);
                     if (curr_region == nullptr)
                         break;
                 }
@@ -116,7 +119,8 @@ namespace density
                 @param i_progress_guarantee Progress guarantee. If it is progress_blocking, a failure indicates an out of memory.
                 @param i_size space in bytes to reserve
                 @return actual size reserved, that can be less (in case of failure), equal or greater than i_size */
-            uintptr_t try_reserve_region_memory(progress_guarantee const i_progress_guarantee, uintptr_t const i_size) noexcept
+            uintptr_t try_reserve_region_memory(
+              progress_guarantee const i_progress_guarantee, uintptr_t const i_size) noexcept
             {
                 Region * unused_region = nullptr;
 
@@ -124,7 +128,8 @@ namespace density
 
                 while (i_size > curr_region->m_cumulative_available_memory)
                 {
-                    auto next_region = get_next_region(i_progress_guarantee, curr_region, &unused_region);
+                    auto next_region =
+                      get_next_region(i_progress_guarantee, curr_region, &unused_region);
                     if (next_region == nullptr)
                         break;
 
@@ -139,28 +144,27 @@ namespace density
                 return curr_region->m_cumulative_available_memory;
             }
 
-        private:
-
+          private:
             struct Region
             {
                 /** Address of the next free page in the region. When >= m_end, the region is exhausted. */
-                std::atomic<uintptr_t> m_curr{ 0 };
+                std::atomic<uintptr_t> m_curr{0};
 
                 /** First address after the available memory of the region */
-                uintptr_t m_end{ 0 };
+                uintptr_t m_end{0};
 
                 /** Pointer to the next memory region */
-                std::atomic<Region*> m_next_region{ nullptr };
+                std::atomic<Region *> m_next_region{nullptr};
 
                 /** Address of the first allocable page of the region */
-                uintptr_t m_start{ 0 };
+                uintptr_t m_start{0};
 
                 /** Sum of the sizes (in bytes) of all the memory regions in the list up to this one */
-                uintptr_t m_cumulative_available_memory{ 0 };
+                uintptr_t m_cumulative_available_memory{0};
 
-                Region() noexcept { }
+                Region() noexcept {}
                 Region(const Region &) = delete;
-                Region & operator = (const Region &) = delete;
+                Region & operator=(const Region &) = delete;
             };
 
             /** Returns the region after a given one, possibly creating it.
@@ -170,7 +174,10 @@ namespace density
                 @param io_new_region contains a new region provided by the caller, or is nullptr. After the call it
                     may point to a memory region that the caller should destroy, or use somehow.
                 @return the next region, or null in case of failure */
-            Region * get_next_region(progress_guarantee const i_progress_guarantee, Region * i_curr_region, Region * * io_new_region) noexcept
+            Region * get_next_region(
+              progress_guarantee const i_progress_guarantee,
+              Region *                 i_curr_region,
+              Region **                io_new_region) noexcept
             {
                 // we get the pointer to the next_region region, or allocate it
                 auto next_region = i_curr_region->m_next_region.load();
@@ -191,14 +198,17 @@ namespace density
                     if (*io_new_region != nullptr)
                     {
                         // set m_cumulative_available_memory on the new region
-                        auto const new_region_size = (*io_new_region)->m_end - (*io_new_region)->m_curr;
+                        auto const new_region_size =
+                          (*io_new_region)->m_end - (*io_new_region)->m_curr;
                         DENSITY_ASSERT_INTERNAL((new_region_size % page_alignment_and_size) == 0);
-                        (*io_new_region)->m_cumulative_available_memory = i_curr_region->m_cumulative_available_memory + new_region_size;
+                        (*io_new_region)->m_cumulative_available_memory =
+                          i_curr_region->m_cumulative_available_memory + new_region_size;
 
                         // The allocation succeeded, so set the pointer to the next_region region, if it is null
-                        if (i_curr_region->m_next_region.compare_exchange_strong(next_region, *io_new_region))
+                        if (i_curr_region->m_next_region.compare_exchange_strong(
+                              next_region, *io_new_region))
                         {
-                            next_region = *io_new_region;
+                            next_region    = *io_new_region;
                             *io_new_region = nullptr;
                         }
                     }
@@ -219,8 +229,8 @@ namespace density
                     This operation is not mandatory, so we can tolerate spurious failures. */
                 DENSITY_ASSERT_INTERNAL(next_region != nullptr);
                 auto expected = i_curr_region;
-                m_curr_region.compare_exchange_weak(expected, next_region,
-                    std::memory_order_release, std::memory_order_relaxed);
+                m_curr_region.compare_exchange_weak(
+                  expected, next_region, std::memory_order_release, std::memory_order_relaxed);
 
                 // we are done we this region
                 i_curr_region = next_region;
@@ -228,7 +238,8 @@ namespace density
                 return i_curr_region;
             }
 
-            static void * allocate_page_from_region(progress_guarantee i_progress_guarantee, Region * const i_region)
+            static void * allocate_page_from_region(
+              progress_guarantee i_progress_guarantee, Region * const i_region)
             {
                 if (i_progress_guarantee != progress_wait_free)
                     return allocate_page_from_region_lockfree(i_region);
@@ -242,7 +253,8 @@ namespace density
             {
                 /* First we blindly allocate the page, then we detect the overflow of m_curr. This is an
                     optimistic method. To do: compare performances with a load-compare-exchange method. */
-                auto page = i_region->m_curr.fetch_add(PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
+                auto page = i_region->m_curr.fetch_add(
+                  PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
 
                 /* We want to exploit the full range of uintptr_t to detect overflows of m_curr, so we
                     check also the wraparound of m_curr until m_start.
@@ -251,11 +263,12 @@ namespace density
                     this case very improbable. */
                 if (page >= i_region->m_start && page < i_region->m_end)
                 {
-                    return reinterpret_cast<void*>(page);
+                    return reinterpret_cast<void *>(page);
                 }
                 else
                 {
-                    i_region->m_curr.fetch_sub(PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
+                    i_region->m_curr.fetch_sub(
+                      PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
                     return nullptr;
                 }
             }
@@ -264,13 +277,16 @@ namespace density
             static void * allocate_page_from_region_waitfree(Region * const i_region) noexcept
             {
                 auto curr_address = i_region->m_curr.load(std::memory_order_relaxed);
-                auto new_address = curr_address + PAGE_CAPACITY_AND_ALIGNMENT;
-                DENSITY_ASSERT_INTERNAL( (curr_address >= i_region->m_end) == (new_address > i_region->m_end) ); // two different way to express the condition
+                auto new_address  = curr_address + PAGE_CAPACITY_AND_ALIGNMENT;
+                DENSITY_ASSERT_INTERNAL(
+                  (curr_address >= i_region->m_end) ==
+                  (new_address > i_region->m_end)); // two different way to express the condition
                 if (curr_address < i_region->m_end)
                 {
-                    if (i_region->m_curr.compare_exchange_weak(curr_address, new_address, std::memory_order_relaxed))
+                    if (i_region->m_curr.compare_exchange_weak(
+                          curr_address, new_address, std::memory_order_relaxed))
                     {
-                        return reinterpret_cast<void*>(curr_address);
+                        return reinterpret_cast<void *>(curr_address);
                     }
                 }
                 return nullptr;
@@ -280,19 +296,19 @@ namespace density
                 After failing with region_min_size_bytes, return nullptr. */
             static Region * create_region() noexcept
             {
-                Region * region = new(std::nothrow) Region;
+                Region * region = new (std::nothrow) Region;
                 if (region == nullptr)
                 {
                     return nullptr;
                 }
 
-                size_t region_size = region_default_size_bytes;
+                size_t region_size  = region_default_size_bytes;
                 void * region_start = nullptr;
                 while (region_start == nullptr)
                 {
                     region_size = detail::size_max(region_size, region_min_size_bytes);
 
-                    region_start = operator new (region_size, std::nothrow);
+                    region_start = operator new(region_size, std::nothrow);
                     if (region_start == nullptr)
                     {
                         if (region_size == region_min_size_bytes)
@@ -306,7 +322,8 @@ namespace density
                 }
 
                 auto const curr = address_upper_align(region_start, PAGE_CAPACITY_AND_ALIGNMENT);
-                auto const end = address_lower_align(address_add(region_start, region_size), PAGE_CAPACITY_AND_ALIGNMENT);
+                auto const end  = address_lower_align(
+                  address_add(region_start, region_size), PAGE_CAPACITY_AND_ALIGNMENT);
                 DENSITY_ASSERT_INTERNAL(region_start <= curr && curr < end);
 
                 region->m_start = reinterpret_cast<uintptr_t>(region_start);
@@ -318,12 +335,13 @@ namespace density
             static void delete_region(Region * const i_region) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_region != nullptr);
-                operator delete (reinterpret_cast<void*>(i_region->m_start));
+                operator delete(reinterpret_cast<void *>(i_region->m_start));
                 delete i_region;
             }
 
-        private:
-            std::atomic<Region *> m_curr_region; /**< Usually this is a pointer to the last memory region,
+          private:
+            std::atomic<Region *>
+                   m_curr_region;  /**< Usually this is a pointer to the last memory region,
                 but in case of contention between threads it may be left behind. */
             Region m_first_region; /**< First memory region, always empty */
         };
@@ -331,4 +349,3 @@ namespace density
     } // namespace detail
 
 } // namespace density
-

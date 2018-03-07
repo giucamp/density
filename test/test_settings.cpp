@@ -1,19 +1,19 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #if defined(_MSC_VER)
-    #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "test_settings.h"
-#include <cstdio>
-#include <stdexcept>
 #include <algorithm>
-#include <inttypes.h>
+#include <cstdio>
 #include <cstring>
+#include <inttypes.h>
+#include <stdexcept>
 
 namespace
 {
@@ -29,7 +29,8 @@ namespace
         return false;
     }
 
-    bool append_string_list(const char * i_option, const char * i_prefix, std::vector<std::string> & o_values)
+    bool append_string_list(
+      const char * i_option, const char * i_prefix, std::vector<std::string> & o_values)
     {
         std::string list;
         if (read_string(i_option, i_prefix, list))
@@ -53,15 +54,15 @@ namespace
         }
         return false;
     }
-}
+} // namespace
 
-std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
+std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char ** argv)
 {
     TestSettings results;
 
     int integer = 0;
 
-    if(*argv != nullptr && *++argv != nullptr)
+    if (*argv != nullptr && *++argv != nullptr)
     {
         for (auto parameter = argv; *parameter != nullptr; parameter++)
         {
@@ -90,9 +91,11 @@ std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
             {
                 results.m_test_allocators = integer != 0;
             }
-            else if (sscanf(*parameter, "-queue_tests_cardinality:%zu", &results.m_queue_tests_cardinality) == 1)
+            else if (
+              sscanf(
+                *parameter, "-queue_tests_cardinality:%zu", &results.m_queue_tests_cardinality) ==
+              1)
             {
-
             }
             else
             {
@@ -105,7 +108,7 @@ std::shared_ptr<const TestSettings> parse_settings(int /*argc*/, char **argv)
 
 bool TestSettings::should_run(const char * i_test_name) const
 {
-    if(!m_run_only.empty())
+    if (!m_run_only.empty())
     {
         if (std::find(m_run_only.begin(), m_run_only.end(), i_test_name) == m_run_only.end())
         {
@@ -117,5 +120,5 @@ bool TestSettings::should_run(const char * i_test_name) const
 }
 
 #if defined(_MSC_VER)
-    #undef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
 #endif

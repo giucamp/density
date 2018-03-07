@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -11,7 +11,6 @@ namespace density_tests
     LineUpdaterStreamAdapter::LineUpdaterStreamAdapter(std::ostream & i_dest_stream)
         : m_dest_stream(i_dest_stream)
     {
-
     }
 
     LineUpdaterStreamAdapter::~LineUpdaterStreamAdapter()
@@ -63,5 +62,3 @@ void test()
 }
 
 #endif
-
-

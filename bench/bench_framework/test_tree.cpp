@@ -1,23 +1,23 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "test_tree.h"
-#include <string.h>
-#include <random>
 #include <algorithm>
+#include <random>
+#include <string.h>
 
 namespace density_bench
 {
     namespace detail
     {
         template <typename PREEDICATE>
-            static void for_each_token(const char * i_path, PREEDICATE && i_predicate)
+        static void for_each_token(const char * i_path, PREEDICATE && i_predicate)
         {
             const char * remaining_path = i_path;
-            for(;;)
+            for (;;)
             {
                 const size_t token_length = strcspn(remaining_path, "/\\");
                 i_predicate(remaining_path, token_length);
@@ -27,7 +27,7 @@ namespace density_bench
                 remaining_path++;
             }
         }
-    }
+    } // namespace detail
 
     void TestTree::add_child(TestTree i_child)
     {
@@ -39,15 +39,18 @@ namespace density_bench
         m_children.push_back(std::move(i_child));
     }
 
-    TestTree & TestTree::operator [] (const char * i_path)
+    TestTree & TestTree::operator[](const char * i_path)
     {
         using namespace std;
 
         auto node = this;
         detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
-
-            auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
-                [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length) == 0; });
+            auto entry_it = find_if(
+              node->m_children.begin(),
+              node->m_children.end(),
+              [i_token, i_token_length](const TestTree & i_entry) {
+                  return i_entry.name().compare(0, string::npos, i_token, i_token_length) == 0;
+              });
 
             if (entry_it != node->m_children.end())
             {
@@ -69,11 +72,14 @@ namespace density_bench
 
         auto node = this;
         detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
-
             if (node != nullptr)
             {
-                auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
-                    [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length); });
+                auto entry_it = find_if(
+                  node->m_children.begin(),
+                  node->m_children.end(),
+                  [i_token, i_token_length](const TestTree & i_entry) {
+                      return i_entry.name().compare(0, string::npos, i_token, i_token_length);
+                  });
 
                 if (entry_it != node->m_children.end())
                 {
@@ -95,11 +101,14 @@ namespace density_bench
 
         auto node = this;
         detail::for_each_token(i_path, [&node](const char * i_token, size_t i_token_length) {
-
             if (node != nullptr)
             {
-                auto entry_it = find_if(node->m_children.begin(), node->m_children.end(),
-                    [i_token, i_token_length](const TestTree & i_entry) { return i_entry.name().compare(0, string::npos, i_token, i_token_length); });
+                auto entry_it = find_if(
+                  node->m_children.begin(),
+                  node->m_children.end(),
+                  [i_token, i_token_length](const TestTree & i_entry) {
+                      return i_entry.name().compare(0, string::npos, i_token, i_token_length);
+                  });
 
                 if (entry_it != node->m_children.end())
                 {
@@ -114,7 +123,6 @@ namespace density_bench
 
         return node;
     }
-
 
 
 } // namespace density_bench

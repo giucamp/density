@@ -1,16 +1,16 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <cstring> // for memcpy
+#include <density/default_allocator.h>
 #include <density/density_common.h>
 #include <density/runtime_type.h>
-#include <density/default_allocator.h>
-#include <cstring> // for memcpy
-#include <type_traits>
 #include <iterator>
+#include <type_traits>
 
 namespace density
 {
@@ -42,11 +42,10 @@ namespace density
         that points to the next block \ref allocate would return. A call to \ref allocate_empty just return the top of the stack,
         without altering the state of the allocator.
         lifo_allocator does not cache free pages\blocks: when a page or a block is no more used, it is immediately deallocated. */
-    template <typename UNDERLYING_ALLOCATOR = default_allocator, size_t ALIGNMENT = alignof(void*)>
-        class lifo_allocator : private UNDERLYING_ALLOCATOR
+    template <typename UNDERLYING_ALLOCATOR = default_allocator, size_t ALIGNMENT = alignof(void *)>
+    class lifo_allocator : private UNDERLYING_ALLOCATOR
     {
-    public:
-
+      public:
         static_assert(ALIGNMENT > 0 && is_power_of_2(ALIGNMENT), "ALIGNMENT must be a power of 2");
 
         /** Alias for the template argument UNDERLYING_ALLOCATOR */
@@ -56,24 +55,30 @@ namespace density
         static constexpr size_t alignment = ALIGNMENT;
 
         // compile time checks
-        static_assert(alignment <= UNDERLYING_ALLOCATOR::page_alignment, "The alignment of the pages is too small");
+        static_assert(
+          alignment <= UNDERLYING_ALLOCATOR::page_alignment,
+          "The alignment of the pages is too small");
 
         /** Default constructor, non-throwing and suitable for constant initialization. */
         constexpr lifo_allocator() noexcept {}
 
         /** Constructs passing the underlying allocator as l-value */
         lifo_allocator(const UNDERLYING_ALLOCATOR & i_underlying_allocator)
-            : UNDERLYING_ALLOCATOR(i_underlying_allocator) { }
+            : UNDERLYING_ALLOCATOR(i_underlying_allocator)
+        {
+        }
 
         /** Constructs passing the underlying allocator as r-value */
         lifo_allocator(UNDERLYING_ALLOCATOR && i_underlying_allocator)
-            : UNDERLYING_ALLOCATOR(std::move(i_underlying_allocator)) { }
+            : UNDERLYING_ALLOCATOR(std::move(i_underlying_allocator))
+        {
+        }
 
         /** Copy construction not allowed */
         lifo_allocator(const lifo_allocator &) = delete;
 
         /** Copy assignment not allowed */
-        lifo_allocator & operator = (const lifo_allocator &) = delete;
+        lifo_allocator & operator=(const lifo_allocator &) = delete;
 
         /** Allocates a memory block. The content of the newly allocated memory is undefined. The new memory block
             is aligned at least to \ref alignment.
@@ -90,7 +95,8 @@ namespace density
             DENSITY_ASSERT(i_size % alignment == 0);
 
             auto const new_top = m_top + i_size;
-            auto const new_offset = new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
+            auto const new_offset =
+              new_top - uint_lower_align(m_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (!DENSITY_LIKELY(new_offset < UNDERLYING_ALLOCATOR::page_size))
             {
                 // page overflow
@@ -100,8 +106,8 @@ namespace density
             {
                 // advance m_top
                 DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
-                auto const new_block = reinterpret_cast<void*>(m_top);
-                m_top = new_top;
+                auto const new_block = reinterpret_cast<void *>(m_top);
+                m_top                = new_top;
                 return new_block;
             }
         }
@@ -120,10 +126,7 @@ namespace density
             <i>Implementation notes</i>: this function just returns the top of the stack, without altering the state of the allocator.
 
             \snippet lifo_examples.cpp lifo_allocator allocate_empty 2 */
-        void * allocate_empty() noexcept
-        {
-            return reinterpret_cast<void*>(m_top);
-        }
+        void * allocate_empty() noexcept { return reinterpret_cast<void *>(m_top); }
 
         /** Deallocates the most recently allocated living memory block.
                 @param i_block The memory block to deallocate
@@ -139,7 +142,7 @@ namespace density
             DENSITY_ASSERT(i_block != nullptr && i_size % alignment == 0);
 
             // this check detects page switches and external blocks
-            if (!DENSITY_LIKELY(same_page(i_block, reinterpret_cast<void*>(m_top))))
+            if (!DENSITY_LIKELY(same_page(i_block, reinterpret_cast<void *>(m_top))))
             {
                 deallocate_slow_path(i_block, i_size);
             }
@@ -168,7 +171,7 @@ namespace density
         void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
         {
             // branch depending on the old block: this check detects page switches and external blocks
-            if (same_page(i_block, reinterpret_cast<void*>(m_top)))
+            if (same_page(i_block, reinterpret_cast<void *>(m_top)))
             {
                 // the following call sets the top only when it is sure to not throw
                 auto const new_block = set_top_and_allocate(i_block, i_new_size);
@@ -178,10 +181,11 @@ namespace density
             }
             else
             {
-                if ((m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
-                    same_page(reinterpret_cast<PageHeader*>(m_top)[-1].m_prev_page, i_block) )
+                if (
+                  (m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
+                  same_page(reinterpret_cast<PageHeader *>(m_top)[-1].m_prev_page, i_block))
                 {
-                    auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
+                    auto const page_to_deallocate = reinterpret_cast<void *>(m_top);
                     DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
 
                     // the following call sets the top only when it is sure to not throw
@@ -206,39 +210,34 @@ namespace density
         /** Destroys the allocator, deallocating the bottom page in case this allocator is not virgin */
         ~lifo_allocator()
         {
-            if(m_top != s_virgin_top)
+            if (m_top != s_virgin_top)
             {
-                UNDERLYING_ALLOCATOR::deallocate_page(reinterpret_cast<void*>(m_top));
+                UNDERLYING_ALLOCATOR::deallocate_page(reinterpret_cast<void *>(m_top));
             }
         }
 
         /** Returns a reference to the underlying allocator */
-        UNDERLYING_ALLOCATOR & underlying_allocator_ref() noexcept
-        {
-            return *this;
-        }
+        UNDERLYING_ALLOCATOR & underlying_allocator_ref() noexcept { return *this; }
 
         /** Returns a const reference to the underlying allocator */
-        const UNDERLYING_ALLOCATOR & underlying_allocator_ref() const noexcept
-        {
-            return *this;
-        }
+        const UNDERLYING_ALLOCATOR & underlying_allocator_ref() const noexcept { return *this; }
 
-    private:
-
+      private:
         /** \internal Allocated at the beginning of every page */
-        struct alignas(alignment) alignas(void*) PageHeader
+        struct alignas(alignment) alignas(void *) PageHeader
         {
             void * m_prev_page; /**< pointer to a byte of the previous page */
         };
 
-        static_assert(UNDERLYING_ALLOCATOR::page_size / 2 > sizeof(PageHeader), "page_size is too small");
+        static_assert(
+          UNDERLYING_ALLOCATOR::page_size / 2 > sizeof(PageHeader), "page_size is too small");
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */
         static bool same_page(const void * i_first, const void * i_second) noexcept
         {
             auto const page_mask = UNDERLYING_ALLOCATOR::page_alignment - 1;
-            return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) & ~page_mask) == 0;
+            return ((reinterpret_cast<uintptr_t>(i_first) ^ reinterpret_cast<uintptr_t>(i_second)) &
+                    ~page_mask) == 0;
         }
 
         DENSITY_NO_INLINE void * allocate_slow_path(size_t i_size)
@@ -249,9 +248,9 @@ namespace density
                 // allocate a new page
                 auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
                 DENSITY_ASSERT_INTERNAL(new_page != nullptr);
-                auto const new_header = new(new_page) PageHeader;
-                new_header->m_prev_page = reinterpret_cast<void*>(m_top);
-                m_top = reinterpret_cast<uintptr_t>(new_header + 1) + i_size;
+                auto const new_header   = new (new_page) PageHeader;
+                new_header->m_prev_page = reinterpret_cast<void *>(m_top);
+                m_top                   = reinterpret_cast<uintptr_t>(new_header + 1) + i_size;
                 return new_header + 1;
             }
             else
@@ -265,11 +264,12 @@ namespace density
         {
             DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
 
-            if ((m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
-                same_page(reinterpret_cast<PageHeader*>(m_top)[-1].m_prev_page, i_block) )
+            if (
+              (m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
+              same_page(reinterpret_cast<PageHeader *>(m_top)[-1].m_prev_page, i_block))
             {
                 // deallocate the top page
-                auto const page_to_deallocate = reinterpret_cast<void*>(m_top);
+                auto const page_to_deallocate = reinterpret_cast<void *>(m_top);
                 DENSITY_ASSERT_INTERNAL(!same_page(page_to_deallocate, i_block));
                 UNDERLYING_ALLOCATOR::deallocate_page(page_to_deallocate);
                 m_top = reinterpret_cast<uintptr_t>(i_block);
@@ -291,32 +291,35 @@ namespace density
 
             // we have to procrastinate the assignment of m_top until we have allocated the page or the external block
             auto const new_top = current_top + i_size;
-            auto const new_offset = new_top - uint_lower_align(current_top, UNDERLYING_ALLOCATOR::page_alignment);
+            auto const new_offset =
+              new_top - uint_lower_align(current_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset < UNDERLYING_ALLOCATOR::page_size)
             {
                 DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = i_current_top;
-                m_top = new_top;
+                m_top                = new_top;
                 return new_block;
             }
             else if (i_size < UNDERLYING_ALLOCATOR::page_size / 2)
             {
                 // allocate a new page
-                auto const new_page = static_cast<PageHeader*>(UNDERLYING_ALLOCATOR::allocate_page());
-                new_page->m_prev_page = reinterpret_cast<void*>(current_top);
-                m_top = reinterpret_cast<uintptr_t>(new_page + 1) + i_size;
+                auto const new_page =
+                  static_cast<PageHeader *>(UNDERLYING_ALLOCATOR::allocate_page());
+                new_page->m_prev_page = reinterpret_cast<void *>(current_top);
+                m_top                 = reinterpret_cast<uintptr_t>(new_page + 1) + i_size;
                 return new_page + 1;
             }
             else
             {
                 // external block
                 auto const new_external_block = UNDERLYING_ALLOCATOR::allocate(i_size, alignment);
-                m_top = reinterpret_cast<uintptr_t>(i_current_top);
+                m_top                         = reinterpret_cast<uintptr_t>(i_current_top);
                 return new_external_block;
             }
         }
 
-        void copy(void * i_old_block, size_t i_old_size, void * i_new_block, size_t i_new_size) noexcept
+        void copy(
+          void * i_old_block, size_t i_old_size, void * i_new_block, size_t i_new_size) noexcept
         {
             if (i_old_block != i_new_block)
             {
@@ -328,8 +331,9 @@ namespace density
             }
         }
 
-    private:
-        static constexpr uintptr_t s_virgin_top = uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment);
+      private:
+        static constexpr uintptr_t s_virgin_top =
+          uint_lower_align(UNDERLYING_ALLOCATOR::page_alignment - 1, alignment);
         uintptr_t m_top = s_virgin_top; /**< pointer to the top of the stack.
                                             This variable is an integer to allow constant initialization
                                             (reinterpret_cast can't be used in compile time evaluations). */
@@ -338,72 +342,61 @@ namespace density
     namespace detail
     {
         /** \internal Stateless class template that provides a thread local LIFO memory management */
-        template <int=0> class ThreadLifoAllocator
+        template <int = 0> class ThreadLifoAllocator
         {
-        #ifndef DENSITY_USER_DATA_STACK
+#ifndef DENSITY_USER_DATA_STACK
 
             // default data stack
 
-            public:
+          public:
+            static constexpr size_t alignment =
+              lifo_allocator<data_stack_underlying_allocator>::alignment;
 
-                static constexpr size_t alignment = lifo_allocator<data_stack_underlying_allocator>::alignment;
+            static void * allocate(size_t i_size) { return s_allocator.allocate(i_size); }
 
-                static void * allocate(size_t i_size)
-                {
-                    return s_allocator.allocate(i_size);
-                }
+            static void * allocate_empty() noexcept { return s_allocator.allocate_empty(); }
 
-                static void * allocate_empty() noexcept
-                {
-                    return s_allocator.allocate_empty();
-                }
+            static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+            {
+                return s_allocator.reallocate(i_block, i_old_size, i_new_size);
+            }
 
-                static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
-                {
-                    return s_allocator.reallocate(i_block, i_old_size, i_new_size);
-                }
+            static void deallocate(void * i_block, size_t i_size) noexcept
+            {
+                s_allocator.deallocate(i_block, i_size);
+            }
 
-                static void deallocate(void * i_block, size_t i_size) noexcept
-                {
-                    s_allocator.deallocate(i_block, i_size);
-                }
-
-            private:
-                static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
-        #else
+          private:
+            static thread_local lifo_allocator<data_stack_underlying_allocator> s_allocator;
+#else
 
             // DENSITY_USER_DATA_STACK is defined: forward to the user defined data stack
 
-            public:
-                static constexpr size_t alignment = user_data_stack::alignment;
+          public:
+            static constexpr size_t alignment = user_data_stack::alignment;
 
-                static void * allocate(size_t i_size)
-                {
-                    return user_data_stack::allocate(i_size);
-                }
+            static void * allocate(size_t i_size) { return user_data_stack::allocate(i_size); }
 
-                static void * allocate_empty() noexcept
-                {
-                    return user_data_stack::allocate_empty();
-                }
+            static void * allocate_empty() noexcept { return user_data_stack::allocate_empty(); }
 
-                static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
-                {
-                    return user_data_stack::reallocate(i_block, i_old_size, i_new_size);
-                }
+            static void * reallocate(void * i_block, size_t i_old_size, size_t i_new_size)
+            {
+                return user_data_stack::reallocate(i_block, i_old_size, i_new_size);
+            }
 
-                static void deallocate(void * i_block, size_t i_size) noexcept
-                {
-                    user_data_stack::deallocate(i_block, i_size);
-                }
+            static void deallocate(void * i_block, size_t i_size) noexcept
+            {
+                user_data_stack::deallocate(i_block, i_size);
+            }
 
-        #endif
+#endif
         };
 
-        #ifndef DENSITY_USER_DATA_STACK
-            template <int DUMMY>
-                thread_local lifo_allocator<data_stack_underlying_allocator> ThreadLifoAllocator<DUMMY>::s_allocator;
-        #endif
+#ifndef DENSITY_USER_DATA_STACK
+        template <int DUMMY>
+        thread_local lifo_allocator<data_stack_underlying_allocator>
+          ThreadLifoAllocator<DUMMY>::s_allocator;
+#endif
 
     } // namespace detail
 
@@ -426,21 +419,20 @@ namespace density
         \snippet lifo_examples.cpp lifo_buffer example 1 */
     class lifo_buffer
     {
-    public:
-
+      public:
         /** Alignment guaranteed for the block */
         static constexpr size_t alignment = detail::ThreadLifoAllocator<>::alignment;
 
         /** Allocates an empty block. */
-        lifo_buffer() noexcept
-            : m_data(detail::ThreadLifoAllocator<>::allocate_empty()), m_size(0)
+        lifo_buffer() noexcept : m_data(detail::ThreadLifoAllocator<>::allocate_empty()), m_size(0)
         {
         }
 
         /** Allocates the block
             @param i_size size in bytes of the memory block. */
         lifo_buffer(size_t i_size)
-            : m_data(detail::ThreadLifoAllocator<>::allocate(uint_upper_align(i_size, alignment))), m_size(i_size)
+            : m_data(detail::ThreadLifoAllocator<>::allocate(uint_upper_align(i_size, alignment))),
+              m_size(i_size)
         {
         }
 
@@ -448,7 +440,7 @@ namespace density
         lifo_buffer(const lifo_buffer &) = delete;
 
         /** Copy assignment not allowed */
-        lifo_buffer & operator = (const lifo_buffer &) = delete;
+        lifo_buffer & operator=(const lifo_buffer &) = delete;
 
         /** Deallocates the block */
         ~lifo_buffer()
@@ -471,44 +463,37 @@ namespace density
         void * resize(size_t i_new_size)
         {
             /* we must allocate before updating any data member, so that in case of exception no change remains */
-            auto const block = m_data = detail::ThreadLifoAllocator<>::reallocate(m_data,
-                uint_upper_align(m_size, alignment),
-                uint_upper_align(i_new_size, alignment));
+            auto const block = m_data = detail::ThreadLifoAllocator<>::reallocate(
+              m_data, uint_upper_align(m_size, alignment), uint_upper_align(i_new_size, alignment));
             m_size = i_new_size;
             return block;
         }
 
         /** Returns the address of the owned memory block. If the block is empty (that is the size is zero), the
             return value is undefined (may be nullptr, or any address), but it's still aligned to \ref alignment. */
-        void * data() const noexcept
-        {
-            return m_data;
-        }
+        void * data() const noexcept { return m_data; }
 
         /** Returns the size of the owned memory block. */
-        size_t size() const noexcept
-        {
-            return m_size;
-        }
+        size_t size() const noexcept { return m_size; }
 
-    private:
+      private:
         void * m_data;
         size_t m_size;
     };
 
     namespace detail
     {
-        template <typename TYPE, bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator<>::alignment) >
-            class LifoArrayImpl;
+        template <
+          typename TYPE,
+          bool OVER_ALIGNED = (alignof(TYPE) > detail::ThreadLifoAllocator<>::alignment)>
+        class LifoArrayImpl;
 
-        template <typename TYPE>
-            class LifoArrayImpl<TYPE, false >
+        template <typename TYPE> class LifoArrayImpl<TYPE, false>
         {
-        public:
-
+          public:
             static size_t compute_mem_size(size_t i_element_count) noexcept
             {
-                auto const mem_size = i_element_count * sizeof(TYPE);
+                auto const mem_size  = i_element_count * sizeof(TYPE);
                 bool already_aligned = sizeof(TYPE) % detail::ThreadLifoAllocator<>::alignment == 0;
                 if (already_aligned)
                     return mem_size;
@@ -517,7 +502,8 @@ namespace density
             }
 
             LifoArrayImpl(size_t i_element_count)
-                : m_elements(static_cast<TYPE*>(  detail::ThreadLifoAllocator<>::allocate(compute_mem_size(i_element_count)) )),
+                : m_elements(static_cast<TYPE *>(
+                    detail::ThreadLifoAllocator<>::allocate(compute_mem_size(i_element_count)))),
                   m_size(i_element_count)
             {
             }
@@ -527,22 +513,22 @@ namespace density
                 detail::ThreadLifoAllocator<>::deallocate(m_elements, compute_mem_size(m_size));
             }
 
-        protected:
+          protected:
             TYPE * const m_elements;
-            size_t const m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
+            size_t const
+              m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
                                  was a bad choice, because usually it indicates the number of bytes. */
         };
 
-        template <typename TYPE>
-            class LifoArrayImpl<TYPE, true >
+        template <typename TYPE> class LifoArrayImpl<TYPE, true>
         {
-        public:
-
-            static constexpr size_t size_overhead = alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
+          public:
+            static constexpr size_t size_overhead =
+              alignof(TYPE) - detail::ThreadLifoAllocator<>::alignment;
 
             static size_t compute_mem_size(size_t i_element_count) noexcept
             {
-                auto const mem_size = i_element_count * sizeof(TYPE) + size_overhead;
+                auto const mem_size  = i_element_count * sizeof(TYPE) + size_overhead;
                 bool already_aligned = sizeof(TYPE) % detail::ThreadLifoAllocator<>::alignment == 0;
                 if (already_aligned)
                     return mem_size;
@@ -550,14 +536,14 @@ namespace density
                     return uint_upper_align(mem_size, detail::ThreadLifoAllocator<>::alignment);
             }
 
-            LifoArrayImpl(size_t i_size)
-                : m_size(i_size)
+            LifoArrayImpl(size_t i_size) : m_size(i_size)
             {
                 auto const mem_size = compute_mem_size(m_size);
-                m_block = detail::ThreadLifoAllocator<>::allocate(mem_size);
-                m_elements = static_cast<TYPE*>(address_upper_align(m_block, alignof(TYPE)));
-                DENSITY_ASSERT_INTERNAL(address_diff(m_elements, m_block) <= size_overhead &&
-                    m_elements + m_size <= address_add(m_block, mem_size));
+                m_block             = detail::ThreadLifoAllocator<>::allocate(mem_size);
+                m_elements = static_cast<TYPE *>(address_upper_align(m_block, alignof(TYPE)));
+                DENSITY_ASSERT_INTERNAL(
+                  address_diff(m_elements, m_block) <= size_overhead &&
+                  m_elements + m_size <= address_add(m_block, mem_size));
             }
 
             ~LifoArrayImpl()
@@ -566,13 +552,14 @@ namespace density
                 detail::ThreadLifoAllocator<>::deallocate(m_block, mem_size);
             }
 
-        protected:
+          protected:
             void * m_block;
             TYPE * m_elements;
-            size_t const m_size;  /**< number of elements. Note: the term 'size' for the number of elements in the container
+            size_t const
+              m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
                                  was a bad choice, because usually it indicates the number of bytes. */
         };
-    }
+    } // namespace detail
 
     /** Array container that allocates its elements from the thread-local data stack, and owns it. The block
         is deallocated by the destructor. This class should be used only on the automatic storage.
@@ -596,246 +583,232 @@ namespace density
         Elements are constructed in positional order and destroyed in reverse order.
 
         \snippet lifo_examples.cpp lifo_array example 1 */
-    template <typename TYPE>
-        class lifo_array final : detail::LifoArrayImpl<TYPE>
+    template <typename TYPE> class lifo_array final : detail::LifoArrayImpl<TYPE>
     {
-        struct PrivateTag {};
-    public:
+        struct PrivateTag
+        {
+        };
 
-        using value_type = TYPE;
-        using reference = TYPE &;
+      public:
+        using value_type      = TYPE;
+        using reference       = TYPE &;
         using const_reference = TYPE &;
-        using pointer = TYPE *;
-        using const_pointer = const TYPE *;
-        using size_type = size_t;
+        using pointer         = TYPE *;
+        using const_pointer   = const TYPE *;
+        using size_type       = size_t;
         using difference_type = ptrdiff_t;
 
         class iterator
         {
-        public:
-            using difference_type = ptrdiff_t;
-            using value_type = TYPE;
-            using pointer = TYPE*;
-            using reference = TYPE&;
+          public:
+            using difference_type   = ptrdiff_t;
+            using value_type        = TYPE;
+            using pointer           = TYPE *;
+            using reference         = TYPE &;
             using iterator_category = std::random_access_iterator_tag;
 
-            iterator(PrivateTag, TYPE * i_ptr) noexcept
-                : m_curr(i_ptr)
-                    { }
+            iterator(PrivateTag, TYPE * i_ptr) noexcept : m_curr(i_ptr) {}
 
-            iterator() noexcept = default;
+            iterator() noexcept                 = default;
             iterator(const iterator &) noexcept = default;
-            iterator & operator = (const iterator &) noexcept = default;
+            iterator & operator=(const iterator &) noexcept = default;
 
-            TYPE * operator -> () const noexcept
-            {
-                return m_curr;
-            }
+            TYPE * operator->() const noexcept { return m_curr; }
 
-            TYPE & operator * () const & noexcept
-            {
-                return *m_curr;
-            }
+            TYPE & operator*() const & noexcept { return *m_curr; }
 
-            TYPE && operator * () const && noexcept
-            {
-                return *m_curr;
-            }
+            TYPE && operator*() const && noexcept { return *m_curr; }
 
-            iterator & operator ++ () noexcept
+            iterator & operator++() noexcept
             {
                 m_curr++;
                 return *this;
             }
 
-            iterator operator ++ (int) noexcept
+            iterator operator++(int) noexcept
             {
                 iterator copy(*this);
-                operator ++ ();
+                         operator++();
                 return copy;
             }
 
-            iterator & operator += (difference_type i_diff) noexcept
+            iterator & operator+=(difference_type i_diff) noexcept
             {
                 m_curr += i_diff;
                 return *this;
             }
 
-            iterator & operator -- () noexcept
+            iterator & operator--() noexcept
             {
                 m_curr--;
                 return *this;
             }
 
-            iterator operator -- (int) noexcept
+            iterator operator--(int) noexcept
             {
                 iterator copy(*this);
-                operator ++ ();
+                         operator++();
                 return copy;
             }
 
-            iterator & operator -= (difference_type i_diff) noexcept
+            iterator & operator-=(difference_type i_diff) noexcept
             {
                 m_curr -= i_diff;
                 return *this;
             }
 
-            friend difference_type operator - (const iterator & i_first, const iterator & i_second) noexcept
+            friend difference_type
+              operator-(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr - i_second.m_curr;
             }
 
-                // relational operators
+            // relational operators
 
-            friend bool operator < (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator<(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr < i_second.m_curr;
             }
 
-            friend bool operator <= (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator<=(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr <= i_second.m_curr;
             }
 
-            friend bool operator == (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator==(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr == i_second.m_curr;
             }
 
-            friend bool operator != (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator!=(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr != i_second.m_curr;
             }
 
-            friend bool operator > (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator>(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr > i_second.m_curr;
             }
 
-            friend bool operator >= (const iterator & i_first, const iterator & i_second) noexcept
+            friend bool operator>=(const iterator & i_first, const iterator & i_second) noexcept
             {
                 return i_first.m_curr >= i_second.m_curr;
             }
 
-        private:
+          private:
             TYPE * m_curr{};
         };
 
         class const_iterator
         {
-        public:
-            using difference_type = ptrdiff_t;
-            using value_type = const TYPE;
-            using pointer = const TYPE * ;
-            using reference = const TYPE & ;
+          public:
+            using difference_type   = ptrdiff_t;
+            using value_type        = const TYPE;
+            using pointer           = const TYPE *;
+            using reference         = const TYPE &;
             using iterator_category = std::random_access_iterator_tag;
 
-            const_iterator(PrivateTag, const TYPE * i_ptr) noexcept
-                : m_curr(i_ptr)
-                    { }
+            const_iterator(PrivateTag, const TYPE * i_ptr) noexcept : m_curr(i_ptr) {}
 
-            const_iterator() noexcept = default;
+            const_iterator() noexcept                       = default;
             const_iterator(const const_iterator &) noexcept = default;
-            const_iterator & operator = (const const_iterator &) noexcept = default;
+            const_iterator & operator=(const const_iterator &) noexcept = default;
 
-            const TYPE * operator -> () const noexcept
-            {
-                return m_curr;
-            }
+            const TYPE * operator->() const noexcept { return m_curr; }
 
-            const TYPE & operator * () const & noexcept
-            {
-                return *m_curr;
-            }
+            const TYPE & operator*() const & noexcept { return *m_curr; }
 
-            const TYPE && operator * () const && noexcept
-            {
-                return *m_curr;
-            }
+            const TYPE && operator*() const && noexcept { return *m_curr; }
 
-            const_iterator & operator ++ () noexcept
+            const_iterator & operator++() noexcept
             {
                 m_curr++;
                 return *this;
             }
 
-            const_iterator operator ++ (int) noexcept
+            const_iterator operator++(int) noexcept
             {
                 const_iterator copy(*this);
-                operator ++ ();
+                               operator++();
                 return copy;
             }
 
-            const_iterator & operator += (difference_type i_diff) noexcept
+            const_iterator & operator+=(difference_type i_diff) noexcept
             {
                 m_curr += i_diff;
                 return *this;
             }
 
-            const_iterator & operator -- () noexcept
+            const_iterator & operator--() noexcept
             {
                 m_curr--;
                 return *this;
             }
 
-            const_iterator operator -- (int) noexcept
+            const_iterator operator--(int) noexcept
             {
                 const_iterator copy(*this);
-                operator ++ ();
+                               operator++();
                 return copy;
             }
 
-            const_iterator & operator -= (difference_type i_diff) noexcept
+            const_iterator & operator-=(difference_type i_diff) noexcept
             {
                 m_curr -= i_diff;
                 return *this;
             }
 
-            friend difference_type operator - (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend difference_type
+              operator-(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr - i_second.m_curr;
             }
 
-                // relational operators
+            // relational operators
 
-            friend bool operator < (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator<(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr < i_second.m_curr;
             }
 
-            friend bool operator <= (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator<=(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr <= i_second.m_curr;
             }
 
-            friend bool operator == (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator==(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr == i_second.m_curr;
             }
 
-            friend bool operator != (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator!=(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr != i_second.m_curr;
             }
 
-            friend bool operator > (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator>(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr > i_second.m_curr;
             }
 
-            friend bool operator >= (const const_iterator & i_first, const const_iterator & i_second) noexcept
+            friend bool
+              operator>=(const const_iterator & i_first, const const_iterator & i_second) noexcept
             {
                 return i_first.m_curr >= i_second.m_curr;
             }
 
-        private:
+          private:
             const TYPE * m_curr{};
         };
 
         /** Constructs a lifo_array and all its elements. If elements are POD types, they are not initialized.
             @param i_size number of elements of the array */
-        lifo_array(size_t i_size)
-                : detail::LifoArrayImpl<TYPE>(i_size)
+        lifo_array(size_t i_size) : detail::LifoArrayImpl<TYPE>(i_size)
         {
             default_construct(std::is_pod<TYPE>());
         }
@@ -846,15 +819,15 @@ namespace density
 
             \snippet lifo_examples.cpp lifo_array constructor 3 */
         template <typename... CONSTRUCTION_PARAMS>
-            lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params )
-                : detail::LifoArrayImpl<TYPE>(i_size)
+        lifo_array(size_t i_size, const CONSTRUCTION_PARAMS &... i_construction_params)
+            : detail::LifoArrayImpl<TYPE>(i_size)
         {
             size_t element_index = 0;
             try
             {
                 for (; element_index < i_size; element_index++)
                 {
-                    new(m_elements + element_index) TYPE(i_construction_params...);
+                    new (m_elements + element_index) TYPE(i_construction_params...);
                 }
             }
             catch (...)
@@ -876,17 +849,20 @@ namespace density
 
             \snippet lifo_examples.cpp lifo_array constructor 2 */
         template <typename INPUT_ITERATOR>
-            lifo_array(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end,
-                    typename std::iterator_traits<INPUT_ITERATOR>::iterator_category = typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
-                : detail::LifoArrayImpl<TYPE>(std::distance(i_begin, i_end))
+        lifo_array(
+          INPUT_ITERATOR i_begin,
+          INPUT_ITERATOR i_end,
+          typename std::iterator_traits<INPUT_ITERATOR>::iterator_category =
+            typename std::iterator_traits<INPUT_ITERATOR>::iterator_category())
+            : detail::LifoArrayImpl<TYPE>(std::distance(i_begin, i_end))
         {
             auto dest_element = m_elements;
             try
             {
-                for (;i_begin != i_end; ++i_begin)
+                for (; i_begin != i_end; ++i_begin)
                 {
                     DENSITY_ASSERT_INTERNAL(dest_element != nullptr); // hint for the optimizer
-                    new(dest_element) TYPE(*i_begin);
+                    new (dest_element) TYPE(*i_begin);
                     ++dest_element;
                 }
             }
@@ -908,26 +884,20 @@ namespace density
         lifo_array(const lifo_array &) = delete;
 
         /** Copy assignment not allowed */
-        lifo_array & operator = (const lifo_array &) = delete;
+        lifo_array & operator=(const lifo_array &) = delete;
 
         /** Destroys a lifo_array and all its elements. Elements are destroyed in reverse positional order. */
-        ~lifo_array()
-        {
-            destroy_elements(std::is_trivially_destructible<TYPE>());
-        }
+        ~lifo_array() { destroy_elements(std::is_trivially_destructible<TYPE>()); }
 
         /** Returns the number of elements */
-        size_t size() const noexcept
-        {
-            return m_size;
-        }
+        size_t size() const noexcept { return m_size; }
 
         /** Returns a reference to the i-th element.
 
             \pre The behavior is undefined if either:
                 - i_index >= \ref size
         */
-        TYPE & operator [] (size_t i_index) noexcept
+        TYPE & operator[](size_t i_index) noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
@@ -938,36 +908,39 @@ namespace density
             \pre The behavior is undefined if either:
                 - i_index >= \ref size
         */
-        const TYPE & operator [] (size_t i_index) const noexcept
+        const TYPE & operator[](size_t i_index) const noexcept
         {
             DENSITY_ASSERT(i_index < m_size);
             return m_elements[i_index];
         }
 
         /** Returns a pointer to the first element. */
-        pointer data() noexcept                     { return m_elements; }
+        pointer data() noexcept { return m_elements; }
 
         /** Returns a pointer to the first element. */
-        const_pointer data() const noexcept         { return m_elements; }
+        const_pointer data() const noexcept { return m_elements; }
 
-        iterator begin() noexcept                   { return iterator(PrivateTag{}, m_elements); }
+        iterator begin() noexcept { return iterator(PrivateTag{}, m_elements); }
 
-        iterator end() noexcept                     { return iterator(PrivateTag{}, m_elements + m_size ); }
+        iterator end() noexcept { return iterator(PrivateTag{}, m_elements + m_size); }
 
-        const_iterator cbegin() const noexcept      { return const_iterator(PrivateTag{}, m_elements ); }
+        const_iterator cbegin() const noexcept { return const_iterator(PrivateTag{}, m_elements); }
 
-        const_iterator cend() const noexcept        { return const_iterator(PrivateTag{}, m_elements + m_size ); }
-
-        const_iterator begin() const noexcept       { return const_iterator(PrivateTag{}, m_elements ); }
-
-        const_iterator end() const noexcept         { return const_iterator(PrivateTag{}, m_elements + m_size ); }
-
-    private:
-
-        // trivially default constructible types
-        void default_construct(std::true_type)
+        const_iterator cend() const noexcept
         {
+            return const_iterator(PrivateTag{}, m_elements + m_size);
         }
+
+        const_iterator begin() const noexcept { return const_iterator(PrivateTag{}, m_elements); }
+
+        const_iterator end() const noexcept
+        {
+            return const_iterator(PrivateTag{}, m_elements + m_size);
+        }
+
+      private:
+        // trivially default constructible types
+        void default_construct(std::true_type) {}
 
         // non-trivially default constructible types
         void default_construct(std::false_type)
@@ -979,7 +952,7 @@ namespace density
                 {
                     auto const dest = m_elements + element_index;
                     DENSITY_ASSERT_INTERNAL(dest != nullptr); // hint for the optimizer
-                    new(dest) TYPE();
+                    new (dest) TYPE();
                 }
             }
             catch (...)
@@ -995,10 +968,7 @@ namespace density
             }
         }
 
-        void destroy_elements(std::true_type) noexcept
-        {
-
-        }
+        void destroy_elements(std::true_type) noexcept {}
 
         void destroy_elements(std::false_type) noexcept
         {
@@ -1010,7 +980,7 @@ namespace density
             }
         }
 
-    private:
+      private:
         using detail::LifoArrayImpl<TYPE>::m_elements;
         using detail::LifoArrayImpl<TYPE>::m_size;
     };

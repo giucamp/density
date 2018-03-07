@@ -1,17 +1,17 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
 #include <density/density_common.h>
-#include <density/detail/system_page_manager.h>
 #include <density/detail/page_allocator.h>
+#include <density/detail/system_page_manager.h>
 
 namespace density
 {
-       /*! \page UntypedAllocator_concept UntypedAllocator concept
+    /*! \page UntypedAllocator_concept UntypedAllocator concept
         The UntypedAllocator concept encapsulates an untyped memory allocation service, similar to the
             <a href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator concept</a> defined by the standard, but untyped like
             <a href="http://en.cppreference.com/w/cpp/memory/c/malloc">std::malloc</a>. UntypedAllocator supports over-alignment and alignment
@@ -72,7 +72,6 @@ namespace density
 
         basic_default_allocator meets the requirements of UntypedAllocator concept.
     */
-
 
 
     /*! \page PagedAllocator_concept PagedAllocator concept
@@ -147,8 +146,7 @@ namespace density
         basic_default_allocator meets the requirements of PagedAllocator.
     */
 
-    template <size_t PAGE_CAPACITY_AND_ALIGNMENT>
-        class basic_default_allocator;
+    template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
 
     /** Specialization of basic_default_allocator that uses density::default_page_capacity as page capacity. */
     using default_allocator = basic_default_allocator<default_page_capacity>;
@@ -158,13 +156,13 @@ namespace density
 
         basic_default_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_default_allocator. */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
-        class basic_default_allocator
+    class basic_default_allocator
     {
-    private:
-        using PageAllocator = detail::PageAllocator<typename detail::SystemPageManager<PAGE_CAPACITY_AND_ALIGNMENT>>;
+      private:
+        using PageAllocator =
+          detail::PageAllocator<typename detail::SystemPageManager<PAGE_CAPACITY_AND_ALIGNMENT>>;
 
-    public:
-
+      public:
         /** Usable size (in bytes) of memory pages. */
         static constexpr size_t page_size = PageAllocator::page_size;
 
@@ -187,9 +185,7 @@ namespace density
             \n <b>Throws</b>: std::bad_alloc on failure
 
             The content of the newly allocated block is undefined. */
-        void * allocate(size_t i_size,
-            size_t i_alignment,
-            size_t i_alignment_offset = 0)
+        void * allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
         {
             return density::aligned_allocate(i_size, i_alignment, i_alignment_offset);
         }
@@ -210,10 +206,8 @@ namespace density
             \n <b>Throws</b>: nothing
 
             The content of the newly allocated block is undefined. */
-        void * try_allocate(
-            size_t i_size,
-            size_t i_alignment,
-            size_t i_alignment_offset = 0) noexcept
+        void *
+          try_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
         {
             return density::try_aligned_allocate(i_size, i_alignment, i_alignment_offset);
         }
@@ -233,10 +227,8 @@ namespace density
             \n <b>Throws</b>: nothing
 
             If i_block is nullptr, the call has no effect. */
-        void deallocate(void * i_block,
-            size_t i_size,
-            size_t i_alignment,
-            size_t i_alignment_offset = 0) noexcept
+        void deallocate(
+          void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
         {
             density::aligned_deallocate(i_block, i_size, i_alignment, i_alignment_offset);
         }
@@ -250,8 +242,10 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * allocate_page()
         {
-            auto const new_page = PageAllocator::thread_local_instance().
-                template try_allocate_page<detail::page_allocation_type::uninitialized>(progress_blocking);
+            auto const new_page =
+              PageAllocator::thread_local_instance()
+                .template try_allocate_page<detail::page_allocation_type::uninitialized>(
+                  progress_blocking);
             if (new_page == nullptr)
                 throw std::bad_alloc();
             return new_page;
@@ -266,7 +260,9 @@ namespace density
             The content of the newly allocated page is undefined. */
         void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
         {
-            return PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::uninitialized>(i_progress_guarantee);
+            return PageAllocator::thread_local_instance()
+              .template try_allocate_page<detail::page_allocation_type::uninitialized>(
+                i_progress_guarantee);
         }
 
         /** Allocates a memory page.
@@ -278,7 +274,10 @@ namespace density
             The content of the newly allocated page is zeroed. */
         void * allocate_page_zeroed()
         {
-            auto const new_page = PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::zeroed>(progress_blocking);
+            auto const new_page =
+              PageAllocator::thread_local_instance()
+                .template try_allocate_page<detail::page_allocation_type::zeroed>(
+                  progress_blocking);
             if (new_page == nullptr)
                 throw std::bad_alloc();
             return new_page;
@@ -293,7 +292,9 @@ namespace density
             The content of the newly allocated page is zeroed. */
         void * try_allocate_page_zeroed(progress_guarantee i_progress_guarantee) noexcept
         {
-            return PageAllocator::thread_local_instance().template try_allocate_page<detail::page_allocation_type::zeroed>(i_progress_guarantee);
+            return PageAllocator::thread_local_instance()
+              .template try_allocate_page<detail::page_allocation_type::zeroed>(
+                i_progress_guarantee);
         }
 
         /** Deallocates a memory page. If the page is still pinned by some threads, it is not altered or recycled
@@ -308,7 +309,8 @@ namespace density
         void deallocate_page(void * i_page) noexcept
         {
             DENSITY_ASSERT(i_page != nullptr);
-            PageAllocator::thread_local_instance().template deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
+            PageAllocator::thread_local_instance()
+              .template deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
         }
 
         /** Deallocates a memory page. If the page is still pinned by some threads, it is not altered or recycled
@@ -324,7 +326,8 @@ namespace density
             \n <b>Throws</b>: nothing */
         void deallocate_page_zeroed(void * i_page) noexcept
         {
-            PageAllocator::thread_local_instance().template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
+            PageAllocator::thread_local_instance()
+              .template deallocate_page<detail::page_allocation_type::zeroed>(i_page);
         }
 
         /** Reserves the specified memory size from the system for lock-free page allocation.
@@ -366,9 +369,14 @@ namespace density
 
             \n <b>Progress guarantee</b>: specified by the argument
             \n <b>Throws</b>: nothing. */
-        static bool try_reserve_lockfree_page_memory(progress_guarantee i_progress_guarantee, size_t i_size, size_t * o_reserved_size = nullptr) noexcept
+        static bool try_reserve_lockfree_page_memory(
+          progress_guarantee i_progress_guarantee,
+          size_t             i_size,
+          size_t *           o_reserved_size = nullptr) noexcept
         {
-            auto const reserved_size = PageAllocator::thread_local_instance().try_reserve_lockfree_memory(i_progress_guarantee, i_size);
+            auto const reserved_size =
+              PageAllocator::thread_local_instance().try_reserve_lockfree_memory(
+                i_progress_guarantee, i_size);
             if (o_reserved_size != nullptr)
                 *o_reserved_size = reserved_size;
             return reserved_size >= i_size;
@@ -396,10 +404,7 @@ namespace density
 
             \n <b>Progress guarantee</b>: lock-free
             \n <b>Throws</b>: nothing. */
-        void pin_page(void * i_page) noexcept   
-        {
-            PageAllocator::pin_page(i_page);
-        }
+        void pin_page(void * i_page) noexcept { PageAllocator::pin_page(i_page); }
 
         /** Removes a pin from the page, decrementing the internal ref-count.
 
@@ -409,10 +414,7 @@ namespace density
 
             \n <b>Progress guarantee</b>: lock-free
             \n <b>Throws</b>: nothing. */
-        void unpin_page(void * i_address) noexcept
-        {
-            PageAllocator::unpin_page(i_address);
-        }
+        void unpin_page(void * i_address) noexcept { PageAllocator::unpin_page(i_address); }
 
         /** Tries to pin the page containing the specified address, incrementing an internal page_specific ref-count,
             If the implementation can't complete the action with the specified progress guarantee, the call has no visible effects,
@@ -452,13 +454,11 @@ namespace density
 
         /** Returns whether the right-side allocator can be used to deallocate block and pages allocated by this allocator.
             @return always true. */
-        bool operator == (const basic_default_allocator &) const noexcept
-            { return true; }
+        bool operator==(const basic_default_allocator &) const noexcept { return true; }
 
         /** Returns whether the right-side allocator cannot be used to deallocate block and pages allocated by this allocator.
             @return always false. */
-        bool operator != (const basic_default_allocator &) const noexcept
-            { return false; }
+        bool operator!=(const basic_default_allocator &) const noexcept { return false; }
     };
 
 } // namespace density

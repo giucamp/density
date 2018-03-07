@@ -1,43 +1,40 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #if defined(_MSC_VER)
-    #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "bench_framework/test_tree.h"
-#include "bench_framework/test_session.h"
 #include "bench_framework/performance_test.h"
-#include <density/density_common.h>
-#include <iostream>
-#include <fstream>
+#include "bench_framework/test_session.h"
+#include "bench_framework/test_tree.h"
 #include <chrono>
+#include <density/density_common.h>
+#include <fstream>
+#include <iostream>
 
 namespace density_bench
 {
     void single_thread_tests(TestTree & i_tree);
     void lifo_tests(TestTree & i_tree);
-}
+} // namespace density_bench
 
-bool touch_file(const char * i_file_name)
-{
-    return !std::ofstream(i_file_name).fail();
-}
+bool touch_file(const char * i_file_name) { return !std::ofstream(i_file_name).fail(); }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     using namespace density_bench;
 
-    #if !defined(NDEBUG)
-        std::cout << "WARNING: this is a debug build!" << std::endl;
-    #endif
+#if !defined(NDEBUG)
+    std::cout << "WARNING: this is a debug build!" << std::endl;
+#endif
 
-    std::cout << "density_bench - built on " __DATE__  " at " __TIME__ << std::endl;
+    std::cout << "density_bench - built on " __DATE__ " at " __TIME__ << std::endl;
     std::cout << "density version: " << density::version << std::endl;
-    
+
     std::string out_file;
     std::string src_dir;
 
@@ -74,11 +71,13 @@ int main(int argc, char *argv[])
     lifo_tests(root);
 
     auto progression = [](const Progression & i_progression) {
-        auto const millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(i_progression.m_remaining_time_extimate);
+        auto const millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(
+          i_progression.m_remaining_time_extimate);
         std::cout << static_cast<int>(i_progression.m_completion_factor * 100.) << "%";
-        if(i_progression.m_time_extimate_available)
+        if (i_progression.m_time_extimate_available)
         {
-            std::cout << ", " << static_cast<double>(millisecs.count()) / (1000. * 60.) << " min remaining";
+            std::cout << ", " << static_cast<double>(millisecs.count()) / (1000. * 60.)
+                      << " min remaining";
         }
         std::cout << std::endl;
     };
@@ -94,5 +93,5 @@ int main(int argc, char *argv[])
 }
 
 #if defined(_MSC_VER)
-    #undef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
 #endif

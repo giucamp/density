@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -7,10 +7,10 @@
 #pragma once
 #include "../test_framework/density_test_common.h"
 #include "../test_framework/test_objects.h"
+#include <complex>
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
-#include <complex>
 
 namespace density_tests
 {
@@ -20,15 +20,9 @@ namespace density_tests
 
         InstanceCounted m_inst_counted_1;
 
-        void check()
-        {
-            DENSITY_TEST_ASSERT(m_int == 35);
-        }
+        void check() { DENSITY_TEST_ASSERT(m_int == 35); }
 
-        ~NonPolymorphicBase()
-        {
-            check();
-        }
+        ~NonPolymorphicBase() { check(); }
     };
 
     struct alignas(8) SingleDerivedNonPoly : public NonPolymorphicBase
@@ -44,10 +38,7 @@ namespace density_tests
             DENSITY_TEST_ASSERT(m_str1 + m_str2 == "Hello world!!");
         }
 
-        ~SingleDerivedNonPoly()
-        {
-            void check();
-        }
+        ~SingleDerivedNonPoly() { void check(); }
     };
 
     struct PolymorphicBase : public NonPolymorphicBase
@@ -66,10 +57,7 @@ namespace density_tests
             DENSITY_TEST_ASSERT(m_double == 22.);
         }
 
-        virtual ~PolymorphicBase()
-        {
-            check();
-        }
+        virtual ~PolymorphicBase() { check(); }
     };
 
     struct SingleDerived : public PolymorphicBase
@@ -88,10 +76,7 @@ namespace density_tests
             DENSITY_TEST_ASSERT(m_str == "Hi!!");
         }
 
-        ~SingleDerived()
-        {
-            check();
-        }
+        ~SingleDerived() { check(); }
     };
 
 
@@ -111,10 +96,7 @@ namespace density_tests
             DENSITY_TEST_ASSERT(m_int64 == 999);
         }
 
-        ~Derived1()
-        {
-            check();
-        }
+        ~Derived1() { check(); }
     };
 
     struct Derived2 : public virtual PolymorphicBase
@@ -133,10 +115,7 @@ namespace density_tests
             DENSITY_TEST_ASSERT(m_int8 == 22);
         }
 
-        ~Derived2()
-        {
-            check();
-        }
+        ~Derived2() { check(); }
     };
 
     struct MultipleDerived : public Derived1, public Derived2
@@ -147,7 +126,7 @@ namespace density_tests
 
         using Complex = std::complex<double>;
 
-        Complex m_complex{ 2., -4. };
+        Complex m_complex{2., -4.};
 
         InstanceCounted m_inst_counted_7;
 
@@ -155,17 +134,14 @@ namespace density_tests
         {
             Derived1::check();
             Derived2::check();
-            DENSITY_TEST_ASSERT((m_complex == Complex{ 2., -4. }));
+            DENSITY_TEST_ASSERT((m_complex == Complex{2., -4.}));
         }
 
-        ~MultipleDerived()
-        {
-            check();
-        }
+        ~MultipleDerived() { check(); }
     };
 
     template <typename EXPECTED_TYPE, typename CONSUME_OPERATION>
-        void polymorphic_consume(CONSUME_OPERATION i_consume)
+    void polymorphic_consume(CONSUME_OPERATION i_consume)
     {
         DENSITY_TEST_ASSERT(i_consume.complete_type().template is<EXPECTED_TYPE>());
 
@@ -173,11 +149,13 @@ namespace density_tests
         i_consume.template element<EXPECTED_TYPE>().check();
 
         DENSITY_TEST_ASSERT(i_consume.element_ptr()->class_id() == EXPECTED_TYPE::s_class_id);
-        DENSITY_TEST_ASSERT(i_consume.template element<EXPECTED_TYPE>().class_id() == EXPECTED_TYPE::s_class_id);
+        DENSITY_TEST_ASSERT(
+          i_consume.template element<EXPECTED_TYPE>().class_id() == EXPECTED_TYPE::s_class_id);
 
         auto const unaligned_element_ptr = i_consume.unaligned_element_ptr();
-        auto const untyped_element_ptr = density::address_upper_align(unaligned_element_ptr, i_consume.complete_type().alignment());
-        auto const element_ptr = static_cast<EXPECTED_TYPE*>(untyped_element_ptr);
+        auto const untyped_element_ptr   = density::address_upper_align(
+          unaligned_element_ptr, i_consume.complete_type().alignment());
+        auto const element_ptr = static_cast<EXPECTED_TYPE *>(untyped_element_ptr);
         element_ptr->check();
         DENSITY_TEST_ASSERT(element_ptr->class_id() == EXPECTED_TYPE::s_class_id);
 

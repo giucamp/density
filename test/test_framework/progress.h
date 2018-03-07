@@ -1,5 +1,5 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -19,14 +19,14 @@ namespace density_tests
         count. add_progress is thread safe: multiple threads can call it concurrently. */
     class Progress
     {
-    private:
-        std::atomic<size_t> m_curr_count{ 0 };
-        size_t const m_target_count;
-        double const m_target_count_reciprocal_times_100;
-        std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
+      private:
+        std::atomic<size_t>                                  m_curr_count{0};
+        size_t const                                         m_target_count;
+        double const                                         m_target_count_reciprocal_times_100;
+        std::chrono::high_resolution_clock::time_point const m_start_time =
+          std::chrono::high_resolution_clock::now();
 
-    public:
-
+      public:
         /** Constructs a Progress, assigning the target count. The target count can't be changed. */
         Progress(size_t i_target_count) noexcept;
 
@@ -35,19 +35,13 @@ namespace density_tests
 
         // copy and move not allowed
         Progress(const Progress &) = delete;
-        Progress & operator = (const Progress &) = delete;
+        Progress & operator=(const Progress &) = delete;
 
         /** Returns the current count. */
-        size_t curr_count() const noexcept
-        {
-            return m_curr_count.load(std::memory_order_relaxed);
-        }
+        size_t curr_count() const noexcept { return m_curr_count.load(std::memory_order_relaxed); }
 
         /** Returns the target count. */
-        size_t target_count() const noexcept
-        {
-            return m_target_count;
-        }
+        size_t target_count() const noexcept { return m_target_count; }
 
         /** Sets the progress. */
         void set_progress(size_t i_count) noexcept
@@ -78,7 +72,7 @@ namespace density_tests
         void write_to_stream(std::ostream & i_ostream) const;
 
         /** Writes the progress in an human readable format. */
-        friend std::ostream & operator << (std::ostream & i_ostream, const Progress & i_progress)
+        friend std::ostream & operator<<(std::ostream & i_ostream, const Progress & i_progress)
         {
             i_progress.write_to_stream(i_ostream);
             return i_ostream;
@@ -88,19 +82,19 @@ namespace density_tests
     /** */
     class PrintScopeDuration
     {
-    public:
-
+      public:
         PrintScopeDuration(std::ostream & i_ostream, const char * i_label);
 
         PrintScopeDuration(const PrintScopeDuration &) = delete;
-        PrintScopeDuration & operator = (const PrintScopeDuration &) = delete;
+        PrintScopeDuration & operator=(const PrintScopeDuration &) = delete;
 
         ~PrintScopeDuration();
 
-    private:
-        std::ostream & m_ostream;
-        std::string const m_label;
-        std::chrono::high_resolution_clock::time_point const m_start_time = std::chrono::high_resolution_clock::now();
+      private:
+        std::ostream &                                       m_ostream;
+        std::string const                                    m_label;
+        std::chrono::high_resolution_clock::time_point const m_start_time =
+          std::chrono::high_resolution_clock::now();
     };
 
     void write_duration(std::ostream & i_ostream, double i_seconds);

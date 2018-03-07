@@ -1,28 +1,37 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../test_framework/density_test_common.h"
-#include "../test_framework/test_objects.h"
-#include "../test_framework/test_allocators.h"
 #include "../test_framework/progress.h"
+#include "../test_framework/test_allocators.h"
+#include "../test_framework/test_objects.h"
 #include "complex_polymorphism.h"
 #include <density/lf_heter_queue.h>
-#include <type_traits>
 #include <iterator>
+#include <type_traits>
 
 namespace density_tests
 {
-    template < density::concurrency_cardinality PROD_CARDINALITY,
-        density::concurrency_cardinality CONSUMER_CARDINALITY,
-        density::consistency_model CONSISTENCY_MODEL>
-        struct NbQueueBasicTests
+    template <
+      density::concurrency_cardinality PROD_CARDINALITY,
+      density::concurrency_cardinality CONSUMER_CARDINALITY,
+      density::consistency_model       CONSISTENCY_MODEL>
+    struct NbQueueBasicTests
     {
-        template < typename COMMON_TYPE = void, typename RUNTIME_TYPE = density::runtime_type<COMMON_TYPE>, typename ALLOCATOR_TYPE = density::default_allocator>
-            using LfHeterQueue = density::lf_heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE,
-                    PROD_CARDINALITY, CONSUMER_CARDINALITY, CONSISTENCY_MODEL>;
+        template <
+          typename COMMON_TYPE    = void,
+          typename RUNTIME_TYPE   = density::runtime_type<COMMON_TYPE>,
+          typename ALLOCATOR_TYPE = density::default_allocator>
+        using LfHeterQueue = density::lf_heter_queue<
+          COMMON_TYPE,
+          RUNTIME_TYPE,
+          ALLOCATOR_TYPE,
+          PROD_CARDINALITY,
+          CONSUMER_CARDINALITY,
+          CONSISTENCY_MODEL>;
 
         static void lf_heterogeneous_queue_lifetime_tests()
         {
@@ -31,11 +40,12 @@ namespace density_tests
 
             {
                 default_allocator allocator;
-                LfHeterQueue<> queue(allocator); // copy construct allocator
+                LfHeterQueue<>    queue(allocator); // copy construct allocator
                 queue.push(1);
                 queue.push(2);
 
-                auto other_queue(std::move(queue)); // move construct queue - the source becomes empty
+                auto other_queue(
+                  std::move(queue)); // move construct queue - the source becomes empty
                 DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
 
                 // test swaps
@@ -44,16 +54,21 @@ namespace density_tests
                 swap(queue, other_queue);
                 DENSITY_TEST_ASSERT(queue.empty() && !other_queue.empty());
                 auto cons = other_queue.try_start_consume();
-                DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 1);
+                DENSITY_TEST_ASSERT(
+                  cons && cons.complete_type().template is<int>() &&
+                  cons.template element<int>() == 1);
                 cons.commit();
                 cons = other_queue.try_start_consume();
-                DENSITY_TEST_ASSERT(cons && cons.complete_type().template is<int>() && cons.template element<int>() == 2);
+                DENSITY_TEST_ASSERT(
+                  cons && cons.complete_type().template is<int>() &&
+                  cons.template element<int>() == 2);
                 cons.commit();
                 DENSITY_TEST_ASSERT(other_queue.empty());
 
                 // test allocator getters
-                move_only_void_allocator movable_alloc(5);
-                LfHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(std::move(movable_alloc));
+                move_only_void_allocator                                     movable_alloc(5);
+                LfHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(
+                  std::move(movable_alloc));
 
                 auto allocator_copy = other_queue.get_allocator();
                 (void)allocator_copy;
@@ -69,8 +84,7 @@ namespace density_tests
         }
 
         /** Basic tests LfHeterQueue<void, ...> with a non-polymorphic base */
-        template <typename QUEUE>
-            static void lf_heterogeneous_queue_basic_void_tests()
+        template <typename QUEUE> static void lf_heterogeneous_queue_basic_void_tests()
         {
             static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
@@ -92,8 +106,7 @@ namespace density_tests
             }
         }
 
-        template<typename ELEMENT, typename QUEUE>
-            static void dynamic_push_3(QUEUE & i_queue)
+        template <typename ELEMENT, typename QUEUE> static void dynamic_push_3(QUEUE & i_queue)
         {
             auto const type = QUEUE::runtime_type::template make<ELEMENT>();
 
@@ -110,11 +123,18 @@ namespace density_tests
         static void lf_heterogeneous_queue_basic_nonpolymorphic_base_tests()
         {
             using namespace density::type_features;
-            using density::runtime_type;
             using density::default_allocator;
+            using density::runtime_type;
 
-            using RunTimeType = runtime_type<NonPolymorphicBase, feature_list<
-                default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+            using RunTimeType = runtime_type<
+              NonPolymorphicBase,
+              feature_list<
+                default_construct,
+                move_construct,
+                copy_construct,
+                destroy,
+                size,
+                alignment>>;
             LfHeterQueue<NonPolymorphicBase, RunTimeType> queue;
 
             queue.push(NonPolymorphicBase());
@@ -135,7 +155,8 @@ namespace density_tests
                 }
                 else
                 {
-                    DENSITY_TEST_ASSERT(consume.complete_type().template is<SingleDerivedNonPoly>());
+                    DENSITY_TEST_ASSERT(
+                      consume.complete_type().template is<SingleDerivedNonPoly>());
                     consume.template element<SingleDerivedNonPoly>().check();
                 }
                 consume.commit();
@@ -148,11 +169,18 @@ namespace density_tests
         static void lf_heterogeneous_queue_basic_polymorphic_base_tests()
         {
             using namespace density::type_features;
-            using density::runtime_type;
             using density::default_allocator;
+            using density::runtime_type;
 
-            using RunTimeType = runtime_type<PolymorphicBase, feature_list<
-                default_construct, move_construct, copy_construct, destroy, size, alignment>>;
+            using RunTimeType = runtime_type<
+              PolymorphicBase,
+              feature_list<
+                default_construct,
+                move_construct,
+                copy_construct,
+                destroy,
+                size,
+                alignment>>;
             LfHeterQueue<PolymorphicBase, RunTimeType> queue;
 
             queue.push(PolymorphicBase());
@@ -173,15 +201,15 @@ namespace density_tests
             polymorphic_consume<Derived2>(queue.try_start_reentrant_consume());
             polymorphic_consume<MultipleDerived>(queue.try_start_consume());
 
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
                 polymorphic_consume<PolymorphicBase>(queue.try_start_reentrant_consume());
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
                 polymorphic_consume<SingleDerived>(queue.try_start_consume());
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
                 polymorphic_consume<Derived1>(queue.try_start_reentrant_consume());
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
                 polymorphic_consume<Derived2>(queue.try_start_consume());
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
                 polymorphic_consume<MultipleDerived>(queue.try_start_reentrant_consume());
 
             DENSITY_TEST_ASSERT(queue.empty());
@@ -199,13 +227,14 @@ namespace density_tests
 
             lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<>>();
 
-            lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+            lf_heterogeneous_queue_basic_void_tests<
+              LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-            lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+            lf_heterogeneous_queue_basic_void_tests<
+              LfHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
         }
 
     }; // NbQueueBasicTests
-
 
 
     /** Basic tests for lf_heter_queue<...> */
@@ -213,19 +242,19 @@ namespace density_tests
     {
         PrintScopeDuration dur(i_ostream, "lock-free heterogeneous queue basic tests");
 
-        constexpr auto mult = density::concurrency_multiple;
-        constexpr auto single = density::concurrency_single;
+        constexpr auto mult    = density::concurrency_multiple;
+        constexpr auto single  = density::concurrency_single;
         constexpr auto seq_cst = density::consistency_sequential;
         constexpr auto relaxed = density::consistency_relaxed;
 
-        NbQueueBasicTests<        mult,        mult,            seq_cst        >::tests(i_ostream);
-        NbQueueBasicTests<        single,        mult,            seq_cst        >::tests(i_ostream);
-        NbQueueBasicTests<        mult,        single,            seq_cst        >::tests(i_ostream);
-        NbQueueBasicTests<        single,        single,            seq_cst        >::tests(i_ostream);
+        NbQueueBasicTests<mult, mult, seq_cst>::tests(i_ostream);
+        NbQueueBasicTests<single, mult, seq_cst>::tests(i_ostream);
+        NbQueueBasicTests<mult, single, seq_cst>::tests(i_ostream);
+        NbQueueBasicTests<single, single, seq_cst>::tests(i_ostream);
 
-        NbQueueBasicTests<        mult,        mult,            relaxed        >::tests(i_ostream);
-        NbQueueBasicTests<        single,        mult,            relaxed        >::tests(i_ostream);
-        NbQueueBasicTests<        mult,        single,            relaxed        >::tests(i_ostream);
-        NbQueueBasicTests<        single,        single,            relaxed        >::tests(i_ostream);
+        NbQueueBasicTests<mult, mult, relaxed>::tests(i_ostream);
+        NbQueueBasicTests<single, mult, relaxed>::tests(i_ostream);
+        NbQueueBasicTests<mult, single, relaxed>::tests(i_ostream);
+        NbQueueBasicTests<single, single, relaxed>::tests(i_ostream);
     }
-}
+} // namespace density_tests

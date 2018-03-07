@@ -1,14 +1,14 @@
 
-//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2017.
+//   Copyright Giuseppe Campana (giu.campana@gmail.com) 2016-2018.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
 #include <atomic>
-#include <limits>
 #include <density/density_common.h>
 #include <density/detail/page_stack.h>
+#include <limits>
 
 namespace density
 {
@@ -22,17 +22,13 @@ namespace density
             \n WF_PageStack is not a strict stack: try_pop_unpinned removes the first unpinned page, if any.*/
         class WF_PageStack
         {
-        private:
-            std::atomic<PageFooter*> m_first{ nullptr }; /**< Top of the stack. */
+          private:
+            std::atomic<PageFooter *> m_first{nullptr}; /**< Top of the stack. */
 
             /** Special value set to m_first during a pop operation, that prevents any operation by other threads. */
-            static PageFooter * lock_marker() noexcept
-            {
-                return reinterpret_cast<PageFooter*>(1);
-            }
+            static PageFooter * lock_marker() noexcept { return reinterpret_cast<PageFooter *>(1); }
 
-        public:
-
+          public:
             /* Pushes a (possibly still pinned) single page on the stack. This function is wait-free and may fail in case of contention.
                 @param i_page The page to push. The initial value of i_page->m_next_page is ignored. This parameter can't be nullptr.
                 @return whether the push was successful
@@ -55,7 +51,8 @@ namespace density
                 /* We use the weak CAS because the strong one may be non wait-free.
                     The ABA problem may happen, but here is harmless: even if m_first has been changed
                     to B and then back to first, the push can be safely committed. */
-                return m_first.compare_exchange_weak(first, i_page, detail::mem_release, detail::mem_relaxed);
+                return m_first.compare_exchange_weak(
+                  first, i_page, detail::mem_release, detail::mem_relaxed);
             }
 
             /* Pushes a stack of (possibly still pinned) pages on this stack. This function is wait-free and may fail in case of contention.
@@ -70,7 +67,7 @@ namespace density
                 DENSITY_ASSERT_INTERNAL(!i_stack.empty());
 
                 PageFooter * const range_first = i_stack.first();
-                PageFooter * const range_last = i_stack.find_last();
+                PageFooter * const range_last  = i_stack.find_last();
 
                 auto first = m_first.load(detail::mem_relaxed);
                 if (first == lock_marker())
@@ -82,7 +79,8 @@ namespace density
 
                 /* The ABA problem may happen, but here it is harmless: even if m_first has been changed
                     to B and then back to first, the push can be safely committed. */
-                auto result = m_first.compare_exchange_weak(first, range_first, detail::mem_release, detail::mem_relaxed);
+                auto result = m_first.compare_exchange_weak(
+                  first, range_first, detail::mem_release, detail::mem_relaxed);
                 if (!result)
                 {
                     range_last->m_next_page = nullptr;
@@ -104,7 +102,7 @@ namespace density
                 if (first != lock_marker())
                 {
                     // try to get a page
-                    PageStack range(first);
+                    PageStack  range(first);
                     auto const page = range.pop_unpinned();
 
                     // now we have to restore the stack
