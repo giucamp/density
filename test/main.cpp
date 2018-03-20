@@ -27,14 +27,13 @@
 
 #if defined(__linux__) && !defined(__ANDROID__)
 // https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
-void seg_fault_handler(int sig)
+void segfault_handler(int /*sig*/, siginfo_t *info, void */*ucontext*/)
 {
+    printf("segmentation fault: %p, %p, %p\n", info->si_addr, info->si_lower, info->si_upper);
 
     void * array[256];
     size_t size = backtrace(array, 256);
 
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
@@ -285,7 +284,10 @@ int run(int argc, char ** argv)
 #endif
 
 #if defined(__linux__) && !defined(__ANDROID__)
-    signal(SIGSEGV, seg_fault_handler);
+    struct sigaction sa{};
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = segfault_handler;
+    sigaction(SIGSEGV, &sa, nullptr);
 #endif
 
     auto const settings = parse_settings(argc, argv);
