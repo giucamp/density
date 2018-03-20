@@ -23,13 +23,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#endif
 
-#if defined(__linux__) && !defined(__ANDROID__)
 // https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
-void segfault_handler(int /*sig*/, siginfo_t *info, void */*ucontext*/)
+void segfault_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
 {
-    printf("segmentation fault: %p, %p, %p\n", info->si_addr, info->si_lower, info->si_upper);
+    printf("segmentation fault: %p\n", info->si_addr);
 
     void * array[256];
     size_t size = backtrace(array, 256);
@@ -284,8 +282,10 @@ int run(int argc, char ** argv)
 #endif
 
 #if defined(__linux__) && !defined(__ANDROID__)
-    struct sigaction sa{};
-    sa.sa_flags = SA_SIGINFO;
+    struct sigaction sa
+    {
+    };
+    sa.sa_flags     = SA_SIGINFO;
     sa.sa_sigaction = segfault_handler;
     sigaction(SIGSEGV, &sa, nullptr);
 #endif
