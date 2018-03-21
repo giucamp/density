@@ -33,9 +33,9 @@ REM Run bench
 IF "%BENCH%"=="TRUE" (
     ECHO Benchmarking %PLATFORM% %CONFIGURATION%
     IF "%PLATFORM%"=="x64" (
-        bench\vs2017\x64\%CONFIGURATION%\density_bench.exe -source:"bench\vs2017"
+        bench\vs2017\x64\%CONFIGURATION%\density_bench.exe
     ) ELSE (
-        bench\vs2017\Win32\%CONFIGURATION%\density_bench.exe -source:"bench\vs2017"
+        bench\vs2017\Win32\%CONFIGURATION%\density_bench.exe
     )
 )
 
