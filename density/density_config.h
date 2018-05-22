@@ -71,7 +71,7 @@
 #define DENSITY_CHECKING_ASSERT(bool_expr) assert(bool_expr)
 #endif
 
-/** Macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
+/** Macro that tells an invariant to the compiler as hint for the optimizer. Used only locally in this header. */
 #if defined(__clang__)
 #define DENSITY_ASSUME(bool_expr)                                                                  \
     _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wassume\"")              \
@@ -92,7 +92,7 @@
 
 namespace density
 {
-    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines.  It must be a power of 2.
+    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines. It must be a power of 2.
 
         This is a configuration variable, intended to be customized by the user of the library. The default value is 64.
 
@@ -208,4 +208,5 @@ namespace density
     /** Alias to an implementation of optional. By default a minimal implementation of optional is used, but
         it can be replaced by the C++17 standard one, if available. */
     template <typename TYPE> using optional = builtin_optional<TYPE>;
+
 } // namespace density

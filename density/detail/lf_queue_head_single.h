@@ -132,7 +132,7 @@ namespace density
 
                 bool is_queue_empty(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
+                    DENSITY_ASSERT_INTERNAL(empty());
 
                     begin_iteration(i_queue);
                     while (!empty())
@@ -159,12 +159,12 @@ namespace density
                 }
 
                 /** Tries to start a consume operation. The Consume must be initially empty.
-                    If there are no consumable elements, the Consume remains empty (m_next_ptr == 0).
+                    If there are no consumable elements, the Consume remains empty (m_next_ptr <= LfQueue_AllFlags).
                     Otherwise m_next_ptr is the value to set on the ControlBox to commit the consume
                     (it has the LfQueue_Dead flag). */
                 void start_consume_impl(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
+                    DENSITY_ASSERT_INTERNAL(empty());
 
                     begin_iteration(i_queue);
                     while (!empty())
