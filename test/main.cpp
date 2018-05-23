@@ -24,16 +24,25 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-// https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
-void segfault_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
+void signal_handler()
 {
-    printf("segmentation fault: %p\n", info->si_addr);
-
     void * array[256];
     size_t size = backtrace(array, 256);
 
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
+}
+
+// https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
+void segfault_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
+{
+    printf("segmentation fault: %p\n", info->si_addr);
+    signal_handler();
+}
+void illegalinstr_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
+{
+    printf("illegalinstr fault\n");
+    signal_handler();
 }
 #endif
 
@@ -288,6 +297,8 @@ int run(int argc, char ** argv)
     sa.sa_flags     = SA_SIGINFO;
     sa.sa_sigaction = segfault_handler;
     sigaction(SIGSEGV, &sa, nullptr);
+    sa.sa_sigaction = illegalinstr_handler;
+    sigaction(SIGILL, &sa, nullptr);
 #endif
 
     auto const settings = parse_settings(argc, argv);
