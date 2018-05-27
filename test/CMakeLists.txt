@@ -34,7 +34,35 @@ IF(DEFINED ${CMAKE_BUILD_TYPE})
     ENDIF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
 
-add_executable(density_test 
+add_executable(density_test
+	../density/detail/function_runtime_type.h
+	../density/detail/lf_queue_base.h
+	../density/detail/lf_queue_head_multiple.h
+	../density/detail/lf_queue_head_single.h
+	../density/detail/lf_queue_tail_multiple_relaxed.h
+	../density/detail/lf_queue_tail_multiple_seq_cst.h
+	../density/detail/lf_queue_tail_single.h
+	../density/detail/page_allocator.h
+	../density/detail/page_stack.h
+	../density/detail/singleton_ptr.h
+	../density/detail/sp_queue_tail_multiple.h
+	../density/detail/system_page_manager.h
+	../density/detail/wf_page_stack.h
+	../density/conc_function_queue.h
+	../density/conc_heter_queue.h
+	../density/default_allocator.h
+	../density/density_common.h
+	../density/density_config.h
+	../density/function_queue.h
+	../density/heter_queue.h
+	../density/io_runtimetype_features.h
+	../density/lf_function_queue.h
+	../density/lf_heter_queue.h
+	../density/lifo.h
+	../density/raw_atomic.h
+	../density/runtime_type.h
+	../density/sp_function_queue.h
+	../density/sp_heter_queue.h
 	examples/concurrent_heterogeneous_queue_examples.cpp
 	examples/conc_func_queue_examples.cpp
 	examples/func_queue_examples.cpp

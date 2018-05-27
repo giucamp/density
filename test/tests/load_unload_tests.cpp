@@ -4,6 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include "../test_framework/density_test_common.h"
+//
+
 #include "../test_framework/queue_load_unload_test.h"
 #include <density/conc_heter_queue.h>
 #include <density/lf_heter_queue.h>

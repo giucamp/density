@@ -12,17 +12,21 @@
 /*! \file */
 
 /** Assert used to detect user errors that causes undefined behavior */
+#if !defined(DENSITY_ASSERT)
 #if defined(DENSITY_DEBUG)
 #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
 #else
 #define DENSITY_ASSERT DENSITY_ASSUME
 #endif
+#endif
 
 /** Assert used to detect bugs of the library that causes undefined behavior */
+#if !defined(DENSITY_ASSERT_INTERNAL)
 #if defined(DENSITY_DEBUG_INTERNAL)
 #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
 #else
 #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
+#endif
 #endif
 
 /** Macro used to enforce the alignment of a pointer as an invariant. */

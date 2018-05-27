@@ -4,6 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include "../test_framework/density_test_common.h"
+//
+
 #include "line_updater_stream_adapter.h"
 
 namespace density_tests

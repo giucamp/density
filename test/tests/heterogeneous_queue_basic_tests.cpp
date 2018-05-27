@@ -5,6 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "../test_framework/density_test_common.h"
+//
+
+#include "../test_framework/density_test_common.h"
 #include "../test_framework/progress.h"
 #include "../test_framework/test_allocators.h"
 #include "../test_framework/test_objects.h"

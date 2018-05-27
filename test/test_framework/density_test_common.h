@@ -7,7 +7,6 @@
 #pragma once
 #include <chrono>
 #include <cstdlib>
-#include <density/default_allocator.h>
 #include <sstream>
 #include <string>
 #include <typeinfo>
@@ -15,11 +14,73 @@
 #include <cxxabi.h>
 #endif
 
-#define DENSITY_TEST_ASSERT(expr)                                                                  \
-    if (!(expr))                                                                                   \
-        density_tests::detail::assert_failed(__FILE__, __func__, __LINE__, #expr);                 \
-    else                                                                                           \
+namespace density_tests
+{
+    namespace detail
+    {
+        inline void assert_failed_2(std::ostringstream &)
+        {
+        }
+
+        template <typename FIRST_TYPE, typename... OTHER_TYPES>
+            inline void assert_failed_2(std::ostringstream & i_dest, FIRST_TYPE && i_first, OTHER_TYPES &&... i_others)
+        {
+            i_dest << std::forward<FIRST_TYPE>(i_first);
+            if(sizeof...(i_others) != 0)
+            {
+                i_dest << ", ";
+            }
+            assert_failed_2(i_dest, std::forward<OTHER_TYPES>(i_others)...);
+        }
+
+        void assert_failed3(const char * i_text);
+
+        template <typename... TYPES>
+        #ifdef _MSC_VER
+            __declspec(noinline)
+        #elif defined(__GNUC__)
+            __attribute__((noinline))
+        #endif
+            void assert_failed(const char * i_expression,
+                               const char * i_source_file, int i_line, TYPES &&... i_values)
+        {
+            std::ostringstream stream;
+            stream << "\nAssert failed: " << i_expression << " in " << i_source_file << "(" << i_line;
+            if(sizeof...(i_values) == 0)
+            {
+                stream << ")\n\n";
+            }
+            else
+            {
+                stream << "), {";
+                assert_failed_2(stream, std::forward<TYPES>(i_values)...);
+                stream << "}\n\n";
+            }
+            assert_failed3(stream.str().c_str());
+        }
+    }
+}
+
+#if defined(__GNUC__)
+#define DENSITY_TEST_ASSERT(expr, ...)                                                         \
+    if(!(expr))                                                                                \
+        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, ##__VA_ARGS__);        \
+    else                                                                                       \
         (void)0
+#else
+#define DENSITY_TEST_ASSERT(expr, ...)                                                         \
+    if(!(expr))                                                                                \
+        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, __VA_ARGS__);          \
+    else                                                                                       \
+        (void)0
+#endif
+
+#ifndef NDEBUG
+    #define DENSITY_ASSERT                  DENSITY_TEST_ASSERT
+    #define DENSITY_ASSERT_INTERNAL         DENSITY_TEST_ASSERT
+#endif
+
+#include <density/default_allocator.h>
 
 namespace density_tests
 {
