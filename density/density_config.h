@@ -56,7 +56,7 @@
 
 /** Assert that on failure should cause an halt of the program. Used only locally in this header. */
 #ifdef _MSC_VER
-#define DENSITY_CHECKING_ASSERT(bool_expr)                                                         \
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __debugbreak();                                                                            \
@@ -64,7 +64,7 @@
     else                                                                                           \
         (void)0
 #elif defined(__GNUC__)
-#define DENSITY_CHECKING_ASSERT(bool_expr)                                                         \
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __builtin_trap();                                                                          \
@@ -77,13 +77,13 @@
 
 /** Macro that tells an invariant to the compiler as hint for the optimizer. Used only locally in this header. */
 #if defined(__clang__)
-#define DENSITY_ASSUME(bool_expr)                                                                  \
+#define DENSITY_ASSUME(bool_expr, ...)                                                             \
     _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wassume\"")              \
       __builtin_assume((bool_expr)) _Pragma("clang diagnostic pop")
 #elif defined(_MSC_VER)
-#define DENSITY_ASSUME(bool_expr) __assume((bool_expr))
+#define DENSITY_ASSUME(bool_expr, ...) __assume((bool_expr))
 #elif defined(__GNUC__)
-#define DENSITY_ASSUME(bool_expr)                                                                  \
+#define DENSITY_ASSUME(bool_expr, ...)                                                             \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __builtin_unreachable();                                                                   \
@@ -91,7 +91,7 @@
     else                                                                                           \
         (void)0 // https://stackoverflow.com/questions/25667901/assume-clause-in-gcc
 #else
-#define DENSITY_ASSUME(bool_expr) (void)0
+#define DENSITY_ASSUME(bool_expr, ...) (void)0
 #endif
 
 namespace density
