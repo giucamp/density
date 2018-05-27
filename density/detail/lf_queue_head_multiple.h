@@ -92,7 +92,15 @@ namespace density
                     return *this;
                 }
 
-                bool empty() const noexcept { return m_next_ptr <= LfQueue_AllFlags; }
+                bool empty() const noexcept
+                {
+                    if (m_next_ptr > LfQueue_AllFlags)
+                    {
+                        DENSITY_ASSERT_INTERNAL(
+                          m_next_ptr >= ALLOCATOR_TYPE::page_alignment, m_next_ptr);
+                    }
+                    return m_next_ptr <= LfQueue_AllFlags;
+                }
 
                 bool external() const noexcept { return (m_next_ptr & LfQueue_External) != 0; }
 
@@ -181,6 +189,8 @@ namespace density
 
                 bool move_next() noexcept
                 {
+                    DENSITY_ASSERT_INTERNAL(!empty(), m_next_ptr);
+
                     DENSITY_ASSERT_INTERNAL(
                       address_is_aligned(m_control, Base::s_alloc_granularity));
 
@@ -293,7 +303,7 @@ namespace density
 
                 /** If m_head equals to m_control advance it to the next block, zeroing the memory.
                     This function assumes that the current block is dead. */
-                bool advance_head()
+                bool advance_head() const
                 {
                     auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
 

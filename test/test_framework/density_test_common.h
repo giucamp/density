@@ -18,15 +18,19 @@ namespace density_tests
 {
     namespace detail
     {
-        inline void assert_failed_2(std::ostringstream &)
-        {
-        }
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4127) // conditional expression is constant
+#endif
+
+        inline void assert_failed_2(std::ostringstream &) {}
 
         template <typename FIRST_TYPE, typename... OTHER_TYPES>
-            inline void assert_failed_2(std::ostringstream & i_dest, FIRST_TYPE && i_first, OTHER_TYPES &&... i_others)
+        inline void assert_failed_2(
+          std::ostringstream & i_dest, FIRST_TYPE && i_first, OTHER_TYPES &&... i_others)
         {
             i_dest << std::forward<FIRST_TYPE>(i_first);
-            if(sizeof...(i_others) != 0)
+            if (sizeof...(i_others) != 0)
             {
                 i_dest << ", ";
             }
@@ -36,17 +40,18 @@ namespace density_tests
         void assert_failed3(const char * i_text);
 
         template <typename... TYPES>
-        #ifdef _MSC_VER
-            __declspec(noinline)
-        #elif defined(__GNUC__)
+#ifdef _MSC_VER
+        __declspec(noinline)
+#elif defined(__GNUC__)
             __attribute__((noinline))
-        #endif
-            void assert_failed(const char * i_expression,
-                               const char * i_source_file, int i_line, TYPES &&... i_values)
+#endif
+          void assert_failed(
+            const char * i_expression, const char * i_source_file, int i_line, TYPES &&... i_values)
         {
             std::ostringstream stream;
-            stream << "\nAssert failed: " << i_expression << " in " << i_source_file << "(" << i_line;
-            if(sizeof...(i_values) == 0)
+            stream << "\nAssert failed: " << i_expression << " in " << i_source_file << "("
+                   << i_line;
+            if (sizeof...(i_values) == 0)
             {
                 stream << ")\n\n";
             }
@@ -58,26 +63,31 @@ namespace density_tests
             }
             assert_failed3(stream.str().c_str());
         }
-    }
-}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+    } // namespace detail
+} // namespace density_tests
 
 #if defined(__GNUC__)
-#define DENSITY_TEST_ASSERT(expr, ...)                                                         \
-    if(!(expr))                                                                                \
-        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, ##__VA_ARGS__);        \
-    else                                                                                       \
+#define DENSITY_TEST_ASSERT(expr, ...)                                                             \
+    if (!(expr))                                                                                   \
+        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, ##__VA_ARGS__);            \
+    else                                                                                           \
         (void)0
 #else
-#define DENSITY_TEST_ASSERT(expr, ...)                                                         \
-    if(!(expr))                                                                                \
-        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, __VA_ARGS__);          \
-    else                                                                                       \
+#define DENSITY_TEST_ASSERT(expr, ...)                                                             \
+    if (!(expr))                                                                                   \
+        density_tests::detail::assert_failed(#expr, __FILE__, __LINE__, __VA_ARGS__);              \
+    else                                                                                           \
         (void)0
 #endif
 
 #ifndef NDEBUG
-    #define DENSITY_ASSERT                  DENSITY_TEST_ASSERT
-    #define DENSITY_ASSERT_INTERNAL         DENSITY_TEST_ASSERT
+#define DENSITY_ASSERT DENSITY_TEST_ASSERT
+#define DENSITY_ASSERT_INTERNAL DENSITY_TEST_ASSERT
 #endif
 
 #include <density/default_allocator.h>
