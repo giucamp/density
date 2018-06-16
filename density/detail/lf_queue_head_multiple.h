@@ -247,6 +247,14 @@ namespace density
                                 m_next_ptr |= LfQueue_Dead;
                                 break;
                             }
+                            else
+                            {
+                                if (empty())
+                                {
+                                    begin_iteration(i_queue);
+                                    continue;
+                                }
+                            }
                         }
                         else if ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
                         {
