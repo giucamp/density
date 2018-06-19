@@ -16,7 +16,7 @@ namespace density
         /** This feature reads an object from an std::istream with the operator >> */
         struct istream
         {
-            using type = void * (*)(std::istream & i_istream, void * i_complete_dest);
+            using type = void (*)(std::istream & i_istream, void * i_complete_dest);
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -27,16 +27,14 @@ namespace density
                     i_istream >> *derived;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t istream::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature writes an object to an std::ostream with the operator << */
         struct ostream
         {
-            using type = void * (*)(std::ostream & i_ostream, const void * i_complete_object);
+            using type = void (*)(std::ostream & i_ostream, const void * i_complete_object);
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -47,11 +45,9 @@ namespace density
                     i_ostream << *derived;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t ostream::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
     } // namespace type_features
 

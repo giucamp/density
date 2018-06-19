@@ -9,6 +9,7 @@
 #include <functional> // for std::hash
 #include <limits>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -27,7 +28,7 @@ namespace density
                 using type = ...;
                 template <typename BASE, typename TYPE> struct Impl
                 {
-                    static const uintptr_t value = ...;
+                    static constexpr type value = ...;
                 };
             };
             \endcode
@@ -46,9 +47,11 @@ namespace density
         {
             /** Constant that gives the number of features */
             static const size_t size = sizeof...(FEATURES);
+
+            using tuple = std::tuple<typename FEATURES::type...>;
         };
 
-/** This template concatenates two feature_list, or a feature_list and a feature.
+        /** This template concatenates two feature_list, or a feature_list and a feature.
             @tparam FIRST feature_list to prepend
             @tparam SECOND feature_list or feature to append
 
@@ -89,6 +92,69 @@ namespace density
 
     namespace detail
     {
+        template <typename FEATURE_LIST> struct feature_container;
+        template <typename FIRST_FEATURE, typename... OTHER_FEATURES>
+        struct feature_container<type_features::feature_list<FIRST_FEATURE, OTHER_FEATURES...>>
+            : feature_container<type_features::feature_list<OTHER_FEATURES...>>
+        {
+            typename FIRST_FEATURE::type m_feature;
+
+            using base = feature_container<type_features::feature_list<OTHER_FEATURES...>>;
+
+            template <size_t>
+            constexpr const typename FIRST_FEATURE::type & get_impl(std::true_type) const noexcept
+            {
+                return m_feature;
+            }
+
+            template <size_t INDEX>
+            constexpr auto get_impl(std::false_type) const noexcept -> decltype(
+              std::declval<const feature_container>().base::template get_impl<INDEX - 1>(
+                std::integral_constant<bool, INDEX - 1 == 0>{}))
+            {
+                return base::get_impl<INDEX - 1>(std::integral_constant<bool, INDEX - 1 == 0>{});
+            }
+
+            static feature_container<type_features::feature_list<FIRST_FEATURE, OTHER_FEATURES...>>
+              inst;
+
+            template <size_t INDEX>
+            constexpr auto get() const noexcept /*-> typename std::conditional<
+
+              INDEX == 0,
+              typename FIRST_FEATURE::type,
+              decltype(
+                std::declval<const feature_container>().template get_impl<INDEX>(std::false_type{}))
+
+              >::type*/
+            {
+                static_assert(INDEX < sizeof...(OTHER_FEATURES) + 1, "feature not found");
+                return get_impl<INDEX>(std::integral_constant<bool, INDEX == 0>{});
+            }
+        };
+        template <> struct feature_container<type_features::feature_list<>>
+        {
+        };
+
+        template <typename FEATURE_LIST, size_t INDEX> struct GetFeature;
+
+        template <typename FIRST_FEATURE, typename... OTHER_FEATURES, size_t INDEX>
+        struct GetFeature<
+          feature_container<type_features::feature_list<FIRST_FEATURE, OTHER_FEATURES...>>,
+          INDEX>
+        {
+            using type = typename std::conditional<
+              INDEX == 0,
+              FIRST_FEATURE,
+              typename GetFeature<type_features::feature_list<OTHER_FEATURES...>, INDEX - 1>::
+                type>::type;
+        };
+
+        template <size_t INDEX>
+        struct GetFeature<feature_container<type_features::feature_list<>>, INDEX>
+        {
+        };
+
         /* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object.
             - If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
                 should be defined in the namespace that contains TYPE (it will use ADL). If such function exits,
@@ -155,17 +221,14 @@ namespace density
               i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))());
         }
 
-        /* FeatureTable<TYPE, feature_list<FEATURES...> >::s_table is a static array of all the FEATURES::s_value */
+        /* FeatureTable<TYPE, feature_list<FEATURES...> >::s_table is a constexpr tuple of all the FEATURES::s_value */
         template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
         template <typename BASE, typename TYPE, typename... FEATURES>
         struct FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>
         {
-            static void * const s_table[sizeof...(FEATURES)];
+            constexpr static typename type_features::feature_list<FEATURES...>::tuple s_table{
+              (FEATURES::template Impl<BASE, TYPE>::value)...};
         };
-        template <typename BASE, typename TYPE, typename... FEATURES>
-        void * const
-          FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>::s_table[sizeof...(
-            FEATURES)] = {reinterpret_cast<void *>(FEATURES::template Impl<BASE, TYPE>::value)...};
 
         /* IndexOfFeature<0, TARGET_FEATURE, feature_list<FEATURES...> >::value is the index of TARGET_FEATURE in feature_list<FEATURES...>,
             or feature_list<FEATURES...>::size if TARGET_FEATURE is not present */
@@ -248,7 +311,7 @@ namespace density
         /** This feature stores the size in the table of the type */
         struct size
         {
-            using type = uintptr_t;
+            using type = size_t;
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -256,14 +319,14 @@ namespace density
                   sizeof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
                   "Type with size >= 1/4 of the address space are not supported");
                 // constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
-                static const uintptr_t value = sizeof(TYPE);
+                constexpr static size_t value = sizeof(TYPE);
             };
         };
 
         /** This feature stores the alignment in the table of the type */
         struct alignment
         {
-            using type = uintptr_t;
+            using type = size_t;
 
             template <typename BASE, typename TYPE> struct Impl
             {
@@ -271,7 +334,7 @@ namespace density
                   alignof(TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
                   "Type with alignment >= 1/4 of the address space are not supported");
                 // constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
-                static const uintptr_t value = alignof(TYPE);
+                constexpr static size_t value = alignof(TYPE);
             };
         };
 
@@ -286,7 +349,7 @@ namespace density
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static const uintptr_t value;
+                constexpr static type value = invoke;
 
                 static size_t invoke(const void * i_source)
                 {
@@ -297,21 +360,18 @@ namespace density
             };
         };
 
-        template <typename BASE, typename TYPE>
-        const uintptr_t hash::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(invoke);
-
         /** This feature stores a pointer to a std::type_info associated to a type in the table of the type */
         struct rtti
         {
-            using type = const std::type_info *;
+            using type = const std::type_info & (*)();
 
             template <typename BASE, typename TYPE> struct Impl
             {
-                static const uintptr_t value;
+                static const std::type_info & invoke() { return typeid(TYPE); }
+
+                constexpr static type value = invoke;
             };
         };
-        template <typename BASE, typename TYPE>
-        const uintptr_t rtti::Impl<BASE, TYPE>::value = reinterpret_cast<uintptr_t>(&typeid(TYPE));
 
         /** This feature stores a pointer to the default constructor in the table of the type.
             The effect of the feature is default-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -330,12 +390,9 @@ namespace density
                     return base_result;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t
-          default_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to the copy constructor in the table of the type.
             The effect of the feature is copy-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -359,12 +416,9 @@ namespace density
                     return base_result;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t
-          copy_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to the move constructor in the table of the type.
             The effect of this feature move-constructing an object of type TYPE, and returning a pointer (of type BASE) to it.
@@ -388,14 +442,11 @@ namespace density
                       TYPE(std::move(*detail::down_cast<TYPE *>(base_source)));
                     return base_result;
                 }
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t
-          move_construct::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-/** This feature invokes a function object. The template parameter must be a callable type.
+        /** This feature invokes a function object. The template parameter must be a callable type.
                 @tparam CALLABLE signature of the object function
 
             Example:
@@ -419,15 +470,11 @@ namespace density
                     return (*detail::down_cast<TYPE *>(base_dest))(
                       std::forward<PARAMS>(i_params)...);
                 }
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename RET, typename... PARAMS>
-        template <typename TYPE, typename BASE>
-        const uintptr_t
-          invoke<RET(PARAMS...)>::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
-/** This feature invokes and destroys a function object. The template parameter must be a callable type.
+        /** This feature invokes and destroys a function object. The template parameter must be a callable type.
             The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
             it is faster than using the latter features in sequence.
                 @tparam CALLABLE signature of the object function.
@@ -449,7 +496,7 @@ namespace density
                     return invoke_and_destroy_impl(
                       i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
                 }
-                static const uintptr_t value;
+                constexpr static type value = invoke_and_destroy;
 
               private:
                 static RET
@@ -471,13 +518,8 @@ namespace density
                 }
             };
         };
-        template <typename RET, typename... PARAMS>
-        template <typename TYPE, typename BASE>
-        const uintptr_t invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value =
-          reinterpret_cast<uintptr_t>(invoke_and_destroy);
 
-
-/** This feature aligns, invokes and destroys a function object. The template parameter must be a callable type.
+        /** This feature aligns, invokes and destroys a function object. The template parameter must be a callable type.
             The effect of invoke_destroy is the same of the pair type_features::invoke and type_features::destroy. Anyway
             it is faster than using the latter features in sequence.
                 @tparam CALLABLE signature of the object function.
@@ -502,7 +544,7 @@ namespace density
                     return align_and_invoke_and_destroy_impl(
                       i_base_dest, std::is_void<RET>(), std::forward<PARAMS>(i_params)...);
                 }
-                static const uintptr_t value;
+                constexpr static type value = align_and_invoke_and_destroy;
 
               private:
                 static RET align_and_invoke_and_destroy_impl(
@@ -524,11 +566,6 @@ namespace density
                 }
             };
         };
-        template <typename RET, typename... PARAMS>
-        template <typename TYPE, typename BASE>
-        const uintptr_t align_invoke_destroy<RET(PARAMS...)>::Impl<TYPE, BASE>::value =
-          reinterpret_cast<uintptr_t>(align_and_invoke_and_destroy);
-
 
         /** This feature stores a pointer to the destructor of a type.
                 @param i_base_dest pointer to the object to be destroyed. */
@@ -545,11 +582,9 @@ namespace density
                     derived->TYPE::~TYPE();
                     return derived;
                 }
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t destroy::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to a function that compares two object of the type-erased type.
                 @param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
@@ -576,11 +611,9 @@ namespace density
                     return *complete_first == *complete_second;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t equals::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
         /** This feature stores a pointer to a function that compares two object of the type-erased type.
                 @param i_first_base_object pointer to a subobject (of type BASE) of an object whose complete
@@ -607,11 +640,9 @@ namespace density
                     return *complete_first < *complete_second;
                 }
 
-                static const uintptr_t value;
+                constexpr static type value = invoke;
             };
         };
-        template <typename TYPE, typename BASE>
-        const uintptr_t less::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
 
     } // namespace type_features
 
@@ -667,7 +698,7 @@ namespace density
     namespace type_features
     {
 
-/** \class default_type_features
+        /** \class default_type_features
             This type alias template gives a feature_list for a given type.
                 @tparam COMMON_TYPE type to use to select the features to include. \n
 
@@ -834,37 +865,28 @@ namespace density
 
         /** Creates a runtime_type associated with the specified type. The latter is the target type.
                 @tparam TYPE target type that is type-erased by the returned runtime_type. */
-        template <typename TYPE> static runtime_type make() noexcept
+        template <typename TYPE> constexpr static runtime_type make() noexcept
         {
             return runtime_type(
-              detail::FeatureTable<common_type, typename std::decay<TYPE>::type, FEATURE_LIST>::
+              &detail::FeatureTable<common_type, typename std::decay<TYPE>::type, FEATURE_LIST>::
                 s_table);
         }
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior. */
-        runtime_type() noexcept : m_table(nullptr) {}
-
-        /** Move-constructs a runtime_type */
-        runtime_type(runtime_type &&) noexcept = default;
+        constexpr runtime_type() noexcept = default;
 
         /** Copy-constructs a runtime_type */
-        runtime_type(const runtime_type &) noexcept = default;
-
-        /** Move-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        runtime_type & operator=(runtime_type &&) noexcept = default;
+        constexpr runtime_type(const runtime_type &) noexcept = default;
 
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        runtime_type & operator=(const runtime_type &) noexcept = default;
-
-        /** Destructor */
-        ~runtime_type() noexcept = default;
+        constexpr runtime_type & operator=(const runtime_type &) noexcept = default;
 
         /** Returns whether this runtime_type is not bound to a target type */
-        bool empty() const noexcept { return m_table == nullptr; }
+        constexpr bool empty() const noexcept { return m_feature_table == nullptr; }
 
-        /** Unbind from a target. If the runtime_type was already empty this function has no effect. */
-        void clear() noexcept { m_table = nullptr; }
+        /** Unbinds from a target. If the runtime_type was already empty this function has no effect. */
+        constexpr void clear() noexcept { m_feature_table = nullptr; }
 
         /** Returns the size (in bytes) of the target type, which is always > 0. \n
             The effect of this function is the same of this code:
@@ -878,11 +900,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing */
-        size_t size() const noexcept
-        {
-            DENSITY_ASSERT(!empty());
-            return get_feature<type_features::size>();
-        }
+        constexpr size_t size() const noexcept { return get_feature<type_features::size>(); }
 
         /** Returns the alignment (in bytes) of the target type, which is always an integer power of 2. \n
 
@@ -897,9 +915,8 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing */
-        size_t alignment() const noexcept
+        constexpr size_t alignment() const noexcept
         {
-            DENSITY_ASSERT(!empty());
             return get_feature<type_features::alignment>();
         }
 
@@ -1015,7 +1032,7 @@ namespace density
         const std::type_info & type_info() const noexcept
         {
             DENSITY_ASSERT(!empty());
-            return *get_feature<type_features::rtti>();
+            return get_feature<type_features::rtti>()();
         }
 
         /** Returns true if two instances of the target types compare equal.
@@ -1037,13 +1054,11 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. */
-        template <typename FEATURE> typename FEATURE::type get_feature() const noexcept
+        template <typename FEATURE>
+        constexpr const typename FEATURE::type & get_feature() const noexcept
         {
-            DENSITY_ASSERT(!empty());
-            const size_t feature_index = detail::IndexOfFeature<0, FEATURE, FEATURE_LIST>::value;
-            static_assert(
-              feature_index < FEATURE_LIST::size, "feature not available in FEATURE_LIST");
-            return reinterpret_cast<typename FEATURE::type>(m_table[feature_index]);
+            return std::get<detail::IndexOfFeature<0, FEATURE, FEATURE_LIST>::value>(
+              *m_feature_table);
         }
 
         /** Returns true whether this two runtime_type have the same target type. All empty runtime_type's compare equals.
@@ -1051,9 +1066,9 @@ namespace density
             \n\b Requires: nothing
 
             \n\b Throws: nothing. */
-        bool operator==(const runtime_type & i_other) const noexcept
+        constexpr bool operator==(const runtime_type & i_other) const noexcept
         {
-            return m_table == i_other.m_table;
+            return m_feature_table == i_other.m_feature_table;
         }
 
         /** Returns true whether this two runtime_type have different target types. All empty runtime_type's compare equals.
@@ -1061,30 +1076,33 @@ namespace density
             \n\b Requires: nothing
 
             \n\b Throws: nothing. */
-        bool operator!=(const runtime_type & i_other) const noexcept
+        constexpr bool operator!=(const runtime_type & i_other) const noexcept
         {
-            return m_table != i_other.m_table;
+            return m_feature_table != i_other.m_feature_table;
         }
 
         /** Returns whether the target type of this runtime_type is exactly the one specified in the
             template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
-        template <typename TYPE> bool is() const noexcept
+        template <typename TYPE> constexpr bool is() const noexcept
         {
-            return m_table == detail::FeatureTable<
-                                common_type,
-                                typename std::decay<TYPE>::type,
-                                FEATURE_LIST>::s_table;
+            return m_feature_table == &detail::FeatureTable<
+                                        common_type,
+                                        typename std::decay<TYPE>::type,
+                                        FEATURE_LIST>::s_table;
         }
 
         /** Returns an hash. This function is used for the partial specialization of std::hash
             for runtime_type. */
-        size_t hash() const noexcept { return std::hash<const void *>()(m_table); }
+        size_t hash() const noexcept { return std::hash<const void *>()(m_feature_table); }
 
       private:
-        runtime_type(void * const * i_table) : m_table(i_table) {}
+        constexpr runtime_type(const typename FEATURE_LIST::tuple * i_feature_table) noexcept
+            : m_feature_table(i_feature_table)
+        {
+        }
 
-      private:
-        void * const * m_table;
+      public:
+        const typename FEATURE_LIST::tuple * m_feature_table{};
     };
 } // namespace density
 

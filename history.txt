@@ -12,6 +12,9 @@
                        revision history
 ***************************************
 
+version 1.05.00 - changes:
+    - fixed crash when raw_atomic_compare_exchange_strong failed and m_next_ptr was set to 0 (causing move_next called for an empty consume)
+
 version 1.04.00 - changes:
     - lifo_array: iterators are now classes (and not pointers)    
     - renamed default_allocator and basic_void_allocator to default_allocator and basic_default_allocator

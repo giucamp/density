@@ -32,13 +32,9 @@ namespace density_tests
                 const auto base_dest = static_cast<BASE *>(i_base_dest);
                 static_cast<TYPE *>(base_dest)->update(i_elapsed_time);
             }
-            static const uintptr_t value;
+            constexpr static type value = invoke;
         };
     };
-    template <typename TYPE, typename BASE>
-    const uintptr_t
-      feature_call_update::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
-
     //! [runtime_type example 2]
 
     void misc_examples()
