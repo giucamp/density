@@ -19,6 +19,20 @@
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
 #define DENSITY_VERSION 0x00010401
 
+// detect 'Relaxed constraints on constexpr functions / constexpr member functions and implicit const'
+// see http://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros#C.2B.2B14
+#if __cpp_constexpr >= 201304
+#define DENSITY_CPP14_CONSTEXPR constexpr
+#else
+#define DENSITY_CPP14_CONSTEXPR
+#endif
+
+#if __cpp_noexcept_function_type >= 201510
+#define DENSITY_CPP17_NOEXCEPT noexcept
+#else
+#define DENSITY_CPP17_NOEXCEPT
+#endif
+
 /** namespace density */
 namespace density
 {

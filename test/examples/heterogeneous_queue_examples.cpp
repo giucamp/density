@@ -1326,7 +1326,7 @@ namespace density_tests
               queue.try_start_reentrant_consume();
             assert(consume.complete_type().is<int>());
             std::cout << "An int: " << consume.element<int>() << std::endl;
-            /* std::cout << "An float: " << consume.element<float>() << std::endl; this would
+            /* std::cout << "A float: " << consume.element<float>() << std::endl; this would
         trigger an undefined behavior, because the element is not a float */
             consume.commit();
             //! [heter_queue reentrant_consume_operation element example 1]

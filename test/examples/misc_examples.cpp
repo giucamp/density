@@ -51,6 +51,7 @@ namespace density_tests
         }
 
         {
+#if ENABLE_FEATURE_CAT
             //! [feature_concat example 1]
             using namespace type_features;
             using MyPartialFeatures = feature_list<default_construct, size>;
@@ -58,9 +59,11 @@ namespace density_tests
             using MyFeatures1       = feature_concat_t<MyPartialFeatures, feature_list<alignment>>;
             static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "");
             //! [feature_concat example 1]
+#endif
         }
 
         {
+#if ENABLE_FEATURE_CAT
             //! [type_features::invoke example 1]
 
             using namespace type_features;
@@ -80,6 +83,7 @@ namespace density_tests
             // invoke my_queue.begin()
             my_queue.begin()->first.get_feature<MyInvoke>()(my_queue.begin()->second, "hello!");
             //! [type_features::invoke example 1]
+#endif
         }
 
         {
@@ -107,6 +111,7 @@ namespace density_tests
 
 
         {
+#if ENABLE_FEATURE_CAT
             //! [runtime_type example 3]
 
             struct ObjectA
@@ -144,6 +149,7 @@ namespace density_tests
                 update_func(it->second, 1.f / 60.f);
             }
             //! [runtime_type example 3]
+#endif
         }
 
         {
