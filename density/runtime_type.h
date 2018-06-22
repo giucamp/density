@@ -957,13 +957,13 @@ namespace density
         constexpr runtime_type(const runtime_type &) noexcept = default;
 
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        constexpr runtime_type & operator=(const runtime_type &) noexcept = default;
+        DENSITY_CPP14_CONSTEXPR runtime_type & operator=(const runtime_type &) noexcept = default;
 
         /** Returns whether this runtime_type is not bound to a target type */
         constexpr bool empty() const noexcept { return m_feature_table == nullptr; }
 
         /** Unbinds from a target. If the runtime_type was already empty this function has no effect. */
-        constexpr void clear() noexcept { m_feature_table = nullptr; }
+        DENSITY_CPP14_CONSTEXPR void clear() noexcept { m_feature_table = nullptr; }
 
         /** Returns the size (in bytes) of the target type, which is always > 0. \n
             The effect of this function is the same of this code:
@@ -1128,8 +1128,8 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. */
-        template <template <class> typename FEATURE>
-        constexpr const FEATURE<common_type> & get_feature() const noexcept
+        template <template <typename> class FEATURE>
+        const FEATURE<common_type> & get_feature() const noexcept
         {
             return std::get<FEATURE<common_type>>(*m_feature_table);
         }

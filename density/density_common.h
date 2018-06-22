@@ -548,7 +548,7 @@ namespace density
 
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
-#if __cplusplus >= 201402L
+#if __cpp_sized_deallocation >= 201309
             operator delete(i_block, i_size); // since C++14
 #else
             (void)i_size;
@@ -560,7 +560,7 @@ namespace density
             if (i_block != nullptr)
             {
                 const auto & header = *(static_cast<detail::AlignmentHeader *>(i_block) - 1);
-#if __cplusplus >= 201402L // since C++14
+#if __cpp_sized_deallocation >= 201309 // since C++14
                 size_t const extra_size =
                   detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
                 size_t const actual_size = i_size + extra_size;
