@@ -43,13 +43,67 @@ namespace density
             The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
             casts the value of the feature to this type before returning it.
             \snippet misc_examples.cpp feature_list example 1 */
+
+
+        // Tuple_Merge_t
+        template <typename... TUPLES> struct Tuple_Merge;
+        template <> struct Tuple_Merge<>
+        {
+            using type = std::tuple<>;
+        };
+        template <typename... TYPES_1> struct Tuple_Merge<std::tuple<TYPES_1...>>
+        {
+            using type = std::tuple<TYPES_1...>;
+        };
+        template <typename... TYPES_1, typename... TYPES_2, typename... OTHER_TUPLES>
+        struct Tuple_Merge<std::tuple<TYPES_1...>, std::tuple<TYPES_2...>, OTHER_TUPLES...>
+        {
+            using type =
+              typename Tuple_Merge<std::tuple<TYPES_1..., TYPES_2...>, OTHER_TUPLES...>::type;
+        };
+        template <typename... TUPLES> using Tuple_Merge_t = typename Tuple_Merge<TUPLES...>::type;
+
+        // Tuple_FindFirst
+        template <typename TUPLE, typename TARGET_TYPE> struct Tuple_FindFirst;
+        template <typename TARGET_TYPE> struct Tuple_FindFirst<std::tuple<>, TARGET_TYPE>
+        {
+            constexpr static size_t index = 0;
+        };
+        template <typename FIRST_TYPE, typename... TYPES, typename TARGET_TYPE>
+        struct Tuple_FindFirst<std::tuple<FIRST_TYPE, TYPES...>, TARGET_TYPE>
+        {
+            constexpr static size_t index =
+              (std::is_same<FIRST_TYPE, TARGET_TYPE>::value)
+                ? 0
+                : (Tuple_FindFirst<std::tuple<TYPES...>, TARGET_TYPE>::index + 1);
+        };
+
+        // MakeFeatureTable<tuple<...>>::make_table<COMMON_ANCESTOR>
+        template <typename TUPLE> struct MakeFeatureTable;
+        template <typename... TYPES> struct MakeFeatureTable<std::tuple<TYPES...>>
+        {
+            template <typename TARGET_TYPE> constexpr static std::tuple<TYPES...> make_table()
+            {
+                return std::tuple<TYPES...>{TYPES::template make<TARGET_TYPE>()...};
+            }
+        };
+
+        // feature_list
         template <template <typename> class... FEATURES> struct feature_list
         {
-            /** Constant that gives the number of features */
-            constexpr static size_t size = sizeof...(FEATURES);
-
             template <typename COMMON_ANCESTOR>
             using tuple = std::tuple<FEATURES<COMMON_ANCESTOR>...>;
+        };
+
+        // feature_cat
+        template <typename... LISTS> struct feature_cat
+        {
+            template <typename COMMON_ANCESTOR>
+            using tuple = Tuple_Merge_t<
+
+              typename LISTS::template tuple<COMMON_ANCESTOR>...
+
+              >;
         };
 
 #define ENABLE_FEATURE_CAT 0 // temp
@@ -198,9 +252,22 @@ namespace density
               s_table{(FEATURES<BASE>::template make<TYPE>())...};
         };
 
+        template <typename BASE, typename TYPE, class... FEATURES>
+        struct FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>
+        {
+            using table = typename type_features::feature_cat<FEATURES...>::template tuple<BASE>;
+
+            constexpr static table s_table =
+              type_features::MakeFeatureTable<table>::template make_table<TYPE>();
+        };
+
         template <typename BASE, typename TYPE, template <class> class... FEATURES>
         constexpr typename type_features::feature_list<FEATURES...>::template tuple<BASE>
           FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>::s_table;
+
+        template <typename BASE, typename TYPE, class... FEATURES>
+        typename FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>::table
+          FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>::s_table;
 
     } // namespace detail
 
@@ -1131,7 +1198,9 @@ namespace density
         template <template <typename> class FEATURE>
         const FEATURE<common_type> & get_feature() const noexcept
         {
-            return std::get<FEATURE<common_type>>(*m_feature_table);
+            return std::get<type_features::Tuple_FindFirst<
+              typename FEATURE_LIST::template tuple<COMMON_TYPE>,
+              FEATURE<common_type>>::index>(*m_feature_table);
         }
 
         /** Returns true whether this two runtime_type have the same target type. All empty runtime_type's compare equals.

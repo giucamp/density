@@ -79,6 +79,9 @@ namespace density_tests
       uint32_t         i_random_seed,
       size_t           i_depth,
       size_t           i_fork_depth);
+
+    void type_fetaures_tests();
+
 } // namespace density_tests
 
 DENSITY_NO_INLINE void sandbox()
@@ -165,6 +168,8 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     {
         flags = flags | QueueTesterFlags::ePrintProgress;
     }
+
+    type_fetaures_tests();
 
     if (i_settings.should_run("lifo"))
     {

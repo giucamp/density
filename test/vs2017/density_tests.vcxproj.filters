@@ -105,6 +105,9 @@
     <ClCompile Include="..\test_framework\allocator_stress_test.cpp">
       <Filter>test_framework</Filter>
     </ClCompile>
+    <ClCompile Include="..\tests\type_fetaures_tests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\density\density_common.h">
