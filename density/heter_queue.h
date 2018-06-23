@@ -105,7 +105,7 @@ namespace density
 
         The example above searches for an exact match of the type being consumed (using runtime_type::is). Anyway
         runtime_type (the default <code>RUNTIME_TYPE</code>) allows to add custom functions that can be called regardless
-        of the type. The following example uses the built-in type_features::ostream:
+        of the type. The following example uses the built-in f_ostream:
 
         \snippet heterogeneous_queue_examples.cpp heter_queue example 3
 
@@ -386,7 +386,7 @@ namespace density
         /** Copy constructor. The allocator is copy-constructed from the one of the source.
 
             \n <b>Requires</b>:
-                - the runtime type must support the feature type_features::copy_construct
+                - the runtime type must support the feature f_copy_construct
 
             <b>Complexity</b>: linear in the number of elements of the source.
             \n <b>Throws</b>: unspecified.
@@ -2572,7 +2572,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>type_features::are_equal</code>
+                - the runtime type must support the feature <code>f_equals</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.
@@ -2604,7 +2604,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>type_features::are_equal</code>
+                - the runtime type must support the feature <code>f_equals</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.

@@ -246,6 +246,9 @@
     <ClInclude Include="..\test_framework\allocator_stress_test.h">
       <Filter>test_framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\density\detail\runtime_type_internals.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

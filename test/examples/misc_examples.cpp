@@ -43,8 +43,7 @@ namespace density_tests
 
         {
             //! [feature_list example 1]
-            using namespace type_features;
-            using MyFeatures = feature_list<default_construct, size, alignment>;
+            using MyFeatures = feature_list<f_default_construct, f_size, f_alignment>;
             //! [feature_list example 1]
             MyFeatures unused;
             (void)unused;
@@ -53,45 +52,19 @@ namespace density_tests
         {
 #if ENABLE_FEATURE_CAT
             //! [feature_concat example 1]
-            using namespace type_features;
-            using MyPartialFeatures = feature_list<default_construct, size>;
-            using MyFeatures        = feature_concat_t<MyPartialFeatures, alignment>;
-            using MyFeatures1       = feature_concat_t<MyPartialFeatures, feature_list<alignment>>;
+            using MyPartialFeatures = feature_list<f_default_construct, f_size>;
+            using MyFeatures        = feature_concat_t<MyPartialFeatures, f_alignment>;
+            using MyFeatures1 = feature_concat_t<MyPartialFeatures, feature_list<f_alignment>>;
             static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "");
             //! [feature_concat example 1]
 #endif
         }
 
         {
-#if ENABLE_FEATURE_CAT
-            //! [type_features::invoke example 1]
-
-            using namespace type_features;
-
-            // This feature allows to call a function object passing a std::string
-            using MyInvoke = invoke<void(std::string)>;
-
-            // we need MyInvoke and the standard features (size, alignment, ...)
-            using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke>;
-
-            // create a queue
-            using QueueOfInvokables =
-              heter_queue<void, runtime_type<void, MyFeatures>, default_allocator>;
-            QueueOfInvokables my_queue;
-            my_queue.push([](std::string s) { std::cout << s << std::endl; });
-
-            // invoke my_queue.begin()
-            my_queue.begin()->first.get_feature<MyInvoke>()(my_queue.begin()->second, "hello!");
-            //! [type_features::invoke example 1]
-#endif
-        }
-
-        {
             //! [runtime_type example 1]
 
-            using namespace type_features;
-
-            using MyRTType = runtime_type<void, feature_list<default_construct, destroy, size>>;
+            using MyRTType =
+              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size>>;
 
             MyRTType type = MyRTType::make<std::string>();
 
@@ -130,9 +103,7 @@ namespace density_tests
                 }
             };
 
-            using namespace type_features;
-
-            // concatenates feature_call_update to the default features (destroy, size, alignment)
+            // concatenates feature_call_update to the default features (f_destroy, f_size, f_alignment)
             using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
 
             // create a queue with 3 objects

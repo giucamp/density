@@ -36,8 +36,7 @@ namespace density_tests
 
         static void spinlocking_heterogeneous_queue_lifetime_tests()
         {
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             {
                 default_allocator allocator;
@@ -123,19 +122,17 @@ namespace density_tests
         /** Test SpHeterQueue with a non-polymorphic base */
         static void spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
         {
-            using namespace density::type_features;
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             using RunTimeType = runtime_type<
               NonPolymorphicBase,
               feature_list<
-                default_construct,
-                move_construct,
-                copy_construct,
-                destroy,
-                size,
-                alignment>>;
+                f_default_construct,
+                f_move_construct,
+                f_copy_construct,
+                f_destroy,
+                f_size,
+                f_alignment>>;
             SpHeterQueue<NonPolymorphicBase, RunTimeType> queue;
 
             queue.push(NonPolymorphicBase());
@@ -169,19 +166,17 @@ namespace density_tests
         /** Test SpHeterQueue with a polymorphic base */
         static void spinlocking_heterogeneous_queue_basic_polymorphic_base_tests()
         {
-            using namespace density::type_features;
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             using RunTimeType = runtime_type<
               PolymorphicBase,
               feature_list<
-                default_construct,
-                move_construct,
-                copy_construct,
-                destroy,
-                size,
-                alignment>>;
+                f_default_construct,
+                f_move_construct,
+                f_copy_construct,
+                f_destroy,
+                f_size,
+                f_alignment>>;
             SpHeterQueue<PolymorphicBase, RunTimeType> queue;
 
             queue.push(PolymorphicBase());

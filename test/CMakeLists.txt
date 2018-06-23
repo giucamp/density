@@ -48,6 +48,7 @@ add_executable(density_test
 	../density/detail/sp_queue_tail_multiple.h
 	../density/detail/system_page_manager.h
 	../density/detail/wf_page_stack.h
+    ../density/detail/runtime_type_internals.h
 	../density/conc_function_queue.h
 	../density/conc_heter_queue.h
 	../density/default_allocator.h

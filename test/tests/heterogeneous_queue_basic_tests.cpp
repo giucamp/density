@@ -117,16 +117,15 @@ namespace density_tests
     void heterogeneous_queue_basic_nonpolymorphic_base_tests()
     {
         using namespace density;
-        using namespace type_features;
         using RunTimeType = runtime_type<
           NonPolymorphicBase,
           feature_list<
-            default_construct,
-            move_construct,
-            copy_construct,
-            destroy,
-            size,
-            alignment>>;
+            f_default_construct,
+            f_move_construct,
+            f_copy_construct,
+            f_destroy,
+            f_size,
+            f_alignment>>;
         heter_queue<NonPolymorphicBase, RunTimeType> queue;
 
         queue.push(NonPolymorphicBase());
@@ -165,16 +164,15 @@ namespace density_tests
     void heterogeneous_queue_basic_polymorphic_base_tests()
     {
         using namespace density;
-        using namespace type_features;
         using RunTimeType = runtime_type<
           PolymorphicBase,
           feature_list<
-            default_construct,
-            move_construct,
-            copy_construct,
-            destroy,
-            size,
-            alignment>>;
+            f_default_construct,
+            f_move_construct,
+            f_copy_construct,
+            f_destroy,
+            f_size,
+            f_alignment>>;
         heter_queue<PolymorphicBase, RunTimeType> queue;
 
         queue.push(PolymorphicBase());

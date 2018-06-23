@@ -17,7 +17,7 @@ namespace density_tests
     template <typename FIRST_TUPLE, typename... OTHER_TUPLES> void tuple_merge()
     {
         static_assert(
-          std::is_same<FIRST_TUPLE, density::type_features::Tuple_Merge_t<OTHER_TUPLES...>>::value,
+          std::is_same<FIRST_TUPLE, density::detail::Tuple_Merge_t<OTHER_TUPLES...>>::value,
           "tuple merge error");
     }
 
@@ -57,17 +57,14 @@ namespace density_tests
 
     template <typename TUPLE, typename TARGET_TYPE, size_t EXPECTED_INDEX> void tuple_find()
     {
-        using namespace density;
-        using namespace type_features;
         static_assert(
-          Tuple_FindFirst<TUPLE, TARGET_TYPE>::index == EXPECTED_INDEX, "tuple find error");
+          density::detail::Tuple_FindFirst<TUPLE, TARGET_TYPE>::index == EXPECTED_INDEX,
+          "tuple find error");
     }
 
     void test_tuple_find()
     {
         using namespace std;
-        using namespace density;
-        using namespace type_features;
 
         tuple_find<tuple<>, int, 0>();
 
@@ -80,10 +77,9 @@ namespace density_tests
     void test_feature_cat()
     {
         using namespace density;
-        using namespace type_features;
-        using f1 = feature_list<size, alignment>;
-        using f2 = feature_list<default_construct, destroy, rtti>;
-        using f3 = feature_list<copy_construct, move_construct, equals>;
+        using f1 = feature_list<f_size, f_alignment>;
+        using f2 = feature_list<f_default_construct, f_destroy, f_rtti>;
+        using f3 = feature_list<f_copy_construct, f_move_construct, f_equals>;
 
         using fu1 = feature_cat<f1, f2>;
         using fu2 = feature_cat<f1, feature_cat<f2, f3>>;

@@ -174,7 +174,7 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     if (i_settings.should_run("lifo"))
     {
         lifo_examples();
-        lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
+        lifo_tests(flags, i_ostream, i_random_seed, 20, 3);
         if (i_settings.m_exceptions)
         {
             lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
