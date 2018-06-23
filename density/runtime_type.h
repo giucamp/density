@@ -266,7 +266,7 @@ namespace density
           FeatureTable<BASE, TYPE, type_features::feature_list<FEATURES...>>::s_table;
 
         template <typename BASE, typename TYPE, class... FEATURES>
-        typename FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>::table
+        constexpr typename FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>::table
           FeatureTable<BASE, TYPE, type_features::feature_cat<FEATURES...>>::s_table;
 
     } // namespace detail
