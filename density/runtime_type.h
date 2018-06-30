@@ -19,6 +19,10 @@ namespace density
 {
 #define ENABLE_FEATURE_CAT 0 // temp
 
+    struct f_none
+    {
+    };
+
     /** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
         A feature_list is a composition of features that forms a complete type erasure.
         A feature is a struct that performs a part of type erasure on a type, and has this form:
@@ -44,274 +48,230 @@ namespace density
         casts the value of the feature to this type before returning it.
         \snippet misc_examples.cpp feature_list example 1 */
 
+    template <typename... FEATURES> struct feature_list;
 
-    // feature_list
-    template <template <typename> class... FEATURES> struct feature_list
+    template <> struct feature_list<>
     {
-        template <typename COMMON_ANCESTOR> using tuple = std::tuple<FEATURES<COMMON_ANCESTOR>...>;
+        template <typename COMMON_ANCESTOR> using tuple = std::tuple<>;
     };
 
-    // feature_cat
-    template <typename... LISTS> struct feature_cat
+    template <typename FIRST_FEATURE, typename... OTHER_FEATURES>
+    struct feature_list<FIRST_FEATURE, OTHER_FEATURES...>
     {
         template <typename COMMON_ANCESTOR>
-        using tuple = detail::Tuple_Merge_t<typename LISTS::template tuple<COMMON_ANCESTOR>...>;
+        using tuple = detail::Tuple_Merge_t<
+          std::tuple<typename FIRST_FEATURE::template type<COMMON_ANCESTOR>>,
+
+          detail::Tuple_Remove_t<
+
+            typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>,
+            typename FIRST_FEATURE::template type<COMMON_ANCESTOR>>
+
+          >;
     };
 
-    namespace detail
+    template <typename... GROUPED_FEATURES, typename... OTHER_FEATURES>
+    struct feature_list<feature_list<GROUPED_FEATURES...>, OTHER_FEATURES...>
     {
-        /* size_t invoke_hash(const TYPE & i_object) - Computes the hash of an object.
-            - If a the call hash_func(i_object) is legal, it is used to compute the hash. This function
-                should be defined in the namespace that contains TYPE (it will use ADL). If such function exits,
-                its return type must be size_t.
-            - Otherwise std::hash<TYPE> is used to compute the hash
-        see http://stackoverflow.com/questions/257288/is-it-possible-to-write-a-c-template-to-check-for-a-functions-existence */
-        template <typename> struct sfinae_true : std::true_type
-        {
-        };
-        template <typename TYPE>
-        static sfinae_true<decltype(hash_func(std::declval<TYPE>()))> has_hash_func_impl(int);
-        template <typename TYPE> static std::false_type               has_hash_func_impl(long);
-        template <typename TYPE>
-        inline size_t invoke_hash_func_impl(const TYPE & i_object, std::true_type) noexcept
-        {
-            static_assert(
-              std::is_same<decltype(hash_func(i_object)), size_t>::value,
-              "if hash_func() exits for this type, then it must return a size_t");
-            return hash_func(i_object);
-        }
-        template <typename TYPE>
-        inline size_t invoke_hash_func_impl(const TYPE & i_object, std::false_type) noexcept
-        {
-            return std::hash<TYPE>()(i_object);
-        }
-        template <typename TYPE> inline size_t invoke_hash(const TYPE & i_object) noexcept
-        {
-            return invoke_hash_func_impl(i_object, decltype(has_hash_func_impl<TYPE>(0))());
-        }
+        template <typename COMMON_ANCESTOR>
+        using tuple = detail::Tuple_Merge_t<
 
-        /* DERIVED * down_cast<DERIVED*>(BASE *i_base_ptr) - casts from a base class to a derived, assuming
-            that the cast is legal. A static_cast is used if it is possible. Otherwise, if a virtual base is
-            involved, dynamic_cast is used. */
-        template <typename DERIVED, typename BASE>
-        static sfinae_true<decltype(static_cast<DERIVED>(std::declval<BASE>()))>
-          can_static_cast_impl(int);
-        template <typename DERIVED, typename BASE>
-        static std::false_type can_static_cast_impl(long);
-        template <typename DERIVED, typename BASE>
-        inline DERIVED down_cast_impl(BASE i_base_ptr, std::true_type)
-        {
-            return static_cast<DERIVED>(i_base_ptr);
-        }
-        template <typename DERIVED, typename BASE>
-        inline DERIVED down_cast_impl(BASE i_base_ptr, std::false_type)
-        {
-            return dynamic_cast<DERIVED>(i_base_ptr);
-        }
-        template <typename DERIVED, typename BASE> inline DERIVED down_cast(BASE i_base_ptr)
-        {
-            static_assert(std::is_pointer<DERIVED>::value, "DERIVED must be a pointer");
-            static_assert(std::is_pointer<BASE>::value, "BASE must be a pointer");
+          typename feature_list<GROUPED_FEATURES...>::template tuple<COMMON_ANCESTOR>,
 
-            using BaseNaked = typename std::decay<typename std::remove_pointer<BASE>::type>::type;
-            using DerivedNaked =
-              typename std::decay<typename std::remove_pointer<DERIVED>::type>::type;
-            static_assert(
-              std::is_same<BaseNaked, void>::value ||
-                std::is_same<BaseNaked, DerivedNaked>::value ||
-                std::is_base_of<BaseNaked, DerivedNaked>::value,
-              "*BASE must be void, DERIVED or a base of *DERIVED");
+          detail::Tuple_Diff_t<
 
-            return down_cast_impl<DERIVED>(
-              i_base_ptr, decltype(can_static_cast_impl<DERIVED, BASE>(0))());
-        }
+            typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>,
+            typename feature_list<GROUPED_FEATURES...>::template tuple<COMMON_ANCESTOR>
 
-        /* FeatureTable<TYPE, feature_list<FEATURES...> >::s_table is a constexpr tuple of all the FEATURES::s_value */
-        template <typename BASE, typename TYPE, typename FEATURE_LIST> struct FeatureTable;
-        template <typename BASE, typename TYPE, template <class> class... FEATURES>
-        struct FeatureTable<BASE, TYPE, feature_list<FEATURES...>>
-        {
-            constexpr static typename feature_list<FEATURES...>::template tuple<BASE> s_table{
-              (FEATURES<BASE>::template make<TYPE>())...};
-        };
+            >>;
+    };
 
-        template <typename BASE, typename TYPE, class... FEATURES>
-        struct FeatureTable<BASE, TYPE, feature_cat<FEATURES...>>
-        {
-            using table = typename feature_cat<FEATURES...>::template tuple<BASE>;
+    template <typename... OTHER_FEATURES> struct feature_list<f_none, OTHER_FEATURES...>
+    {
+        template <typename COMMON_ANCESTOR>
+        using tuple = typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>;
+    };
 
-            constexpr static table s_table = MakeFeatureTable<table>::template make_table<TYPE>();
-        };
-
-        template <typename BASE, typename TYPE, template <class> class... FEATURES>
-        constexpr typename feature_list<FEATURES...>::template tuple<BASE>
-          FeatureTable<BASE, TYPE, feature_list<FEATURES...>>::s_table;
-
-        template <typename BASE, typename TYPE, class... FEATURES>
-        constexpr typename FeatureTable<BASE, TYPE, feature_cat<FEATURES...>>::table
-          FeatureTable<BASE, TYPE, feature_cat<FEATURES...>>::s_table;
-
-    } // namespace detail
-
-    /** This type-feature gives the size of the target type 
+    struct f_size
+    {
+        /** This type-feature gives the size of the target type
         @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_size
-    {
-        size_t const m_size;
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_size make() noexcept
+        template <typename COMMON_ANCESTOR> struct type
         {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            size_t const m_size;
 
-            // constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
-            static_assert(
-              sizeof(TARGET_TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
-              "Type with size >= 1/4 of the address space are not supported");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_size{sizeof(TARGET_TYPE)};
-        }
+                // constraining the size of types allows to reduce the runtime checks to detect pointer arithmetic overflow
+                static_assert(
+                  sizeof(TARGET_TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
+                  "Type with size >= 1/4 of the address space are not supported");
 
-        /** Returns the size of the target type. */
-        constexpr size_t operator()() const noexcept { return m_size; }
+                return type{sizeof(TARGET_TYPE)};
+            }
+
+            /** Returns the size of the target type. */
+            constexpr size_t operator()() const noexcept { return m_size; }
+        };
     };
 
-    /** This type-feature gives the alignment of the target type
+    struct f_alignment
+    {
+        /** This type-feature gives the alignment of the target type
         @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_alignment
-    {
-        size_t const m_alignment;
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_alignment make() noexcept
+        template <typename COMMON_ANCESTOR> struct type
         {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            size_t const m_alignment;
 
-            // constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
-            static_assert(
-              alignof(TARGET_TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
-              "Type with alignment >= 1/4 of the address space are not supported");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_alignment{alignof(TARGET_TYPE)};
-        }
+                // constraining the alignment of types allows to reduce the runtime checks to detect pointer arithmetic overflow
+                static_assert(
+                  alignof(TARGET_TYPE) < (std::numeric_limits<uintptr_t>::max)() / 4,
+                  "Type with alignment >= 1/4 of the address space are not supported");
 
-        /** Returns the alignment of the target type. */
-        constexpr size_t operator()() const noexcept { return m_alignment; }
+                return type{alignof(TARGET_TYPE)};
+            }
+
+            /** Returns the alignment of the target type. */
+            constexpr size_t operator()() const noexcept { return m_alignment; }
+        };
     };
 
-    /** This feature computes the hash of an instance of the target type
+    struct f_hash
+    {
+        /** This feature computes the hash of an instance of the target type
         @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's
         - If a function hash_func(const TARGET_TYPE & i_object) exists, it is used to compute the hash. This function
             should be defined in the namespace that contains TARGET_TYPE (it will use ADL). If such function exits,
             its return type must be size_t and must be noexcept.
         - Otherwise std::hash<TARGET_TYPE> is used to compute the hash */
-    template <typename COMMON_ANCESTOR> struct f_hash
-    {
-        /** Pointer to the function that computes the hash */
-        size_t (*const m_hash_func)(const COMMON_ANCESTOR * i_source) DENSITY_CPP17_NOEXCEPT;
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that computes the hash */
+            size_t (*const m_hash_func)(const COMMON_ANCESTOR * i_source) DENSITY_CPP17_NOEXCEPT;
 
-        /** Computes the hash of an instance of the target type object. 
+            /** Computes the hash of an instance of the target type object. 
             @param i_source pointer to an instance of the target type. Can't be null.
                 If the dynamic type of the pointed object is not the taget type (assigned
                 by the function make), the behaviour is undefined. */
-        size_t operator()(const COMMON_ANCESTOR * i_source) const noexcept
-        {
-            return (*m_hash_func)(i_source);
-        }
+            size_t operator()(const COMMON_ANCESTOR * i_source) const noexcept
+            {
+                return (*m_hash_func)(i_source);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_hash make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_hash{&hash_func<TARGET_TYPE>};
-        }
+                return type{&hash_func<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE>
-        static size_t hash_func(const COMMON_ANCESTOR * i_source) noexcept
-        {
-            DENSITY_ASSERT(i_source != nullptr);
-            return detail::invoke_hash(*detail::down_cast<const TARGET_TYPE *>(i_source));
-        }
+          private:
+            template <typename TARGET_TYPE>
+            static size_t hash_func(const COMMON_ANCESTOR * i_source) noexcept
+            {
+                DENSITY_ASSERT(i_source != nullptr);
+                return detail::invoke_hash(*detail::down_cast<const TARGET_TYPE *>(i_source));
+            }
+        };
     };
 
-    /** This feature returns the std::type_info associated to the target type.
-        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_rtti
+    struct f_rtti
     {
-        /** Pointer to the function that returns the std::type_info of the object */
-        std::type_info const & (*const m_type_info_func)() DENSITY_CPP17_NOEXCEPT;
-
-        /** Returns the std::type_info of the target type. */
-        std::type_info const & operator()() const noexcept { return (*m_type_info_func)(); }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_rtti make() noexcept
+        /** This feature returns the std::type_info associated to the target type.
+        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
         {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Pointer to the function that returns the std::type_info of the object */
+            std::type_info const & (*const m_type_info_func)() DENSITY_CPP17_NOEXCEPT;
 
-            return f_rtti{&get_type_info_func<TARGET_TYPE>};
-        }
+            /** Returns the std::type_info of the target type. */
+            std::type_info const & operator()() const noexcept { return (*m_type_info_func)(); }
 
-      private:
-        template <typename TARGET_TYPE> static const std::type_info & get_type_info_func() noexcept
-        {
-            return typeid(TARGET_TYPE);
-        }
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+
+                return type{&get_type_info_func<TARGET_TYPE>};
+            }
+
+          private:
+            template <typename TARGET_TYPE>
+            static const std::type_info & get_type_info_func() noexcept
+            {
+                return typeid(TARGET_TYPE);
+            }
+        };
     };
 
-    /** Constructs to an uninitialized memory buffer a value-initialized instance of the target type.
-        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_default_construct
+    struct f_default_construct
     {
-        /** Pointer to the function that value-constructs the target object. */
-        COMMON_ANCESTOR * (*const m_construct_func)(void * i_dest);
+        /** Constructs to an uninitialized memory buffer a value-initialized instance of the target type.
+        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that value-constructs the target object. */
+            COMMON_ANCESTOR * (*const m_construct_func)(void * i_dest);
 
-        /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
+            /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer 
                 pointed by this parameter does not respect the size and alignment of the target type,
                 the behaviour is undefined.
             @return A pointer to the COMMON_ANCESTOR subobject of the constructed object. Note: the
                 value of this pointer may or may not be the same of the input patrameter. */
-        COMMON_ANCESTOR * operator()(void * i_dest) const { return (*m_construct_func)(i_dest); }
+            COMMON_ANCESTOR * operator()(void * i_dest) const
+            {
+                return (*m_construct_func)(i_dest);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_default_construct make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_default_construct{&construct_func<TARGET_TYPE>};
-        }
+                return type{&construct_func<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE> static COMMON_ANCESTOR * construct_func(void * i_dest)
-        {
-            DENSITY_ASSERT(i_dest != nullptr);
-            COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE();
-            return result;
-        }
+          private:
+            template <typename TARGET_TYPE> static COMMON_ANCESTOR * construct_func(void * i_dest)
+            {
+                DENSITY_ASSERT(i_dest != nullptr);
+                COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE();
+                return result;
+            }
+        };
     };
 
-    /** Copy-constructs to an uninitialized memory buffer an instance of the target type.
-            @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_copy_construct
+    struct f_copy_construct
     {
-        /** Pointer to the function that copy-constructs the target object. */
-        COMMON_ANCESTOR * (*const m_construct_func)(
-          void * i_dest, const COMMON_ANCESTOR * i_source);
+        /** Copy-constructs to an uninitialized memory buffer an instance of the target type.
+            @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that copy-constructs the target object. */
+            COMMON_ANCESTOR * (*const m_construct_func)(
+              void * i_dest, const COMMON_ANCESTOR * i_source);
 
-        /** Copy-constructs in an uninitialized memory buffer an instance of the target type.
+            /** Copy-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
                 the behaviour is undefined.
@@ -320,41 +280,44 @@ namespace density
                 undefined.
             @return A pointer to the COMMON_ANCESTOR subobject of the constructed object. Note: the
                 value of this pointer may or may not be the same of the input patrameter. */
-        COMMON_ANCESTOR * operator()(void * i_dest, const COMMON_ANCESTOR * i_source) const
-        {
-            return (*m_construct_func)(i_dest, i_source);
-        }
+            COMMON_ANCESTOR * operator()(void * i_dest, const COMMON_ANCESTOR * i_source) const
+            {
+                return (*m_construct_func)(i_dest, i_source);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_copy_construct make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_copy_construct{&copy_construct_func<TARGET_TYPE>};
-        }
+                return type{&copy_construct_func<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE>
-        static COMMON_ANCESTOR *
-          copy_construct_func(void * i_dest, const COMMON_ANCESTOR * i_source)
-        {
-            DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
-            const TARGET_TYPE &     source = *detail::down_cast<const TARGET_TYPE *>(i_source);
-            COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE(source);
-            return result;
-        }
+          private:
+            template <typename TARGET_TYPE>
+            static COMMON_ANCESTOR *
+              copy_construct_func(void * i_dest, const COMMON_ANCESTOR * i_source)
+            {
+                DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
+                const TARGET_TYPE &     source = *detail::down_cast<const TARGET_TYPE *>(i_source);
+                COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE(source);
+                return result;
+            }
+        };
     };
 
-    /** Move-constructs to an uninitialized memory buffer an instance of the target type.
-            @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_move_construct
+    struct f_move_construct
     {
-        /** Pointer to the function that move-constructs the target object. */
-        COMMON_ANCESTOR * (*const m_construct_func)(void * i_dest, COMMON_ANCESTOR * i_source);
+        /** Move-constructs to an uninitialized memory buffer an instance of the target type.
+            @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that move-constructs the target object. */
+            COMMON_ANCESTOR * (*const m_construct_func)(void * i_dest, COMMON_ANCESTOR * i_source);
 
-        /** Move-constructs in an uninitialized memory buffer an instance of the target type.
+            /** Move-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
                 the behaviour is undefined.
@@ -363,188 +326,164 @@ namespace density
                 undefined.
             @return A pointer to the COMMON_ANCESTOR subobject of the constructed object. Note: the
                 value of this pointer may or may not be the same of the input patrameter. */
-        COMMON_ANCESTOR * operator()(void * i_dest, COMMON_ANCESTOR * i_source) const
-        {
-            return (*m_construct_func)(i_dest, i_source);
-        }
+            COMMON_ANCESTOR * operator()(void * i_dest, COMMON_ANCESTOR * i_source) const
+            {
+                return (*m_construct_func)(i_dest, i_source);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_move_construct make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_move_construct{&move_construct_func<TARGET_TYPE>};
-        }
+                return type{&move_construct_func<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE>
-        static COMMON_ANCESTOR * move_construct_func(void * i_dest, COMMON_ANCESTOR * i_source)
-        {
-            DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
-            TARGET_TYPE &           source = *detail::down_cast<TARGET_TYPE *>(i_source);
-            COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE(std::move(source));
-            return result;
-        }
+          private:
+            template <typename TARGET_TYPE>
+            static COMMON_ANCESTOR * move_construct_func(void * i_dest, COMMON_ANCESTOR * i_source)
+            {
+                DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
+                TARGET_TYPE &           source = *detail::down_cast<TARGET_TYPE *>(i_source);
+                COMMON_ANCESTOR * const result = new (i_dest) TARGET_TYPE(std::move(source));
+                return result;
+            }
+        };
     };
 
-    /** Destroys an instance of the target type, and returns the address of the complete type.
+    struct f_destroy
+    {
+        /** Destroys an instance of the target type, and returns the address of the complete type.
         @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_destroy
-    {
-        /** Pointer to the function that move-constructs the target object. */
-        void * (*const m_destroy_func)(COMMON_ANCESTOR * i_object)DENSITY_CPP17_NOEXCEPT;
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that move-constructs the target object. */
+            void * (*const m_destroy_func)(COMMON_ANCESTOR * i_object)DENSITY_CPP17_NOEXCEPT;
 
-        /** Destroys an instance of the target type.
+            /** Destroys an instance of the target type.
             @param i_object pointer to the object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined.
             @return The address of the complete object that has been destroyed. */
-        void * operator()(COMMON_ANCESTOR * i_object) const noexcept
-        {
-            return (*m_destroy_func)(i_object);
-        }
+            void * operator()(COMMON_ANCESTOR * i_object) const noexcept
+            {
+                return (*m_destroy_func)(i_object);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_destroy make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_destroy{&destroy_func<TARGET_TYPE>};
-        }
+                return type{&destroy_func<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE> static void * destroy_func(COMMON_ANCESTOR * i_object)
-        {
-            DENSITY_ASSERT(i_object != nullptr);
-            TARGET_TYPE * obj = detail::down_cast<TARGET_TYPE *>(i_object);
-            obj->TARGET_TYPE::~TARGET_TYPE();
-            return obj;
-        }
+          private:
+            template <typename TARGET_TYPE> static void * destroy_func(COMMON_ANCESTOR * i_object)
+            {
+                DENSITY_ASSERT(i_object != nullptr);
+                TARGET_TYPE * obj = detail::down_cast<TARGET_TYPE *>(i_object);
+                obj->TARGET_TYPE::~TARGET_TYPE();
+                return obj;
+            }
+        };
     };
 
-    /** Compares two objects for equality. The target type must have an operator == .
-        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_equals
+    struct f_equals
     {
-        /** Pointer to the function that compares two target objects. */
-        bool (*const m_compare_func)(
-          COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second);
+        /** Compares two objects for equality. The target type must have an operator == .
+        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that compares two target objects. */
+            bool (*const m_compare_func)(
+              COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second);
 
-        /** Returns whether two target object compare equal.
+            /** Returns whether two target object compare equal.
             @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined.
             @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined. */
-        bool operator()(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second) const
-        {
-            return (*m_compare_func)(i_first, i_second);
-        }
+            bool operator()(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second) const
+            {
+                return (*m_compare_func)(i_first, i_second);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_equals make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_equals{&compare_equal<TARGET_TYPE>};
-        }
+                return type{&compare_equal<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE>
-        static bool compare_equal(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second)
-        {
-            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
-            auto const & first  = *detail::down_cast<TARGET_TYPE const *>(i_first);
-            auto const & second = *detail::down_cast<TARGET_TYPE const *>(i_second);
-            bool const   result = first == second;
-            return result;
-        }
+          private:
+            template <typename TARGET_TYPE>
+            static bool
+              compare_equal(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second)
+            {
+                DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+                auto const & first  = *detail::down_cast<TARGET_TYPE const *>(i_first);
+                auto const & second = *detail::down_cast<TARGET_TYPE const *>(i_second);
+                bool const   result = first == second;
+                return result;
+            }
+        };
     };
 
-    /** Compares two objects. The target type must have an operator < .
-        @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
-    template <typename COMMON_ANCESTOR> struct f_less
+    struct f_less
     {
-        /** Pointer to the function that compares two target objects. */
-        bool (*const m_compare_func)(
-          COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second);
+        /** Compares two objects. The target type must have an operator < .
+            @tparam COMMON_ANCESTOR void or common base class of all the TARGET_TYPE's */
+        template <typename COMMON_ANCESTOR> struct type
+        {
+            /** Pointer to the function that compares two target objects. */
+            bool (*const m_compare_func)(
+              COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second);
 
-        /** Returns whether the first object compares less than the second object.
+            /** Returns whether the first object compares less than the second object.
             @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined.
             @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined. */
-        bool operator()(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second) const
-        {
-            return (*m_compare_func)(i_first, i_second);
-        }
+            bool operator()(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second) const
+            {
+                return (*m_compare_func)(i_first, i_second);
+            }
 
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_less make() noexcept
-        {
-            static_assert(
-              std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-              "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
+            /** Creates an instance of this feature bound to the specified target type */
+            template <typename TARGET_TYPE> constexpr static type make() noexcept
+            {
+                static_assert(
+                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
+                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
 
-            return f_less{&compare_less<TARGET_TYPE>};
-        }
+                return type{&compare_less<TARGET_TYPE>};
+            }
 
-      private:
-        template <typename TARGET_TYPE>
-        static bool compare_less(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second)
-        {
-            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
-            auto const & first  = *detail::down_cast<TARGET_TYPE const *>(i_first);
-            auto const & second = *detail::down_cast<TARGET_TYPE const *>(i_second);
-            bool const   result = first < second;
-            return result;
-        }
+          private:
+            template <typename TARGET_TYPE>
+            static bool
+              compare_less(COMMON_ANCESTOR const * i_first, COMMON_ANCESTOR const * i_second)
+            {
+                DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+                auto const & first  = *detail::down_cast<TARGET_TYPE const *>(i_first);
+                auto const & second = *detail::down_cast<TARGET_TYPE const *>(i_second);
+                bool const   result = first < second;
+                return result;
+            }
+        };
     };
-
-    namespace detail
-    {
-        /* GetDefaultFeatures<TYPE>::type. Implementation of default_type_features */
-        template <
-          typename TYPE,
-          bool CAN_COPY = std::is_copy_constructible<TYPE>::value || std::is_void<TYPE>::value,
-          bool CAN_MOVE =
-            std::is_nothrow_move_constructible<TYPE>::value || std::is_void<void>::value>
-        struct GetDefaultFeatures;
-
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, false>
-        {
-            using type = feature_list<f_size, f_alignment, f_rtti, f_destroy>;
-        };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, false>
-        {
-            using type = feature_list<f_size, f_alignment, f_rtti, f_destroy, f_copy_construct>;
-        };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, false, true>
-        {
-            using type = feature_list<f_size, f_alignment, f_rtti, f_destroy, f_move_construct>;
-        };
-        template <typename TYPE> struct GetDefaultFeatures<TYPE, true, true>
-        {
-            using type = feature_list<
-              f_size,
-              f_alignment,
-              f_rtti,
-              f_destroy,
-              f_move_construct,
-              f_copy_construct>;
-        };
-
-    } // namespace detail
-
 
     /** \class default_type_features
         This type alias template gives a feature_list for a given type.
@@ -564,19 +503,41 @@ namespace density
 
         Note: A feature_list does not depend on a type. The template argument is used only to decide which features to include.
     */
-#ifndef DOXYGEN_DOC_GENERATION
     template <typename COMMON_TYPE>
-    using default_type_features = typename detail::GetDefaultFeatures<COMMON_TYPE>;
-#else
-    template <typename COMMON_TYPE> struct default_type_features
-    {
-        using type = default_type_features_t<COMMON_TYPE>;
-    };
-#endif
+    using default_type_features = feature_list<
+      f_size,
+      f_alignment,
+      typename std::conditional<
+        std::is_copy_constructible<COMMON_TYPE>::value || std::is_void<COMMON_TYPE>::value,
+        f_copy_construct,
+        f_none>::type,
+      typename std::conditional<
+        std::is_move_constructible<COMMON_TYPE>::value || std::is_void<COMMON_TYPE>::value,
+        f_move_construct,
+        f_none>::type,
+      f_rtti,
+      f_destroy>;
 
-    /** Alias for default_type_features<COMMON_TYPE>::type */
-    template <typename COMMON_TYPE>
-    using default_type_features_t = typename default_type_features<COMMON_TYPE>::type;
+    namespace detail
+    {
+        template <typename COMMON_TYPE, typename... FEATURES> struct FeaturesToTuple
+        {
+            using type = typename feature_list<FEATURES...>::template tuple<COMMON_TYPE>;
+        };
+        template <typename COMMON_TYPE> struct FeaturesToTuple<COMMON_TYPE>
+        {
+            using type = typename default_type_features<COMMON_TYPE>::template tuple<COMMON_TYPE>;
+        };
+
+        template <typename FEATURE_TUPLE, typename TARGET_TYPE> struct FeatureTable
+        {
+            constexpr static FEATURE_TUPLE s_table = detail::MakeFeatureTable<
+              FEATURE_TUPLE>::template make_table<typename std::decay<TARGET_TYPE>::type>();
+        };
+        template <typename FEATURE_TUPLE, typename TARGET_TYPE>
+        constexpr FEATURE_TUPLE FeatureTable<FEATURE_TUPLE, TARGET_TYPE>::s_table;
+
+    } // namespace detail
 
     /*! \page RuntimeType_concept RuntimeType concept
 
@@ -697,25 +658,22 @@ namespace density
         ObjectB::update(0.0166667)
         ~~~~~~~~~~~~~~
     */
-    template <
-      typename COMMON_TYPE  = void,
-      typename FEATURE_LIST = default_type_features_t<COMMON_TYPE>>
-    class runtime_type
+    template <typename COMMON_TYPE = void, typename... FEATURES> class runtime_type
     {
       public:
         /** Alias for the template argument COMMON_TYPE */
         using common_type = COMMON_TYPE;
 
         /** Alias for the template argument FEATURE_LIST */
-        using feature_list = FEATURE_LIST;
+        //using feature_list = FEATURE_LIST;
+
+        using tuple = typename detail::FeaturesToTuple<COMMON_TYPE, FEATURES...>::type;
 
         /** Creates a runtime_type associated with the specified type. The latter is the target type.
                 @tparam TYPE target type that is type-erased by the returned runtime_type. */
-        template <typename TYPE> constexpr static runtime_type make() noexcept
+        template <typename TARGET_TYPE> constexpr static runtime_type make() noexcept
         {
-            return runtime_type(
-              &detail::FeatureTable<common_type, typename std::decay<TYPE>::type, FEATURE_LIST>::
-                s_table);
+            return runtime_type(&detail::FeatureTable<tuple, TARGET_TYPE>::s_table);
         }
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
@@ -894,12 +852,12 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. */
-        template <template <typename> class FEATURE>
-        const FEATURE<common_type> & get_feature() const noexcept
+        template <typename FEATURE>
+        const typename FEATURE::template type<COMMON_TYPE> & get_feature() const noexcept
         {
-            return std::get<detail::Tuple_FindFirst<
-              typename FEATURE_LIST::template tuple<COMMON_TYPE>,
-              FEATURE<common_type>>::index>(*m_feature_table);
+            return std::get<
+              detail::Tuple_FindFirst<tuple, typename FEATURE::template type<COMMON_TYPE>>::index>(
+              *m_feature_table);
         }
 
         /** Returns true whether this two runtime_type have the same target type. All empty runtime_type's compare equals.
@@ -923,13 +881,10 @@ namespace density
         }
 
         /** Returns whether the target type of this runtime_type is exactly the one specified in the
-            template parameter. Equivalent to *this == runtime_type::make<TYPE>() */
-        template <typename TYPE> constexpr bool is() const noexcept
+            template parameter. Equivalent to *this == runtime_type::make<TARGET_TYPE>() */
+        template <typename TARGET_TYPE> constexpr bool is() const noexcept
         {
-            return m_feature_table == &detail::FeatureTable<
-                                        common_type,
-                                        typename std::decay<TYPE>::type,
-                                        FEATURE_LIST>::s_table;
+            return m_feature_table == &detail::FeatureTable<tuple, TARGET_TYPE>::s_table;
         }
 
         /** Returns an hash. This function is used for the partial specialization of std::hash
@@ -937,14 +892,13 @@ namespace density
         size_t hash() const noexcept { return std::hash<const void *>()(m_feature_table); }
 
       private:
-        constexpr runtime_type(
-          const typename FEATURE_LIST::template tuple<COMMON_TYPE> * i_feature_table) noexcept
+        constexpr runtime_type(const tuple * i_feature_table) noexcept
             : m_feature_table(i_feature_table)
         {
         }
 
       public:
-        const typename FEATURE_LIST::template tuple<COMMON_TYPE> * m_feature_table{};
+        const tuple * m_feature_table{};
     };
 } // namespace density
 
@@ -952,11 +906,11 @@ namespace std
 {
     /** Partial specialization of std::hash to allow the use of density::runtime_type as key
         for unordered associative containers. */
-    template <typename COMMON_TYPE, typename FEATURE_LIST>
-    struct hash<density::runtime_type<COMMON_TYPE, FEATURE_LIST>>
+    template <typename COMMON_TYPE, typename... FEATURES>
+    struct hash<density::runtime_type<COMMON_TYPE, FEATURES...>>
     {
         size_t
-          operator()(const density::runtime_type<COMMON_TYPE, FEATURE_LIST> & i_runtime_type) const
+          operator()(const density::runtime_type<COMMON_TYPE, FEATURES...> & i_runtime_type) const
           noexcept
         {
             return i_runtime_type.hash();
