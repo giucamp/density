@@ -704,20 +704,30 @@ namespace density
             runtime_type leads to undefined behavior. */
         constexpr runtime_type() noexcept = default;
 
-        /** Generalized copy constructor. */
-        template <
-          typename = std::enable_if<std::is_same<
-            tuple,
-            typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value>::type,
-          typename... OTHER_FEATURES>
-        constexpr runtime_type(
-          const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source) noexcept
+        /** Generalized copy constructor */
+        template <typename... OTHER_FEATURES> constexpr runtime_type(
+                const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source,
+
+        typename std::enable_if<std::is_same<
+        typename runtime_type::tuple,
+        typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value, int>::type = 0
+
+        ) noexcept
             : m_feature_table(i_source.m_feature_table)
         {
         }
 
-        /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
-        DENSITY_CPP14_CONSTEXPR runtime_type & operator=(const runtime_type &) noexcept = default;
+        /** Generalized copy assignment */
+        template <typename... OTHER_FEATURES> DENSITY_CPP14_CONSTEXPR
+
+        typename std::enable_if<std::is_same<
+                typename runtime_type::tuple,
+                typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value, runtime_type>::type
+                    & operator = (const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source) noexcept
+        {
+            m_feature_table = i_source.m_feature_table;
+            return *this;
+        }
 
         /** Returns whether this runtime_type is not bound to a target type */
         constexpr bool empty() const noexcept { return m_feature_table == nullptr; }

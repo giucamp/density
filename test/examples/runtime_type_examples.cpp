@@ -15,6 +15,7 @@ namespace density_tests
     void feature_list_examples()
     {
         using namespace density;
+
         //! [feature_list example 1]
         using Features1 = feature_list<f_size, f_alignment, f_copy_construct>;
         using Tuple     = Features1::tuple<void>;
@@ -34,6 +35,33 @@ namespace density_tests
         static_assert(std::is_same<Features1::tuple<int>, Features2::tuple<int>>::value, "");
         static_assert(std::is_same<Features2::tuple<int>, Features3::tuple<int>>::value, "");
         //! [feature_list example 3]
+
+        {
+            using Rt1 = runtime_type<void, f_size, f_alignment>;
+            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
+            Rt1 t1 = Rt1::make<int>();
+            Rt1 t2 = t1;
+            t1 = t2;
+            assert(t1 == t2);
+
+            using Rt3 = runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
+            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
+        }
+
+        {
+            using Rt1 = runtime_type<void>;
+            using Rt2 = runtime_type<void, default_type_features<void>>;
+            Rt1 t1 = Rt1::make<int>();
+            Rt1 t2 = t1;
+            t1 = t2;
+            assert(t1 == t2);
+
+            using Rt3 = runtime_type<void, f_default_construct, f_destroy>;
+            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
+            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
+        }
+
     }
 
     void runtime_type_examples()
