@@ -57,14 +57,6 @@ namespace density_tests
         using namespace density;
 
         {
-            //! [feature_list example 1]
-            using MyFeatures = feature_list<f_default_construct, f_size, f_alignment>;
-            //! [feature_list example 1]
-            MyFeatures unused;
-            (void)unused;
-        }
-
-        {
             //! [feature_concat example 1]
             using MyPartialFeatures = feature_list<f_default_construct, f_size>;
             using MyFeatures        = feature_list<MyPartialFeatures, f_alignment>;

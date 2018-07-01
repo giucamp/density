@@ -35,39 +35,7 @@ namespace density_tests
         static_assert(std::is_same<Features1::tuple<int>, Features2::tuple<int>>::value, "");
         static_assert(std::is_same<Features2::tuple<int>, Features3::tuple<int>>::value, "");
         //! [feature_list example 3]
-
-        {
-            using Rt1 = runtime_type<void, f_size, f_alignment>;
-            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
-            Rt1 t1 = Rt1::make<int>();
-            Rt1 t2 = t1;
-            t1 = t2;
-            assert(t1 == t2);
-
-            using Rt3 = runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
-            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
-            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
-        }
-
-        {
-            using Rt1 = runtime_type<void>;
-            using Rt2 = runtime_type<void, default_type_features<void>>;
-            Rt1 t1 = Rt1::make<int>();
-            Rt1 t2 = t1;
-            t1 = t2;
-            assert(t1 == t2);
-
-            using Rt3 = runtime_type<void, f_default_construct, f_destroy>;
-            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
-            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
-        }
-
-    }
-
-    void runtime_type_examples()
-    {
-        using namespace density;
-        //! [feature_list example 1]
+        //! [feature_list example 4]
 
         using MyFeatures    = feature_list<f_size, f_alignment, f_copy_construct>;
         using MyRuntimeType = runtime_type<void, MyFeatures>;
@@ -78,14 +46,48 @@ namespace density_tests
         // this fails to compile: std::mutex doesen't allow copy construction
         // auto MutexType = MyRuntimeType::make<std::mutex>();
 
-        // MyFeatures::tuple<void> = std::tuple<f_size::type<void>, f_alignment::type<void>>
-        /*static_assert(
+        // MyFeatures::tuple<void> = std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>
+        static_assert(
           std::is_same<
             MyFeatures::tuple<void>,
-            std::tuple<f_size::type<void>, f_alignment::type<void>>>::value,
-          "");*/
+            std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>>::
+            value,
+          "");
+        //! [feature_list example 4]
+    }
 
-        //! [feature_list example 1]
+    void runtime_type_examples()
+    {
+        using namespace density;
+        {
+            //! [runtime_type copy example 1]
+            using Rt1 = runtime_type<void, f_size, f_alignment>;
+            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
+            Rt1 t1    = Rt1::make<int>();
+            Rt1 t2    = t1; // valid because Rt1 and Rt2 are similar
+            assert(t1 == t2);
+
+            using Rt3 =
+              runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+            // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
+            //! [runtime_type copy example 1]
+        }
+        {
+            //! [runtime_type assign example 1]
+            using Rt1 = runtime_type<void, f_size, f_alignment>;
+            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
+            Rt1 t1    = Rt1::make<int>();
+            Rt1 t2;
+            t2 = t1; // valid because Rt1 and Rt2 are similar
+            assert(t1 == t2);
+
+            using Rt3 =
+              runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+            // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
+            //! [runtime_type assign example 1]
+        }
     }
 
     //! [runtime_type example 2]

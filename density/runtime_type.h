@@ -17,7 +17,7 @@
 
 namespace density
 {
-    /** Type-list class template that specifies which features a runtime_type captures from a type.
+    /** Type-list class template that specifies which features a runtime_type captures from a type (the target type).
 
         A feature is a class that capture and exposes a specific feature of a target type, without 
         depending from it at compile time. Most times they use a pointer to a function (that is like
@@ -29,11 +29,13 @@ namespace density
         - a nested feature_list
         - the special feature f_none
 
-        The class template provides a template alias to an std::tuple, that is used by runtime_type
+        feature_list provides a template alias to an std::tuple, that is used by runtime_type
         as pseudo vtable. Actually a runtime_type is a pointer to a static constexpr instance of this tuple.
         \snippet runtime_type_examples.cpp feature_list example 1
-        In the tuple nested features are flatened, and duplicates are removed (only the first occurrence of 
-        a fetaure is considered), and any occurrence of f_none is stripped out.
+        For the composition of the tuple:
+        - nested features are flatened
+        - duplicates are removed (only the first occurrence of a fetaure is considered)
+        - any occurrence of f_none is stripped out
         \snippet runtime_type_examples.cpp feature_list example 2
         If two feature_list produce the same tuple they are similar:
         \snippet runtime_type_examples.cpp feature_list example 3 */
@@ -635,7 +637,9 @@ namespace density
 
     /** Class template that performs type-erasure.
             @tparam COMMON_TYPE Type to which all type-erased types are covariant. If it is void, any type can be type-erased.
-            @tparam FEATURE_LIST Type_features::feature_list that defines which type-features are type-erased. By default
+            @tparam FEATURES... list of features to be captures from the target type. 
+            
+            Type_features::feature_list that defines which type-features are type-erased. By default
                 the feature_list is obtained with default_type_features. If this type is not a feature_list,
                 a compile time error is reported.
 
@@ -704,26 +708,51 @@ namespace density
             runtime_type leads to undefined behavior. */
         constexpr runtime_type() noexcept = default;
 
-        /** Generalized copy constructor */
-        template <typename... OTHER_FEATURES> constexpr runtime_type(
-                const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source,
+        /** Generalized copy constructor.
 
-        typename std::enable_if<std::is_same<
-        typename runtime_type::tuple,
-        typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value, int>::type = 0
-
-        ) noexcept
+            This constructor does not partecipate in oveload resolution unless runtime_type::tuple
+            and runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple are the same (that is the
+            feature lists of the two runtime_type are similar).
+            
+            \snippet runtime_type_examples.cpp runtime_type copy example 1 */
+        template <typename... OTHER_FEATURES>
+        constexpr runtime_type(
+          const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source
+#ifndef DOXYGEN_DOC_GENERATION
+          ,
+          typename std::enable_if<
+            std::is_same<
+              typename runtime_type::tuple,
+              typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value,
+            int>::type = 0
+#endif
+          ) noexcept
             : m_feature_table(i_source.m_feature_table)
         {
         }
 
-        /** Generalized copy assignment */
-        template <typename... OTHER_FEATURES> DENSITY_CPP14_CONSTEXPR
+        /** Generalized copy assignment
 
-        typename std::enable_if<std::is_same<
-                typename runtime_type::tuple,
-                typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value, runtime_type>::type
-                    & operator = (const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source) noexcept
+            This function does not partecipate in oveload resolution unless runtime_type::tuple
+            and runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple are the same (that is the
+            feature lists of the two runtime_type are similar).
+
+            If the compiler conforms to C++14 (in particular __cpp_constexpr >= 201304) this 
+            function is constexpr.
+
+            \snippet runtime_type_examples.cpp runtime_type assign example 1 */
+        template <typename... OTHER_FEATURES>
+        DENSITY_CPP14_CONSTEXPR
+#ifndef DOXYGEN_DOC_GENERATION
+          typename std::enable_if<
+            std::is_same<
+              typename runtime_type::tuple,
+              typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value,
+            runtime_type>::type &
+#else
+          runtime_type &
+#endif
+          operator=(const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source) noexcept
         {
             m_feature_table = i_source.m_feature_table;
             return *this;
