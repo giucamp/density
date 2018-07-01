@@ -14,6 +14,8 @@
 
 version 1.05.00 - changes:
     - fixed crash when raw_atomic_compare_exchange_strong failed and m_next_ptr was set to 0 (causing move_next called for an empty consume)
+    - feature tables (used by runtime types) are now constexpr static objects
+    - feature list supports nesting, duplicate removal, f_none. runtime_type takes a variable number of feature and feature lists
 
 version 1.04.00 - changes:
     - lifo_array: iterators are now classes (and not pointers)    

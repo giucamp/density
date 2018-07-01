@@ -305,6 +305,7 @@
     <ClCompile Include="..\examples\lf_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\examples\lifo_examples.cpp" />
     <ClCompile Include="..\examples\misc_examples.cpp" />
+    <ClCompile Include="..\examples\runtime_type_examples.cpp" />
     <ClCompile Include="..\examples\sp_func_queue_examples.cpp" />
     <ClCompile Include="..\examples\sp_heterogeneous_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />

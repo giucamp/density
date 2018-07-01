@@ -161,4 +161,8 @@ namespace density
 
     } // namespace detail
 
+    struct
+      f_none; /* this forward declaration allow feature_list to use f_none before it is defined. f_none
+        is defined later to make the header more readable.*/
+
 } // namespace density

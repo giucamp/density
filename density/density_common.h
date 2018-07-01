@@ -782,6 +782,7 @@ Concepts
 Concept     | Modeled in density by
 ------------|--------------
 [RuntimeType](RuntimeType_concept.html) | [runtime_type](classdensity_1_1runtime__type.html)
+[TypeFeature](TypeFeature_concept.html) | f_size, f_alignment, f_copy_construct, f_hash, f_rtti
 [UntypedAllocator](UntypedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
 [PagedAllocator](PagedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
 

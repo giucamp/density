@@ -17,79 +17,78 @@
 
 namespace density
 {
-#define ENABLE_FEATURE_CAT 0 // temp
+    /** Type-list class template that specifies which features a runtime_type captures from a type.
 
-    struct f_none
-    {
-    };
+        A feature is a class that capture and exposes a specific feature of a target type, without 
+        depending from it at compile time. Most times they use a pointer to a function (that is like
+        an entry in a vtable), but they may hold just data (like f_size and f_alignment do). 
 
-    /** This template represents a typelist. Every type of this list is a feature that can be used by a runtime_type.
-        A feature_list is a composition of features that forms a complete type erasure.
-        A feature is a struct that performs a part of type erasure on a type, and has this form:
-        \code
-        struct FeatureX
-        {
-            using type = ...;
-            template <typename BASE, typename TYPE> struct Impl
-            {
-                static constexpr type value = ...;
-            };
-        };
-        \endcode
-        A feature is a struct (or class) that doesn't depend on the type to erase. In contrast the inner type Impl
-        depends on the type to erase, and on the base type. All the types to erase are covariant to
-        the base type. If the base type is void any type can be erased. \n
-        The value of the feature (a static const uintptr_t) in Impl stores a value that is required for
-        to do the job on a type: in many cases it is a pointer to a function (like in the case of
-        f_copy_construct or f_destroy). Anyway it
-        may store a value, if it is small enough to fit in a uintptr_t (like in case of f_size, or
-        f_alignment). \n
-        The member 'type' is the real type of the value of the feature. The member function runtime_type::get_feature
-        casts the value of the feature to this type before returning it.
-        \snippet misc_examples.cpp feature_list example 1 */
+        Each type in the list is either:
+        - a type modeling the [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure (f_size, f_alignment, 
+            f_default_construct, f_copy_construct, f_destroy, ...), or a user defined type feature.
+        - a nested feature_list
+        - the special feature f_none
 
+        The class template provides a template alias to an std::tuple, that is used by runtime_type
+        as pseudo vtable. Actually a runtime_type is a pointer to a static constexpr instance of this tuple.
+        \snippet runtime_type_examples.cpp feature_list example 1
+        In the tuple nested features are flatened, and duplicates are removed (only the first occurrence of 
+        a fetaure is considered), and any occurrence of f_none is stripped out.
+        \snippet runtime_type_examples.cpp feature_list example 2
+        If two feature_list produce the same tuple they are similar:
+        \snippet runtime_type_examples.cpp feature_list example 3 */
     template <typename... FEATURES> struct feature_list;
-
-    template <> struct feature_list<>
+    template <> struct feature_list<> /* an empty feature_list gives an empty tuple */
     {
         template <typename COMMON_ANCESTOR> using tuple = std::tuple<>;
     };
-
     template <typename FIRST_FEATURE, typename... OTHER_FEATURES>
-    struct feature_list<FIRST_FEATURE, OTHER_FEATURES...>
+    struct feature_list<FIRST_FEATURE, OTHER_FEATURES...> /* the generic case, to 
+        handle normal features */
     {
         template <typename COMMON_ANCESTOR>
         using tuple = detail::Tuple_Merge_t<
+
+          // add FIRST_FEATURE to the tuple
           std::tuple<typename FIRST_FEATURE::template type<COMMON_ANCESTOR>>,
 
+          /* use recursively feature_list to add the other features, but removes 
+             FIRST_FEATURE from the result */
           detail::Tuple_Remove_t<
-
             typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>,
             typename FIRST_FEATURE::template type<COMMON_ANCESTOR>>
 
           >;
     };
-
     template <typename... GROUPED_FEATURES, typename... OTHER_FEATURES>
-    struct feature_list<feature_list<GROUPED_FEATURES...>, OTHER_FEATURES...>
+    struct feature_list<feature_list<GROUPED_FEATURES...>, OTHER_FEATURES...> /* handle 
+        nesting of feature_list's */
     {
         template <typename COMMON_ANCESTOR>
         using tuple = detail::Tuple_Merge_t<
 
+          // add to the tuple GROUPED_FEATURES (the nested fetaures)
           typename feature_list<GROUPED_FEATURES...>::template tuple<COMMON_ANCESTOR>,
 
+          // add to the tuple the remaining features with the fetaures already in GROUPED_FEATURES removed
           detail::Tuple_Diff_t<
-
             typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>,
-            typename feature_list<GROUPED_FEATURES...>::template tuple<COMMON_ANCESTOR>
+            typename feature_list<GROUPED_FEATURES...>::template tuple<COMMON_ANCESTOR>>
 
-            >>;
+          >;
     };
-
-    template <typename... OTHER_FEATURES> struct feature_list<f_none, OTHER_FEATURES...>
+    template <typename... OTHER_FEATURES>
+    struct feature_list<f_none, OTHER_FEATURES...> /* strip f_none from the feature list*/
     {
         template <typename COMMON_ANCESTOR>
         using tuple = typename feature_list<OTHER_FEATURES...>::template tuple<COMMON_ANCESTOR>;
+    };
+
+    /** Tag type that is ignored in a feature list. This peseudo-feature is usefull to conditionally add features
+        to a feature_list, for example using std::conditional. For example f_none is used in the definition of 
+        default_type_features. */
+    struct f_none
+    {
     };
 
     struct f_size
@@ -520,6 +519,8 @@ namespace density
 
     namespace detail
     {
+        /* FeaturesToTuple - this trait gives the fetaure tuple associated to a type list introducing the
+            special case of empty feature list, that resolves to default_type_features. */
         template <typename COMMON_TYPE, typename... FEATURES> struct FeaturesToTuple
         {
             using type = typename feature_list<FEATURES...>::template tuple<COMMON_TYPE>;
@@ -609,6 +610,29 @@ namespace density
         </table>
     */
 
+    /*! \page TypeFeature_concept TypeFeature concept
+
+        A type feature is a class that capture and exposes a specific feature of a target type, without
+        depending from it at compile time. Most times they use a pointer to a function (that is like
+        an entry in a vtable), but they may hold just data (like f_size and f_alignment do).
+        
+        A class modeling this concept has this form:
+        \code
+        struct f_feature
+        {
+            template <typename COMMON_ANCESTOR> struct type
+            {
+                // returns an instance of this feature bound to a specific target type
+                template <typename TARGET_TYPE>
+                    constexpr static type make() noexcept;
+
+                // invokes the feature. The return type and the parameters depends on the specific feature
+                ... operator()(...) const;
+            };
+        };
+        \endcode
+    */
+
     /** Class template that performs type-erasure.
             @tparam COMMON_TYPE Type to which all type-erased types are covariant. If it is void, any type can be type-erased.
             @tparam FEATURE_LIST Type_features::feature_list that defines which type-features are type-erased. By default
@@ -680,8 +704,17 @@ namespace density
             runtime_type leads to undefined behavior. */
         constexpr runtime_type() noexcept = default;
 
-        /** Copy-constructs a runtime_type */
-        constexpr runtime_type(const runtime_type &) noexcept = default;
+        /** Generalized copy constructor. */
+        template <
+          typename = std::enable_if<std::is_same<
+            tuple,
+            typename runtime_type<COMMON_TYPE, OTHER_FEATURES...>::tuple>::value>::type,
+          typename... OTHER_FEATURES>
+        constexpr runtime_type(
+          const runtime_type<COMMON_TYPE, OTHER_FEATURES...> & i_source) noexcept
+            : m_feature_table(i_source.m_feature_table)
+        {
+        }
 
         /** Copy-assigns a runtime_type. Self assignment (a = a) is not supported, and leads to undefined behavior. */
         DENSITY_CPP14_CONSTEXPR runtime_type & operator=(const runtime_type &) noexcept = default;
@@ -916,4 +949,5 @@ namespace std
             return i_runtime_type.hash();
         }
     };
+
 } // namespace std
