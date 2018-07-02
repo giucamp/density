@@ -145,10 +145,10 @@ namespace density_tests
     {
         DENSITY_TEST_ASSERT(i_consume.complete_type().template is<EXPECTED_TYPE>());
 
-        i_consume.element_ptr()->check();
+        //i_consume.element_ptr()->check();
         i_consume.template element<EXPECTED_TYPE>().check();
 
-        DENSITY_TEST_ASSERT(i_consume.element_ptr()->class_id() == EXPECTED_TYPE::s_class_id);
+        //DENSITY_TEST_ASSERT(i_consume.element_ptr()->class_id() == EXPECTED_TYPE::s_class_id);
         DENSITY_TEST_ASSERT(
           i_consume.template element<EXPECTED_TYPE>().class_id() == EXPECTED_TYPE::s_class_id);
 

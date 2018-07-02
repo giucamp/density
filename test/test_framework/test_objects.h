@@ -156,13 +156,10 @@ namespace density_tests
 #pragma GCC diagnostic pop
 #endif
 
+    template <typename UNDERLYING_TYPE = density::runtime_type<density::default_type_features>>
     class TestRuntimeTime : private InstanceCounted
     {
-        using UnderlyingType = typename density::runtime_type<
-          density::default_type_features,
-          density::f_default_construct,
-          density::f_equals,
-          density::f_less>;
+        using UnderlyingType = UNDERLYING_TYPE;
 
       public:
         template <typename TYPE> static TestRuntimeTime make() noexcept
@@ -253,9 +250,11 @@ namespace std
 {
     /** Partial specialization of std::hash to allow the use of TestRuntimeTime as key
         for unordered associative containers. */
-    template <> struct hash<density_tests::TestRuntimeTime>
+    template <typename UNDERLYING_TYPE> struct hash<density_tests::TestRuntimeTime<UNDERLYING_TYPE>>
     {
-        size_t operator()(const density_tests::TestRuntimeTime & i_runtime_type) const noexcept
+        size_t
+          operator()(const density_tests::TestRuntimeTime<UNDERLYING_TYPE> & i_runtime_type) const
+          noexcept
         {
             return i_runtime_type.hash();
         }

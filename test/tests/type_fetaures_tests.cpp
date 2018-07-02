@@ -110,9 +110,7 @@ namespace density_tests
     template <typename FEATURE_SET, typename... FEATURES> void check_feature_set()
     {
         static_assert(
-          std::is_same<
-            typename FEATURE_SET::template tuple<void>,
-            std::tuple<typename FEATURES::template type<void>...>>::value,
+          std::is_same<typename FEATURE_SET::tuple_type, std::tuple<FEATURES...>>::value,
           "feature_set test failed");
     };
 

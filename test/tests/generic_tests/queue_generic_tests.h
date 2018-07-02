@@ -552,7 +552,6 @@ namespace density_tests
                 if (run_page_default)
                 {
                     single_lf_queue_generic_test<lf_heter_queue<
-                      void,
                       runtime_type<>,
                       UnmovableFastTestAllocator<>,
                       PROD_CARDINALITY,
@@ -565,8 +564,7 @@ namespace density_tests
                       i_nonblocking_thread_counts);
 
                     single_lf_queue_generic_test<lf_heter_queue<
-                      void,
-                      TestRuntimeTime,
+                      TestRuntimeTime<>,
                       DeepTestAllocator<>,
                       PROD_CARDINALITY,
                       CONSUMER_CARDINALITY,
@@ -580,7 +578,6 @@ namespace density_tests
                 if (run_page_256)
                 {
                     single_lf_queue_generic_test<lf_heter_queue<
-                      void,
                       runtime_type<>,
                       UnmovableFastTestAllocator<256>,
                       PROD_CARDINALITY,
@@ -593,8 +590,7 @@ namespace density_tests
                       i_nonblocking_thread_counts);
 
                     single_lf_queue_generic_test<lf_heter_queue<
-                      void,
-                      TestRuntimeTime,
+                      TestRuntimeTime<>,
                       DeepTestAllocator<256>,
                       PROD_CARDINALITY,
                       CONSUMER_CARDINALITY,
@@ -611,7 +607,6 @@ namespace density_tests
                 if (run_page_default)
                 {
                     single_lf_queue_generic_test<lf_heter_queue<
-                      void,
                       runtime_type<>,
                       default_allocator,
                       PROD_CARDINALITY,
@@ -641,7 +636,6 @@ namespace density_tests
             if (i_flags && QueueTesterFlags::eUseTestAllocators)
             {
                 single_lf_queue_generic_test<sp_heter_queue<
-                  void,
                   runtime_type<>,
                   UnmovableFastTestAllocator<>,
                   PROD_CARDINALITY,
@@ -649,15 +643,13 @@ namespace density_tests
                   i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
                 single_lf_queue_generic_test<sp_heter_queue<
-                  void,
-                  TestRuntimeTime,
+                  TestRuntimeTime<>,
                   DeepTestAllocator<>,
                   PROD_CARDINALITY,
                   CONSUMER_CARDINALITY>>(
                   i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
                 single_lf_queue_generic_test<sp_heter_queue<
-                  void,
                   runtime_type<>,
                   UnmovableFastTestAllocator<256>,
                   PROD_CARDINALITY,
@@ -665,8 +657,7 @@ namespace density_tests
                   i_flags, i_output, i_random, i_element_count, i_nonblocking_thread_counts);
 
                 single_lf_queue_generic_test<sp_heter_queue<
-                  void,
-                  TestRuntimeTime,
+                  TestRuntimeTime<>,
                   DeepTestAllocator<256>,
                   PROD_CARDINALITY,
                   CONSUMER_CARDINALITY>>(
@@ -675,7 +666,6 @@ namespace density_tests
             else
             {
                 single_lf_queue_generic_test<sp_heter_queue<
-                  void,
                   runtime_type<>,
                   default_allocator,
                   PROD_CARDINALITY,

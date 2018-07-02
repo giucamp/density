@@ -113,6 +113,6 @@ namespace density_tests
           conc_heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
         conc_heterogeneous_queue_basic_void_tests<
-          conc_heter_queue<TestRuntimeTime, DeepTestAllocator<>>>();
+          conc_heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>();
     }
 } // namespace density_tests

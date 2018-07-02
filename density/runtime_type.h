@@ -381,17 +381,6 @@ namespace density
 
     namespace detail
     {
-        /* FeaturesToTuple - this trait gives the fetaure tuple associated to a type list introducing the
-            special case of empty feature list, that resolves to default_type_features. */
-        template <typename... FEATURES> struct FeaturesToTuple
-        {
-            using type = typename feature_list<FEATURES...>;
-        };
-        template <> struct FeaturesToTuple<>
-        {
-            using type = typename default_type_features;
-        };
-
         template <typename FEATURE_TUPLE, typename TARGET_TYPE> struct FeatureTable
         {
             constexpr static FEATURE_TUPLE s_table = detail::MakeFeatureTable<
@@ -546,7 +535,10 @@ namespace density
     {
       public:
         /** feature_list associated to the template arguments */
-        using feature_list_type = typename detail::FeaturesToTuple<FEATURES...>::type;
+        using feature_list_type = typename std::conditional<
+          (sizeof...(FEATURES) > 0),
+          feature_list<FEATURES...>,
+          default_type_features>::type;
 
         using tuple_type = typename feature_list_type::tuple_type;
 

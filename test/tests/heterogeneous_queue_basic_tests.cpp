@@ -116,26 +116,19 @@ namespace density_tests
     {
         using namespace density;
         using RunTimeType = runtime_type<
-          NonPolymorphicBase,
-          feature_list<
-            f_default_construct,
-            f_move_construct,
-            f_copy_construct,
-            f_destroy,
-            f_size,
-            f_alignment>>;
-        heter_queue<NonPolymorphicBase, RunTimeType> queue;
+          f_default_construct,
+          f_move_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment>;
+        heter_queue<RunTimeType> queue;
 
         queue.push(NonPolymorphicBase());
         queue.emplace<SingleDerivedNonPoly>();
 
         dynamic_push_3<NonPolymorphicBase>(queue);
         dynamic_push_3<SingleDerivedNonPoly>(queue);
-
-        for (const auto & val : queue)
-        {
-            val.second->check();
-        }
 
         for (;;)
         {
@@ -163,15 +156,13 @@ namespace density_tests
     {
         using namespace density;
         using RunTimeType = runtime_type<
-          PolymorphicBase,
-          feature_list<
-            f_default_construct,
-            f_move_construct,
-            f_copy_construct,
-            f_destroy,
-            f_size,
-            f_alignment>>;
-        heter_queue<PolymorphicBase, RunTimeType> queue;
+          f_default_construct,
+          f_move_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment>;
+        heter_queue<RunTimeType> queue;
 
         queue.push(PolymorphicBase());
         queue.reentrant_emplace<SingleDerived>();
@@ -190,8 +181,8 @@ namespace density_tests
         int elements = 0;
         for (const auto & val : queue)
         {
+            (void)val;
             elements++;
-            val.second->check();
         }
         DENSITY_TEST_ASSERT(elements == put_count);
 
@@ -233,6 +224,6 @@ namespace density_tests
         heterogeneous_queue_basic_void_tests<
           heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-        heterogeneous_queue_basic_void_tests<heter_queue<TestRuntimeTime, DeepTestAllocator<>>>();
+        heterogeneous_queue_basic_void_tests<heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>();
     }
 } // namespace density_tests

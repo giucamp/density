@@ -25,11 +25,9 @@ namespace density_tests
     struct NbQueueBasicTests
     {
         template <
-          typename COMMON_TYPE    = void,
-          typename RUNTIME_TYPE   = density::runtime_type<COMMON_TYPE>,
+          typename RUNTIME_TYPE   = density::runtime_type<>,
           typename ALLOCATOR_TYPE = density::default_allocator>
         using LfHeterQueue = density::lf_heter_queue<
-          COMMON_TYPE,
           RUNTIME_TYPE,
           ALLOCATOR_TYPE,
           PROD_CARDINALITY,
@@ -68,8 +66,8 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(other_queue.empty());
 
                 // test allocator getters
-                move_only_void_allocator                                     movable_alloc(5);
-                LfHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(
+                move_only_void_allocator                               movable_alloc(5);
+                LfHeterQueue<runtime_type<>, move_only_void_allocator> move_only_queue(
                   std::move(movable_alloc));
 
                 auto allocator_copy = other_queue.get_allocator();
@@ -85,7 +83,7 @@ namespace density_tests
             }
         }
 
-        /** Basic tests LfHeterQueue<void, ...> with a non-polymorphic base */
+        /** Basic tests LfHeterQueue with a non-polymorphic base */
         template <typename QUEUE> static void lf_heterogeneous_queue_basic_void_tests()
         {
             {
@@ -125,15 +123,13 @@ namespace density_tests
             using namespace density;
 
             using RunTimeType = runtime_type<
-              NonPolymorphicBase,
-              feature_list<
-                f_default_construct,
-                f_move_construct,
-                f_copy_construct,
-                f_destroy,
-                f_size,
-                f_alignment>>;
-            LfHeterQueue<NonPolymorphicBase, RunTimeType> queue;
+              f_default_construct,
+              f_move_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment>;
+            LfHeterQueue<RunTimeType> queue;
 
             queue.push(NonPolymorphicBase());
             queue.template emplace<SingleDerivedNonPoly>();
@@ -169,15 +165,13 @@ namespace density_tests
             using namespace density;
 
             using RunTimeType = runtime_type<
-              PolymorphicBase,
-              feature_list<
-                f_default_construct,
-                f_move_construct,
-                f_copy_construct,
-                f_destroy,
-                f_size,
-                f_alignment>>;
-            LfHeterQueue<PolymorphicBase, RunTimeType> queue;
+              f_default_construct,
+              f_move_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment>;
+            LfHeterQueue<RunTimeType> queue;
 
             queue.push(PolymorphicBase());
             queue.template emplace<SingleDerived>();
@@ -224,10 +218,10 @@ namespace density_tests
             lf_heterogeneous_queue_basic_void_tests<LfHeterQueue<>>();
 
             lf_heterogeneous_queue_basic_void_tests<
-              LfHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+              LfHeterQueue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
             lf_heterogeneous_queue_basic_void_tests<
-              LfHeterQueue<void, TestRuntimeTime, DeepTestAllocator<>>>();
+              LfHeterQueue<TestRuntimeTime<>, DeepTestAllocator<>>>();
         }
 
     }; // NbQueueBasicTests
