@@ -15,8 +15,6 @@ namespace density_tests
     class DynamicType
     {
       public:
-        using common_type = void *;
-
         static DynamicType make_random(EasyRandom & i_random)
         {
             auto const id        = i_random.get_int<size_t>();
@@ -37,7 +35,7 @@ namespace density_tests
 
         size_t alignment() const noexcept { return m_alignment; }
 
-        common_type * default_construct(void * i_dest) const
+        void * default_construct(void * i_dest) const
         {
             DENSITY_TEST_ASSERT(density::address_is_aligned(i_dest, m_alignment));
             memset(
@@ -47,7 +45,7 @@ namespace density_tests
             return result;
         }
 
-        common_type * copy_construct(void * i_dest, const common_type * i_source) const
+        void * copy_construct(void * i_dest, const void * i_source) const
         {
             check_content(i_source);
             DENSITY_TEST_ASSERT(density::address_is_aligned(i_dest, m_alignment));
@@ -57,12 +55,12 @@ namespace density_tests
             return result;
         }
 
-        common_type * move_construct(void * i_dest, common_type * i_source) const noexcept
+        void * move_construct(void * i_dest, void * i_source) const noexcept
         {
             return copy_construct(i_dest, i_source);
         }
 
-        void * destroy(common_type * i_dest) const noexcept
+        void * destroy(void * i_dest) const noexcept
         {
             check_content(i_dest);
             auto const start_address = from_base(i_dest);
@@ -70,31 +68,31 @@ namespace density_tests
             return start_address;
         }
 
-        bool are_equal(const common_type * i_first, const common_type * i_second) const
+        bool are_equal(const void * i_first, const void * i_second) const
         {
             check_content(i_first);
             check_content(i_second);
             return memcmp(from_base(i_first), from_base(i_second), m_size) == 0;
         }
 
-        common_type * to_base(void * i_ptr) const noexcept
+        void * to_base(void * i_ptr) const noexcept
         {
-            return static_cast<common_type *>(density::address_add(i_ptr, m_id % m_size));
+            return static_cast<void *>(density::address_add(i_ptr, m_id % m_size));
         }
-        void * from_base(common_type * i_ptr) const noexcept
+        void * from_base(void * i_ptr) const noexcept
         {
             return density::address_sub(i_ptr, m_id % m_size);
         }
-        const common_type * to_base(const void * i_ptr) const noexcept
+        const void * to_base(const void * i_ptr) const noexcept
         {
-            return static_cast<const common_type *>(density::address_add(i_ptr, m_id % m_size));
+            return static_cast<const void *>(density::address_add(i_ptr, m_id % m_size));
         }
-        const void * from_base(const common_type * i_ptr) const noexcept
+        const void * from_base(const void * i_ptr) const noexcept
         {
             return density::address_sub(i_ptr, m_id % m_size);
         }
 
-        void check_content(const common_type * i_ptr) const
+        void check_content(const void * i_ptr) const
         {
             auto const chars = static_cast<const unsigned char *>(from_base(i_ptr));
             DENSITY_TEST_ASSERT(density::address_is_aligned(chars, m_alignment));

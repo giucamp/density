@@ -360,7 +360,7 @@ namespace density
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_less make() noexcept
         {
-            return type{&compare_less<TARGET_TYPE>};
+            return f_less{&compare_less<TARGET_TYPE>};
         }
 
       private:
@@ -777,6 +777,10 @@ namespace density
             \n\b Throws: nothing. */
         template <typename FEATURE> const typename FEATURE & get_feature() const noexcept
         {
+            static_assert(
+              detail::Tuple_FindFirst<tuple_type, FEATURE>::index !=
+                std::tuple_size<tuple_type>::value,
+              "feature not found");
             return std::get<detail::Tuple_FindFirst<tuple_type, FEATURE>::index>(*m_feature_table);
         }
 

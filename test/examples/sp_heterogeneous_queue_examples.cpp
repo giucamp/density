@@ -40,7 +40,6 @@ namespace density_tests
 
               {//! [sp_heter_queue push example 1]
                using SpQueue = sp_heter_queue<
-                 void,
                  runtime_type<>,
                  default_allocator,
                  PROD_CARDINALITY,
@@ -53,7 +52,6 @@ namespace density_tests
         {
             //! [sp_heter_queue emplace example 1]
             using SpQueue = sp_heter_queue<
-              void,
               runtime_type<>,
               default_allocator,
               PROD_CARDINALITY,
@@ -66,7 +64,6 @@ namespace density_tests
         {
             //! [sp_heter_queue start_push example 1]
             using SpQueue = sp_heter_queue<
-              void,
               runtime_type<>,
               default_allocator,
               PROD_CARDINALITY,
@@ -80,7 +77,6 @@ namespace density_tests
         {
             //! [sp_heter_queue start_emplace example 1]
             using SpQueue = sp_heter_queue<
-              void,
               runtime_type<>,
               default_allocator,
               PROD_CARDINALITY,
@@ -96,12 +92,7 @@ namespace density_tests
         //! [sp_heter_queue dyn_push example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         auto const type = MyRunTimeType::template make<int>();
@@ -112,12 +103,7 @@ namespace density_tests
         //! [sp_heter_queue dyn_push_copy example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string const source("Hello world!!");
@@ -129,12 +115,7 @@ namespace density_tests
         //! [sp_heter_queue dyn_push_move example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string source("Hello world!!");
@@ -147,12 +128,7 @@ namespace density_tests
         //! [sp_heter_queue start_dyn_push example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         auto const type = MyRunTimeType::make<int>();
@@ -164,12 +140,7 @@ namespace density_tests
         //! [sp_heter_queue start_dyn_push_copy example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string const source("Hello world!!");
@@ -182,12 +153,7 @@ namespace density_tests
         //! [sp_heter_queue start_dyn_push_move example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string source("Hello world!!");
@@ -203,12 +169,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     using namespace density;
 
     {
-        sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         {
@@ -257,12 +218,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_dyn_push example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         auto const type = MyRunTimeType::make<int>();
@@ -276,12 +232,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_dyn_push_copy example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string const source("Hello world!!");
@@ -296,12 +247,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_dyn_push_move example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string source("Hello world!!");
@@ -317,12 +263,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_start_dyn_push example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         auto const type = MyRunTimeType::make<int>();
@@ -337,12 +278,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_start_dyn_push_copy example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string const source("Hello world!!");
@@ -358,12 +294,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
         //! [sp_heter_queue try_start_dyn_push_move example 1]
         using MyRunTimeType =
           runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
           queue;
 
         std::string source("Hello world!!");
@@ -383,12 +314,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
 
     {
         //! [sp_heter_queue put_transaction default_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         typename SpQueue::template put_transaction<> transaction;
         assert(transaction.empty());
@@ -396,54 +323,25 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction copy_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
-        using SpQueueInt = sp_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static_assert(
           !std::is_copy_constructible<typename SpQueue::template put_transaction<>>::value, "");
-        static_assert(
-          !std::is_copy_constructible<typename SpQueueInt::template put_transaction<>>::value, "");
         //! [sp_heter_queue put_transaction copy_construct example 1]
     }
     {
         //! [sp_heter_queue put_transaction copy_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
-        using SpQueueInt = sp_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static_assert(
           !std::is_copy_assignable<typename SpQueue::template put_transaction<>>::value, "");
-        static_assert(
-          !std::is_copy_assignable<typename SpQueueInt::template put_transaction<>>::value, "");
         //! [sp_heter_queue put_transaction copy_assign example 1]
     }
     {
         //! [sp_heter_queue put_transaction move_construct example 1]
-        sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>
+        sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>
              queue;
         auto transaction1 = queue.start_push(1);
 
@@ -459,12 +357,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
         //! [sp_heter_queue put_transaction move_construct example 1]
 
         //! [sp_heter_queue put_transaction move_construct example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         // put_transaction<void> can be move constructed from any put_transaction<T>
         static_assert(
@@ -498,12 +392,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction move_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         auto    transaction1 = queue.start_push(1);
@@ -517,12 +407,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction move_assign example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         // put_transaction<void> can be move assigned from any put_transaction<T>
         static_assert(
@@ -556,12 +442,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction raw_allocate example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
         struct Msg
         {
@@ -606,12 +488,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction raw_allocate_copy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -632,12 +510,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction raw_allocate_copy example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -655,12 +529,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction try_raw_allocate example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
         struct Msg
         {
@@ -712,12 +582,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction try_raw_allocate_copy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -744,12 +610,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction try_raw_allocate_copy example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -773,12 +635,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction empty example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -791,12 +649,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction operator_bool example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -809,12 +663,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction cancel example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -835,12 +685,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -860,12 +706,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction complete_type example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -877,12 +719,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue put_transaction destroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -892,12 +730,8 @@ static void spinlocking_heterogeneous_queue_put_transaction_samples()
     }
     {
         //! [sp_heter_queue typed_put_transaction element example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -922,21 +756,13 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
 
     {
         //! [sp_heter_queue consume_operation default_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         typename SpQueue::consume_operation consume;
         assert(consume.empty());
@@ -944,12 +770,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
 
     //! [sp_heter_queue consume_operation copy_construct example 1]
-    using SpQueue = sp_heter_queue<
-      void,
-      runtime_type<>,
-      default_allocator,
-      PROD_CARDINALITY,
-      CONSUMER_CARDINALITY>;
+    using SpQueue =
+      sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
     static_assert(!std::is_copy_constructible<typename SpQueue::consume_operation>::value, "");
     //! [sp_heter_queue consume_operation copy_construct example 1]
@@ -960,12 +782,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
 
     {
         //! [sp_heter_queue consume_operation move_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -979,12 +797,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation move_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1000,12 +814,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation destroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1017,12 +827,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation empty example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1035,12 +841,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation operator_bool example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1052,12 +854,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation commit_nodestroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.template emplace<std::string>("abc");
@@ -1071,12 +869,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation cancel example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1090,12 +884,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation complete_type example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1110,12 +900,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1128,12 +914,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation swap example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1155,12 +937,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation unaligned_element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1185,12 +963,8 @@ static void spinlocking_heterogeneous_queue_consume_operation_samples()
     }
     {
         //! [sp_heter_queue consume_operation element example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -1209,12 +983,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     using namespace density;
 
-    {{using SpQueue = sp_heter_queue<
-        void,
-        runtime_type<>,
-        default_allocator,
-        PROD_CARDINALITY,
-        CONSUMER_CARDINALITY>;
+    {{using SpQueue =
+        sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
     SpQueue queue;
 
@@ -1230,12 +1000,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [sp_heter_queue start_reentrant_push example 1]
-    using SpQueue = sp_heter_queue<
-      void,
-      runtime_type<>,
-      default_allocator,
-      PROD_CARDINALITY,
-      CONSUMER_CARDINALITY>;
+    using SpQueue =
+      sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
     SpQueue queue;
     auto    put = queue.start_reentrant_push(12);
@@ -1245,12 +1011,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [sp_heter_queue start_reentrant_emplace example 1]
-    using SpQueue = sp_heter_queue<
-      void,
-      runtime_type<>,
-      default_allocator,
-      PROD_CARDINALITY,
-      CONSUMER_CARDINALITY>;
+    using SpQueue =
+      sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
     SpQueue queue;
     auto    put = queue.template start_reentrant_emplace<std::string>(4, '*');
@@ -1334,12 +1096,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     using namespace density;
 
     {
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1480,12 +1238,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
 
     {
         //! [sp_heter_queue reentrant_put_transaction default_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         typename SpQueue::template reentrant_put_transaction<> transaction;
         assert(transaction.empty());
@@ -1493,18 +1247,10 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction copy_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
-        using SpQueueInt = sp_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+        using SpQueueInt =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static_assert(
           !std::is_copy_constructible<
@@ -1518,18 +1264,10 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction copy_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
-        using SpQueueInt = sp_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+        using SpQueueInt =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static_assert(
           !std::is_copy_assignable<typename SpQueue::template reentrant_put_transaction<>>::value,
@@ -1542,12 +1280,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction move_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         auto    transaction1 = queue.start_reentrant_push(1);
@@ -1565,12 +1299,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
 
         //! [sp_heter_queue reentrant_put_transaction move_construct example 2]
 
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         // reentrant_put_transaction<void> can be move constructed from any reentrant_put_transaction<T>
         static_assert(
@@ -1604,12 +1334,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction move_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         auto    transaction1 = queue.start_reentrant_push(1);
@@ -1624,12 +1350,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     {
         //! [sp_heter_queue reentrant_put_transaction move_assign example 2]
         // reentrant_put_transaction<void> can be move assigned from any reentrant_put_transaction<T>
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static_assert(
           std::is_assignable<
@@ -1662,12 +1384,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction raw_allocate example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         struct Msg
@@ -1713,12 +1431,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction raw_allocate_copy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         struct Msg
@@ -1738,12 +1452,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction raw_allocate_copy example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         struct Msg
@@ -1760,12 +1470,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction try_raw_allocate example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
         struct Msg
         {
@@ -1819,12 +1525,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1851,12 +1553,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1880,12 +1578,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction empty example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue                                                queue;
         typename SpQueue::template reentrant_put_transaction<> transaction;
@@ -1897,12 +1591,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction operator_bool example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1915,12 +1605,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction queue example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1933,12 +1619,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction cancel example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1959,12 +1641,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -1985,12 +1663,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction complete_type example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2003,12 +1677,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_put_transaction destroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.start_reentrant_push(42); /* this transaction is destroyed without being committed,
@@ -2017,12 +1687,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_transaction_samples()
     }
     {
         //! [sp_heter_queue reentrant_typed_put_transaction element example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2047,47 +1713,31 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
 
     {
         //! [sp_heter_queue reentrant_consume_operation default_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         typename SpQueue::reentrant_consume_operation consume;
         assert(consume.empty());
         //! [sp_heter_queue reentrant_consume_operation default_construct example 1]
     }
     {
         //! [sp_heter_queue reentrant_consume_operation copy_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         static_assert(
           !std::is_copy_constructible<typename SpQueue::reentrant_consume_operation>::value, "");
         //! [sp_heter_queue reentrant_consume_operation copy_construct example 1]
 
         //! [sp_heter_queue reentrant_consume_operation copy_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         static_assert(
           !std::is_copy_assignable<typename SpQueue::reentrant_consume_operation>::value, "");
         //! [sp_heter_queue reentrant_consume_operation copy_assign example 1]
     }
     {
         //! [sp_heter_queue reentrant_consume_operation move_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2101,12 +1751,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation move_assign example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2125,12 +1771,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation destroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2141,12 +1783,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation empty example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2159,12 +1797,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation operator_bool example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2177,12 +1811,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation queue example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2195,12 +1825,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation commit_nodestroy example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.template emplace<std::string>("abc");
@@ -2214,12 +1840,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation swap example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2242,12 +1864,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation cancel example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2262,12 +1880,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation complete_type example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2283,12 +1897,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2301,12 +1911,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation unaligned_element_ptr example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2331,12 +1937,8 @@ static void spinlocking_heterogeneous_queue_reentrant_consume_operation_samples(
     }
     {
         //! [sp_heter_queue reentrant_consume_operation element example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(42);
@@ -2359,22 +1961,16 @@ static void spinlocking_heterogeneous_queue_samples_1()
     /* a runtime_type is internally like a pointer to a v-table, but it can
                 contain functions or data (like in the case of f_size and f_alignment). */
     using MyRunTimeType = runtime_type<
-      void,
-      feature_list<
-        f_default_construct,
-        f_copy_construct,
-        f_destroy,
-        f_size,
-        f_alignment,
-        f_ostream,
-        f_istream,
-        f_rtti>>;
-    using SpQueue = sp_heter_queue<
-      void,
-      MyRunTimeType,
-      default_allocator,
-      PROD_CARDINALITY,
-      CONSUMER_CARDINALITY>;
+      f_default_construct,
+      f_copy_construct,
+      f_destroy,
+      f_size,
+      f_alignment,
+      f_ostream,
+      f_istream,
+      f_rtti>;
+    using SpQueue =
+      sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
     SpQueue queue;
     queue.push(4);
@@ -2422,12 +2018,8 @@ static void samples(std::ostream &)
 
     {
         //! [sp_heter_queue put example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
         queue.push(19); // the parameter can be an l-value or an r-value
         queue.template emplace<std::string>(8, '*'); // pushes "********"
@@ -2448,12 +2040,8 @@ static void samples(std::ostream &)
 
     {
         //! [sp_heter_queue put example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
         struct MessageInABottle
         {
@@ -2480,12 +2068,8 @@ static void samples(std::ostream &)
 
     {
         //! [sp_heter_queue default_construct example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         assert(queue.empty());
@@ -2514,24 +2098,16 @@ static void samples(std::ostream &)
     {
         //! [sp_heter_queue construct_copy_alloc example 1]
         default_allocator allocator;
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue(allocator);
         assert(queue.empty());
         //! [sp_heter_queue construct_copy_alloc example 1]
     }
     {
         //! [sp_heter_queue construct_move_alloc example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         default_allocator allocator;
         SpQueue           queue(std::move(allocator));
@@ -2548,12 +2124,8 @@ static void samples(std::ostream &)
           f_alignment,
           f_equals>;
 
-        using SpQueue = sp_heter_queue<
-          void,
-          MyRunTimeType,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(std::string("abc"));
@@ -2569,12 +2141,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue get_allocator example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         assert(queue.get_allocator() == default_allocator());
@@ -2582,12 +2150,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue get_allocator_ref example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         assert(queue.get_allocator_ref() == default_allocator());
@@ -2595,12 +2159,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue get_allocator_ref example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue      queue;
         auto const & queue_ref = queue;
@@ -2610,12 +2170,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue swap example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue, queue_1;
         queue.push(1);
@@ -2627,12 +2183,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue swap example 2]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue, queue_1;
         queue.push(1);
@@ -2646,12 +2198,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue empty example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         assert(queue.empty());
@@ -2661,12 +2209,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue clear example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         queue.push(1);
@@ -2676,12 +2220,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_pop example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2701,12 +2241,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_start_consume example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
         auto    consume_1 = queue.try_start_consume();
@@ -2722,12 +2258,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_start_consume_ example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         SpQueue queue;
 
@@ -2750,12 +2282,8 @@ static void samples(std::ostream &)
         //! [sp_heter_queue reentrant example 1]
         // start 3 reentrant put transactions
 
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
 
         auto   put_1 = queue.start_reentrant_push(1);
@@ -2785,12 +2313,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_reentrant_pop example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
 
         bool pop_result = queue.try_reentrant_pop();
@@ -2809,12 +2333,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_start_reentrant_consume example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
 
         auto consume_1 = queue.try_start_reentrant_consume();
@@ -2830,12 +2350,8 @@ static void samples(std::ostream &)
     }
     {
         //! [sp_heter_queue try_start_reentrant_consume_ example 1]
-        using SpQueue = sp_heter_queue<
-          void,
-          runtime_type<>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
         SpQueue queue;
 
         typename SpQueue::reentrant_consume_operation consume_1;

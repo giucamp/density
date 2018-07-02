@@ -566,7 +566,7 @@ namespace density_tests
 
                     single_lf_queue_generic_test<lf_heter_queue<
                       void,
-                      TestRuntimeTime<>,
+                      TestRuntimeTime,
                       DeepTestAllocator<>,
                       PROD_CARDINALITY,
                       CONSUMER_CARDINALITY,
@@ -594,7 +594,7 @@ namespace density_tests
 
                     single_lf_queue_generic_test<lf_heter_queue<
                       void,
-                      TestRuntimeTime<>,
+                      TestRuntimeTime,
                       DeepTestAllocator<256>,
                       PROD_CARDINALITY,
                       CONSUMER_CARDINALITY,
@@ -650,7 +650,7 @@ namespace density_tests
 
                 single_lf_queue_generic_test<sp_heter_queue<
                   void,
-                  TestRuntimeTime<>,
+                  TestRuntimeTime,
                   DeepTestAllocator<>,
                   PROD_CARDINALITY,
                   CONSUMER_CARDINALITY>>(
@@ -666,7 +666,7 @@ namespace density_tests
 
                 single_lf_queue_generic_test<sp_heter_queue<
                   void,
-                  TestRuntimeTime<>,
+                  TestRuntimeTime,
                   DeepTestAllocator<256>,
                   PROD_CARDINALITY,
                   CONSUMER_CARDINALITY>>(

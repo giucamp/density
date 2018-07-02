@@ -74,7 +74,6 @@ namespace density_tests
                       << " threads and ";
             i_ostream << i_produces_per_thread << " puts per thread";
             i_ostream << "\nheterogeneous_queue: " << truncated_type_name<QUEUE>();
-            i_ostream << "\ncommon_type: " << truncated_type_name<typename QUEUE::common_type>();
             i_ostream << "\nruntime_type: " << truncated_type_name<typename QUEUE::runtime_type>();
             i_ostream << "\nallocator_type: "
                       << truncated_type_name<typename QUEUE::allocator_type>();

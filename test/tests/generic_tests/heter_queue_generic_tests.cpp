@@ -25,15 +25,14 @@ namespace density_tests
               heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>(
               i_flags, i_output, i_rand, i_element_count, {1});
 
-            detail::single_queue_generic_test<heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>(
+            detail::single_queue_generic_test<heter_queue<TestRuntimeTime, DeepTestAllocator<>>>(
               i_flags, i_output, i_rand, i_element_count, {1});
 
             detail::single_queue_generic_test<
               heter_queue<runtime_type<>, UnmovableFastTestAllocator<256>>>(
               i_flags, i_output, i_rand, i_element_count, {1});
 
-            detail::single_queue_generic_test<
-              heter_queue<TestRuntimeTime<>, DeepTestAllocator<256>>>(
+            detail::single_queue_generic_test<heter_queue<TestRuntimeTime, DeepTestAllocator<256>>>(
               i_flags, i_output, i_rand, i_element_count, {1});
         }
         else

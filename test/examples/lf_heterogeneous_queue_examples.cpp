@@ -403,18 +403,9 @@ static void nonblocking_heterogeneous_queue_put_transaction_samples()
           PROD_CARDINALITY,
           CONSUMER_CARDINALITY,
           CONSISTENCY_MODEL>;
-        using LfQueueInt = lf_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY,
-          CONSISTENCY_MODEL>;
 
         static_assert(
           !std::is_copy_constructible<typename LfQueue::template put_transaction<>>::value, "");
-        static_assert(
-          !std::is_copy_constructible<typename LfQueueInt::template put_transaction<>>::value, "");
         //! [lf_heter_queue put_transaction copy_construct example 1]
     }
     {
@@ -425,18 +416,9 @@ static void nonblocking_heterogeneous_queue_put_transaction_samples()
           PROD_CARDINALITY,
           CONSUMER_CARDINALITY,
           CONSISTENCY_MODEL>;
-        using LfQueueInt = lf_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY,
-          CONSISTENCY_MODEL>;
 
         static_assert(
           !std::is_copy_assignable<typename LfQueue::template put_transaction<>>::value, "");
-        static_assert(
-          !std::is_copy_assignable<typename LfQueueInt::template put_transaction<>>::value, "");
         //! [lf_heter_queue put_transaction copy_assign example 1]
     }
     {
@@ -1502,21 +1484,10 @@ static void nonblocking_heterogeneous_queue_reentrant_put_transaction_samples()
           PROD_CARDINALITY,
           CONSUMER_CARDINALITY,
           CONSISTENCY_MODEL>;
-        using LfQueueInt = lf_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY,
-          CONSISTENCY_MODEL>;
 
         static_assert(
           !std::is_copy_constructible<
             typename LfQueue::template reentrant_put_transaction<>>::value,
-          "");
-        static_assert(
-          !std::is_copy_constructible<
-            typename LfQueueInt::template reentrant_put_transaction<>>::value,
           "");
         //! [lf_heter_queue reentrant_put_transaction copy_construct example 1]
     }
@@ -1528,20 +1499,9 @@ static void nonblocking_heterogeneous_queue_reentrant_put_transaction_samples()
           PROD_CARDINALITY,
           CONSUMER_CARDINALITY,
           CONSISTENCY_MODEL>;
-        using LfQueueInt = lf_heter_queue<
-          int,
-          runtime_type<int>,
-          default_allocator,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY,
-          CONSISTENCY_MODEL>;
 
         static_assert(
           !std::is_copy_assignable<typename LfQueue::template reentrant_put_transaction<>>::value,
-          "");
-        static_assert(
-          !std::is_copy_assignable<
-            typename LfQueueInt::template reentrant_put_transaction<>>::value,
           "");
         //! [lf_heter_queue reentrant_put_transaction copy_assign example 1]
     }

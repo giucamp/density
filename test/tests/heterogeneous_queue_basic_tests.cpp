@@ -74,8 +74,6 @@ namespace density_tests
     /** Basic tests heter_queue<...> with a non-polymorphic base */
     template <typename QUEUE> void heterogeneous_queue_basic_void_tests()
     {
-        static_assert(std::is_void<typename QUEUE::common_type>::value, "");
-
         {
             QUEUE queue;
             DENSITY_TEST_ASSERT(queue.empty());
@@ -235,6 +233,6 @@ namespace density_tests
         heterogeneous_queue_basic_void_tests<
           heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-        heterogeneous_queue_basic_void_tests<heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>();
+        heterogeneous_queue_basic_void_tests<heter_queue<TestRuntimeTime, DeepTestAllocator<>>>();
     }
 } // namespace density_tests

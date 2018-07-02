@@ -86,7 +86,6 @@ namespace density_tests
         /** Basic tests SpHeterQueue<void, ...> with a non-polymorphic base */
         template <typename QUEUE> static void spinlocking_heterogeneous_queue_basic_void_tests()
         {
-            static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
             {
                 QUEUE queue;
@@ -227,7 +226,7 @@ namespace density_tests
               SpHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
 
             spinlocking_heterogeneous_queue_basic_void_tests<
-              SpHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+              SpHeterQueue<void, TestRuntimeTime, DeepTestAllocator<>>>();
         }
 
     }; // SpQueueBasicTests

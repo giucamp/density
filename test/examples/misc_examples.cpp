@@ -23,32 +23,25 @@ namespace density_tests
         type erasure already is a kind of virtualization. */
     struct feature_call_update
     {
-        template <typename COMMON_ANCESTOR> struct type
+        void (*m_func)(void * i_object, float i_elapsed_time);
+
+        void operator()(void * i_object, float i_elapsed_time) const
         {
-            void (*m_func)(COMMON_ANCESTOR * i_object, float i_elapsed_time);
+            m_func(i_object, i_elapsed_time);
+        }
 
-            void operator()(COMMON_ANCESTOR * i_object, float i_elapsed_time) const
-            {
-                m_func(i_object, i_elapsed_time);
-            }
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static feature_call_update make() noexcept
+        {
+            return feature_call_update{&invoke<TARGET_TYPE>};
+        }
 
-            /** Creates an instance of this feature bound to the specified target type */
-            template <typename TARGET_TYPE> constexpr static type make() noexcept
-            {
-                static_assert(
-                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
-
-                return type{&invoke<TARGET_TYPE>};
-            }
-
-          private:
-            template <typename TARGET_TYPE>
-            static void invoke(COMMON_ANCESTOR * i_object, float i_elapsed_time) noexcept
-            {
-                static_cast<TARGET_TYPE *>(i_object)->update(i_elapsed_time);
-            }
-        };
+      private:
+        template <typename TARGET_TYPE>
+        static void invoke(void * i_object, float i_elapsed_time) noexcept
+        {
+            static_cast<TARGET_TYPE *>(i_object)->update(i_elapsed_time);
+        }
     };
     //! [runtime_type example 2]
 
@@ -61,8 +54,7 @@ namespace density_tests
             using MyPartialFeatures = feature_list<f_default_construct, f_size>;
             using MyFeatures        = feature_list<MyPartialFeatures, f_alignment>;
             using MyFeatures1       = feature_list<MyPartialFeatures, feature_list<f_alignment>>;
-            static_assert(
-              std::is_same<MyFeatures::tuple<void>, MyFeatures1::tuple<void>>::value, "");
+            static_assert(std::is_same<MyFeatures::tuple_type, MyFeatures1::tuple_type>::value, "");
             //! [feature_concat example 1]
         }
 
@@ -108,7 +100,7 @@ namespace density_tests
             };
 
             // concatenates feature_call_update to the default features (f_destroy, f_size, f_alignment)
-            using MyFeatures = feature_list<default_type_features<void>, feature_call_update>;
+            using MyFeatures = feature_list<default_type_features, feature_call_update>;
 
             // create a queue with 3 objects
             heter_queue<runtime_type<MyFeatures>, default_allocator> my_queue;

@@ -136,7 +136,7 @@ DENSITY_NO_INLINE void sandbox()
         lf_heter_queue<> q1;
     }
     {
-        lf_heter_queue<void> queue;
+        lf_heter_queue<> queue;
         queue.push(std::string());
         queue.push(std::make_pair(4., 1));
         assert(!queue.empty());

@@ -80,7 +80,6 @@ namespace density
     {
       private:
         using UnderlyingQueue = sp_heter_queue<
-          void,
           detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>,
           ALLOCATOR_TYPE,
           PROD_CARDINALITY,

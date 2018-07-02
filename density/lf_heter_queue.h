@@ -1757,7 +1757,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
