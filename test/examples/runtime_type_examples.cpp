@@ -18,7 +18,7 @@ namespace density_tests
 
         //! [feature_list example 1]
         using Features1 = feature_list<f_size, f_alignment, f_copy_construct>;
-        using Tuple     = Features1::tuple<void>;
+        using Tuple     = Features1::tuple_type;
         //! [feature_list example 1]
         //! [feature_list example 2]
         // Features1, Features2 and Features3 produce the same feature tuple
@@ -30,15 +30,14 @@ namespace density_tests
           feature_list<f_size, f_alignment, f_copy_construct, f_none, f_copy_construct, f_size>>;
         //! [feature_list example 2]
         //! [feature_list example 3]
-        /* If two fetaure_list priduce the same tuple, they are similar. We can't compare class 
-           templates with std::is_same, so we compare a specialization */
-        static_assert(std::is_same<Features1::tuple<int>, Features2::tuple<int>>::value, "");
-        static_assert(std::is_same<Features2::tuple<int>, Features3::tuple<int>>::value, "");
+        // If two fetaure_list priduce the same tuple, they are similar.
+        static_assert(std::is_same<Features1::tuple_type, Features2::tuple_type>::value, "");
+        static_assert(std::is_same<Features2::tuple_type, Features3::tuple_type>::value, "");
         //! [feature_list example 3]
         //! [feature_list example 4]
 
         using MyFeatures    = feature_list<f_size, f_alignment, f_copy_construct>;
-        using MyRuntimeType = runtime_type<void, MyFeatures>;
+        using MyRuntimeType = runtime_type<MyFeatures>;
 
         // this is ok: int supports sizeof, alignof, and copy construction
         auto IntType = MyRuntimeType::make<int>();
@@ -48,9 +47,7 @@ namespace density_tests
 
         // MyFeatures::tuple<void> = std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>
         static_assert(
-          std::is_same<
-            MyFeatures::tuple<void>,
-            std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>>::
+          std::is_same<MyFeatures::tuple_type, std::tuple<f_size, f_alignment, f_copy_construct>>::
             value,
           "");
         //! [feature_list example 4]
@@ -61,29 +58,29 @@ namespace density_tests
         using namespace density;
         {
             //! [runtime_type copy example 1]
-            using Rt1 = runtime_type<void, f_size, f_alignment>;
-            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
+            using Rt1 = runtime_type<f_size, f_alignment>;
+            using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
             Rt1 t1    = Rt1::make<int>();
             Rt1 t2    = t1; // valid because Rt1 and Rt2 are similar
             assert(t1 == t2);
 
             using Rt3 =
-              runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+              runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
             // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
             static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
             //! [runtime_type copy example 1]
         }
         {
             //! [runtime_type assign example 1]
-            using Rt1 = runtime_type<void, f_size, f_alignment>;
-            using Rt2 = runtime_type<void, feature_list<f_size>, f_none, f_alignment>;
+            using Rt1 = runtime_type<f_size, f_alignment>;
+            using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
             Rt1 t1    = Rt1::make<int>();
             Rt1 t2;
             t2 = t1; // valid because Rt1 and Rt2 are similar
             assert(t1 == t2);
 
             using Rt3 =
-              runtime_type<void, feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+              runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
             // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
             static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
             //! [runtime_type assign example 1]
@@ -96,32 +93,25 @@ namespace density_tests
         type erasure already is a kind of virtualization. */
     struct feature_call_update
     {
-        template <typename COMMON_ANCESTOR> struct type
+        void (*m_func)(void * i_object, float i_elapsed_time);
+
+        void operator()(void * i_object, float i_elapsed_time) const
         {
-            void (*m_func)(COMMON_ANCESTOR * i_object, float i_elapsed_time);
+            m_func(i_object, i_elapsed_time);
+        }
 
-            void operator()(COMMON_ANCESTOR * i_object, float i_elapsed_time) const
-            {
-                m_func(i_object, i_elapsed_time);
-            }
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static feature_call_update make() noexcept
+        {
+            return type{&invoke<TARGET_TYPE>};
+        }
 
-            /** Creates an instance of this feature bound to the specified target type */
-            template <typename TARGET_TYPE> constexpr static type make() noexcept
-            {
-                static_assert(
-                  std::is_convertible<TARGET_TYPE *, COMMON_ANCESTOR *>::value,
-                  "TARGET_TYPE must derive from COMMON_ANCESTOR, or COMMON_TYPE must be void");
-
-                return type{&invoke<TARGET_TYPE>};
-            }
-
-          private:
-            template <typename TARGET_TYPE>
-            static void invoke(COMMON_ANCESTOR * i_object, float i_elapsed_time) noexcept
-            {
-                static_cast<TARGET_TYPE *>(i_object)->update(i_elapsed_time);
-            }
-        };
+      private:
+        template <typename TARGET_TYPE>
+        static void invoke(void * i_object, float i_elapsed_time) noexcept
+        {
+            static_cast<TARGET_TYPE *>(i_object)->update(i_elapsed_time);
+        }
     };
     //! [runtime_type example 2]
 

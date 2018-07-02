@@ -60,7 +60,6 @@ namespace density
     {
       private:
         using UnderlyingQueue = conc_heter_queue<
-          void,
           detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>,
           ALLOCATOR_TYPE>;
         UnderlyingQueue m_queue;

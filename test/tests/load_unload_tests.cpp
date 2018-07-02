@@ -18,7 +18,7 @@ namespace density_tests
     {
         using namespace density;
 
-        using LfHeterQueue = lf_heter_queue<void, runtime_type<>, basic_default_allocator<256>>;
+        using LfHeterQueue = lf_heter_queue<runtime_type<>, basic_default_allocator<256>>;
 
         density_tests::queue_load_unload_test<LfHeterQueue>(300, 100, i_ostream);
 
@@ -34,7 +34,7 @@ namespace density_tests
         density_tests::run_queue_integrity_test<lf_heter_queue<>>(3000, 300,
             rand, density_tests::LoadUnloadTestOptions{.5,60, 0});*/
 
-        /*using q = lf_heter_queue<void, runtime_type<void>, density_tests::NonblockingTestAllocator<density::default_page_capacity> >;
+        /*using q = lf_heter_queue<runtime_type<void>, density_tests::NonblockingTestAllocator<density::default_page_capacity> >;
         {
             q a;
             for(int i = 0; i < 260; i++)

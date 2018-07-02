@@ -14,38 +14,20 @@ namespace density
             the tail to detect the end of the queue (it is basically null-terminated), this specialization can hold
             the tail in a non-atomic member variable. */
         template <
-          typename COMMON_TYPE,
           typename RUNTIME_TYPE,
           typename ALLOCATOR_TYPE,
           consistency_model CONSISTENCY_MODEL>
-        class LFQueue_Tail<
-          COMMON_TYPE,
-          RUNTIME_TYPE,
-          ALLOCATOR_TYPE,
-          concurrency_single,
-          CONSISTENCY_MODEL>
+        class LFQueue_Tail<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL>
             : public LFQueue_Base<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
-                LFQueue_Tail<
-                  COMMON_TYPE,
-                  RUNTIME_TYPE,
-                  ALLOCATOR_TYPE,
-                  concurrency_single,
-                  CONSISTENCY_MODEL>>
+                LFQueue_Tail<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL>>
         {
           public:
             using Base = LFQueue_Base<
-              COMMON_TYPE,
               RUNTIME_TYPE,
               ALLOCATOR_TYPE,
-              LFQueue_Tail<
-                COMMON_TYPE,
-                RUNTIME_TYPE,
-                ALLOCATOR_TYPE,
-                concurrency_single,
-                CONSISTENCY_MODEL>>;
+              LFQueue_Tail<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, CONSISTENCY_MODEL>>;
 
             using Base::min_alignment;
             using Base::s_alloc_granularity;

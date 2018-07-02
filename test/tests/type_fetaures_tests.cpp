@@ -179,14 +179,14 @@ namespace density_tests
           f_rtti,
           f_hash>();
 
-        auto t1 = runtime_type<void, f1>::make<int>();
+        auto t1 = runtime_type<f1>::make<int>();
         t1.size();
 
-        auto ru1 = runtime_type<void, fu1>::make<int>();
+        auto ru1 = runtime_type<fu1>::make<int>();
         ru1.size();
 
         {
-            auto   ru2 = runtime_type<void, fu2>::make<int>();
+            auto   ru2 = runtime_type<fu2>::make<int>();
             void * mem = aligned_allocate(ru2.size(), ru2.alignment());
 
             ru2.default_construct(mem);

@@ -60,9 +60,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue dyn_push example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             auto const type = MyRunTimeType::make<int>();
             queue.dyn_push(type); // appends 0
@@ -70,9 +69,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue dyn_push_copy example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string const source("Hello world!!");
             auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -81,9 +79,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue dyn_push_move example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string source("Hello world!!");
             auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -93,9 +90,8 @@ namespace density_tests
 
         {
             //! [conc_heter_queue start_dyn_push example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             auto const type = MyRunTimeType::make<int>();
             auto       put  = queue.start_dyn_push(type);
@@ -104,9 +100,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue start_dyn_push_copy example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string const source("Hello world!!");
             auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -116,9 +111,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue start_dyn_push_move example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string source("Hello world!!");
             auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -633,9 +627,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue reentrant_dyn_push example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             auto const type = MyRunTimeType::make<int>();
             queue.reentrant_dyn_push(type); // appends 0
@@ -643,9 +636,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue reentrant_dyn_push_copy example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string const source("Hello world!!");
             auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -654,9 +646,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue reentrant_dyn_push_move example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string source("Hello world!!");
             auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -666,9 +657,8 @@ namespace density_tests
 
         {
             //! [conc_heter_queue start_reentrant_dyn_push example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             auto const type = MyRunTimeType::make<int>();
             auto       put  = queue.start_reentrant_dyn_push(type);
@@ -677,9 +667,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue start_reentrant_dyn_push_copy example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string const source("Hello world!!");
             auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -689,9 +678,8 @@ namespace density_tests
         }
         {
             //! [conc_heter_queue start_reentrant_dyn_push_move example 1]
-            using MyRunTimeType =
-              runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-            conc_heter_queue<void, MyRunTimeType> queue;
+            using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
+            conc_heter_queue<MyRunTimeType> queue;
 
             std::string source("Hello world!!");
             auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -1222,18 +1210,16 @@ namespace density_tests
         /* a runtime_type is internally like a pointer to a v-table, but it can
            contain functions or data (like in the case of f_size and f_alignment). */
         using MyRunTimeType = runtime_type<
-          void,
-          feature_list<
-            f_default_construct,
-            f_copy_construct,
-            f_destroy,
-            f_size,
-            f_alignment,
-            f_ostream,
-            f_istream,
-            f_rtti>>;
+          f_default_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment,
+          f_ostream,
+          f_istream,
+          f_rtti>;
 
-        conc_heter_queue<void, MyRunTimeType> queue;
+        conc_heter_queue<MyRunTimeType> queue;
         queue.push(4);
         queue.push(std::complex<double>(1., 4.));
         queue.emplace<std::string>("Hello!!");
@@ -1336,20 +1322,18 @@ namespace density_tests
         {
             //! [conc_heter_queue move_construct example 1]
             using MyRunTimeType = runtime_type<
-              void,
-              feature_list<
-                f_default_construct,
-                f_copy_construct,
-                f_destroy,
-                f_size,
-                f_alignment,
-                f_equals>>;
+              f_default_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment,
+              f_equals>;
 
-            conc_heter_queue<void, MyRunTimeType> queue;
+            conc_heter_queue<MyRunTimeType> queue;
             queue.push(std::string());
             queue.push(std::make_pair(4., 1));
 
-            conc_heter_queue<void, MyRunTimeType> queue_1(std::move(queue));
+            conc_heter_queue<MyRunTimeType> queue_1(std::move(queue));
 
             assert(queue.empty());
             assert(!queue_1.empty());
@@ -1372,20 +1356,18 @@ namespace density_tests
         {
             //! [conc_heter_queue move_assign example 1]
             using MyRunTimeType = runtime_type<
-              void,
-              feature_list<
-                f_default_construct,
-                f_copy_construct,
-                f_destroy,
-                f_size,
-                f_alignment,
-                f_equals>>;
+              f_default_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment,
+              f_equals>;
 
-            conc_heter_queue<void, MyRunTimeType> queue;
+            conc_heter_queue<MyRunTimeType> queue;
             queue.push(std::string());
             queue.push(std::make_pair(4., 1));
 
-            conc_heter_queue<void, MyRunTimeType> queue_1;
+            conc_heter_queue<MyRunTimeType> queue_1;
             queue_1 = std::move(queue);
 
             assert(queue.empty());

@@ -887,24 +887,7 @@ namespace density
 
             /** \internal - private function, usable only within the library */
             put_transaction(
-              PrivateType,
-              sp_heter_queue *   i_queue,
-              const Allocation & i_put,
-              std::false_type /*i_is_void*/,
-              COMMON_TYPE * i_element) noexcept
-                : m_put(i_put), m_queue(i_queue)
-            {
-                m_put.m_user_storage             = i_element;
-                m_put.m_control_block->m_element = i_element;
-            }
-
-            /** \internal - private function, usable only within the library */
-            put_transaction(
-              PrivateType,
-              sp_heter_queue *   i_queue,
-              const Allocation & i_put,
-              std::true_type /*i_is_void*/,
-              void *) noexcept
+              PrivateType, sp_heter_queue * i_queue, const Allocation & i_put) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
@@ -1228,7 +1211,7 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue dyn_push_copy example 1 */
-        void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -1252,7 +1235,7 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue dyn_push_move example 1 */
-        void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -1331,8 +1314,7 @@ namespace density
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1340,7 +1322,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
@@ -1352,8 +1334,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<ELEMENT_TYPE>(PrivateType(), this, push_data);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1379,8 +1360,7 @@ namespace density
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1388,7 +1368,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -1399,8 +1379,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -1425,13 +1404,12 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push_copy example 1 */
-        put_transaction<>
-          start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
+            void *         element = nullptr;
             runtime_type * type    = nullptr;
             try
             {
@@ -1475,13 +1453,12 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push_move example 1 */
-        put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        put_transaction<> start_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1489,7 +1466,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -1499,8 +1476,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, copy-constructing or move-constructing
@@ -1799,8 +1775,7 @@ namespace density
               std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
               noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
 
             if (is_noexcept)
             {
@@ -1809,7 +1784,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             else
@@ -1822,7 +1797,7 @@ namespace density
                       new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                     DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                    element = new (push_data.m_user_storage)
+                    new (push_data.m_user_storage)
                       ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
                 catch (...)
@@ -1835,8 +1810,7 @@ namespace density
                 }
             }
 
-            return put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<ELEMENT_TYPE>(PrivateType(), this, push_data);
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1875,8 +1849,7 @@ namespace density
                 return put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1884,7 +1857,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -1895,8 +1868,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -1941,8 +1913,7 @@ namespace density
                 return put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -1950,7 +1921,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.copy_construct(push_data.m_user_storage, i_source);
+                i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -1960,8 +1931,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Tries to begin a transaction that appends an element of a type known at runtime, move-constructing it from the source.
@@ -2005,8 +1975,7 @@ namespace density
                 return put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2014,7 +1983,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -2024,8 +1993,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.
@@ -2545,24 +2513,7 @@ namespace density
 
             /** \internal - private function, usable only within the library */
             reentrant_put_transaction(
-              PrivateType,
-              sp_heter_queue *   i_queue,
-              const Allocation & i_put,
-              std::false_type /*i_is_void*/,
-              COMMON_TYPE * i_element) noexcept
-                : m_put(i_put), m_queue(i_queue)
-            {
-                m_put.m_user_storage             = i_element;
-                m_put.m_control_block->m_element = i_element;
-            }
-
-            /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(
-              PrivateType,
-              sp_heter_queue *   i_queue,
-              const Allocation & i_put,
-              std::true_type /*i_is_void*/,
-              void *) noexcept
+              PrivateType, sp_heter_queue * i_queue, const Allocation & i_put) noexcept
                 : m_put(i_put), m_queue(i_queue)
             {
             }
@@ -2840,7 +2791,7 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_copy example 1 */
-        void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
@@ -2850,7 +2801,7 @@ namespace density
 
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_move example 1 */
-        void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -2888,8 +2839,7 @@ namespace density
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2897,7 +2847,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
@@ -2908,8 +2858,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(), this);
         }
 
         /** Same to sp_heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
@@ -2922,8 +2871,7 @@ namespace density
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2931,7 +2879,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -2941,8 +2889,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -2952,13 +2899,12 @@ namespace density
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+          start_reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -2966,7 +2912,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.copy_construct(push_data.m_user_storage, i_source);
+                i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -2976,8 +2922,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Same to sp_heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
@@ -2986,13 +2931,12 @@ namespace density
             <b>Examples</b>
             \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+          start_reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
               detail::LfQueue_Busy, true, i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3000,7 +2944,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -3010,8 +2954,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Same to sp_heter_queue::try_push, but allows reentrancy: during the construction of the element the queue is in a
@@ -3150,8 +3093,7 @@ namespace density
               std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
               noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
 
             if (is_noexcept)
             {
@@ -3160,7 +3102,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             else
@@ -3173,7 +3115,7 @@ namespace density
                       new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                     DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                    element = new (push_data.m_user_storage)
+                    new (push_data.m_user_storage)
                       ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
                 catch (...)
@@ -3186,8 +3128,7 @@ namespace density
                 }
             }
 
-            return reentrant_put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(), this, push_data);
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push, but allows reentrancy: during the construction of the element the queue is in a
@@ -3205,8 +3146,7 @@ namespace density
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3214,7 +3154,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -3225,8 +3165,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push_copy, but allows reentrancy: during the construction of the element the queue is in a
@@ -3246,8 +3185,7 @@ namespace density
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3255,7 +3193,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.copy_construct(push_data.m_user_storage, i_source);
+                i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -3265,8 +3203,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Same to sp_heter_queue::try_start_dyn_push_move, but allows reentrancy: during the construction of the element the queue is in a
@@ -3286,8 +3223,7 @@ namespace density
                 return reentrant_put_transaction<>();
             }
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
@@ -3295,7 +3231,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -3305,8 +3241,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Removes and destroy the first element of the queue, if the queue is not empty. Otherwise it has no effect.

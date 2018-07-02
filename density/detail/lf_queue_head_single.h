@@ -11,17 +11,9 @@ namespace density
     namespace detail
     {
         /** \internal Class template that implements consume operations with a single producer */
-        template <
-          typename COMMON_TYPE,
-          typename RUNTIME_TYPE,
-          typename ALLOCATOR_TYPE,
-          typename QUEUE_TAIL>
-        class LFQueue_Head<
-          COMMON_TYPE,
-          RUNTIME_TYPE,
-          ALLOCATOR_TYPE,
-          concurrency_single,
-          QUEUE_TAIL> : protected QUEUE_TAIL
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename QUEUE_TAIL>
+        class LFQueue_Head<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_single, QUEUE_TAIL>
+            : protected QUEUE_TAIL
         {
           private:
             using Base = QUEUE_TAIL;

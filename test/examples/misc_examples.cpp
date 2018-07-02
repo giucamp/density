@@ -69,8 +69,7 @@ namespace density_tests
         {
             //! [runtime_type example 1]
 
-            using MyRTType =
-              runtime_type<void, feature_list<f_default_construct, f_destroy, f_size>>;
+            using MyRTType = runtime_type<feature_list<f_default_construct, f_destroy, f_size>>;
 
             MyRTType type = MyRTType::make<std::string>();
 
@@ -112,7 +111,7 @@ namespace density_tests
             using MyFeatures = feature_list<default_type_features<void>, feature_call_update>;
 
             // create a queue with 3 objects
-            heter_queue<void, runtime_type<void, MyFeatures>, default_allocator> my_queue;
+            heter_queue<runtime_type<MyFeatures>, default_allocator> my_queue;
             my_queue.emplace<ObjectA>();
             my_queue.emplace<ObjectB>();
             my_queue.emplace<ObjectB>();

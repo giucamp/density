@@ -95,7 +95,7 @@ namespace density_tests
     {
         //! [sp_heter_queue dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -111,7 +111,7 @@ namespace density_tests
     {
         //! [sp_heter_queue dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -128,7 +128,7 @@ namespace density_tests
     {
         //! [sp_heter_queue dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -146,7 +146,7 @@ namespace density_tests
     {
         //! [sp_heter_queue start_dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -163,7 +163,7 @@ namespace density_tests
     {
         //! [sp_heter_queue start_dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -181,7 +181,7 @@ namespace density_tests
     {
         //! [sp_heter_queue start_dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -256,7 +256,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -275,7 +275,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -295,7 +295,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -316,7 +316,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_start_dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -336,7 +336,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_start_dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -357,7 +357,7 @@ static void spinlocking_heterogeneous_queue_try_put_samples()
     {
         //! [sp_heter_queue try_start_dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
         sp_heter_queue<
           void,
           MyRunTimeType,
@@ -1262,8 +1262,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue reentrant_dyn_push example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     auto const type = MyRunTimeType::make<int>();
     queue.reentrant_dyn_push(type); // appends 0
@@ -1272,8 +1272,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue reentrant_dyn_push_copy example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     std::string const source("Hello world!!");
     auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -1283,8 +1283,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue reentrant_dyn_push_move example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     std::string source("Hello world!!");
     auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -1295,8 +1295,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue start_reentrant_dyn_push example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     auto const type = MyRunTimeType::make<int>();
     auto       put  = queue.start_reentrant_dyn_push(type);
@@ -1306,8 +1306,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue start_reentrant_dyn_push_copy example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     std::string const source("Hello world!!");
     auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -1318,8 +1318,8 @@ static void spinlocking_heterogeneous_queue_reentrant_put_samples()
 {
     //! [sp_heter_queue start_reentrant_dyn_push_move example 1]
     using MyRunTimeType =
-      runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-    sp_heter_queue<void, MyRunTimeType> queue;
+      runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+    sp_heter_queue<MyRunTimeType> queue;
 
     std::string source("Hello world!!");
     auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -1389,8 +1389,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_reentrant_dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         auto const type = MyRunTimeType::make<int>();
         if (queue.try_reentrant_dyn_push(progress_blocking, type)) // appends 0
@@ -1402,8 +1402,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_reentrant_dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         std::string const source("Hello world!!");
         auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -1416,8 +1416,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_reentrant_dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         std::string source("Hello world!!");
         auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -1431,8 +1431,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_start_reentrant_dyn_push example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         auto const type = MyRunTimeType::make<int>();
         if (auto put = queue.try_start_reentrant_dyn_push(progress_blocking, type))
@@ -1445,8 +1445,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_start_reentrant_dyn_push_copy example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         std::string const source("Hello world!!");
         auto const        type = MyRunTimeType::make<decltype(source)>();
@@ -1460,8 +1460,8 @@ static void spinlocking_heterogeneous_queue_reentrant_try_put_samples()
     {
         //! [sp_heter_queue try_start_reentrant_dyn_push_move example 1]
         using MyRunTimeType =
-          runtime_type<void, feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
-        sp_heter_queue<void, MyRunTimeType> queue;
+          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        sp_heter_queue<MyRunTimeType> queue;
 
         std::string source("Hello world!!");
         auto const  type = MyRunTimeType::make<decltype(source)>();
@@ -2494,20 +2494,18 @@ static void samples(std::ostream &)
     {
         //! [sp_heter_queue move_construct example 1]
         using MyRunTimeType = runtime_type<
-          void,
-          feature_list<
-            f_default_construct,
-            f_copy_construct,
-            f_destroy,
-            f_size,
-            f_alignment,
-            f_equals>>;
+          f_default_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment,
+          f_equals>;
 
-        sp_heter_queue<void, MyRunTimeType> queue;
+        sp_heter_queue<MyRunTimeType> queue;
         queue.push(std::string());
         queue.push(std::make_pair(4., 1));
 
-        sp_heter_queue<void, MyRunTimeType> queue_1(std::move(queue));
+        sp_heter_queue<MyRunTimeType> queue_1(std::move(queue));
 
         assert(queue.empty());
         assert(!queue_1.empty());
@@ -2543,14 +2541,12 @@ static void samples(std::ostream &)
     {
         //! [sp_heter_queue move_assign example 1]
         using MyRunTimeType = runtime_type<
-          void,
-          feature_list<
-            f_default_construct,
-            f_copy_construct,
-            f_destroy,
-            f_size,
-            f_alignment,
-            f_equals>>;
+          f_default_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment,
+          f_equals>;
 
         using SpQueue = sp_heter_queue<
           void,

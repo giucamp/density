@@ -49,10 +49,8 @@ namespace density
 #endif
     {
       private:
-        using UnderlyingQueue = heter_queue<
-          void,
-          detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>,
-          ALLOCATOR_TYPE>;
+        using UnderlyingQueue =
+          heter_queue<detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>, ALLOCATOR_TYPE>;
         UnderlyingQueue m_queue;
 
       public:
