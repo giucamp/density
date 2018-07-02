@@ -8,6 +8,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include "test_framework/density_test_common.h"
+//
+
 #include "test_settings.h"
 #include <algorithm>
 #include <cstdio>

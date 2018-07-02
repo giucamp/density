@@ -92,7 +92,15 @@ namespace density
                     return *this;
                 }
 
-                bool empty() const noexcept { return m_next_ptr <= LfQueue_AllFlags; }
+                bool empty() const noexcept
+                {
+                    if (m_next_ptr > LfQueue_AllFlags)
+                    {
+                        DENSITY_ASSERT_INTERNAL(
+                          m_next_ptr >= ALLOCATOR_TYPE::page_alignment, m_next_ptr);
+                    }
+                    return m_next_ptr <= LfQueue_AllFlags;
+                }
 
                 bool external() const noexcept { return (m_next_ptr & LfQueue_External) != 0; }
 
@@ -150,6 +158,8 @@ namespace density
                     m_queue    = i_queue;
                     m_control  = static_cast<ControlBlock *>(head);
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    DENSITY_ASSERT_INTERNAL(
+                      empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
                     return true;
                 }
 
@@ -161,7 +171,7 @@ namespace density
 
                 bool is_queue_empty(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
+                    DENSITY_ASSERT_INTERNAL(empty());
 
                     begin_iteration(i_queue);
                     while (!empty())
@@ -179,6 +189,8 @@ namespace density
 
                 bool move_next() noexcept
                 {
+                    DENSITY_ASSERT_INTERNAL(!empty(), m_next_ptr);
+
                     DENSITY_ASSERT_INTERNAL(
                       address_is_aligned(m_control, Base::s_alloc_granularity));
 
@@ -204,16 +216,18 @@ namespace density
 
                     m_control  = next;
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    DENSITY_ASSERT_INTERNAL(
+                      empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
                     return true;
                 }
 
                 /** Tries to start a consume operation. The Consume must be initially empty.
-                    If there are no consumable elements, the Consume remains empty (m_next_ptr == 0).
+                    If there are no consumable elements, the Consume remains empty (m_next_ptr <= LfQueue_AllFlags).
                     Otherwise m_next_ptr is the value to set on the ControlBox to commit the consume
                     (it has the LfQueue_Dead flag). */
                 void start_consume_impl(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(m_next_ptr == 0);
+                    DENSITY_ASSERT_INTERNAL(empty());
 
                     begin_iteration(i_queue);
                     while (!empty())
@@ -232,6 +246,14 @@ namespace density
                             {
                                 m_next_ptr |= LfQueue_Dead;
                                 break;
+                            }
+                            else
+                            {
+                                if (empty())
+                                {
+                                    begin_iteration(i_queue);
+                                    continue;
+                                }
                             }
                         }
                         else if ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
@@ -289,7 +311,7 @@ namespace density
 
                 /** If m_head equals to m_control advance it to the next block, zeroing the memory.
                     This function assumes that the current block is dead. */
-                bool advance_head()
+                bool advance_head() const
                 {
                     auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
 

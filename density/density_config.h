@@ -12,17 +12,21 @@
 /*! \file */
 
 /** Assert used to detect user errors that causes undefined behavior */
+#if !defined(DENSITY_ASSERT)
 #if defined(DENSITY_DEBUG)
 #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
 #else
 #define DENSITY_ASSERT DENSITY_ASSUME
 #endif
+#endif
 
 /** Assert used to detect bugs of the library that causes undefined behavior */
+#if !defined(DENSITY_ASSERT_INTERNAL)
 #if defined(DENSITY_DEBUG_INTERNAL)
 #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
 #else
 #define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
+#endif
 #endif
 
 /** Macro used to enforce the alignment of a pointer as an invariant. */
@@ -52,7 +56,7 @@
 
 /** Assert that on failure should cause an halt of the program. Used only locally in this header. */
 #ifdef _MSC_VER
-#define DENSITY_CHECKING_ASSERT(bool_expr)                                                         \
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __debugbreak();                                                                            \
@@ -60,7 +64,7 @@
     else                                                                                           \
         (void)0
 #elif defined(__GNUC__)
-#define DENSITY_CHECKING_ASSERT(bool_expr)                                                         \
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __builtin_trap();                                                                          \
@@ -71,15 +75,15 @@
 #define DENSITY_CHECKING_ASSERT(bool_expr) assert(bool_expr)
 #endif
 
-/** Macro that tells an invariant to the compiler as hint for the optimizer. . Used only locally in this header. */
+/** Macro that tells an invariant to the compiler as hint for the optimizer. Used only locally in this header. */
 #if defined(__clang__)
-#define DENSITY_ASSUME(bool_expr)                                                                  \
+#define DENSITY_ASSUME(bool_expr, ...)                                                             \
     _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wassume\"")              \
       __builtin_assume((bool_expr)) _Pragma("clang diagnostic pop")
 #elif defined(_MSC_VER)
-#define DENSITY_ASSUME(bool_expr) __assume((bool_expr))
+#define DENSITY_ASSUME(bool_expr, ...) __assume((bool_expr))
 #elif defined(__GNUC__)
-#define DENSITY_ASSUME(bool_expr)                                                                  \
+#define DENSITY_ASSUME(bool_expr, ...)                                                             \
     if (!(bool_expr))                                                                              \
     {                                                                                              \
         __builtin_unreachable();                                                                   \
@@ -87,12 +91,12 @@
     else                                                                                           \
         (void)0 // https://stackoverflow.com/questions/25667901/assume-clause-in-gcc
 #else
-#define DENSITY_ASSUME(bool_expr) (void)0
+#define DENSITY_ASSUME(bool_expr, ...) (void)0
 #endif
 
 namespace density
 {
-    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines.  It must be a power of 2.
+    /** Alignment used by some concurrent data structure to avoid false sharing of cache lines. It must be a power of 2.
 
         This is a configuration variable, intended to be customized by the user of the library. The default value is 64.
 
@@ -208,4 +212,5 @@ namespace density
     /** Alias to an implementation of optional. By default a minimal implementation of optional is used, but
         it can be replaced by the C++17 standard one, if available. */
     template <typename TYPE> using optional = builtin_optional<TYPE>;
+
 } // namespace density
