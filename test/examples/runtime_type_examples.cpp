@@ -103,7 +103,7 @@ namespace density_tests
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static feature_call_update make() noexcept
         {
-            return type{&invoke<TARGET_TYPE>};
+            return feature_call_update{&invoke<TARGET_TYPE>};
         }
 
       private:

@@ -767,7 +767,7 @@ namespace density
                 - the runtime_type must be non-empty
 
             \n\b Throws: nothing. */
-        template <typename FEATURE> const typename FEATURE & get_feature() const noexcept
+        template <typename FEATURE> const FEATURE & get_feature() const noexcept
         {
             static_assert(
               detail::Tuple_FindFirst<tuple_type, FEATURE>::index !=
