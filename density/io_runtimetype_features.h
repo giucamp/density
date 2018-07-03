@@ -37,7 +37,7 @@ namespace density
         template <typename TARGET_TYPE>
         static void read_func(std::istream & i_istream, void * i_dest)
         {
-            const auto derived = detail::down_cast<TARGET_TYPE *>(i_dest);
+            const auto derived = static_cast<TARGET_TYPE *>(i_dest);
             i_istream >> *derived;
         }
     };
@@ -68,7 +68,7 @@ namespace density
         template <typename TARGET_TYPE>
         static void write_func(std::ostream & i_ostream, const void * i_dest)
         {
-            const auto derived = detail::down_cast<const TARGET_TYPE *>(i_dest);
+            const auto derived = static_cast<const TARGET_TYPE *>(i_dest);
             i_ostream << *derived;
         }
     };

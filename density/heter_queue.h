@@ -1041,7 +1041,7 @@ namespace density
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2030,7 +2030,7 @@ namespace density
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */

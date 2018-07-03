@@ -90,10 +90,9 @@ namespace density
     };
 
     /** This type-feature gives the size of the target type */
-    struct f_size
+    class f_size
     {
-        size_t const m_size;
-
+      public:
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_size make() noexcept
         {
@@ -106,14 +105,17 @@ namespace density
         }
 
         /** Returns the size of the target type. */
-        constexpr size_t operator()() const noexcept { return m_size; }
+        DENSITY_NODISCARD constexpr size_t operator()() const noexcept { return m_size; }
+
+      private:
+        constexpr f_size(size_t i_size) noexcept : m_size(i_size) {}
+        size_t const m_size;
     };
 
     /** This type-feature gives the alignment of the target type */
-    struct f_alignment
+    class f_alignment
     {
-        size_t const m_alignment;
-
+      public:
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_alignment make() noexcept
         {
@@ -126,92 +128,110 @@ namespace density
         }
 
         /** Returns the alignment of the target type. */
-        constexpr size_t operator()() const noexcept { return m_alignment; }
+        DENSITY_NODISCARD constexpr size_t operator()() const noexcept { return m_alignment; }
+
+      private:
+        constexpr f_alignment(size_t i_alignment) noexcept : m_alignment(i_alignment) {}
+        size_t const m_alignment;
     };
 
-    /** This feature computes the hash of an instance of the target type
-        - If a function hash_func(const TARGET_TYPE & i_object) exists, it is used to compute the hash. This function
-            should be defined in the namespace that contains TARGET_TYPE (it will use ADL). If such function exits,
-            its return type must be size_t and must be noexcept.
-        - Otherwise std::hash<TARGET_TYPE> is used to compute the hash */
-    struct f_hash
+    /** This feature invokes std::hash on an instance of the target type. Specializations of
+        std::hash must have a noexcept default constructor and a noexcept operator (). */
+    class f_hash
     {
-        /** Pointer to the function that computes the hash */
-        size_t (*const m_hash_func)(const void * i_source) DENSITY_CPP17_NOEXCEPT;
-
-        /** Computes the hash of an instance of the target type object. 
-        @param i_source pointer to an instance of the target type. Can't be null.
-            If the dynamic type of the pointed object is not the taget type (assigned
-            by the function make), the behaviour is undefined. */
-        size_t operator()(const void * i_source) const noexcept { return (*m_hash_func)(i_source); }
-
+      public:
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_hash make() noexcept
         {
-            return f_hash{&hash_func<TARGET_TYPE>};
+            return f_hash{&invoke<TARGET_TYPE>};
+        }
+
+        /** Computes the hash of an instance of the target type object.
+            @param i_source pointer to an instance of the target type. Can't be null.
+                If the dynamic type of the pointed object is not the taget type (assigned
+                by the function make), the behaviour is undefined. */
+        DENSITY_NODISCARD size_t operator()(const void * i_source) const noexcept
+        {
+            return (*m_function)(i_source);
         }
 
       private:
-        template <typename TARGET_TYPE> static size_t hash_func(const void * i_source) noexcept
+        using Function = size_t (*)(const void * i_source) DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_hash(Function i_function) noexcept : m_function(i_function) {}
+        template <typename TARGET_TYPE> static size_t invoke(const void * i_source) noexcept
         {
             DENSITY_ASSERT(i_source != nullptr);
-            return detail::invoke_hash(*static_cast<const TARGET_TYPE *>(i_source));
+            static_assert(
+              noexcept(std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source))),
+              "Specializations of std::hash must be nothrow constructible and invokable");
+            return std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source));
         }
     };
 
     /** This feature returns the std::type_info associated to the target type. */
-    struct f_rtti
+    class f_rtti
     {
-        /** Pointer to the function that returns the std::type_info of the object */
-        std::type_info const & (*const m_type_info_func)() DENSITY_CPP17_NOEXCEPT;
-
-        /** Returns the std::type_info of the target type. */
-        std::type_info const & operator()() const noexcept { return (*m_type_info_func)(); }
-
+      public:
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_rtti make() noexcept
         {
-            return f_rtti{&get_type_info_func<TARGET_TYPE>};
+            return f_rtti{&invoke<TARGET_TYPE>};
+        }
+
+        /** Returns the std::type_info of the target type. */
+        DENSITY_NODISCARD std::type_info const & operator()() const noexcept
+        {
+            return (*m_function)();
         }
 
       private:
-        template <typename TARGET_TYPE> static const std::type_info & get_type_info_func() noexcept
+        using Function = std::type_info const & (*)() DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_rtti(Function i_function) noexcept : m_function(i_function) {}
+        template <typename TARGET_TYPE> static const std::type_info & invoke() noexcept
         {
             return typeid(TARGET_TYPE);
         }
     };
 
-    /** Constructs to an uninitialized memory buffer a value-initialized instance of the target type. */
-    struct f_default_construct
+    /** [Value-initializes](https://en.cppreference.com/w/cpp/language/value_initialization) an
+        instance of the target type in a user specified storage buffer. */
+    class f_default_construct
     {
-        /** Pointer to the function that value-constructs the target object. */
-        void (*const m_construct_func)(void * i_dest);
-
-        /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
-        @param i_dest where the target object must be constructed. Can't be null. If the buffer 
-            pointed by this parameter does not respect the size and alignment of the target type,
-            the behaviour is undefined. */
-        void operator()(void * i_dest) const { (*m_construct_func)(i_dest); }
-
+      public:
         /** Creates an instance of this feature bound to the specified target type */
         template <typename TARGET_TYPE> constexpr static f_default_construct make() noexcept
         {
-            return f_default_construct{&construct_func<TARGET_TYPE>};
+            return f_default_construct{&invoke<TARGET_TYPE>};
         }
 
+        /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
+            @param i_dest where the target object must be constructed. Can't be null. If the buffer 
+            pointed by this parameter does not respect the size and alignment of the target type,
+            the behaviour is undefined. */
+        void operator()(void * i_dest) const { (*m_function)(i_dest); }
+
       private:
-        template <typename TARGET_TYPE> static void construct_func(void * i_dest)
+        using Function = void (*)(void * i_dest);
+        Function const m_function;
+        constexpr f_default_construct(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_dest)
         {
             DENSITY_ASSERT(i_dest != nullptr);
             new (i_dest) TARGET_TYPE();
         }
     };
 
-    /** Copy-constructs to an uninitialized memory buffer an instance of the target type. */
-    struct f_copy_construct
+    /** Copy-initializes an instance of the target type in a user specified storage buffer. */
+    class f_copy_construct
     {
-        /** Pointer to the function that copy-constructs the target object. */
-        void (*const m_construct_func)(void * i_dest, const void * i_source);
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_copy_construct make() noexcept
+        {
+            return f_copy_construct{&invoke<TARGET_TYPE>};
+        }
 
         /** Copy-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
@@ -222,18 +242,14 @@ namespace density
                 undefined. */
         void operator()(void * i_dest, const void * i_source) const
         {
-            (*m_construct_func)(i_dest, i_source);
-        }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_copy_construct make() noexcept
-        {
-            return f_copy_construct{&copy_construct_func<TARGET_TYPE>};
+            (*m_function)(i_dest, i_source);
         }
 
       private:
-        template <typename TARGET_TYPE>
-        static void copy_construct_func(void * i_dest, const void * i_source)
+        using Function = void (*)(void * i_dest, const void * i_source);
+        Function const m_function;
+        constexpr f_copy_construct(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_dest, const void * i_source)
         {
             DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
             const TARGET_TYPE & source = *static_cast<const TARGET_TYPE *>(i_source);
@@ -244,8 +260,12 @@ namespace density
     /** Move-constructs to an uninitialized memory buffer an instance of the target type. */
     struct f_move_construct
     {
-        /** Pointer to the function that move-constructs the target object. */
-        void (*const m_construct_func)(void * i_dest, void * i_source);
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_move_construct make() noexcept
+        {
+            return f_move_construct{&invoke<TARGET_TYPE>};
+        }
 
         /** Move-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
@@ -254,20 +274,13 @@ namespace density
             @param i_source pointer to the source object. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined. */
-        void operator()(void * i_dest, void * i_source) const
-        {
-            (*m_construct_func)(i_dest, i_source);
-        }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_move_construct make() noexcept
-        {
-            return f_move_construct{&move_construct_func<TARGET_TYPE>};
-        }
+        void operator()(void * i_dest, void * i_source) const { (*m_function)(i_dest, i_source); }
 
       private:
-        template <typename TARGET_TYPE>
-        static void move_construct_func(void * i_dest, void * i_source)
+        using Function = void (*)(void * i_dest, void * i_source);
+        Function const m_function;
+        constexpr f_move_construct(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_dest, void * i_source)
         {
             DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
             TARGET_TYPE & source = *static_cast<TARGET_TYPE *>(i_source);
@@ -276,26 +289,27 @@ namespace density
     };
 
     /** Destroys an instance of the target type, and returns the address of the complete type. */
-    struct f_destroy
+    class f_destroy
     {
-        /** Pointer to the function that move-constructs the target object. */
-        void (*const m_destroy_func)(void * i_object) DENSITY_CPP17_NOEXCEPT;
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_destroy make() noexcept
+        {
+            return f_destroy{&invoke<TARGET_TYPE>};
+        }
 
         /** Destroys an instance of the target type.
             @param i_object pointer to the object to destroy. Can't be null. If the dynamic type of the
                 pointed object is not the taget type (assigned by the function make), the behaviour is
                 undefined.
             @return The address of the complete object that has been destroyed. */
-        void operator()(void * i_object) const noexcept { return (*m_destroy_func)(i_object); }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_destroy make() noexcept
-        {
-            return f_destroy{&destroy_func<TARGET_TYPE>};
-        }
+        void operator()(void * i_object) const noexcept { return (*m_function)(i_object); }
 
       private:
-        template <typename TARGET_TYPE> static void destroy_func(void * i_object)
+        using Function = void (*)(void * i_dest) DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_destroy(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_object) noexcept
         {
             DENSITY_ASSERT(i_object != nullptr);
             TARGET_TYPE * obj = static_cast<TARGET_TYPE *>(i_object);
@@ -304,10 +318,14 @@ namespace density
     };
 
     /** Compares two objects for equality. The target type must have an operator == . */
-    struct f_equals
+    class f_equals
     {
-        /** Pointer to the function that compares two target objects. */
-        bool (*const m_compare_func)(void const * i_first, void const * i_second);
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_equals make() noexcept
+        {
+            return f_equals{&invoke<TARGET_TYPE>};
+        }
 
         /** Returns whether two target object compare equal.
         @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
@@ -318,18 +336,16 @@ namespace density
             undefined. */
         bool operator()(void const * i_first, void const * i_second) const
         {
-            return (*m_compare_func)(i_first, i_second);
-        }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_equals make() noexcept
-        {
-            return f_equals{&compare_equal<TARGET_TYPE>};
+            return (*m_function)(i_first, i_second);
         }
 
       private:
+        using Function = bool (*)(void const * i_first, void const * i_second)
+          DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_equals(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE>
-        static bool compare_equal(void const * i_first, void const * i_second)
+        static bool invoke(void const * i_first, void const * i_second)
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
@@ -340,10 +356,15 @@ namespace density
     };
 
     /** Compares two objects. The target type must have an operator < . */
-    struct f_less
+    class f_less
     {
-        /** Pointer to the function that compares two target objects. */
-        bool (*const m_compare_func)(void const * i_first, void const * i_second);
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_less make() noexcept
+        {
+            return f_less{&invoke<TARGET_TYPE>};
+        }
+
 
         /** Returns whether the first object compares less than the second object.
         @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
@@ -354,18 +375,16 @@ namespace density
             undefined. */
         bool operator()(void const * i_first, void const * i_second) const
         {
-            return (*m_compare_func)(i_first, i_second);
-        }
-
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_less make() noexcept
-        {
-            return f_less{&compare_less<TARGET_TYPE>};
+            return (*m_function)(i_first, i_second);
         }
 
       private:
+        using Function = bool (*)(void const * i_first, void const * i_second)
+          DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_less(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE>
-        static bool compare_less(void const * i_first, void const * i_second)
+        static bool invoke(void const * i_first, void const * i_second)
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
