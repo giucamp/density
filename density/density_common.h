@@ -17,7 +17,7 @@
 /*! \file */
 
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
-#define DENSITY_VERSION 0x00010401
+#define DENSITY_VERSION 0x00020000
 
 // detect 'Relaxed constraints on constexpr functions / constexpr member functions and implicit const'
 // see http://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros#C.2B.2B14
@@ -33,12 +33,24 @@
 #define DENSITY_CPP17_NOEXCEPT
 #endif
 
+// DENSITY_NODISCARD
+#if defined(__has_cpp_attribute)
+#if __has_cpp_attribute(nodiscard) >= 201603
+// clang-format off
+#define DENSITY_NODISCARD [[nodiscard]]
+// clang-format on
+#endif
+#endif
+#ifndef DENSITY_NODISCARD
+#define DENSITY_NODISCARD
+#endif
+
 /** namespace density */
 namespace density
 {
     /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions.
             Example of value: "7.240.22" */
-    constexpr char version[] = "1.4.1";
+    constexpr char version[] = "2.0.0";
 
     /** Specifies whether a set of functions actually support concurrency */
     enum concurrency_cardinality
