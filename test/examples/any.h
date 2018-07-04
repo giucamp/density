@@ -21,7 +21,7 @@ namespace density_examples
 
         constexpr any() noexcept = default;
 
-        template <typename TYPE> any(const TYPE & i_source) : m_type(type_type::make<TYPE>())
+        template <typename TYPE> any(const TYPE & i_source) : m_type(type_type::template make<TYPE>())
         {
             allocate();
             deallocate_on_failure([&] { m_type.copy_construct(m_object, &i_source); });
@@ -69,7 +69,7 @@ namespace density_examples
 
         template <typename DEST_TYPE> friend DEST_TYPE any_cast(const any & i_source)
         {
-            if (i_source.m_type.is<DEST_TYPE>())
+            if (i_source.m_type.template is<DEST_TYPE>())
                 return *static_cast<DEST_TYPE *>(i_source.m_object);
             else
                 throw bad_any_cast();
@@ -77,7 +77,7 @@ namespace density_examples
 
         template <typename DEST_TYPE> friend DEST_TYPE any_cast(any && i_source)
         {
-            if (i_source.m_type.is<DEST_TYPE>())
+            if (i_source.m_type.template is<DEST_TYPE>())
                 return std::move(*static_cast<DEST_TYPE *>(i_source.m_object));
             else
                 throw bad_any_cast();
@@ -86,7 +86,7 @@ namespace density_examples
         template <typename DEST_TYPE>
         friend const DEST_TYPE * any_cast(const any * i_source) noexcept
         {
-            if (i_source->m_type.is<DEST_TYPE>())
+            if (i_source->m_type.template is<DEST_TYPE>())
                 return static_cast<const DEST_TYPE *>(i_source->m_object);
             else
                 return nullptr;
@@ -94,7 +94,7 @@ namespace density_examples
 
         template <typename DEST_TYPE> friend DEST_TYPE * any_cast(any * i_source) noexcept
         {
-            if (i_source->m_type.is<DEST_TYPE>())
+            if (i_source->m_type.template is<DEST_TYPE>())
                 return static_cast<DEST_TYPE *>(i_source->m_object);
             else
                 return nullptr;
