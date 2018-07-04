@@ -19,6 +19,7 @@ namespace density_tests
     {
         using namespace density;
 
+        {
         //! [feature_list example 1]
     using FewFeatures = feature_list<f_size, f_alignment>;
     using MoreFeatures = feature_list<FewFeatures, f_default_construct, f_copy_construct, f_move_construct, f_destroy>;
@@ -39,7 +40,8 @@ namespace density_tests
             f_equal, f_less, f_hash
         >>::value, "");
         //! [feature_list example 3]
-
+        }
+        {
         //! [feature_list example 4]
     // Features1, Features2 and Features3 are similar....
     using Features1 = feature_list<f_size, f_alignment, f_copy_construct>;
@@ -69,6 +71,20 @@ namespace density_tests
         value,
         "");
         //! [feature_list example 5]
+        }
+        {
+        //! [has_features example 7]
+        using MyFeatures = feature_list<f_size, f_alignment>;
+        static_assert(has_features<MyFeatures>::value, "");
+        static_assert(has_features<MyFeatures, f_size>::value, "");
+        static_assert(has_features<MyFeatures, f_alignment>::value, "");
+        static_assert(has_features<MyFeatures, f_size, f_alignment>::value, "");
+        static_assert(!has_features<MyFeatures, f_copy_construct>::value, "");
+        static_assert(!has_features<MyFeatures, f_size, f_copy_construct>::value, "");
+        static_assert(!has_features<MyFeatures, f_copy_construct, f_size>::value, "");
+        //! [has_features example 7]
+        }
+    
 
         {
             std::aligned_storage<sizeof(std::string), alignof(std::string)>::type storage;
@@ -107,6 +123,13 @@ namespace density_tests
     void runtime_type_examples()
     {
         using namespace density;
+        {
+            //! [runtime_type example 1]
+            using Rt1 = runtime_type<f_size, f_alignment>;
+
+
+            //! [runtime_type example 1]
+        }
         {
             //! [runtime_type copy example 1]
             using Rt1 = runtime_type<f_size, f_alignment>;

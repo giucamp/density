@@ -250,6 +250,11 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     i_ostream.flags(prev_stream_flags);
 }
 
+namespace density_examples
+{
+    void any_tests();
+}
+
 int run(int argc, char ** argv)
 {
     std::ostream & out = std::cout;
@@ -331,6 +336,8 @@ int run(int argc, char ** argv)
     DENSITY_TEST_ASSERT(version_stream.str() == density::version);
 
     //sandbox();
+
+    density_examples::any_tests();
 
     do_tests(*settings, out, random_seed);
     return 0;

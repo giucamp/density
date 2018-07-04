@@ -72,6 +72,8 @@ add_executable(density_test
 	examples/lf_heterogeneous_queue_examples.cpp
 	examples/misc_examples.cpp
 	examples/lifo_examples.cpp
+    examples/any.h
+    examples/any_test.cpp
     examples/runtime_type_examples.cpp
 	examples/sp_func_queue_examples.cpp
 	examples/sp_heterogeneous_queue_examples.cpp

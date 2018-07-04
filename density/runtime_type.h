@@ -20,10 +20,10 @@ namespace density
     /** Type-list class template that can be used to specify which features a runtime_type captures from 
         a the target type. 
 
-        Each type in the list is either:
+        Each type in the template arguments is either:
         - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
-          (f_size, f_alignment, f_default_construct, f_copy_construct, f_destroy, ...), or a user defined 
-          type feature.
+          (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
+          f_less, f_istream, f_ostream), or a user defined type feature.
         - a nested feature_list
         - the special tag type f_none
 
@@ -51,9 +51,10 @@ namespace density
     };
     template <typename FIRST_FEATURE, typename... OTHER_FEATURES>
     struct feature_list<FIRST_FEATURE, OTHER_FEATURES...> /* the generic case, to 
-        handle normal features */
+        handle types satisfying [TypeFeature](TypeFeature_concept.html) */
     {
-        static_assert(!std::is_void<FIRST_FEATURE>::value, "void is not valid as type feature");
+        static_assert(
+          !std::is_void<FIRST_FEATURE>::value, "[cv-qualified] void is not valid as type feature");
 
         using tuple_type = detail::Tuple_Merge_t<
 
@@ -412,6 +413,24 @@ namespace density
     using default_type_features =
       feature_list<f_size, f_alignment, f_copy_construct, f_move_construct, f_rtti, f_destroy>;
 
+    /**  
+    
+        \snippet runtime_type_examples.cpp has_features example 7
+    */
+    template <typename FEATURE_LIST, typename... TARGET_FEATURES> struct has_features;
+    template <typename FEATURE_LIST> struct has_features<FEATURE_LIST>
+    {
+        constexpr static bool value = true;
+    };
+    template <typename FEATURE_LIST, typename FIRST_FEATURE, typename... OTHER_FEATURES>
+    struct has_features<FEATURE_LIST, FIRST_FEATURE, OTHER_FEATURES...>
+    {
+        constexpr static bool value =
+          (detail::Tuple_FindFirst<typename FEATURE_LIST::tuple_type, FIRST_FEATURE>::index <
+           std::tuple_size<typename FEATURE_LIST::tuple_type>::value) &&
+          has_features<FEATURE_LIST, OTHER_FEATURES...>::value;
+    };
+
     /*! \page RuntimeType_concept RuntimeType concept
 
         The RuntimeType concept provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
@@ -535,10 +554,19 @@ namespace density
 
     /** Class template that performs type-erasure.
             @tparam FEATURES... list of features to be captures from the target type. 
+
+        Like for feature_list, each type in the template arguments is either:
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
+          (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
+          f_less, f_istream, f_ostream), or a user defined type feature.
+        - a nested feature_list
+        - the special tag type f_none
+
+        \snippet any.h any
             
-            Type_features::feature_list that defines which type-features are type-erased. By default
-                the feature_list is obtained with default_type_features. If this type is not a feature_list,
-                a compile time error is reported.
+        Type_features::feature_list that defines which type-features are type-erased. By default
+            the feature_list is obtained with default_type_features. If this type is not a feature_list,
+            a compile time error is reported.
 
         runtime_type meets the requirements of \ref RuntimeType_concept "RuntimeType".
 
@@ -803,7 +831,7 @@ namespace density
         /** Returns true if two instances of the target types compare equal.
             \n\b Throws: unspecified
         */
-        bool are_equal(const void * i_first, const void * i_second) const
+        bool are_equal(const void * i_first, const void * i_second) const noexcept
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
             return get_feature<f_equal>()(i_first, i_second);
@@ -866,7 +894,7 @@ namespace density
         }
 
       public:
-        const tuple_type * m_feature_table{};
+        const tuple_type * m_feature_table{nullptr};
     };
 } // namespace density
 
