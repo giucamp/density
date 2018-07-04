@@ -139,4 +139,16 @@ namespace density_examples
     };
     //! [any]
 
+    template <typename DEST_TYPE, typename... FEATURES>
+    DEST_TYPE any_cast(const any<FEATURES...> & i_source);
+
+    template <typename DEST_TYPE, typename... FEATURES>
+    DEST_TYPE any_cast(any<FEATURES...> && i_source);
+
+    template <typename DEST_TYPE, typename... FEATURES>
+    const DEST_TYPE * any_cast(const any<FEATURES...> * i_source) noexcept;
+
+    template <typename DEST_TYPE, typename... FEATURES>
+    DEST_TYPE * any_cast(any<FEATURES...> * i_source) noexcept;
+
 } // namespace density_examples
