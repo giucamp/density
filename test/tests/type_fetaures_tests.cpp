@@ -163,8 +163,8 @@ namespace density_tests
         using f2 = feature_list<f_default_construct, f_size, f_destroy, f_rtti>;
         check_feature_set<f2, f_default_construct, f_size, f_destroy, f_rtti>();
 
-        using f3 = feature_list<f_copy_construct, f_move_construct, f_equals>;
-        check_feature_set<f3, f_copy_construct, f_move_construct, f_equals>();
+        using f3 = feature_list<f_copy_construct, f_move_construct, f_equal>;
+        check_feature_set<f3, f_copy_construct, f_move_construct, f_equal>();
 
         using fu1 = feature_list<f_size, f1, f2, f_hash>;
         using fu2 = feature_list<f1, feature_list<f2, f3>>;

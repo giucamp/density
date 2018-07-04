@@ -1327,7 +1327,7 @@ namespace density_tests
               f_destroy,
               f_size,
               f_alignment,
-              f_equals>;
+              f_equal>;
 
             conc_heter_queue<MyRunTimeType> queue;
             queue.push(std::string());
@@ -1361,7 +1361,7 @@ namespace density_tests
               f_destroy,
               f_size,
               f_alignment,
-              f_equals>;
+              f_equal>;
 
             conc_heter_queue<MyRunTimeType> queue;
             queue.push(std::string());

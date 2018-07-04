@@ -2462,7 +2462,7 @@ static void samples(std::ostream &)
           f_destroy,
           f_size,
           f_alignment,
-          f_equals>;
+          f_equal>;
 
         lf_heter_queue<MyRunTimeType> queue;
         queue.push(std::string());
@@ -2509,7 +2509,7 @@ static void samples(std::ostream &)
           f_destroy,
           f_size,
           f_alignment,
-          f_equals>;
+          f_equal>;
 
         using LfQueue = lf_heter_queue<
           MyRunTimeType,

@@ -2083,7 +2083,7 @@ static void samples(std::ostream &)
           f_destroy,
           f_size,
           f_alignment,
-          f_equals>;
+          f_equal>;
 
         sp_heter_queue<MyRunTimeType> queue;
         queue.push(std::string());
@@ -2122,7 +2122,7 @@ static void samples(std::ostream &)
           f_destroy,
           f_size,
           f_alignment,
-          f_equals>;
+          f_equal>;
 
         using SpQueue =
           sp_heter_queue<MyRunTimeType, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;

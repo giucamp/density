@@ -2462,7 +2462,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>f_equals</code>
+                - the runtime type must support the feature <code>f_equal</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.
@@ -2494,7 +2494,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>f_equals</code>
+                - the runtime type must support the feature <code>f_equal</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.

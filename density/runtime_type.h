@@ -17,28 +17,33 @@
 
 namespace density
 {
-    /** Type-list class template that specifies which features a runtime_type captures from a type (the target type).
-
-        A feature is a class that capture and exposes a specific feature of a target type, without 
-        depending from it at compile time. Most times they use a pointer to a function (that is like
-        an entry in a vtable), but they may hold just data (like f_size and f_alignment do). 
+    /** Type-list class template that can be used to specify which features a runtime_type captures from 
+        a the target type. 
 
         Each type in the list is either:
-        - a type modeling the [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure (f_size, f_alignment, 
-            f_default_construct, f_copy_construct, f_destroy, ...), or a user defined type feature.
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
+          (f_size, f_alignment, f_default_construct, f_copy_construct, f_destroy, ...), or a user defined 
+          type feature.
         - a nested feature_list
-        - the special feature f_none
+        - the special tag type f_none
+
+        \snippet runtime_type_examples.cpp feature_list example 1
 
         feature_list provides a template alias to an std::tuple, that is used by runtime_type
         as pseudo vtable. Actually a runtime_type is a pointer to a static constexpr instance of this tuple.
-        \snippet runtime_type_examples.cpp feature_list example 1
+        
+        \snippet runtime_type_examples.cpp feature_list example 2
+
         For the composition of the tuple:
         - nested features are flatened
         - duplicates are removed (only the first occurrence of a fetaure is considered)
         - any occurrence of f_none is stripped out
-        \snippet runtime_type_examples.cpp feature_list example 2
-        If two feature_list produce the same tuple they are similar:
-        \snippet runtime_type_examples.cpp feature_list example 3 */
+        
+        \snippet runtime_type_examples.cpp feature_list example 3 
+        
+        Two feature list are similar if they prduce the same feature tuple:
+
+        \snippet runtime_type_examples.cpp feature_list example 4 */
     template <typename... FEATURES> struct feature_list;
     template <> struct feature_list<> /* an empty feature_list gives an empty tuple */
     {
@@ -82,9 +87,12 @@ namespace density
         using tuple_type = typename feature_list<OTHER_FEATURES...>::tuple_type;
     };
 
-    /** Tag type that is ignored in a feature list. This peseudo-feature is usefull to conditionally add features
-        to a feature_list, for example using std::conditional. For example f_none is used in the definition of 
-        default_type_features. */
+    /** Tag type that can be included in a feature_list without affecting the feature tuple. This peseudo-feature 
+        is usefull to conditionally add features to a feature_list, for example using std::conditional.
+        
+        In this code f_none is used to define a conditional type list.
+
+        \snippet runtime_type_examples.cpp feature_list example 6 */
     struct f_none
     {
     };
@@ -135,8 +143,9 @@ namespace density
         size_t const m_alignment;
     };
 
-    /** This feature invokes std::hash on an instance of the target type. Specializations of
-        std::hash must have a noexcept default constructor and a noexcept operator (). */
+    /** This feature invokes [std::hash](https://en.cppreference.com/w/cpp/utility/hash) on an 
+        instance of the target type. Specializations of std::hash must be nothrow default
+        constructible and nothrow invokable. */
     class f_hash
     {
       public:
@@ -196,7 +205,8 @@ namespace density
     };
 
     /** [Value-initializes](https://en.cppreference.com/w/cpp/language/value_initialization) an
-        instance of the target type in a user specified storage buffer. */
+        instance of the target type in a user specified storage buffer. The target type must satisfy
+        the requirements of [DefaultConstructible](https://en.cppreference.com/w/cpp/named_req/DefaultConstructible). */
     class f_default_construct
     {
       public:
@@ -207,9 +217,9 @@ namespace density
         }
 
         /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
-            @param i_dest where the target object must be constructed. Can't be null. If the buffer 
-            pointed by this parameter does not respect the size and alignment of the target type,
-            the behaviour is undefined. */
+                @param i_dest where the target object must be constructed. Can't be null. If the buffer 
+                pointed by this parameter does not respect the size and alignment of the target type,
+                the behaviour is undefined. */
         void operator()(void * i_dest) const { (*m_function)(i_dest); }
 
       private:
@@ -223,7 +233,8 @@ namespace density
         }
     };
 
-    /** Copy-initializes an instance of the target type in a user specified storage buffer. */
+    /** Copy-initializes an instance of the target type in a user specified storage buffer. The target type
+        must satisfy the requirements of [CopyConstructible](https://en.cppreference.com/w/cpp/named_req/CopyConstructible).*/
     class f_copy_construct
     {
       public:
@@ -257,7 +268,8 @@ namespace density
         }
     };
 
-    /** Move-constructs to an uninitialized memory buffer an instance of the target type. */
+    /** Move-constructs to an uninitialized memory buffer an instance of the target type. The target type
+        must satisfy the requirements of [MoveConstructible](https://en.cppreference.com/w/cpp/named_req/MoveConstructible). */
     struct f_move_construct
     {
       public:
@@ -288,7 +300,8 @@ namespace density
         }
     };
 
-    /** Destroys an instance of the target type, and returns the address of the complete type. */
+    /** Destroys an instance of the target type, and returns the address of the complete type. The target type
+        must satisfy the requirements of [Destructible](https://en.cppreference.com/w/cpp/named_req/Destructible). */
     class f_destroy
     {
       public:
@@ -317,24 +330,25 @@ namespace density
         }
     };
 
-    /** Compares two objects for equality. The target type must have an operator == . */
-    class f_equals
+    /** Compares two objects for equality. The target type must satisfy the requirements of 
+        [EqualityComparable](https://en.cppreference.com/w/cpp/named_req/EqualityComparable). */
+    class f_equal
     {
       public:
         /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_equals make() noexcept
+        template <typename TARGET_TYPE> constexpr static f_equal make() noexcept
         {
-            return f_equals{&invoke<TARGET_TYPE>};
+            return f_equal{&invoke<TARGET_TYPE>};
         }
 
         /** Returns whether two target object compare equal.
-        @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
-            pointed object is not the taget type (assigned by the function make), the behaviour is
-            undefined.
-        @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
-            pointed object is not the taget type (assigned by the function make), the behaviour is
-            undefined. */
-        bool operator()(void const * i_first, void const * i_second) const
+            @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
+                pointed object is not the taget type (assigned by the function make), the behaviour is
+                undefined.
+            @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
+                pointed object is not the taget type (assigned by the function make), the behaviour is
+                undefined. */
+        bool operator()(void const * i_first, void const * i_second) const noexcept
         {
             return (*m_function)(i_first, i_second);
         }
@@ -343,7 +357,7 @@ namespace density
         using Function = bool (*)(void const * i_first, void const * i_second)
           DENSITY_CPP17_NOEXCEPT;
         Function const m_function;
-        constexpr f_equals(Function i_function) : m_function(i_function) {}
+        constexpr f_equal(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE>
         static bool invoke(void const * i_first, void const * i_second)
         {
@@ -355,7 +369,8 @@ namespace density
         }
     };
 
-    /** Compares two objects. The target type must have an operator < . */
+    /** Compares two objects. The target type must satisfy the requirements of 
+        [LessThanComparable](https://en.cppreference.com/w/cpp/named_req/LessThanComparable). */
     class f_less
     {
       public:
@@ -365,14 +380,13 @@ namespace density
             return f_less{&invoke<TARGET_TYPE>};
         }
 
-
         /** Returns whether the first object compares less than the second object.
-        @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
-            pointed object is not the taget type (assigned by the function make), the behaviour is
-            undefined.
-        @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
-            pointed object is not the taget type (assigned by the function make), the behaviour is
-            undefined. */
+            @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
+                pointed object is not the taget type (assigned by the function make), the behaviour is
+                undefined.
+            @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
+                pointed object is not the taget type (assigned by the function make), the behaviour is
+                undefined. */
         bool operator()(void const * i_first, void const * i_second) const
         {
             return (*m_function)(i_first, i_second);
@@ -397,18 +411,6 @@ namespace density
     /** feature_list used by default by runtime_type */
     using default_type_features =
       feature_list<f_size, f_alignment, f_copy_construct, f_move_construct, f_rtti, f_destroy>;
-
-    namespace detail
-    {
-        template <typename FEATURE_TUPLE, typename TARGET_TYPE> struct FeatureTable
-        {
-            constexpr static FEATURE_TUPLE s_table = detail::MakeFeatureTable<
-              FEATURE_TUPLE>::template make_table<typename std::decay<TARGET_TYPE>::type>();
-        };
-        template <typename FEATURE_TUPLE, typename TARGET_TYPE>
-        constexpr FEATURE_TUPLE FeatureTable<FEATURE_TUPLE, TARGET_TYPE>::s_table;
-
-    } // namespace detail
 
     /*! \page RuntimeType_concept RuntimeType concept
 
@@ -482,11 +484,12 @@ namespace density
 
     /*! \page TypeFeature_concept TypeFeature concept
 
-        A type feature is a class that capture and exposes a specific feature of a target type, without
-        depending from it at compile time. Most times they use a pointer to a function (that is like
-        an entry in a vtable), but they may hold just data (like f_size and f_alignment do).
+        A type feature is a class that captures and exposes a specific property or action of a target 
+        type, without depending from it at compile time. Most times features store a pointer to a function
+        (that is like an entry in a vtable), but they may hold just data (like f_size and f_alignment do).
         
-        A class modeling this concept has this form:
+        A class satisfying TypeFeature has this form:
+
         \code
         struct f_feature
         {
@@ -496,6 +499,36 @@ namespace density
 
             // invokes the feature. The return type and the parameters depends on the specific feature
             ... operator()(...) const;
+        };
+        \endcode
+
+        The static function template make creates an instance of the feature bound to a type. The function
+        call operator invokes the fetaure.  
+
+        The following snippet shows the synopsis of f_size, f_default_construct, f_equal.
+
+        \code
+        struct f_size
+        {
+            template <typename TARGET_TYPE>
+                constexpr static f_size make() noexcept;
+
+            constexpr size_t operator()() const noexcept;
+        };
+
+        struct f_default_construct
+        {
+            template <typename TARGET_TYPE>
+                constexpr static f_default_construct make() noexcept;
+
+            void operator()(void * i_dest) const;
+        };
+
+        struct f_equal
+        {
+            template <typename TARGET_TYPE>
+                constexpr static f_equal make() noexcept;
+            bool operator()(void const * i_first, void const * i_second) const;
         };
         \endcode
     */
@@ -516,7 +549,7 @@ namespace density
         A runtime_type becomes empty is the member function \ref clear is called.
 
         runtime_type exposes a set of functions to manipulate instances of the target type. Furthermore it can be extended
-        with any type feature built-in in density (for example f_equals or f_less). User-defined
+        with any type feature built-in in density (for example f_equal or f_less). User-defined
         features are also supported, to add custom capabilities to the type erasure (see the examples below). \n
         Features can be queried with the function runtime_type::get_feature, specifying the requested feature at compile-time as template
         argument. The search is performed at compile time. If the requested feature is not included in <code>FEATURE_LIST</code>, a
@@ -773,7 +806,7 @@ namespace density
         bool are_equal(const void * i_first, const void * i_second) const
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
-            return get_feature<f_equals>()(i_first, i_second);
+            return get_feature<f_equal>()(i_first, i_second);
         }
 
         /** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails.
