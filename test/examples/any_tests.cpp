@@ -5,10 +5,10 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "any.h"
+#include <iostream>
 
 namespace density_examples
 {
-
     void any_tests()
     {
         using namespace density;
@@ -48,6 +48,9 @@ namespace density_examples
         assert(var1.type() == typeid(int));
         assert(any_cast<int>(var1) == 4);
         assert(*any_cast<int>(&var1) == 4);
+
+        any<default_type_features, f_istream, f_ostream> var2 = 9;
+        std::cout << "this any = " << var2;
     }
 
 } // namespace density_examples

@@ -73,16 +73,28 @@ namespace density_tests
         //! [feature_list example 5]
         }
         {
-        //! [has_features example 7]
-        using MyFeatures = feature_list<f_size, f_alignment>;
-        static_assert(has_features<MyFeatures>::value, "");
-        static_assert(has_features<MyFeatures, f_size>::value, "");
-        static_assert(has_features<MyFeatures, f_alignment>::value, "");
-        static_assert(has_features<MyFeatures, f_size, f_alignment>::value, "");
-        static_assert(!has_features<MyFeatures, f_copy_construct>::value, "");
-        static_assert(!has_features<MyFeatures, f_size, f_copy_construct>::value, "");
-        static_assert(!has_features<MyFeatures, f_copy_construct, f_size>::value, "");
-        //! [has_features example 7]
+        //! [has_features example 1]
+    using MyFeatures = feature_list<f_size, f_alignment>;
+    static_assert(has_features<MyFeatures>::value, "");
+    static_assert(has_features<MyFeatures, f_size>::value, "");
+    static_assert(has_features<MyFeatures, f_alignment>::value, "");
+    static_assert(has_features<MyFeatures, f_size, f_alignment>::value, "");
+    static_assert(!has_features<MyFeatures, f_copy_construct>::value, "");
+    static_assert(!has_features<MyFeatures, f_size, f_copy_construct>::value, "");
+    static_assert(!has_features<MyFeatures, f_copy_construct, f_size>::value, "");
+        //! [has_features example 1]
+        }
+        {
+        //! [has_features example 1]
+    using MyFeatures = runtime_type<f_size, f_alignment>;
+    static_assert(has_features<MyFeatures>::value, "");
+    static_assert(has_features<MyFeatures, f_size>::value, "");
+    static_assert(has_features<MyFeatures, f_alignment>::value, "");
+    static_assert(has_features<MyFeatures, f_size, f_alignment>::value, "");
+    static_assert(!has_features<MyFeatures, f_copy_construct>::value, "");
+    static_assert(!has_features<MyFeatures, f_size, f_copy_construct>::value, "");
+    static_assert(!has_features<MyFeatures, f_copy_construct, f_size>::value, "");
+        //! [has_features example 1]
         }
     
 

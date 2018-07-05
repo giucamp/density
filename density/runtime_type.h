@@ -17,8 +17,7 @@
 
 namespace density
 {
-    /** Type-list class template that can be used to specify which features a runtime_type captures from 
-        a the target type. 
+    /** Type-list class template that can be used to specify which features a runtime_type captures from the target type. 
 
         Each type in the template arguments is either:
         - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
@@ -29,19 +28,19 @@ namespace density
 
         \snippet runtime_type_examples.cpp feature_list example 1
 
-        feature_list provides a template alias to an std::tuple, that is used by runtime_type
-        as pseudo vtable. Actually a runtime_type is a pointer to a static constexpr instance of this tuple.
+        feature_list provides a template alias to an [std::tuple](https://it.cppreference.com/w/cpp/utility/tuple). An instance of
+        this tuple is a pseudo-vtable associated to the target type.
         
         \snippet runtime_type_examples.cpp feature_list example 2
 
         For the composition of the tuple:
         - nested features are flatened
         - duplicates are removed (only the first occurrence of a fetaure is considered)
-        - any occurrence of f_none is stripped out
+        - any occurrence of the pseudo-feature f_none is stripped out
         
         \snippet runtime_type_examples.cpp feature_list example 3 
         
-        Two feature list are similar if they prduce the same feature tuple:
+        Two feature lists are similar if they prduce the same feature tuple:
 
         \snippet runtime_type_examples.cpp feature_list example 4 */
     template <typename... FEATURES> struct feature_list;
@@ -89,7 +88,8 @@ namespace density
     };
 
     /** Tag type that can be included in a feature_list without affecting the feature tuple. This peseudo-feature 
-        is usefull to conditionally add features to a feature_list, for example using std::conditional.
+        is usefull to conditionally add features to a feature_list, for example using
+        [std::conditional](https://en.cppreference.com/w/cpp/types/conditional).
         
         In this code f_none is used to define a conditional type list.
 
@@ -413,22 +413,28 @@ namespace density
     using default_type_features =
       feature_list<f_size, f_alignment, f_copy_construct, f_move_construct, f_rtti, f_destroy>;
 
-    /**  
+    /** Traits that checks whether a feature_list or a runtime_type (the first template parameter)
+        contains all of the target fetaures (from the second template parameter on).
+        If no target feature is provided, the trait evaluates to true.
     
-        \snippet runtime_type_examples.cpp has_features example 7
+        \snippet runtime_type_examples.cpp has_features example 1
     */
     template <typename FEATURE_LIST, typename... TARGET_FEATURES> struct has_features;
-    template <typename FEATURE_LIST> struct has_features<FEATURE_LIST>
+    template <typename FEATURE_LIST>
+    struct has_features<FEATURE_LIST> : std::integral_constant<bool, true>
     {
-        constexpr static bool value = true;
     };
     template <typename FEATURE_LIST, typename FIRST_FEATURE, typename... OTHER_FEATURES>
     struct has_features<FEATURE_LIST, FIRST_FEATURE, OTHER_FEATURES...>
+        : std::integral_constant<
+            bool,
+
+            (detail::Tuple_FindFirst<typename FEATURE_LIST::tuple_type, FIRST_FEATURE>::index <
+             std::tuple_size<typename FEATURE_LIST::tuple_type>::value) &&
+              has_features<FEATURE_LIST, OTHER_FEATURES...>::value
+
+            >
     {
-        constexpr static bool value =
-          (detail::Tuple_FindFirst<typename FEATURE_LIST::tuple_type, FIRST_FEATURE>::index <
-           std::tuple_size<typename FEATURE_LIST::tuple_type>::value) &&
-          has_features<FEATURE_LIST, OTHER_FEATURES...>::value;
     };
 
     /*! \page RuntimeType_concept RuntimeType concept
@@ -553,16 +559,21 @@ namespace density
     */
 
     /** Class template that performs type-erasure.
-            @tparam FEATURES... list of features to be captures from the target type. 
-
-        Like for feature_list, each type in the template arguments is either:
+            @tparam FEATURES... list of features to be captures from the target type. Like for feature_list, each type in the template arguments is either:
         - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
           (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature.
         - a nested feature_list
         - the special tag type f_none
 
-        \snippet any.h any
+        In the following example runtime_type is used to implement a class template very similar to std::any, which
+        can be customized withspecifyuing which features should be captured from the target object.
+            
+        \snippet any.h any 1
+
+        This example shows how an operator <<
+
+        \snippet any.h any 2
             
         Type_features::feature_list that defines which type-features are type-erased. By default
             the feature_list is obtained with default_type_features. If this type is not a feature_list,
@@ -849,10 +860,7 @@ namespace density
             \n\b Throws: nothing. */
         template <typename FEATURE> const FEATURE & get_feature() const noexcept
         {
-            static_assert(
-              detail::Tuple_FindFirst<tuple_type, FEATURE>::index !=
-                std::tuple_size<tuple_type>::value,
-              "feature not found");
+            static_assert(has_features<feature_list_type, FEATURE>::value, "feature not found");
             return std::get<detail::Tuple_FindFirst<tuple_type, FEATURE>::index>(*m_feature_table);
         }
 

@@ -4,7 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include <density/io_runtimetype_features.h>
 #include <density/runtime_type.h>
+#include <ostream>
 #include <typeinfo>
 
 namespace density_examples
@@ -13,7 +15,7 @@ namespace density_examples
     {
     };
 
-    //! [any]
+    //! [any 1]
     template <typename... FEATURES> class any
     {
       public:
@@ -21,7 +23,8 @@ namespace density_examples
 
         constexpr any() noexcept = default;
 
-        template <typename TYPE> any(const TYPE & i_source) : m_type(type_type::template make<TYPE>())
+        template <typename TYPE>
+        any(const TYPE & i_source) : m_type(type_type::template make<TYPE>())
         {
             allocate();
             deallocate_on_failure([&] { m_type.copy_construct(m_object, &i_source); });
@@ -111,6 +114,13 @@ namespace density_examples
 
         bool operator!=(const any & i_source) const noexcept { return !operator==(i_source); }
 
+        template <typename FEATURE> const FEATURE & get_feature() const noexcept
+        {
+            return m_type.get_feature<FEATURE>();
+        }
+
+        void * object_ptr() const noexcept { return m_object; }
+
       private:
         void allocate() { m_object = density::aligned_allocate(m_type.size(), m_type.alignment()); }
 
@@ -137,7 +147,6 @@ namespace density_examples
         type_type m_type;
         void *    m_object{nullptr};
     };
-    //! [any]
 
     template <typename DEST_TYPE, typename... FEATURES>
     DEST_TYPE any_cast(const any<FEATURES...> & i_source);
@@ -150,5 +159,20 @@ namespace density_examples
 
     template <typename DEST_TYPE, typename... FEATURES>
     DEST_TYPE * any_cast(any<FEATURES...> * i_source) noexcept;
+
+    //! [any 1]
+
+    //! [any 2]
+    template <typename... FEATURES>
+    std::ostream & operator<<(std::ostream & i_dest, const any<FEATURES...> & i_any)
+    {
+        static_assert(density::has_features::value, "The provided any leaks the fetaure f_ostream");
+        if (i_any.has_value())
+            i_any.get_feature<density::f_ostream>()(i_dest, i_any.object_ptr());
+        else
+            i_dest << "[empty]";
+        return i_dest;
+    }
+    //! [any 2]
 
 } // namespace density_examples
