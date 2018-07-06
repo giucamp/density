@@ -166,9 +166,12 @@ namespace density_examples
     template <typename... FEATURES>
     std::ostream & operator<<(std::ostream & i_dest, const any<FEATURES...> & i_any)
     {
-        static_assert(density::has_features::value, "The provided any leaks the fetaure f_ostream");
+        using namespace density;
+        static_assert(
+          density::has_features<feature_list<FEATURES...>, f_ostream>::value,
+          "The provided any leaks the fetaure f_ostream");
         if (i_any.has_value())
-            i_any.get_feature<density::f_ostream>()(i_dest, i_any.object_ptr());
+            i_any.get_feature<f_ostream>()(i_dest, i_any.object_ptr());
         else
             i_dest << "[empty]";
         return i_dest;
