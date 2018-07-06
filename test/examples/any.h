@@ -116,7 +116,7 @@ namespace density_examples
 
         template <typename FEATURE> const FEATURE & get_feature() const noexcept
         {
-            return m_type.get_feature<FEATURE>();
+            return m_type.template get_feature<FEATURE>();
         }
 
         void * object_ptr() const noexcept { return m_object; }
@@ -171,7 +171,7 @@ namespace density_examples
           density::has_features<feature_list<FEATURES...>, f_ostream>::value,
           "The provided any leaks the fetaure f_ostream");
         if (i_any.has_value())
-            i_any.get_feature<f_ostream>()(i_dest, i_any.object_ptr());
+            i_any.template get_feature<f_ostream>()(i_dest, i_any.object_ptr());
         else
             i_dest << "[empty]";
         return i_dest;
