@@ -19,6 +19,9 @@ namespace density_examples
         assert(!var.has_value());
         assert(var.type() == typeid(void));
 
+        static_assert(has_features<MyAny, f_copy_construct>::value, "");
+        static_assert(!has_features<MyAny, f_istream>::value, "");
+
         var = MyAny(4);
         assert(var != MyAny());
         assert(var != MyAny(4.0));

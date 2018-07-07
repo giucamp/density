@@ -53,7 +53,10 @@ namespace density
         handle types satisfying [TypeFeature](TypeFeature_concept.html) */
     {
         static_assert(
-          !std::is_void<FIRST_FEATURE>::value, "[cv-qualified] void is not valid as type feature");
+          !std::is_void<FIRST_FEATURE>::value, "[cv-qualified] void does not satisfy TypeFeature");
+
+        static_assert(
+          std::is_literal_type<FIRST_FEATURE>::value, "a TypeFeature must be a literal type");
 
         using tuple_type = detail::Tuple_Merge_t<
 
@@ -414,10 +417,16 @@ namespace density
       feature_list<f_size, f_alignment, f_copy_construct, f_move_construct, f_rtti, f_destroy>;
 
     /** Traits that checks whether a feature_list or a runtime_type (the first template parameter)
-        contains all of the target fetaures (from the second template parameter on).
-        If no target feature is provided, the trait evaluates to true.
+        contains all of the target fetaures (from the second template parameter on). If this condition 
+        is satisfied, or if no target feature is provided, this type inehrits from 
+        [std::true_type](https://en.cppreference.com/w/cpp/types/integral_constant).
+        Otherwise it inehrits from [std::false_type](https://en.cppreference.com/w/cpp/types/integral_constant).
     
+        The following example shows has_features used on a feature_list:
         \snippet runtime_type_examples.cpp has_features example 1
+        
+        The following example shows has_features used on a runtime_type:
+        \snippet runtime_type_examples.cpp has_features example 2
     */
     template <typename FEATURE_LIST, typename... TARGET_FEATURES> struct has_features;
     template <typename FEATURE_LIST>
@@ -512,7 +521,9 @@ namespace density
         A type feature is a class that captures and exposes a specific property or action of a target 
         type, without depending from it at compile time. Most times features store a pointer to a function
         (that is like an entry in a vtable), but they may hold just data (like f_size and f_alignment do).
-        
+    
+        A TypeFeature must satisfy the requirements of [LiteralType](https://en.cppreference.com/w/cpp/named_req/LiteralType).
+
         A class satisfying TypeFeature has this form:
 
         \code

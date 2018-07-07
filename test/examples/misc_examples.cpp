@@ -61,7 +61,7 @@ namespace density_tests
         {
             //! [runtime_type example 1]
 
-            using MyRTType = runtime_type<feature_list<f_default_construct, f_destroy, f_size>>;
+            using MyRTType = runtime_type<f_default_construct, f_destroy, f_size>;
 
             MyRTType type = MyRTType::make<std::string>();
 

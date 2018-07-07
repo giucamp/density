@@ -19,21 +19,23 @@ namespace density_examples
     template <typename... FEATURES> class any
     {
       public:
-        using type_type = density::runtime_type<FEATURES...>;
+        using runtime_type      = density::runtime_type<FEATURES...>;
+        using feature_list_type = typename runtime_type::feature_list_type;
+        using tuple_type        = typename feature_list_type::tuple_type;
 
         constexpr any() noexcept = default;
 
         template <typename TYPE>
-        any(const TYPE & i_source) : m_type(type_type::template make<TYPE>())
+        any(const TYPE & i_source) : m_type(runtime_type::template make<TYPE>())
         {
             allocate();
-            deallocate_on_failure([&] { m_type.copy_construct(m_object, &i_source); });
+            deallocate_if_excepts([&] { m_type.copy_construct(m_object, &i_source); });
         }
 
         any(const any & i_source) : m_type(i_source.m_type)
         {
             allocate();
-            deallocate_on_failure([&] { m_type.copy_construct(m_object, i_source.m_object); });
+            deallocate_if_excepts([&] { m_type.copy_construct(m_object, i_source.m_object); });
         }
 
         any(any && i_source) noexcept : m_type(i_source.m_type), m_object(i_source.m_object)
@@ -119,7 +121,8 @@ namespace density_examples
             return m_type.template get_feature<FEATURE>();
         }
 
-        void * object_ptr() const noexcept { return m_object; }
+        void *       object_ptr() noexcept { return m_object; }
+        const void * object_ptr() const noexcept { return m_object; }
 
       private:
         void allocate() { m_object = density::aligned_allocate(m_type.size(), m_type.alignment()); }
@@ -129,7 +132,7 @@ namespace density_examples
             density::aligned_deallocate(m_object, m_type.size(), m_type.alignment());
         }
 
-        template <typename FUNC> void deallocate_on_failure(const FUNC & i_func)
+        template <typename FUNC> void deallocate_if_excepts(const FUNC & i_func)
         {
             try
             {
@@ -144,19 +147,17 @@ namespace density_examples
         }
 
       private:
-        type_type m_type;
-        void *    m_object{nullptr};
+        runtime_type m_type;
+        void *       m_object{nullptr};
     };
 
+    // any_cast is already defined, but we have to declare it too
     template <typename DEST_TYPE, typename... FEATURES>
     DEST_TYPE any_cast(const any<FEATURES...> & i_source);
-
     template <typename DEST_TYPE, typename... FEATURES>
     DEST_TYPE any_cast(any<FEATURES...> && i_source);
-
     template <typename DEST_TYPE, typename... FEATURES>
     const DEST_TYPE * any_cast(const any<FEATURES...> * i_source) noexcept;
-
     template <typename DEST_TYPE, typename... FEATURES>
     DEST_TYPE * any_cast(any<FEATURES...> * i_source) noexcept;
 
@@ -167,9 +168,10 @@ namespace density_examples
     std::ostream & operator<<(std::ostream & i_dest, const any<FEATURES...> & i_any)
     {
         using namespace density;
-        static_assert(
+        static_assert( // for simplcity we don't SFINAE
           density::has_features<feature_list<FEATURES...>, f_ostream>::value,
           "The provided any leaks the fetaure f_ostream");
+
         if (i_any.has_value())
             i_any.template get_feature<f_ostream>()(i_dest, i_any.object_ptr());
         else

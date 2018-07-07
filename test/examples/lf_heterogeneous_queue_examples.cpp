@@ -95,8 +95,7 @@ namespace density_tests
     }
     {
         //! [lf_heter_queue dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -111,8 +110,7 @@ namespace density_tests
     }
     {
         //! [lf_heter_queue dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -128,8 +126,7 @@ namespace density_tests
     }
     {
         //! [lf_heter_queue dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -146,8 +143,7 @@ namespace density_tests
 
     {
         //! [lf_heter_queue start_dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -163,8 +159,7 @@ namespace density_tests
     }
     {
         //! [lf_heter_queue start_dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -181,8 +176,7 @@ namespace density_tests
     }
     {
         //! [lf_heter_queue start_dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -256,8 +250,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
     }
     {
         //! [lf_heter_queue try_dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -275,8 +268,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
     }
     {
         //! [lf_heter_queue try_dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -295,8 +287,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
     }
     {
         //! [lf_heter_queue try_dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -316,8 +307,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
 
     {
         //! [lf_heter_queue try_start_dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -336,8 +326,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
     }
     {
         //! [lf_heter_queue try_start_dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -357,8 +346,7 @@ static void nonblocking_heterogeneous_queue_try_put_samples()
     }
     {
         //! [lf_heter_queue try_start_dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<
           MyRunTimeType,
           default_allocator,
@@ -1246,8 +1234,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [lf_heter_queue reentrant_dyn_push example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     auto const type = MyRunTimeType::make<int>();
@@ -1256,8 +1243,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [lf_heter_queue reentrant_dyn_push_copy example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     std::string const source("Hello world!!");
@@ -1267,8 +1253,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [lf_heter_queue reentrant_dyn_push_move example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     std::string source("Hello world!!");
@@ -1279,8 +1264,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 
 {
     //! [lf_heter_queue start_reentrant_dyn_push example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     auto const type = MyRunTimeType::make<int>();
@@ -1290,8 +1274,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [lf_heter_queue start_reentrant_dyn_push_copy example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     std::string const source("Hello world!!");
@@ -1302,8 +1285,7 @@ static void nonblocking_heterogeneous_queue_reentrant_put_samples()
 }
 {
     //! [lf_heter_queue start_reentrant_dyn_push_move example 1]
-    using MyRunTimeType =
-      runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+    using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
     lf_heter_queue<MyRunTimeType> queue;
 
     std::string source("Hello world!!");
@@ -1373,8 +1355,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
     }
     {
         //! [lf_heter_queue try_reentrant_dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         auto const type = MyRunTimeType::make<int>();
@@ -1386,8 +1367,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
     }
     {
         //! [lf_heter_queue try_reentrant_dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         std::string const source("Hello world!!");
@@ -1400,8 +1380,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
     }
     {
         //! [lf_heter_queue try_reentrant_dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         std::string source("Hello world!!");
@@ -1415,8 +1394,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
 
     {
         //! [lf_heter_queue try_start_reentrant_dyn_push example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_default_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_default_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         auto const type = MyRunTimeType::make<int>();
@@ -1429,8 +1407,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
     }
     {
         //! [lf_heter_queue try_start_reentrant_dyn_push_copy example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_copy_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_copy_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         std::string const source("Hello world!!");
@@ -1444,8 +1421,7 @@ static void nonblocking_heterogeneous_queue_reentrant_try_put_samples()
     }
     {
         //! [lf_heter_queue try_start_reentrant_dyn_push_move example 1]
-        using MyRunTimeType =
-          runtime_type<feature_list<f_move_construct, f_destroy, f_size, f_alignment>>;
+        using MyRunTimeType = runtime_type<f_move_construct, f_destroy, f_size, f_alignment>;
         lf_heter_queue<MyRunTimeType> queue;
 
         std::string source("Hello world!!");

@@ -198,7 +198,7 @@ namespace density
     template <typename RUNTIME_TYPE = runtime_type<>, typename ALLOCATOR_TYPE = default_allocator>
     class heter_queue : private ALLOCATOR_TYPE
     {
-        using ControlBlock = typename detail::QueueControl;
+        using ControlBlock = detail::QueueControl;
 
         /** Pointer to the head. It is equal to s_invalid_control_block, or it is aligned to min_alignment. */
         ControlBlock * m_head;
