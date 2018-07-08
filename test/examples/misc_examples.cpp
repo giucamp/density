@@ -8,9 +8,11 @@
 //
 
 #include <atomic>
+#include <complex>
 #include <cstdlib>
 #include <density/conc_function_queue.h>
 #include <density/function_queue.h>
+#include <density/io_runtimetype_features.h>
 #include <density/lf_function_queue.h>
 #include <iostream>
 #include <string>
@@ -59,24 +61,33 @@ namespace density_tests
         }
 
         {
+            // clang-format off
             //! [runtime_type example 1]
+        // we just want to create, print and destroy objects
+        using RuntimeType =
+            runtime_type<f_size, f_alignment, f_ostream, f_default_construct, f_destroy>;
 
-            using MyRTType = runtime_type<f_default_construct, f_destroy, f_size>;
+        // create a runtime type bound to std::complex<float> (the target type)
+        auto const type = RuntimeType::make<std::complex<float>>();
 
-            MyRTType type = MyRTType::make<std::string>();
+        /* From now on, we can manage instances of the target type just using the runtime_type.
+            Note that this is a kind of generic code different from C++ templates, because the 
+            type is bound at runtime. It's also very low-level code, and it's not exception-safe. */
 
-            void * buff = malloc(type.size());
+        // allocate and default construct an object
+        void * const buff = aligned_allocate(type.size(), type.alignment());
+        type.default_construct(buff); /* equivalent to get_feature<f_default_construct>()(buff). 
+            default_construct is just a convenience function. */
 
-            type.default_construct(buff);
+        // now print the object std::cout
+        type.get_feature<f_ostream>()(std::cout, buff); /* There is no convenience function to 
+            do that, use get_feature. */
 
-            // now buff points to a valid std::string
-            *static_cast<std::string *>(buff) = "hello world!";
-
-            type.destroy(buff);
-
-            free(buff);
-
+        /* destroy and deallocate. */
+        type.destroy(buff);
+        aligned_deallocate(buff, type.size(), type.alignment());
             //! [runtime_type example 1]
+            // clang-format on
         }
 
 

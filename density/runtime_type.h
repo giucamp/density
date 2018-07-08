@@ -518,13 +518,20 @@ namespace density
 
     /*! \page TypeFeature_concept TypeFeature concept
 
+        Requirements
+        -------------------------
+        A type <code>F</code> is a TypeFeature if:
+        - <code>F</code> satisfies [LiteralType](https://en.cppreference.com/w/cpp/named_req/LiteralType)
+        - <code>F::make<T>()</code> is valid as constant expression that returns an instance of 
+            <code>F</code> bound to the target type <code>T</code>
+
+        Notes
+        -------------------------
         A type feature is a class that captures and exposes a specific property or action of a target 
         type, without depending from it at compile time. Most times features store a pointer to a function
         (that is like an entry in a vtable), but they may hold just data (like f_size and f_alignment do).
     
-        A TypeFeature must satisfy the requirements of [LiteralType](https://en.cppreference.com/w/cpp/named_req/LiteralType).
-
-        A class satisfying TypeFeature has this form:
+        Usually a TypeFeature has this form:
 
         \code
         struct f_feature
@@ -569,28 +576,36 @@ namespace density
         \endcode
     */
 
-    /** Class template that performs type-erasure.
-            @tparam FEATURES... list of features to be captures from the target type. Like for feature_list, each type in the template arguments is either:
+    /** Class template that performs [type-erasure](https://en.wikipedia.org/wiki/Type_erasure). A runtime_type can be empty, 
+        or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable, 
+        trivially destructible. Conceptually a runtime_type is a pointer to a static constexpr instance of the tuple of the 
+        suppported features. A specialization of runtime_type satisfies the requirements of \ref RuntimeType_concept "RuntimeType".
+            @tparam FEATURES... list of features to be captures from the target type. 
+            
+        Like for feature_list, each type in the template arguments pack is either:
         - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
           (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature.
         - a nested feature_list
         - the special tag type f_none
 
-        In the following example runtime_type is used to implement a class template very similar to std::any, which
-        can be customized withspecifyuing which features should be captured from the target object.
+        This example shows a very simple usage of runtime_type:
+        \snippet misc_examples.cpp runtime_type example 1
+
+        Managing instances of the target type directly is difficult and requires very low-level code: instances are managed by
+        void pointers, they must explictly allocated, constructed, destroyed and deallocated. runtime_type is intended instead 
+        to be used to implement heterogeneous containers (for example a vector in which the element type is assigned at runtime).
+        
+        In the following example runtime_type is used to implement a class template very similar to 
+        [std::any](https://en.cppreference.com/w/cpp/utility/any), which can be customized specifying which features must 
+        be captured from the target object.
             
         \snippet any.h any 1
 
-        This example shows how an operator <<
+        This example shows how a non-intrusive serialization operator << can be easly implemented:
 
         \snippet any.h any 2
-            
-        Type_features::feature_list that defines which type-features are type-erased. By default
-            the feature_list is obtained with default_type_features. If this type is not a feature_list,
-            a compile time error is reported.
-
-        runtime_type meets the requirements of \ref RuntimeType_concept "RuntimeType".
+          
 
         An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
         instances of the target types, depending on the features included on <code>FEATURE_LIST</code>. \n
@@ -613,6 +628,8 @@ namespace density
         In this example an <code>std::string</code> is created and destroyed using a runtime_type.
 
         \snippet misc_examples.cpp runtime_type example 1
+
+
 
         This is an example of user-defined features: it calls a function named <code>update</code>, that takes as parameter a <code>float</code>.
 

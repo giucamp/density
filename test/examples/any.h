@@ -44,6 +44,14 @@ namespace density_examples
             i_source.m_type.clear();
         }
 
+        template <typename CONSTRUCTION_FUNC>
+        any(const runtime_type & i_type, CONSTRUCTION_FUNC && i_construction_func) : m_type(i_type)
+        {
+            allocate();
+            deallocate_if_excepts(
+              [&] { std::forward<CONSTRUCTION_FUNC>(i_construction_func)(m_object); });
+        }
+
         any & operator=(any i_source) noexcept
         {
             swap(*this, i_source);
@@ -116,13 +124,15 @@ namespace density_examples
 
         bool operator!=(const any & i_source) const noexcept { return !operator==(i_source); }
 
-        template <typename FEATURE> const FEATURE & get_feature() const noexcept
+        template <typename FEATURE> const FEATURE & get_type_feature() const noexcept
         {
             return m_type.template get_feature<FEATURE>();
         }
 
         void *       object_ptr() noexcept { return m_object; }
         const void * object_ptr() const noexcept { return m_object; }
+
+        const runtime_type & get_runtime_type() const noexcept { return m_type; }
 
       private:
         void allocate() { m_object = density::aligned_allocate(m_type.size(), m_type.alignment()); }
@@ -142,6 +152,7 @@ namespace density_examples
             {
                 if (m_object != nullptr)
                     deallocate();
+                m_type.clear();
                 throw;
             }
         }
@@ -173,10 +184,56 @@ namespace density_examples
           "The provided any leaks the fetaure f_ostream");
 
         if (i_any.has_value())
-            i_any.template get_feature<f_ostream>()(i_dest, i_any.object_ptr());
+            i_any.template get_type_feature<f_ostream>()(i_dest, i_any.object_ptr());
         else
             i_dest << "[empty]";
         return i_dest;
+    }
+    //! [any 2]
+
+    class f_sum
+    {
+      public:
+        template <typename TARGET_TYPE> constexpr static f_sum make() noexcept
+        {
+            return f_sum{&invoke<TARGET_TYPE>};
+        }
+
+        void operator()(void * i_dest, void const * i_first, void const * i_second) const noexcept
+        {
+            (*m_function)(i_dest, i_first, i_second);
+        }
+
+      private:
+        using Function = void (*)(void * i_dest, void const * i_first, void const * i_second);
+        Function const m_function;
+        constexpr f_sum(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE>
+        static void invoke(void * i_dest, void const * i_first, void const * i_second)
+        {
+            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+            auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
+            auto const & second = *static_cast<TARGET_TYPE const *>(i_second);
+            new (i_dest) TARGET_TYPE(first + second);
+        }
+    };
+
+    //! [any 3]
+    template <typename... FEATURES>
+    any<FEATURES...> operator+(const any<FEATURES...> & i_first, const any<FEATURES...> & i_second)
+    {
+        using namespace density;
+        static_assert( // for simplcity we don't SFINAE
+          density::has_features<feature_list<FEATURES...>, f_sum>::value,
+          "The provided any leaks the fetaure sum_impl");
+
+        if (i_first.type() != i_second.type() || i_first.type() == typeid(void))
+            throw std::runtime_error("Mismatching types");
+
+        return any<FEATURES...>(i_first.get_runtime_type(), [&](void * i_dest) {
+            i_first.template get_type_feature<f_sum>()(
+              i_dest, i_first.object_ptr(), i_second.object_ptr());
+        });
     }
     //! [any 2]
 

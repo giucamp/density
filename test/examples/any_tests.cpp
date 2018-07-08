@@ -52,8 +52,9 @@ namespace density_examples
         assert(any_cast<int>(var1) == 4);
         assert(*any_cast<int>(&var1) == 4);
 
-        any<default_type_features, f_istream, f_ostream> var2 = 9;
-        std::cout << "this any = " << var2;
+        using summable_any = any<default_type_features, f_istream, f_ostream, f_sum>;
+        summable_any a = 3, b = 4;
+        std::cout << a << " + " << b << " = " << a + b << std::endl;
     }
 
 } // namespace density_examples

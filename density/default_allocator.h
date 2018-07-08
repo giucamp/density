@@ -70,7 +70,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_default_allocator meets the requirements of UntypedAllocator concept.
+        basic_default_allocator satisfies the requirements of UntypedAllocator concept.
     */
 
 
@@ -143,7 +143,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_default_allocator meets the requirements of PagedAllocator.
+        basic_default_allocator satisfies the requirements of PagedAllocator.
     */
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
