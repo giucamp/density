@@ -8,7 +8,6 @@
 //
 
 #include <atomic>
-#include <complex>
 #include <cstdlib>
 #include <density/conc_function_queue.h>
 #include <density/function_queue.h>
@@ -59,37 +58,6 @@ namespace density_tests
             static_assert(std::is_same<MyFeatures::tuple_type, MyFeatures1::tuple_type>::value, "");
             //! [feature_concat example 1]
         }
-
-        {
-            // clang-format off
-            //! [runtime_type example 1]
-        // we just want to create, print and destroy objects
-        using RuntimeType =
-            runtime_type<f_size, f_alignment, f_ostream, f_default_construct, f_destroy>;
-
-        // create a runtime type bound to std::complex<float> (the target type)
-        auto const type = RuntimeType::make<std::complex<float>>();
-
-        /* From now on, we can manage instances of the target type just using the runtime_type.
-            Note that this is a kind of generic code different from C++ templates, because the 
-            type is bound at runtime. It's also very low-level code, and it's not exception-safe. */
-
-        // allocate and default construct an object
-        void * const buff = aligned_allocate(type.size(), type.alignment());
-        type.default_construct(buff); /* equivalent to get_feature<f_default_construct>()(buff). 
-            default_construct is just a convenience function. */
-
-        // now print the object std::cout
-        type.get_feature<f_ostream>()(std::cout, buff); /* There is no convenience function to 
-            do that, use get_feature. */
-
-        /* destroy and deallocate. */
-        type.destroy(buff);
-        aligned_deallocate(buff, type.size(), type.alignment());
-            //! [runtime_type example 1]
-            // clang-format on
-        }
-
 
         {
             //! [runtime_type example 3]

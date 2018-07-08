@@ -6,8 +6,10 @@
 
 #include "../test_framework/density_test_common.h"
 //
-
+#include <complex>
+#include <density/io_runtimetype_features.h>
 #include <density/runtime_type.h>
+#include <iostream>
 #include <mutex>
 #include <string>
 #include <type_traits>
@@ -136,40 +138,101 @@ namespace density_tests
     {
         using namespace density;
         {
+            // clang-format off
             //! [runtime_type example 1]
-            using Rt1 = runtime_type<f_size, f_alignment>;
-
-
+    using RuntimeType_1 = runtime_type<f_size, f_alignment>;
+    using RuntimeType_2 = runtime_type<f_size, f_none, f_size, f_alignment>;
+    using RuntimeType_3 = runtime_type<feature_list<f_size, feature_list<f_none>>, f_alignment, f_alignment>;
+    RuntimeType_1 a;
+    RuntimeType_2 b = a;
+    RuntimeType_3 c = b;
             //! [runtime_type example 1]
+            // clang-format on
         }
         {
-            //! [runtime_type copy example 1]
-            using Rt1 = runtime_type<f_size, f_alignment>;
-            using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
-            Rt1 t1    = Rt1::make<int>();
-            Rt1 t2    = t1; // valid because Rt1 and Rt2 are similar
-            assert(t1 == t2);
+            // clang-format off
+            //! [runtime_type example 3]
+    // we just want to create, print and destroy objects
+    using RuntimeType =
+        runtime_type<f_size, f_alignment, f_ostream, f_default_construct, f_destroy>;
 
-            using Rt3 =
-              runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
-            // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
-            static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
-            //! [runtime_type copy example 1]
+    // create a runtime type bound to std::complex<float> (the target type)
+    auto const type = RuntimeType::make<std::complex<float>>();
+
+    /* From now on, we can manage instances of the target type just using the runtime_type.
+        Note that this is a kind of generic code different from C++ templates, because the 
+        type is bound at runtime. It's also very low-level code, and it's not exception-safe. */
+
+    // allocate and default construct an object
+    void * const buff = aligned_allocate(type.size(), type.alignment());
+    type.default_construct(buff); /* equivalent to get_feature<f_default_construct>()(buff). 
+        default_construct is just a convenience function. */
+
+    // now print the object std::cout
+    type.get_feature<f_ostream>()(std::cout, buff); /* There is no convenience function to 
+        do that, use get_feature. */
+
+    /* destroy and deallocate. */
+    type.destroy(buff);
+    aligned_deallocate(buff, type.size(), type.alignment());
+            //! [runtime_type example 3]
+            // clang-format on
         }
         {
-            //! [runtime_type assign example 1]
-            using Rt1 = runtime_type<f_size, f_alignment>;
-            using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
-            Rt1 t1    = Rt1::make<int>();
-            Rt1 t2;
-            t2 = t1; // valid because Rt1 and Rt2 are similar
-            assert(t1 == t2);
+            // clang-format off
+            using T = int;
+            using R = runtime_type<>;
+            //! [runtime_type construct example 1]
+    constexpr R r;
+    static_assert(r.empty(), "");
+    static_assert(!r.is<T>(), "");
+            //! [runtime_type construct example 1]
+            // clang-format on
+        }
+        {
+            // clang-format off
+            using T = int;
+            using R = runtime_type<>;
+            //! [runtime_type make example 1]
+    constexpr auto r = R::make<T>();
+    static_assert(!r.empty(), "");
+    static_assert(r != R(), "");
+    static_assert(r.is<T>(), "");
+            //! [runtime_type make example 1]
+            // clang-format on
+        }
+        {
+            // clang-format off
+            //! [runtime_type copy example 1]
+    using Rt1 = runtime_type<f_size, f_alignment>;
+    using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
+    Rt1 t1    = Rt1::make<int>();
+    Rt1 t2    = t1; // valid because Rt1 and Rt2 are similar
+    assert(t1 == t2);
 
-            using Rt3 =
-              runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
-            // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
-            static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
+    using Rt3 =
+        runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+    // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+    static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
+            //! [runtime_type copy example 1]
+            // clang-format on
+        }
+        {
+            // clang-format off
             //! [runtime_type assign example 1]
+    using Rt1 = runtime_type<f_size, f_alignment>;
+    using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
+    Rt1 t1    = Rt1::make<int>();
+    Rt1 t2;
+    t2 = t1; // valid because Rt1 and Rt2 are similar
+    assert(t1 == t2);
+
+    using Rt3 =
+        runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
+    // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+    static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
+            //! [runtime_type assign example 1]
+            // clang-format on
         }
     }
 

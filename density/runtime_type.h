@@ -577,99 +577,88 @@ namespace density
     */
 
     /** Class template that performs [type-erasure](https://en.wikipedia.org/wiki/Type_erasure). A runtime_type can be empty, 
-        or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable, 
-        trivially destructible. Conceptually a runtime_type is a pointer to a static constexpr instance of the tuple of the 
-        suppported features. A specialization of runtime_type satisfies the requirements of \ref RuntimeType_concept "RuntimeType".
+        or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable and
+        trivially destructible. A specialization of runtime_type satisfies the requirements of \ref RuntimeType_concept "RuntimeType".
             @tparam FEATURES... list of features to be captures from the target type. 
-            
-        Like for feature_list, each type in the template arguments pack is either:
-        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
-          (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
-          f_less, f_istream, f_ostream), or a user defined type feature.
-        - a nested feature_list
-        - the special tag type f_none
 
+        <i>Implementation note</i>:
+        runtime_type is actually a wrapper around a pointer to a static constexpr instance of the tuple of the suppported features. 
+        It is actually a generalization of the pointer to the v-table in a polymorphic type.
+
+        Like in a feature_list, each type in the template arguments pack is either:
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
+          (one of f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
+          f_less, f_istream, f_ostream), or a user defined type feature
+        - a nested feature_list, which is expanded. Feature lists can be nested to any level, and they are always flatened
+        - the special tag type f_none, which is ignored
+
+        Furthermore duplicate features are removed (only the first occurrence of a fetaure is considered). If after all these 
+        transformations two runtime_type specializations have the same feature_list, they are copyable and assignable each others:
+
+        \snippet runtime_type_examples.cpp runtime_type example 1
+        
         This example shows a very simple usage of runtime_type:
-        \snippet misc_examples.cpp runtime_type example 1
+        \snippet runtime_type_examples.cpp runtime_type example 3
+
+        Every type feature is associated with a concept. If a target type does not satisfy the syntactic requirements of all the features
+        supported by the runtime_type, the function <code>make</code> fails to specialize, and a compile error is reported. For example
+        we can't bind an instance of the <code>RuntimeType</code> of the example above to <code>std::lock_guard</code>, because 
+        <code>RuntimeType</code> has the feature <code>f_default_construct</code>, but <code>std::lock_guard</code> is not default 
+        constructible.
+
+        Any type feature can be retrieved with the member function template <code>get_feature</code>. Anyway a set of convenience
+        member function is avaiable for the most common features: \ref size, \ref alignment, \ref default_construct, \ref copy_construct, 
+        \ref move_construct, \ref destroy, \ref type_info, \ref are_equal.
 
         Managing instances of the target type directly is difficult and requires very low-level code: instances are managed by
-        void pointers, they must explictly allocated, constructed, destroyed and deallocated. runtime_type is intended instead 
-        to be used to implement heterogeneous containers (for example a vector in which the element type is assigned at runtime).
+        void pointers, they must explictly allocated, constructed, destroyed and deallocated. Indeed runtime_type is not intended to be
+        used directly in this way, but it should instead used by library code to provide high-level features.
         
         In the following example runtime_type is used to implement a class template very similar to 
         [std::any](https://en.cppreference.com/w/cpp/utility/any), which can be customized specifying which features must 
-        be captured from the target object.
+        be captured from the underlying object.
             
         \snippet any.h any 1
 
-        This example shows how a non-intrusive serialization operator << can be easly implemented:
+        This example shows how a non-intrusive serialization operator << for the above <code>any</code> can be easly implemented:
 
-        \snippet any.h any 2
-          
-
-        An instance of runtime_type binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc.,
-        instances of the target types, depending on the features included on <code>FEATURE_LIST</code>. \n
-        A runtime_type bound to a type can be created with the static function runtime_type::make. runtime_type has value semantic, and is copyable. \n
-        A default-constructed runtime_type is empty: trying to use type-features of an empty runtime_type leads to undefined behavior.
-        A runtime_type becomes empty is the member function \ref clear is called.
-
-        runtime_type exposes a set of functions to manipulate instances of the target type. Furthermore it can be extended
-        with any type feature built-in in density (for example f_equal or f_less). User-defined
-        features are also supported, to add custom capabilities to the type erasure (see the examples below). \n
-        Features can be queried with the function runtime_type::get_feature, specifying the requested feature at compile-time as template
-        argument. The search is performed at compile time. If the requested feature is not included in <code>FEATURE_LIST</code>, a
-        static_assert fails.
-
-        \n\b Implementation runtime_type is implemented as a pointer to a pseudo vtable, that is a static array of feature
-            values: for every feature in FEATURE_LIST there is an entry in this vtable. Most entries are pointer to functions.
-            Anyway, some features (notably f_size and f_alignment) store a static const value.
-
-
-        In this example an <code>std::string</code> is created and destroyed using a runtime_type.
-
-        \snippet misc_examples.cpp runtime_type example 1
-
-
-
-        This is an example of user-defined features: it calls a function named <code>update</code>, that takes as parameter a <code>float</code>.
-
-        \snippet misc_examples.cpp runtime_type example 2
-
-        The example below uses feature_call_update. Note that:
-            - <code>ObjectA</code> and <code>ObjectB</code> are unrelated types (no common base class)
-            - <code>ObjectA::update</code> and <code>ObjectB::update</code> are not virtual functions
-            - If a <code>std::string</code> was added to the array, a compile time error would report that <code>std::string</code> has not an update function
-
-        \snippet misc_examples.cpp runtime_type example 3
-
-        Output:
-
-        ~~~~~~~~~~~~~~
-        ObjectA::update(0.0166667)
-        ObjectB::update(0.0166667)
-        ObjectB::update(0.0166667)
-        ~~~~~~~~~~~~~~
-    */
+        \snippet any.h any 2 
+        
+        This example defines the feature <code>f_sum</code> and then overloads the operator operator + between two <code>any</code>'s
+        
+        \snippet any.h any 3 */
     template <typename... FEATURES> class runtime_type
     {
       public:
-        /** feature_list associated to the template arguments */
+        /** feature_list associated to the template arguments. If to template arguments is provided, default_type_features is used. */
         using feature_list_type = typename std::conditional<
           (sizeof...(FEATURES) > 0),
           feature_list<FEATURES...>,
           default_type_features>::type;
 
+        /** Alias for feature_list_type::tuple_type.
+        \n <i>Implementation note</i>: runtime_type is actually a wrapper around a pointer to a static constexpr instance of this tuple. */
         using tuple_type = typename feature_list_type::tuple_type;
 
-        /** Creates a runtime_type associated with the specified type. The latter is the target type.
-                @tparam TYPE target type that is type-erased by the returned runtime_type. */
+        /** Creates a runtime_type boudnto a target type.
+                @tparam TARGET_TYPE type to bind to the returned runtime_type. 
+
+        \n\b Postcoditions:
+            Given a specialization of runtime_type R and type T, the following conditions hold:
+            \snippet runtime_type_examples.cpp runtime_type make example 1
+        \b Throws: nothing */
         template <typename TARGET_TYPE> constexpr static runtime_type make() noexcept
         {
             return runtime_type(&detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table);
         }
 
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
-            runtime_type leads to undefined behavior. */
+            runtime_type leads to undefined behavior.
+            
+        \n\b Postcoditions:
+            Given a specialization of runtime_type R and type T, the following conditions hold:
+            \snippet runtime_type_examples.cpp runtime_type construct example 1
+        \b Throws: nothing */
         constexpr runtime_type() noexcept = default;
 
         /** Generalized copy constructor.

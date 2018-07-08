@@ -117,9 +117,7 @@ namespace density_examples
         {
             if (m_type != i_source.m_type)
                 return false;
-            if (m_object == nullptr)
-                return true;
-            return m_type.are_equal(m_object, i_source.m_object);
+            return m_object == nullptr || m_type.are_equal(m_object, i_source.m_object);
         }
 
         bool operator!=(const any & i_source) const noexcept { return !operator==(i_source); }
@@ -191,9 +189,8 @@ namespace density_examples
     }
     //! [any 2]
 
-    class f_sum
+    struct f_sum
     {
-      public:
         template <typename TARGET_TYPE> constexpr static f_sum make() noexcept
         {
             return f_sum{&invoke<TARGET_TYPE>};
@@ -204,14 +201,11 @@ namespace density_examples
             (*m_function)(i_dest, i_first, i_second);
         }
 
-      private:
-        using Function = void (*)(void * i_dest, void const * i_first, void const * i_second);
-        Function const m_function;
-        constexpr f_sum(Function i_function) : m_function(i_function) {}
+        void (*m_function)(void * i_dest, void const * i_first, void const * i_second);
+
         template <typename TARGET_TYPE>
         static void invoke(void * i_dest, void const * i_first, void const * i_second)
         {
-            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
             auto const & second = *static_cast<TARGET_TYPE const *>(i_second);
             new (i_dest) TARGET_TYPE(first + second);

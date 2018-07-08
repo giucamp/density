@@ -49,8 +49,8 @@ namespace density
         so heter_queue is not a container.
 
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
-                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
+                This type must satisfy the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_concept
                 "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
 
         \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
@@ -627,7 +627,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -671,7 +671,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1615,7 +1615,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1659,7 +1659,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
