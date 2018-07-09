@@ -116,27 +116,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\density\density_common.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\density_config.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\lifo.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\raw_atomic.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\runtime_type.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\system_page_manager.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\exception_tests.h">
       <Filter>test_framework</Filter>
     </ClInclude>
@@ -173,90 +152,111 @@
     <ClInclude Include="..\test_framework\histogram.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\io_runtimetype_features.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\queue_generic_tester.h">
       <Filter>test_framework</Filter>
     </ClInclude>
     <ClInclude Include="..\tests\generic_tests\queue_generic_tests.h">
       <Filter>tests\generic_tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\heter_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\lf_heter_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\conc_heter_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_tail_single.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_seq_cst.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_tail_multiple_relaxed.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_head_single.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_head_multiple.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\threading_extensions.h">
       <Filter>test_framework</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\page_stack.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\singleton_ptr.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\wf_page_stack.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\page_allocator.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\sp_heter_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\sp_queue_tail_multiple.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\conc_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\lf_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\sp_function_queue.h">
-      <Filter>density</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\detail\function_runtime_type.h">
-      <Filter>density\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\test_settings.h" />
     <ClInclude Include="..\test_framework\statistics.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\lf_queue_base.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\density\default_allocator.h">
-      <Filter>density</Filter>
-    </ClInclude>
     <ClInclude Include="..\test_framework\allocator_stress_test.h">
       <Filter>test_framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\density\detail\runtime_type_internals.h">
-      <Filter>density\detail</Filter>
-    </ClInclude>
     <ClInclude Include="..\examples\any.h">
       <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\conc_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\conc_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\default_allocator.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\density_common.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\density_config.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\io_runtimetype_features.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\lf_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\lf_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\lifo.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\raw_atomic.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\runtime_type.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\sp_function_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\sp_heter_queue.h">
+      <Filter>density</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_tail_multiple_relaxed.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_tail_multiple_seq_cst.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_tail_single.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\page_allocator.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\page_stack.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\runtime_type_internals.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\singleton_ptr.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\sp_queue_tail_multiple.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\system_page_manager.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\wf_page_stack.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\function_runtime_type.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_base.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_head_multiple.h">
+      <Filter>density\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\density\detail\lf_queue_head_single.h">
+      <Filter>density\detail</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -278,10 +278,5 @@
     <Filter Include="tests\generic_tests">
       <UniqueIdentifier>{bde40fab-7dc3-46aa-9141-e3800b57ccc9}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\history.txt">
-      <Filter>density</Filter>
-    </Text>
   </ItemGroup>
 </Project>
