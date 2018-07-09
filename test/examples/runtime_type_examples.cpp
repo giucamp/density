@@ -45,7 +45,7 @@ namespace density_tests
         }
         {
         //! [feature_list example 4]
-    // Features1, Features2 and Features3 are similar....
+    // Features1, Features2 and Features3 are equivalent....
     using Features1 = feature_list<f_size, f_alignment, f_copy_construct>;
     using Features2 = feature_list< feature_list<f_size>, 
         feature_list<f_alignment, f_copy_construct>>;
@@ -180,6 +180,17 @@ namespace density_tests
         }
         {
             // clang-format off
+            //! [runtime_type tuple_type example 1]
+    using RuntimeRype = runtime_type<f_size, feature_list<f_none, f_alignment> >;
+    static_assert( std::is_same<
+        RuntimeRype::tuple_type, 
+        std::tuple<f_size, f_alignment>
+    >::value, "");
+            //! [runtime_type tuple_type example 1]
+            // clang-format on
+        }
+        {
+            // clang-format off
             using T = int;
             using R = runtime_type<>;
             //! [runtime_type construct example 1]
@@ -207,12 +218,12 @@ namespace density_tests
     using Rt1 = runtime_type<f_size, f_alignment>;
     using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
     Rt1 t1    = Rt1::make<int>();
-    Rt1 t2    = t1; // valid because Rt1 and Rt2 are similar
+    Rt1 t2    = t1; // valid because Rt1 and Rt2 are equivalent
     assert(t1 == t2);
 
     using Rt3 =
         runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
-    // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+    // Rt3 includes f_default_construct, so it's not equivalent to Rt1 and Rt2
     static_assert(!std::is_constructible<Rt1, Rt3>::value, "");
             //! [runtime_type copy example 1]
             // clang-format on
@@ -224,12 +235,12 @@ namespace density_tests
     using Rt2 = runtime_type<feature_list<f_size>, f_none, f_alignment>;
     Rt1 t1    = Rt1::make<int>();
     Rt1 t2;
-    t2 = t1; // valid because Rt1 and Rt2 are similar
+    t2 = t1; // valid because Rt1 and Rt2 are equivalent
     assert(t1 == t2);
 
     using Rt3 =
         runtime_type<feature_list<f_size, f_default_construct>, f_none, f_alignment>;
-    // Rt3 includes f_default_construct, so it's not similar to Rt1 and Rt2
+    // Rt3 includes f_default_construct, so it's not equivalent to Rt1 and Rt2
     static_assert(!std::is_assignable<Rt1, Rt3>::value, "");
             //! [runtime_type assign example 1]
             // clang-format on

@@ -40,7 +40,7 @@ namespace density
         
         \snippet runtime_type_examples.cpp feature_list example 3 
         
-        Two feature lists are similar if they prduce the same feature tuple:
+        Two feature lists are equivalent if they prduce the same feature tuple:
 
         \snippet runtime_type_examples.cpp feature_list example 4 */
     template <typename... FEATURES> struct feature_list;
@@ -330,6 +330,9 @@ namespace density
         {
             DENSITY_ASSERT(i_object != nullptr);
             TARGET_TYPE * obj = static_cast<TARGET_TYPE *>(i_object);
+            static_assert(
+              noexcept(obj->TARGET_TYPE::~TARGET_TYPE()),
+              "TARGET_TYPE must be nothrow destructible");
             obj->TARGET_TYPE::~TARGET_TYPE();
         }
     };
@@ -548,7 +551,7 @@ namespace density
         The static function template make creates an instance of the feature bound to a type. The function
         call operator invokes the fetaure.  
 
-        The following snippet shows the synopsis of f_size, f_default_construct, f_equal.
+        The following snippet shows the synopsis of f_size, f_default_construct and f_equal.
 
         \code
         struct f_size
@@ -620,30 +623,34 @@ namespace density
             
         \snippet any.h any 1
 
-        This example shows how a non-intrusive serialization operator << for the above <code>any</code> can be easly implemented:
+        This example shows how a non-intrusive serialization <code>operator << </code>for the above <code>any</code> can be easly implemented
+        exploiting the feature built-in f_ostream:
 
         \snippet any.h any 2 
         
-        This example defines the feature <code>f_sum</code> and then overloads the operator operator + between two <code>any</code>'s
+        This example defines the feature <code>f_sum</code> and then overloads the operator <code>operator +</code> between two <code>any</code>'s
         
         \snippet any.h any 3 */
     template <typename... FEATURES> class runtime_type
     {
       public:
-        /** feature_list associated to the template arguments. If to template arguments is provided, default_type_features is used. */
+        /** feature_list associated to the template arguments. If to template arguments is provided, \ref default_type_features is used. */
         using feature_list_type = typename std::conditional<
           (sizeof...(FEATURES) > 0),
           feature_list<FEATURES...>,
           default_type_features>::type;
 
-        /** Alias for feature_list_type::tuple_type.
-        \n <i>Implementation note</i>: runtime_type is actually a wrapper around a pointer to a static constexpr instance of this tuple. */
+        /** Alias for <code>feature_list_type::tuple_type</code>, a specialization of 
+            [std::tuple](https://en.cppreference.com/w/cpp/utility/tuple) that contains all the features.
+            \snippet runtime_type_examples.cpp runtime_type tuple_type example 1 
+            <i>Implementation note</i>: runtime_type is actually a wrapper around a pointer to a static 
+            constexpr instance of this tuple. */
         using tuple_type = typename feature_list_type::tuple_type;
 
         /** Creates a runtime_type boudnto a target type.
                 @tparam TARGET_TYPE type to bind to the returned runtime_type. 
 
-        \n\b Postcoditions:
+        \b Postcoditions:
             Given a specialization of runtime_type R and type T, the following conditions hold:
             \snippet runtime_type_examples.cpp runtime_type make example 1
         \b Throws: nothing */
@@ -655,17 +662,18 @@ namespace density
         /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior.
             
-        \n\b Postcoditions:
+        \b Postcoditions:
             Given a specialization of runtime_type R and type T, the following conditions hold:
             \snippet runtime_type_examples.cpp runtime_type construct example 1
         \b Throws: nothing */
         constexpr runtime_type() noexcept = default;
 
         /** Generalized copy constructor.
+            This constructor does not partecipate in oveload resolution unless <code>runtime_type::tuple</code>
+            and <code>runtime_type<OTHER_FEATURES...>::tuple</code> are the same (that is the
+            feature lists of the two runtime_type are equivalent).
 
-            This constructor does not partecipate in oveload resolution unless runtime_type::tuple
-            and runtime_type<OTHER_FEATURES...>::tuple are the same (that is the
-            feature lists of the two runtime_type are similar).
+            \b Throws: nothing
             
             \snippet runtime_type_examples.cpp runtime_type copy example 1 */
         template <typename... OTHER_FEATURES>
@@ -684,14 +692,15 @@ namespace density
         {
         }
 
-        /** Generalized copy assignment
+        /** Generalized copy assignment.
+            This function does not partecipate in oveload resolution unless <code>runtime_type::tuple</code>
+            and <code>runtime_type<OTHER_FEATURES...>::tuple</code> are the same (that is the
+            feature lists of the two runtime_type are equivalent).
 
-            This function does not partecipate in oveload resolution unless runtime_type::tuple
-            and runtime_type<OTHER_FEATURES...>::tuple are the same (that is the
-            feature lists of the two runtime_type are similar).
-
-            If the compiler conforms to C++14 (in particular __cpp_constexpr >= 201304) this 
+            If the compiler conforms to C++14 (in particular <code>__cpp_constexpr >= 201304</code>) this 
             function is constexpr.
+
+            \b Throws: nothing
 
             \snippet runtime_type_examples.cpp runtime_type assign example 1 */
         template <typename... OTHER_FEATURES>
@@ -711,154 +720,230 @@ namespace density
             return *this;
         }
 
-        /** Returns whether this runtime_type is not bound to a target type */
+        /** Returns whether this runtime_type is not bound to a target type.
+            
+            \b Throws: nothing */
         constexpr bool empty() const noexcept { return m_feature_table == nullptr; }
 
-        /** Unbinds from a target. If the runtime_type was already empty this function has no effect. */
+        /** Unbinds from a target. If the runtime_type was already empty this function has no effect. 
+        
+            If the compiler conforms to C++14 (in particular <code>__cpp_constexpr >= 201304</code>) this
+            function is constexpr.
+
+            \b Throws: nothing */
         DENSITY_CPP14_CONSTEXPR void clear() noexcept { m_feature_table = nullptr; }
 
-        /** Returns the size (in bytes) of the target type, which is always > 0. \n
+        /** Invokes the feature f_size and returns the size of the target type.
+            Equivalent to <code>get_feature<f_size>()()</code>.
+
             The effect of this function is the same of this code:
-                @code
-                    return sizeof(TARGET_TYPE);
-                @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make).
+            @code
+                return sizeof(TARGET_TYPE);
+            @endcode
 
-            \n\b Requires:
-                - the feature f_size must be included in the FEATURE_LIST \n
-                - the runtime_type must be non-empty
+            \b Precoditions:
+                - If the runtime_type is empty the behaviour is undefined.
 
-            \n\b Throws: nothing */
+            \b Postcoditions:
+                - The return value is above zero.
+
+            \b Requires:
+                - If the feature f_size is not included in the FEATURE_LIST a compile 
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: nothing */
         constexpr size_t size() const noexcept { return get_feature<f_size>()(); }
 
-        /** Returns the alignment (in bytes) of the target type, which is always an integer power of 2. \n
+        /** Invokes the feature f_alignment and returns the alignment of the target type.
+            Equivalent to <code>get_feature<f_alignment>()()</code>.
 
             The effect of this function is the same of this code:
-                @code
-                    return alignof(TARGET_TYPE);
-                @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make).
+            @code
+                return alignof(TARGET_TYPE);
+            @endcode
 
-            \n\b Requires:
-                - the feature f_alignment must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            \b Precoditions:
+                - If the runtime_type is empty the behaviour is undefined.
 
-            \n\b Throws: nothing */
+            \b Postcoditions:
+                - The return value is above zero.
+
+            \b Requires:
+                - If the feature f_alignment is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: nothing */
         constexpr size_t alignment() const noexcept { return get_feature<f_alignment>()(); }
 
-        /** Default constructs an instance of the target type on the specified uninitialized storage. \n
+        /** Invokes the feature f_default_construct to [value-initialize](https://en.cppreference.com/w/cpp/language/value_initialization)
+            an instance of the target type.
+            Equivalent to <code>get_feature<f_default_construct>()(i_dest)</code>.
+                @param i_dest pointer to the destination buffer in which the target type is inplace constructed. 
+
             The effect of this function is the same of this code:
                 @code
                     new(i_dest) TARGET_TYPE();
                 @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make). Note that primitive
-            types are initialized by this expression.
-            @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
-                must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
 
-            \n\b Requires:
-                - the feature f_default_construct must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            Note that if TARGET_TYPE is not a class type, it is zero-initialized.
 
-            \n\b Throws: anything that the default constructor of the target type throws. */
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
+                - The destination buffer is null
+                - The destination buffer is not large at least as the result of runtime_type::size, or is 
+                  not aligned at least according to runtime_type::alignment
+
+            \b Postcoditions:
+                - The destination buffer contains an instance of the TARGET_TYPE.
+
+            \b Requires:
+                - If the feature f_default_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: anything that the constructor of the target type throws. */
         void default_construct(void * i_dest) const
         {
             DENSITY_ASSERT(!empty());
             get_feature<f_default_construct>()(i_dest);
         }
 
-        /** Copy constructs an instance of the target type on the specified uninitialized storage. \n
+        /** Invokes the feature f_copy_construct to copy-construct an instance of the target type.
+            Equivalent to <code>get_feature<f_copy_construct>()(i_dest, i_source)</code>.
+                @param i_dest pointer to the destination buffer in which the target type is inplace constructed.
+                @param i_source pointer to an instance of the target type to be used as source for the copy.
+
             The effect of this function is the same of this code:
                 @code
-                    return static_cast<common_type*>( new(i_dest) TARGET_TYPE(
-                        *dynamic_cast<const TARGET_TYPE*>(i_source) ) );
+                    new(i_dest) TARGET_TYPE( *static_cast<const TARGET_TYPE*>(i_source) );
                 @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
-            @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
-                must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
-            @param i_source pointer to a subobject common_type of an instance of TARGET_TYPE.
-            @return pointer to the common_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
-                assume that the value of this pointer is the same of i_dest.
 
-            \n\b Requires:
-                - the feature f_copy_construct must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
+                - The destination pointer or the source pointer are null
+                - The destination buffer is not large at least as the result of runtime_type::size, or is
+                  not aligned at least according to runtime_type::alignment
+                - The source pointer does not point to an object whose dynamic type is the target type
 
-            \n\b Throws: anything that the copy constructor of the target type throws. */
+            \b Postcoditions:
+                - The destination buffer contains an instance of the TARGET_TYPE.
+
+            \b Requires:
+                - If the feature f_copy_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: anything that the copy constructor of the target type throws. */
         void copy_construct(void * i_dest, const void * i_source) const
         {
             DENSITY_ASSERT(!empty());
             get_feature<f_copy_construct>()(i_dest, i_source);
         }
 
-        /** Move constructs an instance of the target type on the specified uninitialized storage. \n
+        /** Invokes the feature f_move_construct to move-construct an instance of the target type.
+            Equivalent to <code>get_feature<f_move_construct>()(i_dest, i_source)</code>.
+                @param i_dest pointer to the destination buffer in which the target type is inplace constructed.
+                @param i_source pointer to an instance of the target type to be used as source for the move
+
             The effect of this function is the same of this code:
                 @code
-                    return static_cast<common_type*>( new(i_dest) TARGET_TYPE(
-                        std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) );
+                    new(i_dest) TARGET_TYPE( std::move(*static_cast<TARGET_TYPE*>(i_source)) );
                 @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
-            @param i_dest pointer to a buffer in which the target type is inplace constructed. This buffer
-                must be large at least as the result of runtime_type::size, and must be aligned at least according to runtime_type::alignment.
-            @param i_source pointer to a subobject common_type of an instance of TARGET_TYPE.
-            @return pointer to the common_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not
-                assume that the value of this pointer is the same of i_dest.
 
-            \n\b Requires:
-                - the feature f_move_construct must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
-            */
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
+                - The destination pointer or the source pointer are null
+                - The destination buffer is not large at least as the result of runtime_type::size, or is
+                  not aligned at least according to runtime_type::alignment
+                - The source pointer does not point to an object whose dynamic type is the target type
+
+            \b Postcoditions:
+                - The destination buffer contains an instance of the TARGET_TYPE.
+                - The source buffer contains a moved-from instance of the target type.
+
+            \b Requires:
+                - If the feature f_move_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: anything that the move constructor of the target type throws. */
         void move_construct(void * i_dest, void * i_source) const
         {
             DENSITY_ASSERT(!empty());
             get_feature<f_move_construct>()(i_dest, i_source);
         }
 
-        /** Destroys an object of the target type through a pointer to the subobject common_type.
+        /** Invokes the feature f_destroy to destroy an instance of the target type.
+            Equivalent to <code>get_feature<f_destroy>()(i_dest)</code>.
+                @param i_dest pointer to an instance of the target type to be destroyed.
 
             The effect of this function is the same of this code:
                 @code
-                    dynamic_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
-                    return dynamic_cast<TARGET_TYPE*>(i_source);
+                    static_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
                 @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
 
-            @return pointer to the complete object that has been destroyed. This pointer can be used
-                to deallocate a memory block on the heap.
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
+                - The destination pointer is null or does not point to an object whose dynamic type is the target type
 
-            \n\b Requires:
-                - the feature f_destroy must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            \b Postcoditions:
+                - The destination buffer does not contain an instance of the TARGET_TYPE.
 
-            \n\b Throws: nothing. Destructors are required to be noexcept. */
+            \b Requires:
+                - If the feature f_destroy is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: nothing. */
         void destroy(void * i_dest) const noexcept
         {
             DENSITY_ASSERT(!empty());
             get_feature<f_destroy>()(i_dest);
         }
 
-        /** Returns the std::type_info associated to the target type.
+        /** Invokes the feature f_rtti to return the [std::type_info](https://en.cppreference.com/w/cpp/types/type_info) of
+            the target type.
+            Equivalent to <code>get_feature<f_rtti>()()</code>.
 
             The effect of this function is the same of this code:
                 @code
                     return typeid(TARGET_TYPE);
                 @endcode
-            where TARGET_TYPE is the target type (see the static member function runtime_type::make). \n
 
-            \n\b Requires:
-                - the feature f_rtti must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
 
-            \n\b Throws: nothing. */
+            \b Requires:
+                - If the feature f_rtti is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: nothing. */
         const std::type_info & type_info() const noexcept
         {
             DENSITY_ASSERT(!empty());
             return get_feature<f_rtti>()();
         }
 
-        /** Returns true if two instances of the target types compare equal.
-            \n\b Throws: unspecified
-        */
+        /** Invokes the feature f_equal to compare two instances of the target type.
+            Equivalent to <code>get_feature<f_equal>()(i_first, i_second)</code>.
+
+            The effect of this function is the same of this code:
+                @code
+                    return *static_cast<const TARGET_TYPE*>(i_first) == *static_cast<const TARGET_TYPE*>(i_second);
+                @endcode
+
+            \b Precoditions:
+                The behaviour is undefined if either:
+                - The runtime_type is empty
+                - The first pointer is null or does not point to an object whose dynamic type is the target type
+                - The second pointer is null or does not point to an object whose dynamic type is the target type
+
+            \b Requires:
+                - If the feature f_equal is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
+            \b Throws: nothing. */
         bool are_equal(const void * i_first, const void * i_second) const noexcept
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr && !empty());
@@ -918,7 +1003,10 @@ namespace density
         {
         }
 
-      public:
+      private:
+#ifndef DOXYGEN_DOC_GENERATION
+        template <typename... FEATURES> friend class runtime_type;
+#endif
         const tuple_type * m_feature_table{nullptr};
     };
 } // namespace density

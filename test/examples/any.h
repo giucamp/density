@@ -189,6 +189,7 @@ namespace density_examples
     }
     //! [any 2]
 
+    //! [any 3]
     struct f_sum
     {
         template <typename TARGET_TYPE> constexpr static f_sum make() noexcept
@@ -212,7 +213,6 @@ namespace density_examples
         }
     };
 
-    //! [any 3]
     template <typename... FEATURES>
     any<FEATURES...> operator+(const any<FEATURES...> & i_first, const any<FEATURES...> & i_second)
     {
@@ -229,6 +229,6 @@ namespace density_examples
               i_dest, i_first.object_ptr(), i_second.object_ptr());
         });
     }
-    //! [any 2]
+    //! [any 3]
 
 } // namespace density_examples
