@@ -35,8 +35,7 @@ cd build
 cmake $MAKE_ARGS -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
 make
 if [ "$RUN" = "TRUE" ]; then
-    sudo make install
-    density_test $PARAMS
+    $PWD/density_test $PARAMS
 fi
 
 cd ../..
