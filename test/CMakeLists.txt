@@ -3,6 +3,7 @@ project (density_test)
 
 OPTION(DENSITY_DEBUG "Enable debug checks" OFF)
 OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
+SET(CPP_STANDARD "c++11" CACHE STRING "C++ standard to use")
 
 IF(DENSITY_DEBUG)
     MESSAGE("DENSITY_DEBUG is ON")
@@ -107,11 +108,11 @@ add_executable(density_test
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	MESSAGE( STATUS "will compile with clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g ${COMPILER_EXTRA}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CPP_STANDARD} -g ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "will compile with g++")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -rdynamic ${COMPILER_EXTRA}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CPP_STANDARD} -g -rdynamic ${COMPILER_EXTRA}")
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "will compile with msvc")
