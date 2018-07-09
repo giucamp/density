@@ -16,7 +16,7 @@ IF(ENABLE_TEST_DATA_STACK)
 ENDIF(ENABLE_TEST_DATA_STACK)
 
 include_directories(".")
-include_directories("../")
+include_directories("../include")
 
 SET(COMPILER_EXTRA "" CACHE STRING "additional compiler options")
 
@@ -35,35 +35,35 @@ IF(DEFINED ${CMAKE_BUILD_TYPE})
 ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
 
 add_executable(density_test
-	../density/detail/function_runtime_type.h
-	../density/detail/lf_queue_base.h
-	../density/detail/lf_queue_head_multiple.h
-	../density/detail/lf_queue_head_single.h
-	../density/detail/lf_queue_tail_multiple_relaxed.h
-	../density/detail/lf_queue_tail_multiple_seq_cst.h
-	../density/detail/lf_queue_tail_single.h
-	../density/detail/page_allocator.h
-	../density/detail/page_stack.h
-	../density/detail/singleton_ptr.h
-	../density/detail/sp_queue_tail_multiple.h
-	../density/detail/system_page_manager.h
-	../density/detail/wf_page_stack.h
-    ../density/detail/runtime_type_internals.h
-	../density/conc_function_queue.h
-	../density/conc_heter_queue.h
-	../density/default_allocator.h
-	../density/density_common.h
-	../density/density_config.h
-	../density/function_queue.h
-	../density/heter_queue.h
-	../density/io_runtimetype_features.h
-	../density/lf_function_queue.h
-	../density/lf_heter_queue.h
-	../density/lifo.h
-	../density/raw_atomic.h
-	../density/runtime_type.h
-	../density/sp_function_queue.h
-	../density/sp_heter_queue.h
+	../include/density/detail/function_runtime_type.h
+	../include/density/detail/lf_queue_base.h
+	../include/density/detail/lf_queue_head_multiple.h
+	../include/density/detail/lf_queue_head_single.h
+	../include/density/detail/lf_queue_tail_multiple_relaxed.h
+	../include/density/detail/lf_queue_tail_multiple_seq_cst.h
+	../include/density/detail/lf_queue_tail_single.h
+	../include/density/detail/page_allocator.h
+	../include/density/detail/page_stack.h
+	../include/density/detail/singleton_ptr.h
+	../include/density/detail/sp_queue_tail_multiple.h
+	../include/density/detail/system_page_manager.h
+	../include/density/detail/wf_page_stack.h
+    ../include/density/detail/runtime_type_internals.h
+	../include/density/conc_function_queue.h
+	../include/density/conc_heter_queue.h
+	../include/density/default_allocator.h
+	../include/density/density_common.h
+	../include/density/density_config.h
+	../include/density/function_queue.h
+	../include/density/heter_queue.h
+	../include/density/io_runtimetype_features.h
+	../include/density/lf_function_queue.h
+	../include/density/lf_heter_queue.h
+	../include/density/lifo.h
+	../include/density/raw_atomic.h
+	../include/density/runtime_type.h
+	../include/density/sp_function_queue.h
+	../include/density/sp_heter_queue.h
 	examples/concurrent_heterogeneous_queue_examples.cpp
 	examples/conc_func_queue_examples.cpp
 	examples/func_queue_examples.cpp

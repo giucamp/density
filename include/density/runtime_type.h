@@ -1005,7 +1005,7 @@ namespace density
 
       private:
 #ifndef DOXYGEN_DOC_GENERATION
-        template <typename... FEATURES> friend class runtime_type;
+        template <typename...> friend class runtime_type;
 #endif
         const tuple_type * m_feature_table{nullptr};
     };
