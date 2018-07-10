@@ -189,6 +189,8 @@ namespace density_tests
             //! [runtime_type tuple_type example 1]
             // clang-format on
         }
+#if !defined(__GNUC__) || defined(__clang__) /* gcc has some bugs in constexpr
+			evaluation (m_feature_table == nullptr is not a constant expression) */
         {
             // clang-format off
             using T = int;
@@ -212,6 +214,7 @@ namespace density_tests
             //! [runtime_type make example 1]
             // clang-format on
         }
+#endif
         {
             // clang-format off
             //! [runtime_type copy example 1]

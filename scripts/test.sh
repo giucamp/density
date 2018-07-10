@@ -7,10 +7,12 @@ TEST_DATA_STACK=$3
 GCOV=$4
 PARAMS=$5
 COMPILER_PARAMS=$6
+CPP_STD=$7
 
 export TSAN_OPTIONS="halt_on_error=1 history_size=4"
 
 echo "RUN=$RUN, BUILD_TYPE=$BUILD_TYPE, TEST_DATA_STACK=$TEST_DATA_STACK, GCOV=$GCOV, PARAMS=$PARAMS, COMPILER_PARAMS=$COMPILER_PARAMS"
+echo "CPP_STD = $CPP_STD"
 
 MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
@@ -20,6 +22,10 @@ fi
 
 if [ "$BUILD_TYPE" = "Debug" ]; then
     MAKE_ARGS+=" -DDENSITY_DEBUG:BOOL=ON"
+fi
+
+if [ "$CPP_STD" != "" ]; then
+    MAKE_ARGS+=" -DCPP_STANDARD:STRING=$CPP_STD"
 fi
 
 if [ "$GCOV" == "gcov-7" ]; then

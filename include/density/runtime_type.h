@@ -366,7 +366,7 @@ namespace density
         Function const m_function;
         constexpr f_equal(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE>
-        static bool invoke(void const * i_first, void const * i_second)
+        static bool invoke(void const * i_first, void const * i_second) noexcept
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
@@ -405,7 +405,7 @@ namespace density
         Function const m_function;
         constexpr f_less(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE>
-        static bool invoke(void const * i_first, void const * i_second)
+        static bool invoke(void const * i_first, void const * i_second) noexcept
         {
             DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
