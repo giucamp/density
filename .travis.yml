@@ -66,6 +66,26 @@ matrix:
       env:
         - MATRIX_EVAL="CXX=g++-7 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def\" && COMPILER_PARAMS=\"-fsanitize=thread -fuse-ld=gold\""
 
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CXX=g++-7 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:1500 && CPP_STD=c++14"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CXX=clang++-5.0 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:15000 && CPP_STD=c++17"
+
 before_install:
     - pip install --user cpp-coveralls
     - chmod +x scripts/test.sh
@@ -73,5 +93,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV "$TEST_PARAMS" "$COMPILER_PARAMS"
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $TEST_DATA_STACK $GCOV "$TEST_PARAMS" "$COMPILER_PARAMS" CPP_STD
   - scripts/bench.sh $BENCH_RUN
