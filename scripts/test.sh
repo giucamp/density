@@ -3,11 +3,11 @@ set -e
 
 RUN=$1
 BUILD_TYPE=$2
-TEST_DATA_STACK=$3
-GCOV=$4
-PARAMS=$5
-COMPILER_PARAMS=$6
-CPP_STD=$7
+CPP_STD=$3
+TEST_DATA_STACK=$4
+GCOV=$5
+PARAMS=$6
+COMPILER_PARAMS=$7
 
 export TSAN_OPTIONS="halt_on_error=1 history_size=4"
 
@@ -24,21 +24,17 @@ if [ "$BUILD_TYPE" = "Debug" ]; then
     MAKE_ARGS+=" -DDENSITY_DEBUG:BOOL=ON"
 fi
 
-if [ "$CPP_STD" != "" ]; then
-    MAKE_ARGS+=" -DCPP_STANDARD:STRING=$CPP_STD"
-fi
-
 if [ "$GCOV" == "gcov-7" ]; then
     GCC_OPTIONS+=" -fprofile-arcs -ftest-coverage"
 fi
 GCC_OPTIONS+=$COMPILER_PARAMS
 
-echo "MAKE_ARGS = $MAKE_ARGS"
+echo "cmake \"$MAKE_ARGS\" -DCOMPILER_EXTRA:STRING=\"$GCC_OPTIONS\" -DCMAKE_CXX_STANDARD=\"$CPP_STD\" .."
 
 cd test
 mkdir build || true
 cd build
-cmake $MAKE_ARGS -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
+cmake "$MAKE_ARGS" -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" -DCMAKE_CXX_STANDARD=$CPP_STD ..
 make
 if [ "$RUN" = "TRUE" ]; then
     $PWD/density_test $PARAMS
