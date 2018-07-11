@@ -13,7 +13,7 @@ matrix:
           packages:
             - g++-4.9
       env:
-         - MATRIX_EVAL="CXX=g++-4.9 && TEST_BUILD=Release && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
+         - MATRIX_EVAL="CXX=g++-4.9 && CPP_STD=11 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && GCOV=no && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
     
     - os: linux
       addons:
@@ -23,7 +23,7 @@ matrix:
           packages:
             - g++-7
       env:
-         - MATRIX_EVAL="CXX=g++-7 && TEST_BUILD=Debug && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && GCOV=gcov-7 && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
+         - MATRIX_EVAL="CXX=g++-7 && CPP_STD=11 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && GCOV=gcov-7 && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
     
     - os: linux
       env:
@@ -34,7 +34,7 @@ matrix:
           packages:
             - clang-4.0
       env:
-        - MATRIX_EVAL="CXX=clang++-4.0 && TEST_BUILD=Release && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
+        - MATRIX_EVAL="CXX=clang++-4.0 && CPP_STD=11 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && BENCH_RUN=TRUE && GCOV=no && TEST_PARAMS=-queue_tests_cardinality:15000"
 
     - os: linux
       addons:
@@ -44,7 +44,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CXX=clang++-5.0 && TEST_BUILD=Debug && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:15000"
+        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=11 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && GCOV=no && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:15000"
 
     - os: linux
       addons:
@@ -54,7 +54,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CXX=clang++-5.0 && TEST_BUILD=Release && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def\" && COMPILER_PARAMS=-fsanitize=thread"
+        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=11 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def\" && COMPILER_PARAMS=-fsanitize=thread"
 
     - os: linux
       addons:
@@ -64,17 +64,7 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CXX=g++-7 && TEST_BUILD=Release && CPP_STD=11 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def\" && COMPILER_PARAMS=\"-fsanitize=thread -fuse-ld=gold\""
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-        - MATRIX_EVAL="CXX=g++-7 && TEST_BUILD=Debug && CPP_STD=14 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:1500"
+        - MATRIX_EVAL="CXX=g++-7 && CPP_STD=11 && TEST_BUILD=Release && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def\" && COMPILER_PARAMS=\"-fsanitize=thread -fuse-ld=gold\""
 
     - os: linux
       addons:
@@ -84,7 +74,18 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CXX=clang++-5.0 && TEST_BUILD=Release && CPP_STD=17 && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:15000"
+        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=14 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CXX=g++-7 && CPP_STD=17 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
+
 
 before_install:
     - pip install --user cpp-coveralls
@@ -93,5 +94,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $CPP_STD $TEST_DATA_STACK $GCOV \"$TEST_PARAMS\"
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $CPP_STD $TEST_DATA_STACK $GCOV "$TEST_PARAMS" "$COMPILER_PARAMS"
   - scripts/bench.sh $BENCH_RUN

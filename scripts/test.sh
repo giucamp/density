@@ -29,12 +29,12 @@ if [ "$GCOV" == "gcov-7" ]; then
 fi
 GCC_OPTIONS+=$COMPILER_PARAMS
 
-echo "cmake \"$MAKE_ARGS\" -DCOMPILER_EXTRA:STRING=\"$GCC_OPTIONS\" -DCMAKE_CXX_STANDARD=\"$CPP_STD\" .."
+echo "MAKE_ARGS = $MAKE_ARGS"
 
 cd test
 mkdir build || true
 cd build
-cmake "$MAKE_ARGS" -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" -DCMAKE_CXX_STANDARD=$CPP_STD ..
+cmake $MAKE_ARGS -DCMAKE_CXX_STANDARD=$CPP_STD -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
 make
 if [ "$RUN" = "TRUE" ]; then
     $PWD/density_test $PARAMS
