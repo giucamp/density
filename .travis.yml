@@ -93,5 +93,5 @@ before_install:
     - eval "${MATRIX_EVAL}"
 
 script:
-  - scripts/test.sh $TEST_RUN $TEST_BUILD $CPP_STD $TEST_DATA_STACK $GCOV \"$TEST_PARAMS\" \"$COMPILER_PARAMS\"
+  - scripts/test.sh $TEST_RUN $TEST_BUILD $CPP_STD $TEST_DATA_STACK $GCOV \"$TEST_PARAMS\"
   - scripts/bench.sh $BENCH_RUN
