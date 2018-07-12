@@ -767,8 +767,8 @@ The first 3 template parameters are the same for all the heterogeneous queues.
 Template parameter            |Meaning  |Constraints|Default  |
 ------------------------------|---------|-----------|---------|
 typename `COMMON_TYPE`|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`|
-typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_concept.html)|[runtime_type](classdensity_1_1runtime__type.html)|
-typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
+typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_requirements.html)|[runtime_type](classdensity_1_1runtime__type.html)|
+typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_requirements.html) and [UntypedAllocator](UntypedAllocator_requirements.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
 An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
 The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
@@ -788,15 +788,13 @@ Implementation details
 ----------
 <a href="implementation.pdf" target="_blank">This document</a> describes some of the internals of density.
 
-Concepts
+Named requirements
 ----------
 
-Concept     | Modeled in density by
-------------|--------------
-[RuntimeType](RuntimeType_concept.html) | [runtime_type](classdensity_1_1runtime__type.html)
-[TypeFeature](TypeFeature_concept.html) | f_size, f_alignment, f_copy_construct, f_hash, f_rtti
-[UntypedAllocator](UntypedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
-[PagedAllocator](PagedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[RuntimeType](RuntimeType_requirements.html) | [runtime_type](classdensity_1_1runtime__type.html)
+[TypeFeature](TypeFeature_requirements.html) | f_size, f_alignment, f_copy_construct, f_hash, f_rtti
+[UntypedAllocator](UntypedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[PagedAllocator](PagedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
 
 Benchmarks
 ----------

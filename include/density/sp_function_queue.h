@@ -26,8 +26,8 @@ namespace density
         use a spin-locking mutex to synchronize the write to the tail pointer.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
+                "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
         @tparam PROD_CARDINALITY specifies whether multiple threads can do put transactions concurrently. Must be a member of density::concurrency_cardinality.
         @tparam CONSUMER_CARDINALITY specifies whether multiple threads can do consume operations concurrently. Must be a member of density::concurrency_cardinality.

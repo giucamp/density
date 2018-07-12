@@ -249,6 +249,26 @@ namespace density_tests
             //! [runtime_type assign example 1]
             // clang-format on
         }
+        {
+            // clang-format off
+            //! [runtime_type swap example 1]
+    auto r1 = runtime_type<>::make<int>();
+    auto r2 = runtime_type<>::make<double>();
+    swap(r1, r2);
+    assert(r1.is<double>());
+    assert(r2.is<int>());
+            //! [runtime_type swap example 1]
+            // clang-format on
+        }
+        {
+            // clang-format off
+            //! [runtime_type is example 1]
+    auto r = runtime_type<>::make<int>();
+    assert(r.is<int>());
+    assert(!r.is<double>());
+            //! [runtime_type is example 1]
+            // clang-format on
+        }
     }
 
     //! [runtime_type example 2]

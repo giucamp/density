@@ -52,6 +52,8 @@ void illegalinstr_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
 namespace density_tests
 {
     void misc_examples();
+    void feature_list_examples();
+    void runtime_type_examples();
 
     void heterogeneous_queue_samples(std::ostream & i_ostream);
     void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
@@ -184,6 +186,8 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     if (i_settings.should_run("misc_examples"))
     {
         misc_examples();
+        feature_list_examples();
+        runtime_type_examples();
     }
 
     if (i_settings.should_run("queue"))

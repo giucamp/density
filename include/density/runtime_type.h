@@ -20,7 +20,7 @@ namespace density
     /** Type-list class template that can be used to specify which features a runtime_type captures from the target type. 
 
         Each type in the template arguments is either:
-        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type fetaure
           (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature.
         - a nested feature_list
@@ -50,7 +50,7 @@ namespace density
     };
     template <typename FIRST_FEATURE, typename... OTHER_FEATURES>
     struct feature_list<FIRST_FEATURE, OTHER_FEATURES...> /* the generic case, to 
-        handle types satisfying [TypeFeature](TypeFeature_concept.html) */
+        handle types satisfying [TypeFeature](TypeFeature_requirements.html) */
     {
         static_assert(
           !std::is_void<FIRST_FEATURE>::value, "[cv-qualified] void does not satisfy TypeFeature");
@@ -449,9 +449,15 @@ namespace density
     {
     };
 
-    /*! \page RuntimeType_concept RuntimeType concept
+    /*! \page RuntimeType_requirements RuntimeType (named requirement)
+        - R is default constructible in a constant expression
+        - R is copy constructible and assignable
+        - R is equality comparable
+        - R is trivially destructible
+        - the expression R::make<T>() yelds an instance of R bound to the target type T
+        - the expression r.is<T>() -> bool is true if and only if T is the target type to which r is bound
 
-        The RuntimeType concept provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
+        A RuntimeType provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
         ctors, dtor, or retrieval of size and alignment.
 
         The target type is assigned with the make static function template (see below). A default constructed RuntimeType is empty,
@@ -519,7 +525,7 @@ namespace density
         </table>
     */
 
-    /*! \page TypeFeature_concept TypeFeature concept
+    /*! \page TypeFeature_requirements TypeFeature (named requirement)
 
         Requirements
         -------------------------
@@ -581,7 +587,7 @@ namespace density
 
     /** Class template that performs [type-erasure](https://en.wikipedia.org/wiki/Type_erasure). A runtime_type can be empty, 
         or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable and
-        trivially destructible. Specializations of runtime_type satisfy the requirements of \ref RuntimeType_concept "RuntimeType".
+        trivially destructible. Specializations of runtime_type satisfy the requirements of \ref RuntimeType_requirements "RuntimeType".
             @tparam FEATURES... list of features to be captures from the target type. 
 
         <i>Implementation note</i>:
@@ -589,7 +595,7 @@ namespace density
         It is actually a generalization of the pointer to the v-table in a polymorphic type.
 
         Like in a feature_list, each type in the template arguments pack is either:
-        - a type satisfying the requirements of [TypeFeature](TypeFeature_concept.html) concept, like a built-in type fetaure
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type fetaure
           (one of f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature
         - a nested feature_list, which is expanded. Feature lists can be nested to any level, and they are always flatened
@@ -719,6 +725,16 @@ namespace density
         {
             m_feature_table = i_source.m_feature_table;
             return *this;
+        }
+
+        /** Swaps two instances.
+        
+        \b Throws: nothing
+
+        \snippet runtime_type_examples.cpp runtime_type swap example 1 */
+        friend void swap(runtime_type & i_first, runtime_type & i_second) noexcept
+        {
+            std::swap(i_first.m_feature_table, i_second.m_feature_table);
         }
 
         /** Returns whether this runtime_type is not bound to a target type.
@@ -992,7 +1008,9 @@ namespace density
         /** Returns whether the target type of this runtime_type is exactly the one specified in the
             template parameter. Equivalent to <code>*this == runtime_type::make<TARGET_TYPE>()<&code> 
             
-            \b Throws: nothing. */
+            \b Throws: nothing. 
+            
+            \snippet runtime_type_examples.cpp runtime_type is example 1 */
         template <typename TARGET_TYPE> constexpr bool is() const noexcept
         {
             return m_feature_table == &detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table;

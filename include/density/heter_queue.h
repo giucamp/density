@@ -45,13 +45,13 @@ namespace density
         (<em>consume operation</em>).
         When doing a put, the user may associate one or more <em>raw memory blocks</em> to the element. Raw blocks are
         deallocated automatically when the value is consumed.
-        heter_queue supports iterators, but they are just <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>
+        heter_queue supports iterators, but they are just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>
         so heter_queue is not a container.
 
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
-                This type must satisfy the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
+                This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
+                "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
 
         \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
         \n <b>Exception safeness</b>: Any function of heter_queue is noexcept or provides the strong exception guarantee.
@@ -108,8 +108,8 @@ namespace density
         A value in the queue has the type <code>std::pair<const RUNTIME_TYPE &, void* const></code>. Iterators are
         conceptually pointers to such pairs.
         They don't provide the multipass guarantee, so they are not
-        <a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterators</a>, but just
-        <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>.
+        <a href="https://en.cppreference.com/w/cpp/named_req/ForwardIterator">Forward Iterators</a>, but just
+        <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>.
         For this reason heter_queue is not a container.
         Insertions invalidate no iterators. Removals invalidate only the iterators pointing to the element
         being removed.
@@ -627,7 +627,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -671,7 +671,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1615,7 +1615,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1659,7 +1659,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must satisfy the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:

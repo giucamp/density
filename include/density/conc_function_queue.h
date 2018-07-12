@@ -19,8 +19,8 @@ namespace density
     /** Thread-safe heterogeneous FIFO pseudo-container specialized to hold callable objects. conc_function_queue is an adaptor for conc_heter_queue.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
+                "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
 
         conc_function_queue is basically a function_queue protected from data-races by a mutex. Non-reentrant operations (put or
