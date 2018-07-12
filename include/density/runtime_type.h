@@ -147,67 +147,6 @@ namespace density
         size_t const m_alignment;
     };
 
-    /** This feature invokes [std::hash](https://en.cppreference.com/w/cpp/utility/hash) on an 
-        instance of the target type. Specializations of std::hash must be nothrow default
-        constructible and nothrow invokable. */
-    class f_hash
-    {
-      public:
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_hash make() noexcept
-        {
-            return f_hash{&invoke<TARGET_TYPE>};
-        }
-
-        /** Computes the hash of an instance of the target type object.
-            @param i_source pointer to an instance of the target type. Can't be null.
-                If the dynamic type of the pointed object is not the taget type (assigned
-                by the function make), the behaviour is undefined. */
-        DENSITY_NODISCARD size_t operator()(const void * i_source) const noexcept
-        {
-            return (*m_function)(i_source);
-        }
-
-      private:
-        using Function = size_t (*)(const void * i_source) DENSITY_CPP17_NOEXCEPT;
-        Function const m_function;
-        constexpr f_hash(Function i_function) noexcept : m_function(i_function) {}
-        template <typename TARGET_TYPE> static size_t invoke(const void * i_source) noexcept
-        {
-            DENSITY_ASSERT(i_source != nullptr);
-            static_assert(
-              noexcept(std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source))),
-              "Specializations of std::hash must be nothrow constructible and invokable");
-            return std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source));
-        }
-    };
-
-    /** This feature returns the std::type_info associated to the target type. */
-    class f_rtti
-    {
-      public:
-        /** Creates an instance of this feature bound to the specified target type */
-        template <typename TARGET_TYPE> constexpr static f_rtti make() noexcept
-        {
-            return f_rtti{&invoke<TARGET_TYPE>};
-        }
-
-        /** Returns the std::type_info of the target type. */
-        DENSITY_NODISCARD std::type_info const & operator()() const noexcept
-        {
-            return (*m_function)();
-        }
-
-      private:
-        using Function = std::type_info const & (*)() DENSITY_CPP17_NOEXCEPT;
-        Function const m_function;
-        constexpr f_rtti(Function i_function) noexcept : m_function(i_function) {}
-        template <typename TARGET_TYPE> static const std::type_info & invoke() noexcept
-        {
-            return typeid(TARGET_TYPE);
-        }
-    };
-
     /** [Value-initializes](https://en.cppreference.com/w/cpp/language/value_initialization) an
         instance of the target type in a user specified storage buffer. The target type must satisfy
         the requirements of [DefaultConstructible](https://en.cppreference.com/w/cpp/named_req/DefaultConstructible). */
@@ -221,7 +160,7 @@ namespace density
         }
 
         /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
-                @param i_dest where the target object must be constructed. Can't be null. If the buffer 
+                @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
                 the behaviour is undefined. */
         void operator()(void * i_dest) const { (*m_function)(i_dest); }
@@ -337,7 +276,7 @@ namespace density
         }
     };
 
-    /** Compares two objects for equality. The target type must satisfy the requirements of 
+    /** Compares two objects for equality. The target type must satisfy the requirements of
         [EqualityComparable](https://en.cppreference.com/w/cpp/named_req/EqualityComparable). */
     class f_equal
     {
@@ -376,7 +315,7 @@ namespace density
         }
     };
 
-    /** Compares two objects. The target type must satisfy the requirements of 
+    /** Compares two objects. The target type must satisfy the requirements of
         [LessThanComparable](https://en.cppreference.com/w/cpp/named_req/LessThanComparable). */
     class f_less
     {
@@ -412,6 +351,67 @@ namespace density
             auto const & second = *static_cast<TARGET_TYPE const *>(i_second);
             bool const   result = first < second;
             return result;
+        }
+    };
+
+    /** This feature invokes [std::hash](https://en.cppreference.com/w/cpp/utility/hash) on an 
+        instance of the target type. Specializations of std::hash must be nothrow default
+        constructible and nothrow invokable. */
+    class f_hash
+    {
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_hash make() noexcept
+        {
+            return f_hash{&invoke<TARGET_TYPE>};
+        }
+
+        /** Computes the hash of an instance of the target type object.
+            @param i_source pointer to an instance of the target type. Can't be null.
+                If the dynamic type of the pointed object is not the taget type (assigned
+                by the function make), the behaviour is undefined. */
+        DENSITY_NODISCARD size_t operator()(const void * i_source) const noexcept
+        {
+            return (*m_function)(i_source);
+        }
+
+      private:
+        using Function = size_t (*)(const void * i_source) DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_hash(Function i_function) noexcept : m_function(i_function) {}
+        template <typename TARGET_TYPE> static size_t invoke(const void * i_source) noexcept
+        {
+            DENSITY_ASSERT(i_source != nullptr);
+            static_assert(
+              noexcept(std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source))),
+              "Specializations of std::hash must be nothrow constructible and invokable");
+            return std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source));
+        }
+    };
+
+    /** This feature returns the std::type_info associated to the target type. */
+    class f_rtti
+    {
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_rtti make() noexcept
+        {
+            return f_rtti{&invoke<TARGET_TYPE>};
+        }
+
+        /** Returns the std::type_info of the target type. */
+        DENSITY_NODISCARD std::type_info const & operator()() const noexcept
+        {
+            return (*m_function)();
+        }
+
+      private:
+        using Function = std::type_info const & (*)() DENSITY_CPP17_NOEXCEPT;
+        Function const m_function;
+        constexpr f_rtti(Function i_function) noexcept : m_function(i_function) {}
+        template <typename TARGET_TYPE> static const std::type_info & invoke() noexcept
+        {
+            return typeid(TARGET_TYPE);
         }
     };
 
@@ -581,7 +581,7 @@ namespace density
 
     /** Class template that performs [type-erasure](https://en.wikipedia.org/wiki/Type_erasure). A runtime_type can be empty, 
         or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable and
-        trivially destructible. A specialization of runtime_type satisfies the requirements of \ref RuntimeType_concept "RuntimeType".
+        trivially destructible. Specializations of runtime_type satisfy the requirements of \ref RuntimeType_concept "RuntimeType".
             @tparam FEATURES... list of features to be captures from the target type. 
 
         <i>Implementation note</i>:
@@ -603,17 +603,18 @@ namespace density
         This example shows a very simple usage of runtime_type:
         \snippet runtime_type_examples.cpp runtime_type example 3
 
-        Every type feature is associated with a concept. If a target type does not satisfy the syntactic requirements of all the features
-        supported by the runtime_type, the function <code>make</code> fails to specialize, and a compile error is reported. For example
-        we can't bind an instance of the <code>RuntimeType</code> of the example above to <code>std::lock_guard</code>, because 
-        <code>RuntimeType</code> has the feature <code>f_default_construct</code>, but <code>std::lock_guard</code> is not default 
-        constructible.
+        Every type feature implies one or more concepts. For example f_equal implies EqualityComparable. If a target type does not 
+        satisfy the syntactic requirements of all the features supported by the runtime_type, the function <code>make</code> fails 
+        to specialize, and a compile error is reported. 
+        For example we can't bind an instance of the <code>RuntimeType</code> of the example above to <code>std::lock_guard</code>,
+        because <code>RuntimeType</code> has the feature <code>f_default_construct</code>, but <code>std::lock_guard</code> is not
+        default constructible.
 
         Any type feature can be retrieved with the member function template <code>get_feature</code>. Anyway a set of convenience
         member function is avaiable for the most common features: \ref size, \ref alignment, \ref default_construct, \ref copy_construct, 
         \ref move_construct, \ref destroy, \ref type_info, \ref are_equal.
 
-        Managing instances of the target type directly is difficult and requires very low-level code: instances are managed by
+        Managing instances of the target type directly is difficult and requires very low-level code: instances are handled by
         void pointers, they must explictly allocated, constructed, destroyed and deallocated. Indeed runtime_type is not intended to be
         used directly in this way, but it should instead used by library code to provide high-level features.
         
@@ -647,7 +648,7 @@ namespace density
             constexpr instance of this tuple. */
         using tuple_type = typename feature_list_type::tuple_type;
 
-        /** Creates a runtime_type boudnto a target type.
+        /** Creates a runtime_type bound to a target type.
                 @tparam TARGET_TYPE type to bind to the returned runtime_type. 
 
         \b Postcoditions:
@@ -741,8 +742,9 @@ namespace density
                 return sizeof(TARGET_TYPE);
             @endcode
 
-            \b Precoditions:
-                - If the runtime_type is empty the behaviour is undefined.
+            \b Precoditions: 
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
 
             \b Postcoditions:
                 - The return value is above zero.
@@ -763,7 +765,8 @@ namespace density
             @endcode
 
             \b Precoditions:
-                - If the runtime_type is empty the behaviour is undefined.
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
 
             \b Postcoditions:
                 - The return value is above zero.
@@ -788,11 +791,11 @@ namespace density
             Note that if TARGET_TYPE is not a class type, it is zero-initialized.
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
-                - The destination buffer is null
-                - The destination buffer is not large at least as the result of runtime_type::size, or is 
-                  not aligned at least according to runtime_type::alignment
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
+                - The destination pointer is not null
+                - The destination buffer is large at least as the result of runtime_type::size and it's 
+                  aligned at least according to runtime_type::alignment
 
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
@@ -819,12 +822,12 @@ namespace density
                 @endcode
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
-                - The destination pointer or the source pointer are null
-                - The destination buffer is not large at least as the result of runtime_type::size, or is
-                  not aligned at least according to runtime_type::alignment
-                - The source pointer does not point to an object whose dynamic type is the target type
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
+                - The destination pointer and the source pointer are not null
+                - The destination buffer is large at least as the result of runtime_type::size and it's
+                  aligned at least according to runtime_type::alignment
+                - The source pointer points to an object whose dynamic type is the target type
 
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
@@ -851,12 +854,12 @@ namespace density
                 @endcode
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
-                - The destination pointer or the source pointer are null
-                - The destination buffer is not large at least as the result of runtime_type::size, or is
-                  not aligned at least according to runtime_type::alignment
-                - The source pointer does not point to an object whose dynamic type is the target type
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
+                - The destination pointer and the source pointer are not null
+                - The destination buffer is large at least as the result of runtime_type::size and it's
+                  aligned at least according to runtime_type::alignment
+                - The source pointer points to an object whose dynamic type is the target type
 
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
@@ -883,9 +886,9 @@ namespace density
                 @endcode
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
-                - The destination pointer is null or does not point to an object whose dynamic type is the target type
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
+                - The destination pointer is not null and it points to an object whose dynamic type is the target type
 
             \b Postcoditions:
                 - The destination buffer does not contain an instance of the TARGET_TYPE.
@@ -911,8 +914,8 @@ namespace density
                 @endcode
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
 
             \b Requires:
                 - If the feature f_rtti is not included in the FEATURE_LIST a compile
@@ -927,6 +930,9 @@ namespace density
 
         /** Invokes the feature f_equal to compare two instances of the target type.
             Equivalent to <code>get_feature<f_equal>()(i_first, i_second)</code>.
+            @param i_first pointer to an instance of the target type
+            @param i_second pointer to an instance of the target type
+            @return true if the two objects compare equal, false otherwise
 
             The effect of this function is the same of this code:
                 @code
@@ -934,10 +940,10 @@ namespace density
                 @endcode
 
             \b Precoditions:
-                The behaviour is undefined if either:
-                - The runtime_type is empty
-                - The first pointer is null or does not point to an object whose dynamic type is the target type
-                - The second pointer is null or does not point to an object whose dynamic type is the target type
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
+                - The first pointer is not null and it points to an object whose dynamic type is the target type
+                - The second pointer is not null and it points to an object whose dynamic type is the target type
 
             \b Requires:
                 - If the feature f_equal is not included in the FEATURE_LIST a compile

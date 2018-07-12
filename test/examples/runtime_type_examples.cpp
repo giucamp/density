@@ -161,7 +161,8 @@ namespace density_tests
 
     /* From now on, we can manage instances of the target type just using the runtime_type.
         Note that this is a kind of generic code different from C++ templates, because the 
-        type is bound at runtime. It's also very low-level code, and it's not exception-safe. */
+        type is bound at runtime. 
+        It's also very low-level code, and for simplicity it's not exception-safe. */
 
     // allocate and default construct an object
     void * const buff = aligned_allocate(type.size(), type.alignment());

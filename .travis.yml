@@ -49,7 +49,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=11 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && GCOV=no && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:15000"
+        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=11 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=FALSE && GCOV=no && BENCH_RUN=FALSE && TEST_PARAMS=-queue_tests_cardinality:10000"
 
     - os: linux
       addons:
@@ -75,11 +75,11 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
-            - clang-5.0
+            - g++-7
       env:
-        - MATRIX_EVAL="CXX=clang++-5.0 && CPP_STD=17 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
+        - MATRIX_EVAL="CXX=g++-7 && CPP_STD=14 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
 
     - os: linux
       addons:
@@ -89,7 +89,7 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CXX=g++-7 && CPP_STD=14 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
+        - MATRIX_EVAL="CXX=g++-7 && CPP_STD=17 && TEST_BUILD=Release && TEST_RUN=FALSE && TEST_DATA_STACK=FALSE && BENCH_RUN=FALSE && GCOV=no && TEST_PARAMS=\"-test_allocators:0 -queue_tests_cardinality:10000\""
 
 
 before_install:
