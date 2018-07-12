@@ -232,7 +232,7 @@ namespace density_tests
             return m_underlying_type.template is<TYPE>();
         }
 
-        size_t hash() const noexcept { return m_underlying_type.hash(); }
+        size_t hash() const noexcept { return std::hash<UnderlyingType>()(m_underlying_type); }
 
       private:
         TestRuntimeTime(const UnderlyingType & i_underlying_type)

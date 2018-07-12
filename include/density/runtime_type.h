@@ -742,16 +742,16 @@ namespace density
                 return sizeof(TARGET_TYPE);
             @endcode
 
+            \b Requires:
+                - If the feature f_size is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions: 
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
 
             \b Postcoditions:
                 - The return value is above zero.
-
-            \b Requires:
-                - If the feature f_size is not included in the FEATURE_LIST a compile 
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: nothing */
         constexpr size_t size() const noexcept { return get_feature<f_size>()(); }
@@ -764,16 +764,16 @@ namespace density
                 return alignof(TARGET_TYPE);
             @endcode
 
+            \b Requires:
+                - If the feature f_alignment is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
 
             \b Postcoditions:
                 - The return value is above zero.
-
-            \b Requires:
-                - If the feature f_alignment is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: nothing */
         constexpr size_t alignment() const noexcept { return get_feature<f_alignment>()(); }
@@ -790,6 +790,10 @@ namespace density
 
             Note that if TARGET_TYPE is not a class type, it is zero-initialized.
 
+            \b Requires:
+                - If the feature f_default_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
@@ -799,10 +803,6 @@ namespace density
 
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
-
-            \b Requires:
-                - If the feature f_default_construct is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: anything that the constructor of the target type throws. */
         void default_construct(void * i_dest) const
@@ -821,6 +821,10 @@ namespace density
                     new(i_dest) TARGET_TYPE( *static_cast<const TARGET_TYPE*>(i_source) );
                 @endcode
 
+            \b Requires:
+                - If the feature f_copy_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
@@ -831,10 +835,6 @@ namespace density
 
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
-
-            \b Requires:
-                - If the feature f_copy_construct is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: anything that the copy constructor of the target type throws. */
         void copy_construct(void * i_dest, const void * i_source) const
@@ -853,6 +853,10 @@ namespace density
                     new(i_dest) TARGET_TYPE( std::move(*static_cast<TARGET_TYPE*>(i_source)) );
                 @endcode
 
+            \b Requires:
+                - If the feature f_move_construct is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
@@ -864,10 +868,6 @@ namespace density
             \b Postcoditions:
                 - The destination buffer contains an instance of the TARGET_TYPE.
                 - The source buffer contains a moved-from instance of the target type.
-
-            \b Requires:
-                - If the feature f_move_construct is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: anything that the move constructor of the target type throws. */
         void move_construct(void * i_dest, void * i_source) const
@@ -885,6 +885,10 @@ namespace density
                     static_cast<TARGET_TYPE*>(i_source)->~TARGET_TYPE::TARGET_TYPE();
                 @endcode
 
+            \b Requires:
+                - If the feature f_destroy is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
@@ -892,10 +896,6 @@ namespace density
 
             \b Postcoditions:
                 - The destination buffer does not contain an instance of the TARGET_TYPE.
-
-            \b Requires:
-                - If the feature f_destroy is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: nothing. */
         void destroy(void * i_dest) const noexcept
@@ -939,15 +939,15 @@ namespace density
                     return *static_cast<const TARGET_TYPE*>(i_first) == *static_cast<const TARGET_TYPE*>(i_second);
                 @endcode
 
+            \b Requires:
+                - If the feature f_equal is not included in the FEATURE_LIST a compile
+                    error is reported (this function is not SFINAE-friendly).
+
             \b Precoditions:
                The behaviour is undefined if any of these conditions is not satified:
                 - The runtime_type is not empty
                 - The first pointer is not null and it points to an object whose dynamic type is the target type
                 - The second pointer is not null and it points to an object whose dynamic type is the target type
-
-            \b Requires:
-                - If the feature f_equal is not included in the FEATURE_LIST a compile
-                    error is reported (this function is not SFINAE-friendly).
 
             \b Throws: nothing. */
         bool are_equal(const void * i_first, const void * i_second) const noexcept
@@ -956,52 +956,47 @@ namespace density
             return get_feature<f_equal>()(i_first, i_second);
         }
 
-        /** Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails.
-            This function grant access to features that are not part of the interface of runtime_type.
+        /* Returns the instance of a feature associated to the target type.
 
-            The search a the feature is done at compile time, so the complexity is alway constant.
+            \b Requires:
+                - If the feature FEATURE is not supported by this specialization a compile
+                    error is reported (this function is not SFINAE-friendly).
 
-            \n\b Requires:
-                - the feature FEATURE must be included in the FEATURE_LIST
-                - the runtime_type must be non-empty
+            \b Precoditions:
+               The behaviour is undefined if any of these conditions is not satified:
+                - The runtime_type is not empty
 
-            \n\b Throws: nothing. */
+            \b Throws: nothing. */
         template <typename FEATURE> const FEATURE & get_feature() const noexcept
         {
             static_assert(has_features<feature_list_type, FEATURE>::value, "feature not found");
             return std::get<detail::Tuple_FindFirst<tuple_type, FEATURE>::index>(*m_feature_table);
         }
 
-        /** Returns true whether this two runtime_type have the same target type. All empty runtime_type's compare equals.
+        /** Returns true whether this two runtime_type have the same target type. All empty runtime_type's compare equal.
 
-            \n\b Requires: nothing
-
-            \n\b Throws: nothing. */
+            \b Throws: nothing. */
         constexpr bool operator==(const runtime_type & i_other) const noexcept
         {
             return m_feature_table == i_other.m_feature_table;
         }
 
-        /** Returns true whether this two runtime_type have different target types. All empty runtime_type's compare equals.
+        /** Returns true whether this two runtime_type have different target types. All empty runtime_type's compare equal.
 
-            \n\b Requires: nothing
-
-            \n\b Throws: nothing. */
+            \b Throws: nothing. */
         constexpr bool operator!=(const runtime_type & i_other) const noexcept
         {
             return m_feature_table != i_other.m_feature_table;
         }
 
         /** Returns whether the target type of this runtime_type is exactly the one specified in the
-            template parameter. Equivalent to *this == runtime_type::make<TARGET_TYPE>() */
+            template parameter. Equivalent to <code>*this == runtime_type::make<TARGET_TYPE>()<&code> 
+            
+            \b Throws: nothing. */
         template <typename TARGET_TYPE> constexpr bool is() const noexcept
         {
             return m_feature_table == &detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table;
         }
-
-        /** Returns an hash. This function is used for the partial specialization of std::hash
-            for runtime_type. */
-        size_t hash() const noexcept { return std::hash<const void *>()(m_feature_table); }
 
       private:
         constexpr runtime_type(const tuple_type * i_feature_table) noexcept
@@ -1012,20 +1007,21 @@ namespace density
       private:
 #ifndef DOXYGEN_DOC_GENERATION
         template <typename...> friend class runtime_type;
+        friend struct std::hash<density::runtime_type<FEATURES...>>;
 #endif
-        const tuple_type * m_feature_table{nullptr};
+        const tuple_type * m_feature_table = nullptr;
     };
 } // namespace density
 
 namespace std
 {
     /** Partial specialization of std::hash to allow the use of density::runtime_type as key
-        for unordered associative containers. */
+        in unordered associative containers. */
     template <typename... FEATURES> struct hash<density::runtime_type<FEATURES...>>
     {
         size_t operator()(const density::runtime_type<FEATURES...> & i_runtime_type) const noexcept
         {
-            return i_runtime_type.hash();
+            return std::hash<const void *>()(i_runtime_type.m_feature_table);
         }
     };
 
