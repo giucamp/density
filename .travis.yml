@@ -26,6 +26,9 @@ matrix:
          - MATRIX_EVAL="CXX=g++-7 && CPP_STD=11 && TEST_BUILD=Debug && TEST_RUN=TRUE && TEST_DATA_STACK=TRUE && GCOV=gcov-7 && BENCH_RUN=TRUE && TEST_PARAMS=-queue_tests_cardinality:15000"
       before_install:
          - pip install --user cpp-coveralls
+         - chmod +x scripts/test.sh
+         - chmod +x scripts/bench.sh
+         - eval "${MATRIX_EVAL}"
 
     - os: linux
       env:
