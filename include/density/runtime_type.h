@@ -450,80 +450,28 @@ namespace density
     };
 
     /*! \page RuntimeType_requirements RuntimeType (named requirement)
-        - R is default constructible in a constant expression
-        - R is copy constructible and assignable
-        - R is equality comparable
+
+        Given a type R, an object r of type <code>const R</code>, and a type T, R satisfies the requirenmemnts of 
+            RuntimeType if and only if:
+        - R is default constructible. A default constructed R is empty, that is it's not bound to a target type
+        - R is copy constructible and assignable, yelding and instance that compares equal
+        - R is equality comparable. Two instances of R compare equal if they are both empty, or they are bound to the
+            same target type
         - R is trivially destructible
-        - the expression R::make<T>() yelds an instance of R bound to the target type T
-        - the expression r.is<T>() -> bool is true if and only if T is the target type to which r is bound
-
-        A RuntimeType provides at runtime data and functionalities specific to a type (the <em>target type</em>), like
-        ctors, dtor, or retrieval of size and alignment.
-
-        The target type is assigned with the make static function template (see below). A default constructed RuntimeType is empty,
-        that is it has no target type. Trying to use any feature of the target type on an empty RuntimeType results is undefined behavior.
-
-        <table>
-        <tr><th style="width:600px">Requirement                      </th><th>Semantic</th></tr>
-        <tr>
-            <td>Non-throwing default constructor and destructor</td>
-            <td>A default constructed RuntimeType is empty (not assigned to a target type).</td>
-        </tr>
-        <tr>
-            <td>Copy constructor and copy assignment</td>
-            <td>The destination RuntimeType gets the same target type of the source RuntimeType.</td>
-        </tr>
-        <tr>
-            <td>Non-throwing move constructor and non-throwing move assignment</td>
-            <td>The destination RuntimeType gets the target type of the source RuntimeType. The source becomes empty.</td>
-        </tr>
-        <tr>
-            <td>Operators == and !=</td>
-            <td>Checks for equality\\inequality. Two RuntimeType are equal if they have the same target type.</td>
-        </tr>
-        <tr>
-            <td>Type alias: @code using common_type = [implementation defined] @endcode</td>
-            <td>The type to which all the types handled by this RuntimeType are covariant. common_type can be void, is which case any target type is legal.</td>
-        </tr>
-        <tr>
-            <td>Static function template: @code
-                template <typename TARGET_TYPE>\n
-                    static RuntimeType make() noexcept @endcode</td>
-            <td>Returns a RuntimeType that has TARGET_TYPE as target type. The target type must be covariant to <em>common_type</em>, otherwise the
-                behavior is undefined</td>
-        </tr>
-        <tr>
-            <td>Member function: @code size_t size() const noexcept @endcode</td>
-            <td>Equivalent to: @code return sizeof(TARGET_TYPE); @endcode. </td>
-        </tr>
-        <tr>
-            <td>Member function: @code size_t alignment() const noexcept @endcode</td>
-            <td>Equivalent to: @code return aignof(TARGET_TYPE); @endcode. </td>
-        </tr>
-        <tr>
-            <td>Member function: @code common_type * default_construct(void * i_dest) const @endcode</td>
-            <td>Equivalent to: @code return static_cast<common_type*>( new(i_dest) TARGET_TYPE() ); @endcode. </td>
-        </tr>
-        <tr>
-            <td>Member function: @code common_type * copy_construct(void * i_dest, const common_type * i_source) const @endcode</td>
-            <td>Equivalent to: @code return static_cast<common_type*>( new(i_dest) TARGET_TYPE(\n
-                        *dynamic_cast<const TARGET_TYPE*>(i_source) ) ); @endcode. </td>
-        </tr>
-        <tr>
-            <td>Member function: @code common_type * move_construct(void * i_dest, common_type * i_source) const noexcept @endcode</td>
-            <td>Equivalent to: @code return static_cast<common_type*>( new(i_dest) TARGET_TYPE(\n
-                        std::move(*dynamic_cast<TARGET_TYPE*>(i_source)) ) ); @endcode </td>
-        </tr>
-        <tr>
-            <td>Member function: @code void * destroy(common_type * i_dest) const noexcept @endcode</td>
-            <td>Equivalent to: @code dynamic_cast<TARGET_TYPE*>(i_dest)->~TARGET_TYPE::TARGET_TYPE();\nreturn dynamic_cast<TARGET_TYPE*>(i_dest); @endcode </td>
-        </tr>
-        <tr>
-            <td>Member function: @code const std::type_info & type_info() const noexcept @endcode</td>
-            <td>Equivalent to: @code return typeid(TARGET_TYPE); @endcode </td>
-        </tr>
-        </table>
-    */
+        - the expression <code>R::make<T>()</code> yelds an instance of R bound to the target type T
+        - the expression <code>r.is<T>() -> bool</code> is true if and only if T is the target type to which r is bound
+        - <code>r.size()</code> is equivalent to <code>sizeof(T)</code>, where T is the target type
+        - <code>r.alignment()</code> is equivalent to <code>alignof(T)</code>, where T is the target type
+        - the expression <code>r.default_construct(dest)</code> is equivalent to <code>(void)new(dest) T()</code>, where
+            T is the target type
+        - the expression <code>r.copy_construct(dest, source)</code> is equivalent to
+            <code>(void)new(dest) T(\*static_cast<const T*>(source))</code>, where T is the target type
+        - the expression <code>r.move_construct(dest, source)</code> is equivalent to
+            <code>(void)new(dest) T(std::move(\*static_cast<T*>(source)))</code>, where T is the target type
+        - the expression <code>r.destroy(dest)</code> is equivalent to <code>static_cast<T*>(dest)->T::~T()</code>, where
+            T is the target type
+        - the expression <code>r.type_info()</code> is equivalent to <code>typeid(T)</code>, where
+            T is the target type */
 
     /*! \page TypeFeature_requirements TypeFeature (named requirement)
 

@@ -12,9 +12,12 @@
                        revision history
 ***************************************
 
-version 2.00.00 - changes:
+version 2.00.00 - API BREAKING - changes:
+    - removed the template parameter COMMON_TYPE from runtime_type and heterogeneous queues
     - feature tables (used by runtime types) are now constexpr static objects
     - feature list supports nesting, duplicate removal, f_none. runtime_type takes a variable number of feature and feature lists
+    - removed the namespace type_features. Now builtin features have an f_ prefix and they are defined the namespace density
+    - moved the sources of the library under an include/ directory (from density/ to include/density)
 
 version 1.04.01 - changes:
     - fixed crash when raw_atomic_compare_exchange_strong failed and m_next_ptr was set to 0 (causing move_next called for an empty consume)
