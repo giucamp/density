@@ -7,5 +7,5 @@ var searchData=
   ['underlying_5fallocator',['underlying_allocator',['../classdensity_1_1lifo__allocator.html#aec51b97896660342ea4809c91ca70337',1,'density::lifo_allocator']]],
   ['underlying_5fallocator_5fref',['underlying_allocator_ref',['../classdensity_1_1lifo__allocator.html#a8ad696f73ca99a680361dd50ec3d115c',1,'density::lifo_allocator::underlying_allocator_ref() noexcept'],['../classdensity_1_1lifo__allocator.html#ad2ee86e9d4a7595254b53433ae55a8e7',1,'density::lifo_allocator::underlying_allocator_ref() const  noexcept']]],
   ['unpin_5fpage',['unpin_page',['../classdensity_1_1basic__default__allocator.html#a2bcc0338d78cf3e8462207134ae05a7c',1,'density::basic_default_allocator::unpin_page(void *i_address) noexcept'],['../classdensity_1_1basic__default__allocator.html#a58f5ddd6ae1288498bc969582d3845dd',1,'density::basic_default_allocator::unpin_page(progress_guarantee i_progress_guarantee, void *i_address) noexcept']]],
-  ['untypedallocator_20concept',['UntypedAllocator concept',['../UntypedAllocator_concept.html',1,'']]]
+  ['untypedallocator_20_28named_20requirement_29',['UntypedAllocator (named requirement)',['../UntypedAllocator_requirements.html',1,'']]]
 ];

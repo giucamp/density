@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>density: runtime_type&lt; COMMON_TYPE, FEATURE_LIST &gt; Class Template Reference</title>
+<title>density: runtime_type&lt; FEATURES &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -93,9 +93,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classdensity_1_1runtime__type-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">runtime_type&lt; COMMON_TYPE, FEATURE_LIST &gt; Class Template Reference</div>  </div>
+<div class="title">runtime_type&lt; FEATURES &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -103,120 +104,116 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aa751aeee567f3a896028bc26f5737372"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> = COMMON_TYPE</td></tr>
-<tr class="separator:aa751aeee567f3a896028bc26f5737372"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab02b92af0561444fc7befaeb7d0cebd2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ab02b92af0561444fc7befaeb7d0cebd2">feature_list</a> = FEATURE_LIST</td></tr>
-<tr class="separator:ab02b92af0561444fc7befaeb7d0cebd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a924836c5392e41b6b28cc0fdeaa2bd93"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a924836c5392e41b6b28cc0fdeaa2bd93">feature_list_type</a> = typename std::conditional&lt; (sizeof...(FEATURES) &gt; 0), <a class="el" href="structdensity_1_1feature__list.html">feature_list</a>&lt; FEATURES... &gt;, <a class="el" href="namespacedensity.html#a04320ecf0d34306a32b30664eff1858b">default_type_features</a> &gt;::type</td></tr>
+<tr class="separator:a924836c5392e41b6b28cc0fdeaa2bd93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af517350859287a48e8de74ae2163aaa0"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#af517350859287a48e8de74ae2163aaa0">tuple_type</a> = typename feature_list_type::tuple_type</td></tr>
+<tr class="separator:af517350859287a48e8de74ae2163aaa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae5dbf06252ee10eea586f2360766aa38"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ae5dbf06252ee10eea586f2360766aa38">runtime_type</a> () noexcept</td></tr>
-<tr class="separator:ae5dbf06252ee10eea586f2360766aa38"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab43b4904cea5fee34853a7000ae854d2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ab43b4904cea5fee34853a7000ae854d2">runtime_type</a> (<a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;&amp;) noexcept=default</td></tr>
-<tr class="separator:ab43b4904cea5fee34853a7000ae854d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55f3349070992accf46cf6cac1e42976"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a55f3349070992accf46cf6cac1e42976">runtime_type</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;) noexcept=default</td></tr>
-<tr class="separator:a55f3349070992accf46cf6cac1e42976"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7da20638cee29e15564b55240ef0d2a5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a7da20638cee29e15564b55240ef0d2a5">operator=</a> (<a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;&amp;) noexcept=default</td></tr>
-<tr class="separator:a7da20638cee29e15564b55240ef0d2a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05f1c6f7a4fe5e0951f7c5f1419dd487"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a05f1c6f7a4fe5e0951f7c5f1419dd487">operator=</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;) noexcept=default</td></tr>
-<tr class="separator:a05f1c6f7a4fe5e0951f7c5f1419dd487"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a06ed6553409324d6cb4abca7cff53c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a9a06ed6553409324d6cb4abca7cff53c">~runtime_type</a> () noexcept=default</td></tr>
-<tr class="separator:a9a06ed6553409324d6cb4abca7cff53c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab863df8ed6316860117a6bf26e131bbd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ab863df8ed6316860117a6bf26e131bbd">empty</a> () const  noexcept</td></tr>
-<tr class="separator:ab863df8ed6316860117a6bf26e131bbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03bfacfaaba9195e4498375659f43531"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a03bfacfaaba9195e4498375659f43531">clear</a> () noexcept</td></tr>
-<tr class="separator:a03bfacfaaba9195e4498375659f43531"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44545a936daa510da7f9fe4835f6ee84"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a44545a936daa510da7f9fe4835f6ee84">size</a> () const  noexcept</td></tr>
-<tr class="separator:a44545a936daa510da7f9fe4835f6ee84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a24d2dbaa1c6bb2b299d62e9cc44ceddc"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a24d2dbaa1c6bb2b299d62e9cc44ceddc">alignment</a> () const  noexcept</td></tr>
-<tr class="separator:a24d2dbaa1c6bb2b299d62e9cc44ceddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9aadbec0fcd3f771269379f11c7078b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ae9aadbec0fcd3f771269379f11c7078b">default_construct</a> (void *i_dest) const </td></tr>
-<tr class="separator:ae9aadbec0fcd3f771269379f11c7078b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7868d62dfc21c9fa4ce2ccad8810caff"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a7868d62dfc21c9fa4ce2ccad8810caff">copy_construct</a> (void *i_dest, const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *i_source) const </td></tr>
-<tr class="separator:a7868d62dfc21c9fa4ce2ccad8810caff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3dae21b8142a2d5f0c70b15f48ff8d16"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a3dae21b8142a2d5f0c70b15f48ff8d16">move_construct</a> (void *i_dest, <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *i_source) const </td></tr>
-<tr class="separator:a3dae21b8142a2d5f0c70b15f48ff8d16"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a364d39f4d71e5bb486ab83db8bd6876d"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a364d39f4d71e5bb486ab83db8bd6876d">destroy</a> (<a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *i_dest) const  noexcept</td></tr>
-<tr class="separator:a364d39f4d71e5bb486ab83db8bd6876d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad721703ab961d63c634a999aaafc5ef2"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a> () noexcept=default</td></tr>
+<tr class="separator:ad721703ab961d63c634a999aaafc5ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a133cc3cb44fec7cc5f0a0ac8a38b9d08"><td class="memTemplParams" colspan="2">template&lt;typename... OTHER_FEATURES&gt; </td></tr>
+<tr class="memitem:a133cc3cb44fec7cc5f0a0ac8a38b9d08"><td class="memTemplItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a133cc3cb44fec7cc5f0a0ac8a38b9d08">runtime_type</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; OTHER_FEATURES... &gt; &amp;i_source) noexcept</td></tr>
+<tr class="separator:a133cc3cb44fec7cc5f0a0ac8a38b9d08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a531b830ff16940f0caa996bf74108c0d"><td class="memTemplParams" colspan="2">template&lt;typename... OTHER_FEATURES&gt; </td></tr>
+<tr class="memitem:a531b830ff16940f0caa996bf74108c0d"><td class="memTemplItemLeft" align="right" valign="top">DENSITY_CPP14_CONSTEXPR <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a531b830ff16940f0caa996bf74108c0d">operator=</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; OTHER_FEATURES... &gt; &amp;i_source) noexcept</td></tr>
+<tr class="separator:a531b830ff16940f0caa996bf74108c0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8dd4861b9294732926d931fc93608c9"><td class="memItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#aa8dd4861b9294732926d931fc93608c9">empty</a> () const  noexcept</td></tr>
+<tr class="separator:aa8dd4861b9294732926d931fc93608c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bf0906ef4cb9f35f9509fcb53f2370c"><td class="memItemLeft" align="right" valign="top">DENSITY_CPP14_CONSTEXPR void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a1bf0906ef4cb9f35f9509fcb53f2370c">clear</a> () noexcept</td></tr>
+<tr class="separator:a1bf0906ef4cb9f35f9509fcb53f2370c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58c970e754354e3260aab95baca8c91b"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a58c970e754354e3260aab95baca8c91b">size</a> () const  noexcept</td></tr>
+<tr class="separator:a58c970e754354e3260aab95baca8c91b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a598cc19af7cffd394057e31b455aadd2"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a598cc19af7cffd394057e31b455aadd2">alignment</a> () const  noexcept</td></tr>
+<tr class="separator:a598cc19af7cffd394057e31b455aadd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40ad421c0167e18929e1c8a1a4fc2c57"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a40ad421c0167e18929e1c8a1a4fc2c57">default_construct</a> (void *i_dest) const </td></tr>
+<tr class="separator:a40ad421c0167e18929e1c8a1a4fc2c57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2abe296201853172ef045308d68f5517"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a2abe296201853172ef045308d68f5517">copy_construct</a> (void *i_dest, const void *i_source) const </td></tr>
+<tr class="separator:a2abe296201853172ef045308d68f5517"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bd200b1ad9a1132b61fbad992106c4f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a0bd200b1ad9a1132b61fbad992106c4f">move_construct</a> (void *i_dest, void *i_source) const </td></tr>
+<tr class="separator:a0bd200b1ad9a1132b61fbad992106c4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae42c20f6c8b24d082f3f3f4003ba6a3f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ae42c20f6c8b24d082f3f3f4003ba6a3f">destroy</a> (void *i_dest) const  noexcept</td></tr>
+<tr class="separator:ae42c20f6c8b24d082f3f3f4003ba6a3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8e306e798ad223d6d2b481bbb8cdb432"><td class="memItemLeft" align="right" valign="top">const std::type_info &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a8e306e798ad223d6d2b481bbb8cdb432">type_info</a> () const  noexcept</td></tr>
 <tr class="separator:a8e306e798ad223d6d2b481bbb8cdb432"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0172361ca1d8d5af7a5020e09ab4ec7d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a0172361ca1d8d5af7a5020e09ab4ec7d">are_equal</a> (const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *i_first, const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *i_second) const </td></tr>
-<tr class="separator:a0172361ca1d8d5af7a5020e09ab4ec7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20be97fc2b24c0b746dbcd655948a32d"><td class="memTemplParams" colspan="2">template&lt;typename FEATURE &gt; </td></tr>
-<tr class="memitem:a20be97fc2b24c0b746dbcd655948a32d"><td class="memTemplItemLeft" align="right" valign="top">FEATURE::type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a20be97fc2b24c0b746dbcd655948a32d">get_feature</a> () const  noexcept</td></tr>
-<tr class="separator:a20be97fc2b24c0b746dbcd655948a32d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a872ae71ef3a6ae9f0acb0f99a5a3a180"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a872ae71ef3a6ae9f0acb0f99a5a3a180">operator==</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_other) const  noexcept</td></tr>
-<tr class="separator:a872ae71ef3a6ae9f0acb0f99a5a3a180"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e6cfd416cf9b900b2fce82881e10018"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a8e6cfd416cf9b900b2fce82881e10018">operator!=</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_other) const  noexcept</td></tr>
-<tr class="separator:a8e6cfd416cf9b900b2fce82881e10018"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7420a5e28322c9a7a3348d35b46fbe66"><td class="memTemplParams" colspan="2">template&lt;typename TYPE &gt; </td></tr>
-<tr class="memitem:a7420a5e28322c9a7a3348d35b46fbe66"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a7420a5e28322c9a7a3348d35b46fbe66">is</a> () const  noexcept</td></tr>
-<tr class="separator:a7420a5e28322c9a7a3348d35b46fbe66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0adeb0b1bf92a27fd77db62aa2a79e17"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a0adeb0b1bf92a27fd77db62aa2a79e17">hash</a> () const  noexcept</td></tr>
-<tr class="separator:a0adeb0b1bf92a27fd77db62aa2a79e17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee24893e83b9615dc9cb5200f5570ce3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#aee24893e83b9615dc9cb5200f5570ce3">are_equal</a> (const void *i_first, const void *i_second) const  noexcept</td></tr>
+<tr class="separator:aee24893e83b9615dc9cb5200f5570ce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4b318b4cfe6730a93f64c72b86c45ae"><td class="memTemplParams" colspan="2"><a class="anchor" id="ab4b318b4cfe6730a93f64c72b86c45ae"></a>
+template&lt;typename FEATURE &gt; </td></tr>
+<tr class="memitem:ab4b318b4cfe6730a93f64c72b86c45ae"><td class="memTemplItemLeft" align="right" valign="top">const FEATURE &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get_feature</b> () const  noexcept</td></tr>
+<tr class="separator:ab4b318b4cfe6730a93f64c72b86c45ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12615d545aa2ad0bfd207ee55ee41bc3"><td class="memItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a12615d545aa2ad0bfd207ee55ee41bc3">operator==</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_other) const  noexcept</td></tr>
+<tr class="separator:a12615d545aa2ad0bfd207ee55ee41bc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac761ebea0e22fa30cd2853d2707a9da9"><td class="memItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ac761ebea0e22fa30cd2853d2707a9da9">operator!=</a> (const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_other) const  noexcept</td></tr>
+<tr class="separator:ac761ebea0e22fa30cd2853d2707a9da9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5af96afb26e5918b3071b78737a84f80"><td class="memTemplParams" colspan="2">template&lt;typename TARGET_TYPE &gt; </td></tr>
+<tr class="memitem:a5af96afb26e5918b3071b78737a84f80"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a5af96afb26e5918b3071b78737a84f80">is</a> () const  noexcept</td></tr>
+<tr class="separator:a5af96afb26e5918b3071b78737a84f80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ab886d51d6e9787a4a9eee9455e024e01"><td class="memTemplParams" colspan="2">template&lt;typename TYPE &gt; </td></tr>
-<tr class="memitem:ab886d51d6e9787a4a9eee9455e024e01"><td class="memTemplItemLeft" align="right" valign="top">static <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">make</a> () noexcept</td></tr>
-<tr class="separator:ab886d51d6e9787a4a9eee9455e024e01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a002bead579375c1cdca5b592a8cda349"><td class="memTemplParams" colspan="2">template&lt;typename TARGET_TYPE &gt; </td></tr>
+<tr class="memitem:a002bead579375c1cdca5b592a8cda349"><td class="memTemplItemLeft" align="right" valign="top">static constexpr <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">make</a> () noexcept</td></tr>
+<tr class="separator:a002bead579375c1cdca5b592a8cda349"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a2419502ccf1f967d1f8a7c9f6d484d7b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1runtime__type.html#a2419502ccf1f967d1f8a7c9f6d484d7b">swap</a> (<a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_first, <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> &amp;i_second) noexcept</td></tr>
+<tr class="separator:a2419502ccf1f967d1f8a7c9f6d484d7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename COMMON_TYPE = void, typename FEATURE_LIST = type_features::default_type_features_t&lt;COMMON_TYPE&gt;&gt;<br />
-class density::runtime_type&lt; COMMON_TYPE, FEATURE_LIST &gt;</h3>
+<div class="textblock"><h3>template&lt;typename... FEATURES&gt;<br />
+class density::runtime_type&lt; FEATURES &gt;</h3>
 
-<p>Class template that performs type-erasure. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
+<p>Class template that performs <a href="https://en.wikipedia.org/wiki/Type_erasure">type-erasure</a>. A <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> can be empty, or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable and trivially destructible. Specializations of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">COMMON_TYPE</td><td>Type to which all type-erased types are covariant. If it is void, any type can be type-erased. </td></tr>
-    <tr><td class="paramname">FEATURE_LIST</td><td>Type_features::feature_list that defines which type-features are type-erased. By default the feature_list is obtained with <a class="el" href="structdensity_1_1type__features_1_1default__type__features.html">type_features::default_type_features</a>. If this type is not a <a class="el" href="structdensity_1_1type__features_1_1feature__list.html">type_features::feature_list</a>, a compile time error is reported.</td></tr>
+    <tr><td class="paramname">FEATURES...</td><td>list of features to be captures from the target type.</td></tr>
   </table>
   </dd>
 </dl>
-<p><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> meets the requirements of <a class="el" href="RuntimeType_concept.html">RuntimeType</a>.</p>
-<p>An instance of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> binds at runtime to a target type. It can be used to construct, copy-construct, destroy, etc., instances of the target types, depending on the features included on <code>FEATURE_LIST</code>. <br />
-A <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> bound to a type can be created with the static function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>. <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> has value semantic, and is copyable. <br />
-A default-constructed <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is empty: trying to use type-features of an empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> leads to undefined behavior. A <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> becomes empty is the member function <a class="el" href="classdensity_1_1runtime__type.html#a03bfacfaaba9195e4498375659f43531">clear</a> is called.</p>
-<p><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> exposes a set of functions to manipulate instances of the target type. Furthermore it can be extended with any type feature built-in in density (for example <a class="el" href="structdensity_1_1type__features_1_1equals.html">type_features::equals</a> or <a class="el" href="structdensity_1_1type__features_1_1less.html">type_features::less</a>). User-defined features are also supported, to add custom capabilities to the type erasure (see the examples below). <br />
-Features can be queried with the function <a class="el" href="classdensity_1_1runtime__type.html#a20be97fc2b24c0b746dbcd655948a32d">runtime_type::get_feature</a>, specifying the requested feature at compile-time as template argument. The search is performed at compile time. If the requested feature is not included in <code>FEATURE_LIST</code>, a static_assert fails.</p>
-<p><br />
-<b>Implementation</b> <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is implemented as a pointer to a pseudo vtable, that is a static array of feature values: for every feature in FEATURE_LIST there is an entry in this vtable. Most entries are pointer to functions. Anyway, some features (notably <a class="el" href="structdensity_1_1type__features_1_1size.html">type_features::size</a> and <a class="el" href="structdensity_1_1type__features_1_1alignment.html">type_features::alignment</a>) store a static const value.</p>
-<p>In this example an <code>std::string</code> is created and destroyed using a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>.</p>
-<div class="fragment"><div class="line"></div><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line"></div><div class="line">            <span class="keyword">using</span> MyRTType = runtime_type&lt;void, feature_list&lt;default_construct, destroy, size&gt;&gt;;</div><div class="line"></div><div class="line">            MyRTType type = MyRTType::make&lt;std::string&gt;();</div><div class="line"></div><div class="line">            <span class="keywordtype">void</span> * buff = malloc(type.size());</div><div class="line"></div><div class="line">            type.default_construct(buff);</div><div class="line"></div><div class="line">            <span class="comment">// now buff points to a valid std::string</span></div><div class="line">            *<span class="keyword">static_cast&lt;</span>std::string *<span class="keyword">&gt;</span>(buff) = <span class="stringliteral">&quot;hello world!&quot;</span>;</div><div class="line"></div><div class="line">            type.destroy(buff);</div><div class="line"></div><div class="line">            free(buff);</div><div class="line"></div></div><!-- fragment --><p> This is an example of user-defined features: it calls a function named <code>update</code>, that takes as parameter a <code>float</code>.</p>
-<div class="fragment"><div class="line"></div><div class="line">    <span class="comment">/* This feature calls an update function on any object. The update has not to be virtual, as</span></div><div class="line"><span class="comment">        type erasure already is a kind of virtualization. */</span></div><div class="line">    <span class="keyword">struct </span>feature_call_update</div><div class="line">    {</div><div class="line">        <span class="keyword">using</span> type = void (*)(<span class="keywordtype">void</span> * i_dest, <span class="keywordtype">float</span> i_elapsed_time);</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> BASE, <span class="keyword">typename</span> TYPE&gt; <span class="keyword">struct </span>Impl</div><div class="line">        {</div><div class="line">            <span class="keyword">static</span> <span class="keywordtype">void</span> invoke(<span class="keywordtype">void</span> * i_base_dest, <span class="keywordtype">float</span> i_elapsed_time) noexcept</div><div class="line">            {</div><div class="line">                <span class="keyword">const</span> <span class="keyword">auto</span> base_dest = <span class="keyword">static_cast&lt;</span>BASE *<span class="keyword">&gt;</span>(i_base_dest);</div><div class="line">                <span class="keyword">static_cast&lt;</span>TYPE *<span class="keyword">&gt;</span>(base_dest)-&gt;update(i_elapsed_time);</div><div class="line">            }</div><div class="line">            <span class="keyword">static</span> <span class="keyword">const</span> uintptr_t value;</div><div class="line">        };</div><div class="line">    };</div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> TYPE, <span class="keyword">typename</span> BASE&gt;</div><div class="line">    <span class="keyword">const</span> uintptr_t</div><div class="line">      feature_call_update::Impl&lt;TYPE, BASE&gt;::value = <span class="keyword">reinterpret_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(invoke);</div><div class="line"></div></div><!-- fragment --><p> The example below uses feature_call_update. Note that:</p><ul>
-<li><code>ObjectA</code> and <code>ObjectB</code> are unrelated types (no common base class)</li>
-<li><code>ObjectA::update</code> and <code>ObjectB::update</code> are not virtual functions</li>
-<li>If a <code>std::string</code> was added to the array, a compile time error would report that <code>std::string</code> has not an update function</li>
+<p><em>Implementation note</em>: <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is actually a wrapper around a pointer to a static constexpr instance of the tuple of the suppported features. It is actually a generalization of the pointer to the v-table in a polymorphic type.</p>
+<p>Like in a <a class="el" href="structdensity_1_1feature__list.html">feature_list</a>, each type in the template arguments pack is either:</p><ul>
+<li>a type satisfying the requirements of <a href="TypeFeature_requirements.html">TypeFeature</a>, like a built-in type fetaure (one of <a class="el" href="classdensity_1_1f__size.html">f_size</a>, <a class="el" href="classdensity_1_1f__alignment.html">f_alignment</a>, <a class="el" href="classdensity_1_1f__default__construct.html">f_default_construct</a>, <a class="el" href="classdensity_1_1f__copy__construct.html">f_copy_construct</a>, <a class="el" href="structdensity_1_1f__move__construct.html">f_move_construct</a>, <a class="el" href="classdensity_1_1f__destroy.html">f_destroy</a>, <a class="el" href="classdensity_1_1f__hash.html">f_hash</a>, <a class="el" href="classdensity_1_1f__rtti.html">f_rtti</a>, <a class="el" href="classdensity_1_1f__equal.html">f_equal</a>, <a class="el" href="classdensity_1_1f__less.html">f_less</a>, <a class="el" href="classdensity_1_1f__istream.html">f_istream</a>, <a class="el" href="classdensity_1_1f__ostream.html">f_ostream</a>), or a user defined type feature</li>
+<li>a nested <a class="el" href="structdensity_1_1feature__list.html">feature_list</a>, which is expanded. Feature lists can be nested to any level, and they are always flatened</li>
+<li>the special tag type <a class="el" href="structdensity_1_1f__none.html">f_none</a>, which is ignored</li>
 </ul>
-<div class="fragment"><div class="line"></div><div class="line">            <span class="keyword">struct </span>ObjectA</div><div class="line">            {</div><div class="line">                <span class="keywordtype">void</span> update(<span class="keywordtype">float</span> i_elapsed_time)</div><div class="line">                {</div><div class="line">                    std::cout &lt;&lt; <span class="stringliteral">&quot;ObjectA::update(&quot;</span> &lt;&lt; i_elapsed_time &lt;&lt; <span class="stringliteral">&quot;)&quot;</span> &lt;&lt; std::endl;</div><div class="line">                }</div><div class="line">            };</div><div class="line"></div><div class="line">            <span class="keyword">struct </span>ObjectB</div><div class="line">            {</div><div class="line">                <span class="keywordtype">void</span> update(<span class="keywordtype">float</span> i_elapsed_time)</div><div class="line">                {</div><div class="line">                    std::cout &lt;&lt; <span class="stringliteral">&quot;ObjectB::update(&quot;</span> &lt;&lt; i_elapsed_time &lt;&lt; <span class="stringliteral">&quot;)&quot;</span> &lt;&lt; std::endl;</div><div class="line">                }</div><div class="line">            };</div><div class="line"></div><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line"></div><div class="line">            <span class="comment">// concatenates feature_call_update to the default features (destroy, size, alignment)</span></div><div class="line">            <span class="keyword">using</span> MyFeatures = feature_concat_t&lt;default_type_features_t&lt;void&gt;, feature_call_update&gt;;</div><div class="line"></div><div class="line">            <span class="comment">// create a queue with 3 objects</span></div><div class="line">            heter_queue&lt;void, runtime_type&lt;void, MyFeatures&gt;, default_allocator&gt; my_queue;</div><div class="line">            my_queue.emplace&lt;ObjectA&gt;();</div><div class="line">            my_queue.emplace&lt;ObjectB&gt;();</div><div class="line">            my_queue.emplace&lt;ObjectB&gt;();</div><div class="line"></div><div class="line">            <span class="comment">// call update on all the objects</span></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> end_it = my_queue.end();</div><div class="line">            <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = my_queue.begin(); it != end_it; ++it)</div><div class="line">            {</div><div class="line">                <span class="keyword">auto</span> <span class="keyword">const</span> update_func = it-&gt;first.get_feature&lt;feature_call_update&gt;();</div><div class="line">                update_func(it-&gt;second, 1.f / 60.f);</div><div class="line">            }</div></div><!-- fragment --><p> Output:</p>
-<div class="fragment"><div class="line">ObjectA::update(0.0166667)</div><div class="line">ObjectB::update(0.0166667)</div><div class="line">ObjectB::update(0.0166667)</div></div><!-- fragment --> </div><h2 class="groupheader">Member Typedef Documentation</h2>
-<a class="anchor" id="aa751aeee567f3a896028bc26f5737372"></a>
+<p>Furthermore duplicate features are removed (only the first occurrence of a fetaure is considered). If after all these transformations two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> specializations have the same <a class="el" href="structdensity_1_1feature__list.html">feature_list</a>, they are copyable and assignable each others:</p>
+<div class="fragment"><div class="line">    <span class="keyword">using</span> RuntimeType_1 = runtime_type&lt;f_size, f_alignment&gt;;</div><div class="line">    <span class="keyword">using</span> RuntimeType_2 = runtime_type&lt;f_size, f_none, f_size, f_alignment&gt;;</div><div class="line">    <span class="keyword">using</span> RuntimeType_3 = runtime_type&lt;feature_list&lt;f_size, feature_list&lt;f_none&gt;&gt;, f_alignment, f_alignment&gt;;</div><div class="line">    RuntimeType_1 a;</div><div class="line">    RuntimeType_2 b = a;</div><div class="line">    RuntimeType_3 c = b;</div></div><!-- fragment --><p> This example shows a very simple usage of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>: </p><div class="fragment"><div class="line">    <span class="comment">// we just want to create, print and destroy objects</span></div><div class="line">    <span class="keyword">using</span> RuntimeType =</div><div class="line">        runtime_type&lt;f_size, f_alignment, f_ostream, f_default_construct, f_destroy&gt;;</div><div class="line"></div><div class="line">    <span class="comment">// create a runtime type bound to std::complex&lt;float&gt; (the target type)</span></div><div class="line">    <span class="keyword">auto</span> <span class="keyword">const</span> type = RuntimeType::make&lt;std::complex&lt;float&gt;&gt;();</div><div class="line"></div><div class="line">    <span class="comment">/* From now on, we can manage instances of the target type just using the runtime_type.</span></div><div class="line"><span class="comment">        Note that this is a kind of generic code different from C++ templates, because the </span></div><div class="line"><span class="comment">        type is bound at runtime. </span></div><div class="line"><span class="comment">        It&#39;s also very low-level code, and for simplicity it&#39;s not exception-safe. */</span></div><div class="line"></div><div class="line">    <span class="comment">// allocate and default construct an object</span></div><div class="line">    <span class="keywordtype">void</span> * <span class="keyword">const</span> buff = <a class="code" href="namespacedensity.html#aaf57ef4d1f1e8932b5b5fd824f42e292">aligned_allocate</a>(type.size(), type.alignment());</div><div class="line">    type.default_construct(buff); <span class="comment">/* equivalent to get_feature&lt;f_default_construct&gt;()(buff). </span></div><div class="line"><span class="comment">        default_construct is just a convenience function. */</span></div><div class="line"></div><div class="line">    <span class="comment">// now print the object std::cout</span></div><div class="line">    type.get_feature&lt;f_ostream&gt;()(std::cout, buff); <span class="comment">/* There is no convenience function to </span></div><div class="line"><span class="comment">        do that, use get_feature. */</span></div><div class="line"></div><div class="line">    <span class="comment">/* destroy and deallocate. */</span></div><div class="line">    type.destroy(buff);</div><div class="line">    <a class="code" href="namespacedensity.html#ae5422c080ea9996803f500e7c4323e3f">aligned_deallocate</a>(buff, type.size(), type.alignment());</div></div><!-- fragment --><p> Every type feature implies one or more concepts. For example <a class="el" href="classdensity_1_1f__equal.html">f_equal</a> implies EqualityComparable. If a target type does not satisfy the syntactic requirements of all the features supported by the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>, the function <code>make</code> fails to specialize, and a compile error is reported. For example we can't bind an instance of the <code>RuntimeType</code> of the example above to <code>std::lock_guard</code>, because <code>RuntimeType</code> has the feature <code><a class="el" href="classdensity_1_1f__default__construct.html">f_default_construct</a></code>, but <code>std::lock_guard</code> is not default constructible.</p>
+<p>Any type feature can be retrieved with the member function template <code>get_feature</code>. Anyway a set of convenience member function is avaiable for the most common features: <a class="el" href="classdensity_1_1runtime__type.html#a58c970e754354e3260aab95baca8c91b">size</a>, <a class="el" href="classdensity_1_1runtime__type.html#a598cc19af7cffd394057e31b455aadd2">alignment</a>, <a class="el" href="classdensity_1_1runtime__type.html#a40ad421c0167e18929e1c8a1a4fc2c57">default_construct</a>, <a class="el" href="classdensity_1_1runtime__type.html#a2abe296201853172ef045308d68f5517">copy_construct</a>, <a class="el" href="classdensity_1_1runtime__type.html#a0bd200b1ad9a1132b61fbad992106c4f">move_construct</a>, <a class="el" href="classdensity_1_1runtime__type.html#ae42c20f6c8b24d082f3f3f4003ba6a3f">destroy</a>, <a class="el" href="classdensity_1_1runtime__type.html#a8e306e798ad223d6d2b481bbb8cdb432">type_info</a>, <a class="el" href="classdensity_1_1runtime__type.html#aee24893e83b9615dc9cb5200f5570ce3">are_equal</a>.</p>
+<p>Managing instances of the target type directly is difficult and requires very low-level code: instances are handled by void pointers, they must explictly allocated, constructed, destroyed and deallocated. Indeed <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not intended to be used directly in this way, but it should instead used by library code to provide high-level features.</p>
+<p>In the following example <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is used to implement a class template very similar to <a href="https://en.cppreference.com/w/cpp/utility/any">std::any</a>, which can be customized specifying which features must be captured from the underlying object.</p>
+<div class="fragment"><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span>... FEATURES&gt; <span class="keyword">class </span>any</div><div class="line">    {</div><div class="line">      <span class="keyword">public</span>:</div><div class="line">        <span class="keyword">using</span> <a class="code" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a>      = <a class="code" href="classdensity_1_1runtime__type.html">density::runtime_type</a>&lt;FEATURES...&gt;;</div><div class="line">        <span class="keyword">using</span> <a class="code" href="classdensity_1_1runtime__type.html#a924836c5392e41b6b28cc0fdeaa2bd93">feature_list_type</a> = <span class="keyword">typename</span> <a class="code" href="classdensity_1_1runtime__type.html#a924836c5392e41b6b28cc0fdeaa2bd93">runtime_type::feature_list_type</a>;</div><div class="line">        <span class="keyword">using</span> <a class="code" href="classdensity_1_1runtime__type.html#af517350859287a48e8de74ae2163aaa0">tuple_type</a>        = <span class="keyword">typename</span> feature_list_type::tuple_type;</div><div class="line"></div><div class="line">        constexpr any() noexcept = default;</div><div class="line"></div><div class="line">        template &lt;typename TYPE&gt;</div><div class="line">        any(const TYPE &amp; i_source) : m_type(<a class="code" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a>::template <a class="code" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">make</a>&lt;TYPE&gt;())</div><div class="line">        {</div><div class="line">            allocate();</div><div class="line">            deallocate_if_excepts([&amp;] { m_type.copy_construct(m_object, &amp;i_source); });</div><div class="line">        }</div><div class="line"></div><div class="line">        any(<span class="keyword">const</span> any &amp; i_source) : m_type(i_source.m_type)</div><div class="line">        {</div><div class="line">            allocate();</div><div class="line">            deallocate_if_excepts([&amp;] { m_type.copy_construct(m_object, i_source.m_object); });</div><div class="line">        }</div><div class="line"></div><div class="line">        any(any &amp;&amp; i_source) noexcept : m_type(i_source.m_type), m_object(i_source.m_object)</div><div class="line">        {</div><div class="line">            i_source.m_object = <span class="keyword">nullptr</span>;</div><div class="line">            i_source.m_type.clear();</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> CONSTRUCTION_FUNC&gt;</div><div class="line">        any(<span class="keyword">const</span> <a class="code" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a> &amp; i_type, CONSTRUCTION_FUNC &amp;&amp; i_construction_func) : m_type(i_type)</div><div class="line">        {</div><div class="line">            allocate();</div><div class="line">            deallocate_if_excepts(</div><div class="line">              [&amp;] { std::forward&lt;CONSTRUCTION_FUNC&gt;(i_construction_func)(m_object); });</div><div class="line">        }</div><div class="line"></div><div class="line">        any &amp; <a class="code" href="classdensity_1_1runtime__type.html#a531b830ff16940f0caa996bf74108c0d">operator=</a>(any i_source) noexcept</div><div class="line">        {</div><div class="line">            <a class="code" href="classdensity_1_1runtime__type.html#a2419502ccf1f967d1f8a7c9f6d484d7b">swap</a>(*<span class="keyword">this</span>, i_source);</div><div class="line">            <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div><div class="line">        }</div><div class="line"></div><div class="line">        ~any()</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (m_object != <span class="keyword">nullptr</span>)</div><div class="line">            {</div><div class="line">                m_type.destroy(m_object);</div><div class="line">                deallocate();</div><div class="line">            }</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">friend</span> <span class="keywordtype">void</span> <a class="code" href="classdensity_1_1runtime__type.html#a2419502ccf1f967d1f8a7c9f6d484d7b">swap</a>(any &amp; i_first, any &amp; i_second) noexcept</div><div class="line">        {</div><div class="line">            std::swap(i_first.m_type, i_second.m_type);</div><div class="line">            std::swap(i_first.m_object, i_second.m_object);</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keywordtype">bool</span> has_value() const noexcept { <span class="keywordflow">return</span> m_object != <span class="keyword">nullptr</span>; }</div><div class="line"></div><div class="line">        <span class="keyword">const</span> std::type_info &amp; type() const noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">return</span> m_type.empty() ? <span class="keyword">typeid</span>(void) : m_type.type_info();</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE&gt; <span class="keyword">friend</span> DEST_TYPE any_cast(<span class="keyword">const</span> any &amp; i_source)</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (i_source.m_type.template is&lt;DEST_TYPE&gt;())</div><div class="line">                <span class="keywordflow">return</span> *<span class="keyword">static_cast&lt;</span>DEST_TYPE *<span class="keyword">&gt;</span>(i_source.m_object);</div><div class="line">            <span class="keywordflow">else</span></div><div class="line">                <span class="keywordflow">throw</span> bad_any_cast();</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE&gt; <span class="keyword">friend</span> DEST_TYPE any_cast(any &amp;&amp; i_source)</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (i_source.m_type.template is&lt;DEST_TYPE&gt;())</div><div class="line">                <span class="keywordflow">return</span> std::move(*static_cast&lt;DEST_TYPE *&gt;(i_source.m_object));</div><div class="line">            <span class="keywordflow">else</span></div><div class="line">                <span class="keywordflow">throw</span> bad_any_cast();</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE&gt;</div><div class="line">        <span class="keyword">friend</span> <span class="keyword">const</span> DEST_TYPE * any_cast(<span class="keyword">const</span> any * i_source) noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (i_source-&gt;m_type.template is&lt;DEST_TYPE&gt;())</div><div class="line">                <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>DEST_TYPE *<span class="keyword">&gt;</span>(i_source-&gt;m_object);</div><div class="line">            <span class="keywordflow">else</span></div><div class="line">                <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE&gt; <span class="keyword">friend</span> DEST_TYPE * any_cast(any * i_source) noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (i_source-&gt;m_type.template is&lt;DEST_TYPE&gt;())</div><div class="line">                <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>DEST_TYPE *<span class="keyword">&gt;</span>(i_source-&gt;m_object);</div><div class="line">            <span class="keywordflow">else</span></div><div class="line">                <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keywordtype">bool</span> <a class="code" href="classdensity_1_1runtime__type.html#a12615d545aa2ad0bfd207ee55ee41bc3">operator==</a>(<span class="keyword">const</span> any &amp; i_source) <span class="keyword">const</span> noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">if</span> (m_type != i_source.m_type)</div><div class="line">                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div><div class="line">            <span class="keywordflow">return</span> m_object == <span class="keyword">nullptr</span> || m_type.are_equal(m_object, i_source.m_object);</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keywordtype">bool</span> <a class="code" href="classdensity_1_1runtime__type.html#ac761ebea0e22fa30cd2853d2707a9da9">operator!=</a>(<span class="keyword">const</span> any &amp; i_source) <span class="keyword">const</span> noexcept { <span class="keywordflow">return</span> !<a class="code" href="classdensity_1_1runtime__type.html#a12615d545aa2ad0bfd207ee55ee41bc3">operator==</a>(i_source); }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> FEATURE&gt; <span class="keyword">const</span> FEATURE &amp; get_type_feature() const noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">return</span> m_type.template get_feature&lt;FEATURE&gt;();</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keywordtype">void</span> *       object_ptr() noexcept { <span class="keywordflow">return</span> m_object; }</div><div class="line">        <span class="keyword">const</span> <span class="keywordtype">void</span> * object_ptr() const noexcept { <span class="keywordflow">return</span> m_object; }</div><div class="line"></div><div class="line">        <span class="keyword">const</span> <a class="code" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a> &amp; get_runtime_type() const noexcept { <span class="keywordflow">return</span> m_type; }</div><div class="line"></div><div class="line">      <span class="keyword">private</span>:</div><div class="line">        <span class="keywordtype">void</span> allocate() { m_object = <a class="code" href="namespacedensity.html#aaf57ef4d1f1e8932b5b5fd824f42e292">density::aligned_allocate</a>(m_type.size(), m_type.alignment()); }</div><div class="line"></div><div class="line">        <span class="keywordtype">void</span> deallocate() noexcept</div><div class="line">        {</div><div class="line">            <a class="code" href="namespacedensity.html#ae5422c080ea9996803f500e7c4323e3f">density::aligned_deallocate</a>(m_object, m_type.size(), m_type.alignment());</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> FUNC&gt; <span class="keywordtype">void</span> deallocate_if_excepts(<span class="keyword">const</span> FUNC &amp; i_func)</div><div class="line">        {</div><div class="line">            <span class="keywordflow">try</span></div><div class="line">            {</div><div class="line">                i_func();</div><div class="line">            }</div><div class="line">            <span class="keywordflow">catch</span> (...)</div><div class="line">            {</div><div class="line">                <span class="keywordflow">if</span> (m_object != <span class="keyword">nullptr</span>)</div><div class="line">                    deallocate();</div><div class="line">                m_type.clear();</div><div class="line">                <span class="keywordflow">throw</span>;</div><div class="line">            }</div><div class="line">        }</div><div class="line"></div><div class="line">      <span class="keyword">private</span>:</div><div class="line">        <a class="code" href="classdensity_1_1runtime__type.html#ad721703ab961d63c634a999aaafc5ef2">runtime_type</a> m_type;</div><div class="line">        <span class="keywordtype">void</span> *       m_object{<span class="keyword">nullptr</span>};</div><div class="line">    };</div><div class="line"></div><div class="line">    <span class="comment">// any_cast is already defined, but we have to declare it too</span></div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE, <span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    DEST_TYPE any_cast(<span class="keyword">const</span> any&lt;FEATURES...&gt; &amp; i_source);</div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE, <span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    DEST_TYPE any_cast(any&lt;FEATURES...&gt; &amp;&amp; i_source);</div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE, <span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    <span class="keyword">const</span> DEST_TYPE * any_cast(<span class="keyword">const</span> any&lt;FEATURES...&gt; * i_source) noexcept;</div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> DEST_TYPE, <span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    DEST_TYPE * any_cast(any&lt;FEATURES...&gt; * i_source) noexcept;</div><div class="line"></div></div><!-- fragment --><p> This example shows how a non-intrusive serialization <code>operator &lt;&lt; </code>for the above <code>any</code> can be easly implemented exploiting the feature built-in <a class="el" href="classdensity_1_1f__ostream.html">f_ostream</a>:</p>
+<div class="fragment"><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    std::ostream &amp; operator&lt;&lt;(std::ostream &amp; i_dest, <span class="keyword">const</span> any&lt;FEATURES...&gt; &amp; i_any)</div><div class="line">    {</div><div class="line">        <span class="keyword">using namespace </span><a class="code" href="namespacedensity.html">density</a>;</div><div class="line">        static_assert( <span class="comment">// for simplcity we don&#39;t SFINAE</span></div><div class="line">          <a class="code" href="structdensity_1_1has__features.html">density::has_features</a>&lt;<a class="code" href="structdensity_1_1feature__list.html">feature_list&lt;FEATURES...&gt;</a>, <a class="code" href="classdensity_1_1f__ostream.html">f_ostream</a>&gt;::value,</div><div class="line">          <span class="stringliteral">&quot;The provided any leaks the fetaure f_ostream&quot;</span>);</div><div class="line"></div><div class="line">        <span class="keywordflow">if</span> (i_any.has_value())</div><div class="line">            i_any.template get_type_feature&lt;f_ostream&gt;()(i_dest, i_any.object_ptr());</div><div class="line">        <span class="keywordflow">else</span></div><div class="line">            i_dest &lt;&lt; <span class="stringliteral">&quot;[empty]&quot;</span>;</div><div class="line">        <span class="keywordflow">return</span> i_dest;</div><div class="line">    }</div></div><!-- fragment --><p> This example defines the feature <code>f_sum</code> and then overloads the operator <code>operator +</code> between two <code>any</code>'s</p>
+<div class="fragment"><div class="line">    <span class="keyword">struct </span>f_sum</div><div class="line">    {</div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> TARGET_TYPE&gt; constexpr <span class="keyword">static</span> f_sum <a class="code" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">make</a>() noexcept</div><div class="line">        {</div><div class="line">            <span class="keywordflow">return</span> f_sum{&amp;invoke&lt;TARGET_TYPE&gt;};</div><div class="line">        }</div><div class="line"></div><div class="line">        <span class="keywordtype">void</span> operator()(<span class="keywordtype">void</span> * i_dest, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_first, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_second) <span class="keyword">const</span> noexcept</div><div class="line">        {</div><div class="line">            (*m_function)(i_dest, i_first, i_second);</div><div class="line">        }</div><div class="line"></div><div class="line">        void (*m_function)(<span class="keywordtype">void</span> * i_dest, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_first, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_second);</div><div class="line"></div><div class="line">        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> TARGET_TYPE&gt;</div><div class="line">        <span class="keyword">static</span> <span class="keywordtype">void</span> invoke(<span class="keywordtype">void</span> * i_dest, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_first, <span class="keywordtype">void</span> <span class="keyword">const</span> * i_second)</div><div class="line">        {</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> &amp; first  = *<span class="keyword">static_cast&lt;</span>TARGET_TYPE <span class="keyword">const </span>*<span class="keyword">&gt;</span>(i_first);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> &amp; second = *<span class="keyword">static_cast&lt;</span>TARGET_TYPE <span class="keyword">const </span>*<span class="keyword">&gt;</span>(i_second);</div><div class="line">            <span class="keyword">new</span> (i_dest) TARGET_TYPE(first + second);</div><div class="line">        }</div><div class="line">    };</div><div class="line"></div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span>... FEATURES&gt;</div><div class="line">    any&lt;FEATURES...&gt; operator+(<span class="keyword">const</span> any&lt;FEATURES...&gt; &amp; i_first, <span class="keyword">const</span> any&lt;FEATURES...&gt; &amp; i_second)</div><div class="line">    {</div><div class="line">        <span class="keyword">using namespace </span><a class="code" href="namespacedensity.html">density</a>;</div><div class="line">        static_assert( <span class="comment">// for simplcity we don&#39;t SFINAE</span></div><div class="line">          <a class="code" href="structdensity_1_1has__features.html">density::has_features</a>&lt;<a class="code" href="structdensity_1_1feature__list.html">feature_list&lt;FEATURES...&gt;</a>, f_sum&gt;::value,</div><div class="line">          <span class="stringliteral">&quot;The provided any leaks the fetaure sum_impl&quot;</span>);</div><div class="line"></div><div class="line">        <span class="keywordflow">if</span> (i_first.type() != i_second.type() || i_first.type() == <span class="keyword">typeid</span>(void))</div><div class="line">            <span class="keywordflow">throw</span> std::runtime_error(<span class="stringliteral">&quot;Mismatching types&quot;</span>);</div><div class="line"></div><div class="line">        <span class="keywordflow">return</span> any&lt;FEATURES...&gt;(i_first.get_runtime_type(), [&amp;](<span class="keywordtype">void</span> * i_dest) {</div><div class="line">            i_first.template get_type_feature&lt;f_sum&gt;()(</div><div class="line">              i_dest, i_first.object_ptr(), i_second.object_ptr());</div><div class="line">        });</div><div class="line">    }</div></div><!-- fragment --></div><h2 class="groupheader">Member Typedef Documentation</h2>
+<a class="anchor" id="a924836c5392e41b6b28cc0fdeaa2bd93"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> =  COMMON_TYPE</td>
+          <td class="memname">using <a class="el" href="classdensity_1_1runtime__type.html#a924836c5392e41b6b28cc0fdeaa2bd93">feature_list_type</a> =  typename std::conditional&lt; (sizeof...(FEATURES) &gt; 0), <a class="el" href="structdensity_1_1feature__list.html">feature_list</a>&lt;FEATURES...&gt;, <a class="el" href="namespacedensity.html#a04320ecf0d34306a32b30664eff1858b">default_type_features</a>&gt;::type</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Alias for the template argument COMMON_TYPE </p>
+<p><a class="el" href="structdensity_1_1feature__list.html">feature_list</a> associated to the template arguments. If to template arguments is provided, <a class="el" href="namespacedensity.html#a04320ecf0d34306a32b30664eff1858b">default_type_features</a> is used. </p>
 
 </div>
 </div>
-<a class="anchor" id="ab02b92af0561444fc7befaeb7d0cebd2"></a>
+<a class="anchor" id="af517350859287a48e8de74ae2163aaa0"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classdensity_1_1runtime__type.html#ab02b92af0561444fc7befaeb7d0cebd2">feature_list</a> =  FEATURE_LIST</td>
+          <td class="memname">using <a class="el" href="classdensity_1_1runtime__type.html#af517350859287a48e8de74ae2163aaa0">tuple_type</a> =  typename feature_list_type::tuple_type</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Alias for the template argument FEATURE_LIST </p>
+<p>Alias for <code>feature_list_type::tuple_type</code>, a specialization of <a href="https://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a> that contains all the features. </p><div class="fragment"><div class="line">    <span class="keyword">using</span> RuntimeRype = runtime_type&lt;f_size, feature_list&lt;f_none, f_alignment&gt; &gt;;</div><div class="line">    static_assert( std::is_same&lt;</div><div class="line">        RuntimeRype::tuple_type, </div><div class="line">        std::tuple&lt;f_size, f_alignment&gt;</div><div class="line">    &gt;::value, <span class="stringliteral">&quot;&quot;</span>);</div></div><!-- fragment --><p><em>Implementation note</em>: <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is actually a wrapper around a pointer to a static constexpr instance of this tuple. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="ae5dbf06252ee10eea586f2360766aa38"></a>
+<a class="anchor" id="ad721703ab961d63c634a999aaafc5ef2"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -224,9 +221,35 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Construct an empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> not associated with any type. Trying to use any feature of an empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> leads to undefined behavior.</p>
+<p><b>Postcoditions:</b> Given a specialization of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> R and type T, the following conditions hold: </p><div class="fragment"><div class="line">    constexpr R r;</div><div class="line">    static_assert(r.empty(), <span class="stringliteral">&quot;&quot;</span>);</div><div class="line">    static_assert(!r.is&lt;T&gt;(), <span class="stringliteral">&quot;&quot;</span>);</div></div><!-- fragment --><p><b>Throws:</b> nothing </p>
+
+</div>
+</div>
+<a class="anchor" id="a133cc3cb44fec7cc5f0a0ac8a38b9d08"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; OTHER_FEATURES... &gt; &amp;&#160;</td>
+          <td class="paramname"><em>i_source</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -236,86 +259,13 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Construct an empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> not associated with any type. Trying to use any feature of an empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> leads to undefined behavior. </p>
-
-</div>
-</div>
-<a class="anchor" id="ab43b4904cea5fee34853a7000ae854d2"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&amp;&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Move-constructs a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </p>
-
-</div>
-</div>
-<a class="anchor" id="a55f3349070992accf46cf6cac1e42976"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Copy-constructs a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </p>
-
-</div>
-</div>
-<a class="anchor" id="a9a06ed6553409324d6cb4abca7cff53c"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">~<a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Destructor </p>
-
+<p>Generalized copy constructor. This constructor does not partecipate in oveload resolution unless <code>runtime_type::tuple</code> and <code>runtime_type&lt;OTHER_FEATURES...&gt;::tuple</code> are the same (that is the feature lists of the two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> are equivalent).</p>
+<p><b>Throws:</b> nothing</p>
+<div class="fragment"><div class="line">    <span class="keyword">using</span> Rt1 = runtime_type&lt;f_size, f_alignment&gt;;</div><div class="line">    <span class="keyword">using</span> Rt2 = runtime_type&lt;feature_list&lt;f_size&gt;, f_none, f_alignment&gt;;</div><div class="line">    Rt1 t1    = Rt1::make&lt;int&gt;();</div><div class="line">    Rt1 t2    = t1; <span class="comment">// valid because Rt1 and Rt2 are equivalent</span></div><div class="line">    assert(t1 == t2);</div><div class="line"></div><div class="line">    <span class="keyword">using</span> Rt3 =</div><div class="line">        runtime_type&lt;feature_list&lt;f_size, f_default_construct&gt;, f_none, f_alignment&gt;;</div><div class="line">    <span class="comment">// Rt3 includes f_default_construct, so it&#39;s not equivalent to Rt1 and Rt2</span></div><div class="line">    static_assert(!std::is_constructible&lt;Rt1, Rt3&gt;::value, <span class="stringliteral">&quot;&quot;</span>);</div></div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ab886d51d6e9787a4a9eee9455e024e01"></a>
+<a class="anchor" id="a002bead579375c1cdca5b592a8cda349"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -323,7 +273,7 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> make </td>
+          <td class="memname">static constexpr <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> make </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -335,16 +285,17 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Creates a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> associated with the specified type. The latter is the target type. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
+<p>Creates a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> bound to a target type. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">TYPE</td><td>target type that is type-erased by the returned <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">TARGET_TYPE</td><td>type to bind to the returned <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>.</td></tr>
   </table>
   </dd>
 </dl>
+<p><b>Postcoditions:</b> Given a specialization of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> R and type T, the following conditions hold: </p><div class="fragment"><div class="line">    constexpr <span class="keyword">auto</span> r = R::make&lt;T&gt;();</div><div class="line">    static_assert(!r.empty(), <span class="stringliteral">&quot;&quot;</span>);</div><div class="line">    static_assert(r != R(), <span class="stringliteral">&quot;&quot;</span>);</div><div class="line">    static_assert(r.is&lt;T&gt;(), <span class="stringliteral">&quot;&quot;</span>);</div></div><!-- fragment --><p><b>Throws:</b> nothing </p>
 
 </div>
 </div>
-<a class="anchor" id="a7da20638cee29e15564b55240ef0d2a5"></a>
+<a class="anchor" id="a531b830ff16940f0caa996bf74108c0d"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -352,24 +303,26 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&amp; operator= </td>
+          <td class="memname">DENSITY_CPP14_CONSTEXPR <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&amp; operator= </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&amp;&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; OTHER_FEATURES... &gt; &amp;&#160;</td>
+          <td class="paramname"><em>i_source</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Move-assigns a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. Self assignment (a = a) is not supported, and leads to undefined behavior. </p>
-
+<p>Generalized copy assignment. This function does not partecipate in oveload resolution unless <code>runtime_type::tuple</code> and <code>runtime_type&lt;OTHER_FEATURES...&gt;::tuple</code> are the same (that is the feature lists of the two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> are equivalent).</p>
+<p>If the compiler conforms to C++14 (in particular <code>__cpp_constexpr &gt;= 201304</code>) this function is constexpr.</p>
+<p><b>Throws:</b> nothing</p>
+<div class="fragment"><div class="line">    <span class="keyword">using</span> Rt1 = runtime_type&lt;f_size, f_alignment&gt;;</div><div class="line">    <span class="keyword">using</span> Rt2 = runtime_type&lt;feature_list&lt;f_size&gt;, f_none, f_alignment&gt;;</div><div class="line">    Rt1 t1    = Rt1::make&lt;int&gt;();</div><div class="line">    Rt1 t2;</div><div class="line">    t2 = t1; <span class="comment">// valid because Rt1 and Rt2 are equivalent</span></div><div class="line">    assert(t1 == t2);</div><div class="line"></div><div class="line">    <span class="keyword">using</span> Rt3 =</div><div class="line">        runtime_type&lt;feature_list&lt;f_size, f_default_construct&gt;, f_none, f_alignment&gt;;</div><div class="line">    <span class="comment">// Rt3 includes f_default_construct, so it&#39;s not equivalent to Rt1 and Rt2</span></div><div class="line">    static_assert(!std::is_assignable&lt;Rt1, Rt3&gt;::value, <span class="stringliteral">&quot;&quot;</span>);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a05f1c6f7a4fe5e0951f7c5f1419dd487"></a>
+<a class="anchor" id="aa8dd4861b9294732926d931fc93608c9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -377,32 +330,7 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&amp; operator= </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Copy-assigns a <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. Self assignment (a = a) is not supported, and leads to undefined behavior. </p>
-
-</div>
-</div>
-<a class="anchor" id="ab863df8ed6316860117a6bf26e131bbd"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool empty </td>
+          <td class="memname">constexpr bool empty </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -414,11 +342,12 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns whether this <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not bound to a target type </p>
+<p>Returns whether this <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not bound to a target type.</p>
+<p><b>Throws:</b> nothing </p>
 
 </div>
 </div>
-<a class="anchor" id="a03bfacfaaba9195e4498375659f43531"></a>
+<a class="anchor" id="a1bf0906ef4cb9f35f9509fcb53f2370c"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -426,7 +355,7 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void clear </td>
+          <td class="memname">DENSITY_CPP14_CONSTEXPR void clear </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -438,11 +367,13 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Unbind from a target. If the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> was already empty this function has no effect. </p>
+<p>Unbinds from a target. If the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> was already empty this function has no effect.</p>
+<p>If the compiler conforms to C++14 (in particular <code>__cpp_constexpr &gt;= 201304</code>) this function is constexpr.</p>
+<p><b>Throws:</b> nothing </p>
 
 </div>
 </div>
-<a class="anchor" id="a44545a936daa510da7f9fe4835f6ee84"></a>
+<a class="anchor" id="a58c970e754354e3260aab95baca8c91b"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -450,7 +381,7 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">size_t size </td>
+          <td class="memname">constexpr size_t size </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -462,20 +393,21 @@ Features can be queried with the function <a class="el" href="classdensity_1_1ru
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns the size (in bytes) of the target type, which is always &gt; 0. <br />
-The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">sizeof</span>(TARGET_TYPE);</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>).</p>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1size.html">type_features::size</a> must be included in the FEATURE_LIST <br />
-</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__size.html">f_size</a> and returns the size of the target type. Equivalent to <code>get_feature&lt;f_size&gt;()()</code>.</p>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">sizeof</span>(TARGET_TYPE);</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__size.html">f_size</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> nothing </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The return value is above zero.</li>
+</ul>
+<p><b>Throws:</b> nothing </p>
 
 </div>
 </div>
-<a class="anchor" id="a24d2dbaa1c6bb2b299d62e9cc44ceddc"></a>
+<a class="anchor" id="a598cc19af7cffd394057e31b455aadd2"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -483,7 +415,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">size_t alignment </td>
+          <td class="memname">constexpr size_t alignment </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -495,19 +427,21 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns the alignment (in bytes) of the target type, which is always an integer power of 2. <br />
- The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">alignof</span>(TARGET_TYPE);</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>).</p>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1alignment.html">type_features::alignment</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__alignment.html">f_alignment</a> and returns the alignment of the target type. Equivalent to <code>get_feature&lt;f_alignment&gt;()()</code>.</p>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">alignof</span>(TARGET_TYPE);</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__alignment.html">f_alignment</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> nothing </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The return value is above zero.</li>
+</ul>
+<p><b>Throws:</b> nothing </p>
 
 </div>
 </div>
-<a class="anchor" id="ae9aadbec0fcd3f771269379f11c7078b"></a>
+<a class="anchor" id="a40ad421c0167e18929e1c8a1a4fc2c57"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -515,7 +449,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>* default_construct </td>
+          <td class="memname">void default_construct </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_dest</em></td><td>)</td>
@@ -528,25 +462,29 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Default constructs an instance of the target type on the specified uninitialized storage. <br />
-The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><a class="code" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>*<span class="keyword">&gt;</span>( <span class="keyword">new</span>(i_dest) TARGET_TYPE() );</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>). Note that primitive types are initialized by this expression. </p><dl class="params"><dt>Parameters</dt><dd>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__default__construct.html">f_default_construct</a> to <a href="https://en.cppreference.com/w/cpp/language/value_initialization">value-initialize</a> an instance of the target type. Equivalent to <code>get_feature&lt;f_default_construct&gt;()(i_dest)</code>. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">i_dest</td><td>pointer to a buffer in which the target type is inplace constructed. This buffer must be large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a44545a936daa510da7f9fe4835f6ee84">runtime_type::size</a>, and must be aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a24d2dbaa1c6bb2b299d62e9cc44ceddc">runtime_type::alignment</a>. </td></tr>
+    <tr><td class="paramname">i_dest</td><td>pointer to the destination buffer in which the target type is inplace constructed.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>pointer to the common_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not assume that the value of this pointer is the same of i_dest.</dd></dl>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1default__construct.html">type_features::default_construct</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keyword">new</span>(i_dest) TARGET_TYPE();</div></div><!-- fragment --><p>Note that if TARGET_TYPE is not a class type, it is zero-initialized.</p>
+<p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__default__construct.html">f_default_construct</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> anything that the default constructor of the target type throws. </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+<li>The destination pointer is not null</li>
+<li>The destination buffer is large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a58c970e754354e3260aab95baca8c91b">runtime_type::size</a> and it's aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a598cc19af7cffd394057e31b455aadd2">runtime_type::alignment</a></li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The destination buffer contains an instance of the TARGET_TYPE.</li>
+</ul>
+<p><b>Throws:</b> anything that the constructor of the target type throws. </p>
 
 </div>
 </div>
-<a class="anchor" id="a7868d62dfc21c9fa4ce2ccad8810caff"></a>
+<a class="anchor" id="a2abe296201853172ef045308d68f5517"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -554,7 +492,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>* copy_construct </td>
+          <td class="memname">void copy_construct </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_dest</em>, </td>
@@ -562,7 +500,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -577,27 +515,30 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Copy constructs an instance of the target type on the specified uninitialized storage. <br />
-The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><a class="code" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>*<span class="keyword">&gt;</span>( <span class="keyword">new</span>(i_dest) TARGET_TYPE(</div><div class="line">    *dynamic_cast&lt;const TARGET_TYPE*&gt;(i_source) ) );</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>). <br />
-</p><dl class="params"><dt>Parameters</dt><dd>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__copy__construct.html">f_copy_construct</a> to copy-construct an instance of the target type. Equivalent to <code>get_feature&lt;f_copy_construct&gt;()(i_dest, i_source)</code>. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">i_dest</td><td>pointer to a buffer in which the target type is inplace constructed. This buffer must be large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a44545a936daa510da7f9fe4835f6ee84">runtime_type::size</a>, and must be aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a24d2dbaa1c6bb2b299d62e9cc44ceddc">runtime_type::alignment</a>. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to a subobject common_type of an instance of TARGET_TYPE. </td></tr>
+    <tr><td class="paramname">i_dest</td><td>pointer to the destination buffer in which the target type is inplace constructed. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to an instance of the target type to be used as source for the copy.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>pointer to the common_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not assume that the value of this pointer is the same of i_dest.</dd></dl>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1copy__construct.html">type_features::copy_construct</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keyword">new</span>(i_dest) TARGET_TYPE( *static_cast&lt;const TARGET_TYPE*&gt;(i_source) );</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__copy__construct.html">f_copy_construct</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> anything that the copy constructor of the target type throws. </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+<li>The destination pointer and the source pointer are not null</li>
+<li>The destination buffer is large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a58c970e754354e3260aab95baca8c91b">runtime_type::size</a> and it's aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a598cc19af7cffd394057e31b455aadd2">runtime_type::alignment</a></li>
+<li>The source pointer points to an object whose dynamic type is the target type</li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The destination buffer contains an instance of the TARGET_TYPE.</li>
+</ul>
+<p><b>Throws:</b> anything that the copy constructor of the target type throws. </p>
 
 </div>
 </div>
-<a class="anchor" id="a3dae21b8142a2d5f0c70b15f48ff8d16"></a>
+<a class="anchor" id="a0bd200b1ad9a1132b61fbad992106c4f"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -605,7 +546,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>* move_construct </td>
+          <td class="memname">void move_construct </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_dest</em>, </td>
@@ -613,7 +554,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -628,25 +569,31 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Move constructs an instance of the target type on the specified uninitialized storage. <br />
-The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><a class="code" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a>*<span class="keyword">&gt;</span>( <span class="keyword">new</span>(i_dest) TARGET_TYPE(</div><div class="line">    std::move(*dynamic_cast&lt;TARGET_TYPE*&gt;(i_source)) ) );</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>). <br />
-</p><dl class="params"><dt>Parameters</dt><dd>
+<p>Invokes the feature <a class="el" href="structdensity_1_1f__move__construct.html">f_move_construct</a> to move-construct an instance of the target type. Equivalent to <code>get_feature&lt;f_move_construct&gt;()(i_dest, i_source)</code>. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">i_dest</td><td>pointer to a buffer in which the target type is inplace constructed. This buffer must be large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a44545a936daa510da7f9fe4835f6ee84">runtime_type::size</a>, and must be aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a24d2dbaa1c6bb2b299d62e9cc44ceddc">runtime_type::alignment</a>. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to a subobject common_type of an instance of TARGET_TYPE. </td></tr>
+    <tr><td class="paramname">i_dest</td><td>pointer to the destination buffer in which the target type is inplace constructed. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to an instance of the target type to be used as source for the move</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>pointer to the common_type subobject of the instance of TARGET_TYPE that has been constructed. Note: do not assume that the value of this pointer is the same of i_dest.</dd></dl>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1move__construct.html">type_features::move_construct</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty </li>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keyword">new</span>(i_dest) TARGET_TYPE( std::move(*static_cast&lt;TARGET_TYPE*&gt;(i_source)) );</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="structdensity_1_1f__move__construct.html">f_move_construct</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+<li>The destination pointer and the source pointer are not null</li>
+<li>The destination buffer is large at least as the result of <a class="el" href="classdensity_1_1runtime__type.html#a58c970e754354e3260aab95baca8c91b">runtime_type::size</a> and it's aligned at least according to <a class="el" href="classdensity_1_1runtime__type.html#a598cc19af7cffd394057e31b455aadd2">runtime_type::alignment</a></li>
+<li>The source pointer points to an object whose dynamic type is the target type</li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The destination buffer contains an instance of the TARGET_TYPE.</li>
+<li>The source buffer contains a moved-from instance of the target type.</li>
+</ul>
+<p><b>Throws:</b> anything that the move constructor of the target type throws. </p>
 
 </div>
 </div>
-<a class="anchor" id="a364d39f4d71e5bb486ab83db8bd6876d"></a>
+<a class="anchor" id="ae42c20f6c8b24d082f3f3f4003ba6a3f"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -654,9 +601,9 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void* destroy </td>
+          <td class="memname">void destroy </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_dest</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -667,16 +614,23 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Destroys an object of the target type through a pointer to the subobject common_type.</p>
-<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keyword">dynamic_cast&lt;</span>TARGET_TYPE*<span class="keyword">&gt;</span>(i_source)-&gt;~TARGET_TYPE::TARGET_TYPE();</div><div class="line"><span class="keywordflow">return</span> <span class="keyword">dynamic_cast&lt;</span>TARGET_TYPE*<span class="keyword">&gt;</span>(i_source);</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>). <br />
- </p><dl class="section return"><dt>Returns</dt><dd>pointer to the complete object that has been destroyed. This pointer can be used to deallocate a memory block on the heap.</dd></dl>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1destroy.html">type_features::destroy</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__destroy.html">f_destroy</a> to destroy an instance of the target type. Equivalent to <code>get_feature&lt;f_destroy&gt;()(i_dest)</code>. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_dest</td><td>pointer to an instance of the target type to be destroyed.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keyword">static_cast&lt;</span>TARGET_TYPE*<span class="keyword">&gt;</span>(i_source)-&gt;~TARGET_TYPE::TARGET_TYPE();</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__destroy.html">f_destroy</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> nothing. Destructors are required to be noexcept. </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+<li>The destination pointer is not null and it points to an object whose dynamic type is the target type</li>
+</ul>
+<p><b>Postcoditions:</b> </p><ul>
+<li>The destination buffer does not contain an instance of the TARGET_TYPE.</li>
+</ul>
+<p><b>Throws:</b> nothing. </p>
 
 </div>
 </div>
@@ -700,19 +654,18 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns the std::type_info associated to the target type.</p>
-<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">typeid</span>(TARGET_TYPE);</div></div><!-- fragment --><p> where TARGET_TYPE is the target type (see the static member function <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make</a>). <br />
- <br />
-<b>Requires:</b> </p><ul>
-<li>the feature <a class="el" href="structdensity_1_1type__features_1_1rtti.html">type_features::rtti</a> must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__rtti.html">f_rtti</a> to return the <a href="https://en.cppreference.com/w/cpp/types/type_info">std::type_info</a> of the target type. Equivalent to <code>get_feature&lt;f_rtti&gt;()()</code>.</p>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> <span class="keyword">typeid</span>(TARGET_TYPE);</div></div><!-- fragment --><p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
 </ul>
-<p><br />
-<b>Throws:</b> nothing. </p>
+<p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__rtti.html">f_rtti</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
+</ul>
+<p><b>Throws:</b> nothing. </p>
 
 </div>
 </div>
-<a class="anchor" id="a0172361ca1d8d5af7a5020e09ab4ec7d"></a>
+<a class="anchor" id="aee24893e83b9615dc9cb5200f5570ce3"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -722,13 +675,13 @@ The effect of this function is the same of this code: </p><div class="fragment">
         <tr>
           <td class="memname">bool are_equal </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_first</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html#aa751aeee567f3a896028bc26f5737372">common_type</a> *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_second</em>&#160;</td>
         </tr>
         <tr>
@@ -739,48 +692,31 @@ The effect of this function is the same of this code: </p><div class="fragment">
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Returns true if two instances of the target types compare equal. <br />
-<b>Throws:</b> unspecified </p>
-
-</div>
-</div>
-<a class="anchor" id="a20be97fc2b24c0b746dbcd655948a32d"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">FEATURE::type get_feature </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns the feature matching the specified type, if present. If the feature is not present, a static_assert fails. This function grant access to features that are not part of the interface of <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>.</p>
-<p>The search a the feature is done at compile time, so the complexity is alway constant.</p>
-<p><br />
-<b>Requires:</b> </p><ul>
-<li>the feature FEATURE must be included in the FEATURE_LIST</li>
-<li>the <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> must be non-empty</li>
+<p>Invokes the feature <a class="el" href="classdensity_1_1f__equal.html">f_equal</a> to compare two instances of the target type. Equivalent to <code>get_feature&lt;f_equal&gt;()(i_first, i_second)</code>. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_first</td><td>pointer to an instance of the target type </td></tr>
+    <tr><td class="paramname">i_second</td><td>pointer to an instance of the target type </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the two objects compare equal, false otherwise</dd></dl>
+<p>The effect of this function is the same of this code: </p><div class="fragment"><div class="line"><span class="keywordflow">return</span> *<span class="keyword">static_cast&lt;</span><span class="keyword">const </span>TARGET_TYPE*<span class="keyword">&gt;</span>(i_first) == *static_cast&lt;const TARGET_TYPE*&gt;(i_second);</div></div><!-- fragment --><p><b>Requires:</b> </p><ul>
+<li>If the feature <a class="el" href="classdensity_1_1f__equal.html">f_equal</a> is not included in the FEATURE_LIST a compile error is reported (this function is not SFINAE-friendly).</li>
 </ul>
-<p><br />
-<b>Throws:</b> nothing. </p>
+<p><b>Precoditions:</b> The behaviour is undefined if any of these conditions is not satified:</p><ul>
+<li>The <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is not empty</li>
+<li>The first pointer is not null and it points to an object whose dynamic type is the target type</li>
+<li>The second pointer is not null and it points to an object whose dynamic type is the target type</li>
+</ul>
+<p><b>Throws:</b> nothing. </p>
 
 </div>
 </div>
-<a class="anchor" id="a872ae71ef3a6ae9f0acb0f99a5a3a180"></a>
+<a class="anchor" id="a12615d545aa2ad0bfd207ee55ee41bc3"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -788,9 +724,9 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool operator== </td>
+          <td class="memname">constexpr bool operator== </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; FEATURES &gt; &amp;&#160;</td>
           <td class="paramname"><em>i_other</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -801,15 +737,12 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns true whether this two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> have the same target type. All empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>'s compare equals.</p>
-<p><br />
-<b>Requires:</b> nothing</p>
-<p><br />
-<b>Throws:</b> nothing. </p>
+<p>Returns true whether this two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> have the same target type. All empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>'s compare equal.</p>
+<p><b>Throws:</b> nothing. </p>
 
 </div>
 </div>
-<a class="anchor" id="a8e6cfd416cf9b900b2fce82881e10018"></a>
+<a class="anchor" id="ac761ebea0e22fa30cd2853d2707a9da9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -817,9 +750,9 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool operator!= </td>
+          <td class="memname">constexpr bool operator!= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; COMMON_TYPE, FEATURE_LIST &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; FEATURES &gt; &amp;&#160;</td>
           <td class="paramname"><em>i_other</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -830,15 +763,12 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns true whether this two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> have different target types. All empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>'s compare equals.</p>
-<p><br />
-<b>Requires:</b> nothing</p>
-<p><br />
-<b>Throws:</b> nothing. </p>
+<p>Returns true whether this two <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> have different target types. All empty <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>'s compare equal.</p>
+<p><b>Throws:</b> nothing. </p>
 
 </div>
 </div>
-<a class="anchor" id="a7420a5e28322c9a7a3348d35b46fbe66"></a>
+<a class="anchor" id="a5af96afb26e5918b3071b78737a84f80"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -846,7 +776,7 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool is </td>
+          <td class="memname">constexpr bool is </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -858,11 +788,14 @@ The effect of this function is the same of this code: </p><div class="fragment">
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns whether the target type of this <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is exactly the one specified in the template parameter. Equivalent to *this == <a class="el" href="classdensity_1_1runtime__type.html#ab886d51d6e9787a4a9eee9455e024e01">runtime_type::make&lt;TYPE&gt;()</a> </p>
+<p>Returns whether the target type of this <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> is exactly the one specified in the template parameter. Equivalent to <code>*this == <a class="el" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">runtime_type::make&lt;TARGET_TYPE&gt;()</a>&lt;&amp;code&gt;</code></p>
+<p><code><b>Throws:</b> nothing.</code></p>
+<p><code></p><div class="fragment"><div class="line">    <span class="keyword">auto</span> r = <a class="code" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">runtime_type&lt;&gt;::make</a>&lt;<span class="keywordtype">int</span>&gt;();</div><div class="line">    assert(r.is&lt;<span class="keywordtype">int</span>&gt;());</div><div class="line">    assert(!r.is&lt;<span class="keywordtype">double</span>&gt;());</div></div><!-- fragment --><p></code></p>
 
 </div>
 </div>
-<a class="anchor" id="a0adeb0b1bf92a27fd77db62aa2a79e17"></a>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a class="anchor" id="a2419502ccf1f967d1f8a7c9f6d484d7b"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -870,24 +803,36 @@ The effect of this function is the same of this code: </p><div class="fragment">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">size_t hash </td>
+          <td class="memname">void swap </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; FEATURES &gt; &amp;&#160;</td>
+          <td class="paramname"><em>i_first</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>&lt; FEATURES &gt; &amp;&#160;</td>
+          <td class="paramname"><em>i_second</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Returns an hash. This function is used for the partial specialization of std::hash for <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </p>
-
+<p>Swaps two instances.</p>
+<p><b>Throws:</b> nothing</p>
+<div class="fragment"><div class="line">    <span class="keyword">auto</span> r1 = <a class="code" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">runtime_type&lt;&gt;::make</a>&lt;<span class="keywordtype">int</span>&gt;();</div><div class="line">    <span class="keyword">auto</span> r2 = <a class="code" href="classdensity_1_1runtime__type.html#a002bead579375c1cdca5b592a8cda349">runtime_type&lt;&gt;::make</a>&lt;<span class="keywordtype">double</span>&gt;();</div><div class="line">    <a class="code" href="classdensity_1_1runtime__type.html#a2419502ccf1f967d1f8a7c9f6d484d7b">swap</a>(r1, r2);</div><div class="line">    assert(r1.is&lt;<span class="keywordtype">double</span>&gt;());</div><div class="line">    assert(r2.is&lt;<span class="keywordtype">int</span>&gt;());</div></div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>C:/projects/density/density/<a class="el" href="runtime__type_8h_source.html">runtime_type.h</a></li>
+<li>C:/projects/density/include/density/<a class="el" href="runtime__type_8h_source.html">runtime_type.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

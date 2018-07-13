@@ -154,7 +154,7 @@ Static Public Attributes</h2></td></tr>
 <div class="textblock"><h3>template&lt;size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity&gt;<br />
 class density::basic_default_allocator&lt; PAGE_CAPACITY_AND_ALIGNMENT &gt;</h3>
 
-<p>Class template providing paged and legacy memory allocation. It models both the <a class="el" href="UntypedAllocator_concept.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_concept.html">PagedAllocator</a> concepts.</p>
+<p>Class template providing paged and legacy memory allocation. It meets the requirements of <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>.</p>
 <p><a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a> is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of <a class="el" href="classdensity_1_1basic__default__allocator.html">basic_default_allocator</a>. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a1d56b32852c92c13ceee61989b4bb2c1"></a>
@@ -738,7 +738,7 @@ If the page is still allocated then the pin ensures that, while the page is pinn
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Tries to pin the page containing the specified address, incrementing an internal page_specific ref-count, If the implementation can't complete the action with the specified progress guarantee, the call has no visible effects, and the return value is false. Otherwise the return value is true..</p>
+<p>Tries to pin the page containing the specified address, incrementing an internal page_specific ref-count, If the implementation can't complete the action with the specified progress guarantee, the call has no visible effects, and the return value is false. Otherwise the return value is true.</p>
 <p><br />
  <b>Progress guarantee</b>: specified by the argument <br />
  <b>Throws</b>: nothing. </p>
@@ -914,7 +914,7 @@ If the page is still allocated then the pin ensures that, while the page is pinn
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>C:/projects/density/density/<a class="el" href="default__allocator_8h_source.html">default_allocator.h</a></li>
+<li>C:/projects/density/include/density/<a class="el" href="default__allocator_8h_source.html">default_allocator.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

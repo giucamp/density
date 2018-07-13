@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['untypedallocator_20concept',['UntypedAllocator concept',['../UntypedAllocator_concept.html',1,'']]]
+  ['typefeature_20_28named_20requirement_29',['TypeFeature (named requirement)',['../TypeFeature_requirements.html',1,'']]]
 ];

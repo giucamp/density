@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>density: conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; Class Template Reference</title>
+<title>density: conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#friends">Friends</a> &#124;
 <a href="classdensity_1_1conc__heter__queue-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; Class Template Reference</div>  </div>
+<div class="title">conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -116,15 +116,12 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aa751aeee567f3a896028bc26f5737372"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa751aeee567f3a896028bc26f5737372"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>common_type</b> = COMMON_TYPE</td></tr>
-<tr class="separator:aa751aeee567f3a896028bc26f5737372"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad98b50f4f25fd3da4205169b7280303e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad98b50f4f25fd3da4205169b7280303e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>runtime_type</b> = RUNTIME_TYPE</td></tr>
 <tr class="separator:ad98b50f4f25fd3da4205169b7280303e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8f23956d8bbb59a23afc104b5a00175"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad8f23956d8bbb59a23afc104b5a00175"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = std::pair&lt; const runtime_type &amp;, common_type *const  &gt;</td></tr>
-<tr class="separator:ad8f23956d8bbb59a23afc104b5a00175"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b4e58eb36b4d512fa47b5abc6c17968"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0b4e58eb36b4d512fa47b5abc6c17968"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = std::pair&lt; const runtime_type &amp;, void *const  &gt;</td></tr>
+<tr class="separator:a0b4e58eb36b4d512fa47b5abc6c17968"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8bafeb4e974cce856d533d2bb3de432"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad8bafeb4e974cce856d533d2bb3de432"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>allocator_type</b> = ALLOCATOR_TYPE</td></tr>
 <tr class="separator:ad8bafeb4e974cce856d533d2bb3de432"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,10 +176,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a49d0820906b9bd4c1b5a1b08980a9330"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94888fab06d0078cd93ac1562fcce9bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
 <tr class="separator:a94888fab06d0078cd93ac1562fcce9bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52867536308877c33bfb29f5ca8c9ebc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a52867536308877c33bfb29f5ca8c9ebc">dyn_push_copy</a> (const runtime_type &amp;i_type, const COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a52867536308877c33bfb29f5ca8c9ebc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8da90ba09177e403d9bd6f466d332eca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a8da90ba09177e403d9bd6f466d332eca">dyn_push_move</a> (const runtime_type &amp;i_type, COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a8da90ba09177e403d9bd6f466d332eca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3258d6f064776a9d0b7c93c14881e159"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a3258d6f064776a9d0b7c93c14881e159">dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:a3258d6f064776a9d0b7c93c14881e159"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ca7f4811d5e01996cdcf949bf7aac93"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a5ca7f4811d5e01996cdcf949bf7aac93">dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a5ca7f4811d5e01996cdcf949bf7aac93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a857a56adb973d294e1cf85acca8efbad"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE &gt; </td></tr>
 <tr class="memitem:a857a56adb973d294e1cf85acca8efbad"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&lt; typename std::decay&lt; ELEMENT_TYPE &gt;::type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a857a56adb973d294e1cf85acca8efbad">start_push</a> (ELEMENT_TYPE &amp;&amp;i_source)</td></tr>
 <tr class="separator:a857a56adb973d294e1cf85acca8efbad"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,10 +188,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a722ecea4d64dc7853d3825f24f316b47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65085a9e9c299f23ad95b297752d3775"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a65085a9e9c299f23ad95b297752d3775">start_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
 <tr class="separator:a65085a9e9c299f23ad95b297752d3775"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac2746c80dae973ad196b7f12c1bbcc8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#aac2746c80dae973ad196b7f12c1bbcc8">start_dyn_push_copy</a> (const runtime_type &amp;i_type, const COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:aac2746c80dae973ad196b7f12c1bbcc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a194977988482bd3bcfeb92c14ccef60a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a194977988482bd3bcfeb92c14ccef60a">start_dyn_push_move</a> (const runtime_type &amp;i_type, COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a194977988482bd3bcfeb92c14ccef60a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab35bc74bffbbf40d83d62ab06bd25537"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#ab35bc74bffbbf40d83d62ab06bd25537">start_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:ab35bc74bffbbf40d83d62ab06bd25537"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c816b115d1efd64796fc83e685d1507"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a0c816b115d1efd64796fc83e685d1507">start_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a0c816b115d1efd64796fc83e685d1507"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a274dca2a1d2c68ff3249f37b3ae410d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a274dca2a1d2c68ff3249f37b3ae410d5">pop</a> () noexcept</td></tr>
 <tr class="separator:a274dca2a1d2c68ff3249f37b3ae410d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35b9c85fad7f5d27b7555c29b2e4e3fe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a35b9c85fad7f5d27b7555c29b2e4e3fe">try_pop</a> () noexcept</td></tr>
@@ -211,10 +208,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a99a0cef94c1cde53cf68ce8c11bbc74f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22a0faba214d7f09f7af2d8ee795490d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a22a0faba214d7f09f7af2d8ee795490d">reentrant_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
 <tr class="separator:a22a0faba214d7f09f7af2d8ee795490d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09fc9a353af5e0de17d9cd2c74876c3f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a09fc9a353af5e0de17d9cd2c74876c3f">reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a09fc9a353af5e0de17d9cd2c74876c3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a711a4f42d9c13317c6a1412686c42609"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a711a4f42d9c13317c6a1412686c42609">reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a711a4f42d9c13317c6a1412686c42609"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa78127fb4a95605d6bfd993b2926ce2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#afa78127fb4a95605d6bfd993b2926ce2">reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:afa78127fb4a95605d6bfd993b2926ce2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c1ac143bb1c4c8cf474a37b57f2af80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a2c1ac143bb1c4c8cf474a37b57f2af80">reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a2c1ac143bb1c4c8cf474a37b57f2af80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43e3c73b2740ce46477422fb90d18208"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE &gt; </td></tr>
 <tr class="memitem:a43e3c73b2740ce46477422fb90d18208"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&lt; typename std::decay&lt; ELEMENT_TYPE &gt;::type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a43e3c73b2740ce46477422fb90d18208">start_reentrant_push</a> (ELEMENT_TYPE &amp;&amp;i_source)</td></tr>
 <tr class="separator:a43e3c73b2740ce46477422fb90d18208"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -223,10 +220,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6aa035e6311be7c63c72334427572193"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a298d63c59edac31a0d50efc67bdd9381"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a298d63c59edac31a0d50efc67bdd9381">start_reentrant_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
 <tr class="separator:a298d63c59edac31a0d50efc67bdd9381"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55249c74018c4dad488fb1eebec8bde3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a55249c74018c4dad488fb1eebec8bde3">start_reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:a55249c74018c4dad488fb1eebec8bde3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af6abd47f0a85b6d2f90de584c05270c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#af6abd47f0a85b6d2f90de584c05270c0">start_reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, COMMON_TYPE *i_source)</td></tr>
-<tr class="separator:af6abd47f0a85b6d2f90de584c05270c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a725f4449941d9e2f8f64309cd3945f83"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a725f4449941d9e2f8f64309cd3945f83">start_reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:a725f4449941d9e2f8f64309cd3945f83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a793e4a443a2f0742b3cfc72c67e5b6e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1conc__heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#a793e4a443a2f0742b3cfc72c67e5b6e9">start_reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a793e4a443a2f0742b3cfc72c67e5b6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa83c43fd2aca56043d4209f67dd579a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#aa83c43fd2aca56043d4209f67dd579a1">reentrant_pop</a> () noexcept</td></tr>
 <tr class="separator:aa83c43fd2aca56043d4209f67dd579a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac83d6e59ab5dec61205db0cea6e6cf5b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#ac83d6e59ab5dec61205db0cea6e6cf5b">try_reentrant_pop</a> () noexcept</td></tr>
@@ -251,20 +248,19 @@ Static Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:abb8fbaa4b1d68aaea3b603a10e39836e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#abb8fbaa4b1d68aaea3b603a10e39836e">swap</a> (<a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;i_first, <a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;i_second) noexcept</td></tr>
-<tr class="separator:abb8fbaa4b1d68aaea3b603a10e39836e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2ced880743cb6386e5ecf7dcaeb4769"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1conc__heter__queue.html#ab2ced880743cb6386e5ecf7dcaeb4769">swap</a> (<a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;i_first, <a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;i_second) noexcept</td></tr>
+<tr class="separator:ab2ced880743cb6386e5ecf7dcaeb4769"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename COMMON_TYPE = void, typename RUNTIME_TYPE = runtime_type&lt;COMMON_TYPE&gt;, typename ALLOCATOR_TYPE = default_allocator&gt;<br />
-class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
+<div class="textblock"><h3>template&lt;typename RUNTIME_TYPE = runtime_type&lt;&gt;, typename ALLOCATOR_TYPE = default_allocator&gt;<br />
+class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 
 <p>Class template implementing a concurrent heterogeneous FIFO pseudo-container.</p>
 <p><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a> is a concurrent version of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a>, with a mutex embedded within. It allows different threads to put and consume elements concurrently without any external synchronization.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">COMMON_TYPE</td><td>Common type of all the elements. An object of type E can be pushed on the queue only if E* is implicitly convertible to COMMON_TYPE*. If COMMON_TYPE is void (the default), any type can be put in the queue. Otherwise it should be an user-defined-type, and only types deriving from it can be added. </td></tr>
-    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must meet the requirements of <a class="el" href="RuntimeType_concept.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
-    <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must meet the requirements of both <a class="el" href="UntypedAllocator_concept.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_concept.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>.</td></tr>
+    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must satisfy the requirements of both <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>.</td></tr>
   </table>
   </dd>
 </dl>
@@ -381,7 +377,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&amp;&#160;</td>
           <td class="paramname"><em>i_source</em></td><td>)</td>
           <td></td>
         </tr>
@@ -403,7 +399,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <em>Implementation notes</em>:</p><ul>
 <li>After the call the source is left empty.</li>
 </ul>
-<div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">              void,</div><div class="line">              feature_list&lt;default_construct, copy_construct, destroy, size, alignment, equals&gt;&gt;;</div><div class="line"></div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line">            queue.push(std::string());</div><div class="line">            queue.push(std::make_pair(4., 1));</div><div class="line"></div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue_1(std::move(queue));</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
+<div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">              f_default_construct,</div><div class="line">              f_copy_construct,</div><div class="line">              f_destroy,</div><div class="line">              f_size,</div><div class="line">              f_alignment,</div><div class="line">              f_equal&gt;;</div><div class="line"></div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line">            queue.push(std::string());</div><div class="line">            queue.push(std::make_pair(4., 1));</div><div class="line"></div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue_1(std::move(queue));</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="ab469e36ad7836ce4c3ca181ad4cbd252"></a>
@@ -444,7 +440,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&amp; operator= </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&amp;&#160;</td>
           <td class="paramname"><em>i_source</em></td><td>)</td>
           <td></td>
         </tr>
@@ -469,7 +465,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <li>After the call the source is left empty.</li>
 <li>The complexity is linear in the number of elements in this queue.</li>
 </ul>
-<div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">              void,</div><div class="line">              feature_list&lt;default_construct, copy_construct, destroy, size, alignment, equals&gt;&gt;;</div><div class="line"></div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line">            queue.push(std::string());</div><div class="line">            queue.push(std::make_pair(4., 1));</div><div class="line"></div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue_1;</div><div class="line">            queue_1 = std::move(queue);</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line"></div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
+<div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">              f_default_construct,</div><div class="line">              f_copy_construct,</div><div class="line">              f_destroy,</div><div class="line">              f_size,</div><div class="line">              f_alignment,</div><div class="line">              f_equal&gt;;</div><div class="line"></div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line">            queue.push(std::string());</div><div class="line">            queue.push(std::make_pair(4., 1));</div><div class="line"></div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue_1;</div><div class="line">            queue_1 = std::move(queue);</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line"></div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="ac29f19b7f4021ce4a40e84ab895ab453"></a>
@@ -632,9 +628,6 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <p><br />
  <b>Requires</b>:</p><ul>
 <li><code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)</li>
-<li><code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code></li>
-<li><code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. <br />
- This requirement is not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -675,9 +668,6 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <p><br />
  <b>Requires</b>:</p><ul>
 <li><code>ELEMENT_TYPE</code> must be constructible with <code>std::forward&lt;CONSTRUCTION_PARAMS&gt;(i_construction_params)...</code></li>
-<li><code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code></li>
-<li><code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. <br />
- This requirement is not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -722,10 +712,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;default_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a52867536308877c33bfb29f5ca8c9ebc"></a>
+<a class="anchor" id="a3258d6f064776a9d0b7c93c14881e159"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -741,7 +731,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const COMMON_TYPE *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -760,7 +750,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>. <em>Note</em>: be careful using void pointers: only the compiler knows how to casts from/to a base to/from a derived class.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -772,10 +762,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;copy_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a8da90ba09177e403d9bd6f466d332eca"></a>
+<a class="anchor" id="a5ca7f4811d5e01996cdcf949bf7aac93"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -791,7 +781,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">COMMON_TYPE *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -810,7 +800,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code> <em>Note</em>: be careful using void pointers: casts from/to a base to/from a derived class can be done only by the type system of the language.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -822,7 +812,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;move_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.dyn_push_move(type, &amp;source);</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.dyn_push_move(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="a857a56adb973d294e1cf85acca8efbad"></a>
@@ -862,15 +852,11 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <dl class="section return"><dt>Returns</dt><dd>The associated transaction object.</dd></dl>
 <p><br />
  <b>Requires</b>:</p><ul>
-<li><code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)</li>
-<li><code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code></li>
-<li><code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. <br />
- This requirement is not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.</li>
-</ul>
-<p><b>Complexity</b>: constant. <br />
+<li><code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value) <b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
- <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
+ <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</li>
+</ul>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">                <span class="keyword">auto</span> put = queue.start_push(12);</div><div class="line">                put.element() += 2;</div><div class="line">                put.commit(); <span class="comment">// commits a 14</span></div></div><!-- fragment -->
 </div>
 </div>
@@ -908,9 +894,6 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <p><br />
  <b>Requires</b>:</p><ul>
 <li><code>ELEMENT_TYPE</code> must be constructible with <code>std::forward&lt;CONSTRUCTION_PARAMS&gt;(i_construction_params)...</code></li>
-<li><code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code></li>
-<li><code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. <br />
- This requirement is not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -954,10 +937,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;default_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="aac2746c80dae973ad196b7f12c1bbcc8"></a>
+<a class="anchor" id="ab35bc74bffbbf40d83d62ab06bd25537"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -973,7 +956,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const COMMON_TYPE *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -994,7 +977,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE. <em>Note</em>: be careful using void pointers: casts from/to a base to/from a derived class can be done only by the type system of the language. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1003,10 +986,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;copy_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a194977988482bd3bcfeb92c14ccef60a"></a>
+<a class="anchor" id="a0c816b115d1efd64796fc83e685d1507"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1022,7 +1005,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">COMMON_TYPE *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -1043,7 +1026,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE. <em>Note</em>: be careful using void pointers: casts from/to a base to/from a derived class can be done only by the type system of the language. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1052,7 +1035,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
  <b>Effects on iterators</b>: no iterator is invalidated <br />
  <b>Throws</b>: unspecified. <br />
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;move_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>        put  = queue.start_dyn_push_move(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>        put  = queue.start_dyn_push_move(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="a274dca2a1d2c68ff3249f37b3ae410d5"></a>
@@ -1242,10 +1225,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 </table>
 </div><div class="memdoc">
 <p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">conc_heter_queue::dyn_push</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;default_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.reentrant_dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.reentrant_dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a09fc9a353af5e0de17d9cd2c74876c3f"></a>
+<a class="anchor" id="afa78127fb4a95605d6bfd993b2926ce2"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1261,7 +1244,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const COMMON_TYPE *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -1276,11 +1259,11 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a52867536308877c33bfb29f5ca8c9ebc">conc_heter_queue::dyn_push_copy</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;copy_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
+<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a3258d6f064776a9d0b7c93c14881e159">conc_heter_queue::dyn_push_copy</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a711a4f42d9c13317c6a1412686c42609"></a>
+<a class="anchor" id="a2c1ac143bb1c4c8cf474a37b57f2af80"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1296,7 +1279,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">COMMON_TYPE *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -1311,8 +1294,8 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a8da90ba09177e403d9bd6f466d332eca">conc_heter_queue::dyn_push_move</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;move_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_move(type, &amp;source);</div></div><!-- fragment -->
+<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a5ca7f4811d5e01996cdcf949bf7aac93">conc_heter_queue::dyn_push_move</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_move(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="a43e3c73b2740ce46477422fb90d18208"></a>
@@ -1387,10 +1370,10 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 </table>
 </div><div class="memdoc">
 <p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a65085a9e9c299f23ad95b297752d3775">conc_heter_queue::start_dyn_push</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;default_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_reentrant_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_reentrant_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a55249c74018c4dad488fb1eebec8bde3"></a>
+<a class="anchor" id="a725f4449941d9e2f8f64309cd3945f83"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1406,7 +1389,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const COMMON_TYPE *&#160;</td>
+          <td class="paramtype">const void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -1421,11 +1404,11 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#aac2746c80dae973ad196b7f12c1bbcc8">conc_heter_queue::start_dyn_push_copy</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;copy_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_reentrant_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#ab35bc74bffbbf40d83d62ab06bd25537">conc_heter_queue::start_dyn_push_copy</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_reentrant_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="af6abd47f0a85b6d2f90de584c05270c0"></a>
+<a class="anchor" id="a793e4a443a2f0742b3cfc72c67e5b6e9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1441,7 +1424,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">COMMON_TYPE *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>i_source</em>&#160;</td>
         </tr>
         <tr>
@@ -1456,8 +1439,8 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a194977988482bd3bcfeb92c14ccef60a">conc_heter_queue::start_dyn_push_move</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
-<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using namespace </span>type_features;</div><div class="line">            <span class="keyword">using</span> MyRunTimeType =</div><div class="line">              runtime_type&lt;void, feature_list&lt;move_construct, destroy, size, alignment&gt;&gt;;</div><div class="line">            conc_heter_queue&lt;void, MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>        put  = queue.start_reentrant_dyn_push_move(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
+<p>Same to <a class="el" href="classdensity_1_1conc__heter__queue.html#a0c816b115d1efd64796fc83e685d1507">conc_heter_queue::start_dyn_push_move</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
+<p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            conc_heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>        put  = queue.start_reentrant_dyn_push_move(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="aa83c43fd2aca56043d4209f67dd579a1"></a>
@@ -1578,7 +1561,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a class="anchor" id="abb8fbaa4b1d68aaea3b603a10e39836e"></a>
+<a class="anchor" id="ab2ced880743cb6386e5ecf7dcaeb4769"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1588,13 +1571,13 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
         <tr>
           <td class="memname">void swap </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&#160;</td>
           <td class="paramname"><em>i_first</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a>&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt; &amp;&#160;</td>
           <td class="paramname"><em>i_second</em>&#160;</td>
         </tr>
         <tr>
@@ -1610,7 +1593,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 </table>
 </div><div class="memdoc">
 <p>Swaps two queues.</p>
-<div class="fragment"><div class="line">            conc_heter_queue&lt;&gt; queue, queue_1;</div><div class="line">            queue.push(1);</div><div class="line">            <a class="code" href="classdensity_1_1conc__heter__queue.html#abb8fbaa4b1d68aaea3b603a10e39836e">swap</a>(queue, queue_1);</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
+<div class="fragment"><div class="line">            conc_heter_queue&lt;&gt; queue, queue_1;</div><div class="line">            queue.push(1);</div><div class="line">            <a class="code" href="classdensity_1_1conc__heter__queue.html#ab2ced880743cb6386e5ecf7dcaeb4769">swap</a>(queue, queue_1);</div><div class="line"></div><div class="line">            assert(queue.empty());</div><div class="line">            assert(!queue_1.empty());</div></div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -1720,7 +1703,7 @@ class density::conc_heter_queue&lt; COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE &g
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>C:/projects/density/density/<a class="el" href="conc__heter__queue_8h_source.html">conc_heter_queue.h</a></li>
+<li>C:/projects/density/include/density/<a class="el" href="conc__heter__queue_8h_source.html">conc_heter_queue.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

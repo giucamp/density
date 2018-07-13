@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['feature_5flist',['feature_list',['../classdensity_1_1runtime__type.html#ab02b92af0561444fc7befaeb7d0cebd2',1,'density::runtime_type']]]
+  ['feature_5flist_5ftype',['feature_list_type',['../classdensity_1_1runtime__type.html#a924836c5392e41b6b28cc0fdeaa2bd93',1,'density::runtime_type']]]
 ];
