@@ -11,9 +11,9 @@
 
 namespace density
 {
-    /*! \page UntypedAllocator_concept UntypedAllocator concept
-        The UntypedAllocator concept encapsulates an untyped memory allocation service, similar to the
-            <a href="http://en.cppreference.com/w/cpp/concept/Allocator">Allocator concept</a> defined by the standard, but untyped like
+    /*! \page UntypedAllocator_requirements UntypedAllocator (named requirement)
+        UntypedAllocator encapsulates an untyped memory allocation service, similar to
+            <a href="https://en.cppreference.com/w/cpp/named_req/Allocator">Allocator</a>, defined by the standard, but untyped like
             <a href="http://en.cppreference.com/w/cpp/memory/c/malloc">std::malloc</a>. UntypedAllocator supports over-alignment and alignment
             offset. UntypedAllocator is also similar to the class <a href="http://en.cppreference.com/w/cpp/memory/memory_resource">
             std::pmr::memory_resource</a> (introduced in C++17), but is not polymorphic.
@@ -70,11 +70,11 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_default_allocator meets the requirements of UntypedAllocator concept.
+        basic_default_allocator satisfies the requirements of UntypedAllocator.
     */
 
 
-    /*! \page PagedAllocator_concept PagedAllocator concept
+    /*! \page PagedAllocator_requirements PagedAllocator (named requirement)
         The PagedAllocator concept encapsulates a page-based untyped memory allocation service. All pages allocated by a
         PagedAllocator have the same fixed size and alignment requirements.
 
@@ -143,7 +143,7 @@ namespace density
         by A must be deallocated by B. </td></tr>
         </table>
 
-        basic_default_allocator meets the requirements of PagedAllocator.
+        basic_default_allocator satisfies the requirements of PagedAllocator.
     */
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
@@ -151,8 +151,8 @@ namespace density
     /** Specialization of basic_default_allocator that uses density::default_page_capacity as page capacity. */
     using default_allocator = basic_default_allocator<default_page_capacity>;
 
-    /** Class template providing paged and legacy memory allocation. It models both the \ref UntypedAllocator_concept "UntypedAllocator"
-        and \ref PagedAllocator_concept "PagedAllocator" concepts.
+    /** Class template providing paged and legacy memory allocation. It meets the requirements of \ref UntypedAllocator_requirements "UntypedAllocator"
+        and \ref PagedAllocator_requirements "PagedAllocator".
 
         basic_default_allocator is stateless, so instances are interchangeable: blocks and pages can be deallocated by any instance of basic_default_allocator. */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = default_page_capacity>
@@ -418,7 +418,7 @@ namespace density
 
         /** Tries to pin the page containing the specified address, incrementing an internal page_specific ref-count,
             If the implementation can't complete the action with the specified progress guarantee, the call has no visible effects,
-            and the return value is false. Otherwise the return value is true..
+            and the return value is false. Otherwise the return value is true.
 
             \n <b>Progress guarantee</b>: specified by the argument
             \n <b>Throws</b>: nothing. */

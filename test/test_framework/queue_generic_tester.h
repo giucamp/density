@@ -86,7 +86,6 @@ namespace density_tests
             m_output << "starting queue generic test with " << m_thread_count << " threads and ";
             m_output << i_target_put_count << " total puts";
             m_output << "\nheterogeneous_queue: " << truncated_type_name<QUEUE>();
-            m_output << "\ncommon_type: " << truncated_type_name<typename QUEUE::common_type>();
             m_output << "\nruntime_type: " << truncated_type_name<typename QUEUE::runtime_type>();
             m_output << "\nallocator_type: "
                      << truncated_type_name<typename QUEUE::allocator_type>();

@@ -118,8 +118,8 @@ namespace density
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
 
-    /** Allocator type the data stack is built upon. It must meet the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
-        and \ref PagedAllocator_concept "PagedAllocator" */
+    /** Allocator type the data stack is built upon. It must satisfy the requirements of both \ref UntypedAllocator_requirements "UntypedAllocator"
+        and \ref PagedAllocator_requirements "PagedAllocator" */
     using data_stack_underlying_allocator = basic_default_allocator<default_page_capacity>;
 
 /** \def DENSITY_USER_DATA_STACK If defined enables the user data stack. */

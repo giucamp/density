@@ -67,8 +67,8 @@ namespace density_tests
         static thread_local double       t_fail_probability;
     };
 
-    /* Allocators that meets the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
-        and \ref PagedAllocator_concept "PagedAllocator".
+    /* Allocators that satisfies the requirements of both \ref UntypedAllocator_requirements "UntypedAllocator"
+        and \ref PagedAllocator_requirements "PagedAllocator".
         This class is based on density::basic_default_allocator, and uses a shared registry to detect bugs
         in the memory management of containers (and pseudo-containers).
         This class uses a mutex to be thread-safe, and doing so violates the progress guarantee of try- functions. */
@@ -275,8 +275,8 @@ namespace density_tests
         std::vector<IAllocatorHook *> m_hooks;
     };
 
-    /* Allocators that meets the requirements of both \ref UntypedAllocator_concept "UntypedAllocator"
-        and \ref PagedAllocator_concept "PagedAllocator".
+    /* Allocators that satisfies the requirements of both \ref UntypedAllocator_requirements "UntypedAllocator"
+        and \ref PagedAllocator_requirements "PagedAllocator".
         This class is based on density::basic_default_allocator, and uses atomic counters to detect bugs
         in the memory management of containers (and pseudo-containers). */
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT = density::default_page_capacity>

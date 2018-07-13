@@ -156,13 +156,12 @@ namespace density_tests
 #pragma GCC diagnostic pop
 #endif
 
-    template <typename COMMON_TYPE = void> class TestRuntimeTime : private InstanceCounted
+    template <typename UNDERLYING_TYPE = density::runtime_type<density::default_type_features>>
+    class TestRuntimeTime : private InstanceCounted
     {
-        using UnderlyingType = typename density::runtime_type<COMMON_TYPE>;
+        using UnderlyingType = UNDERLYING_TYPE;
 
       public:
-        using common_type = COMMON_TYPE;
-
         template <typename TYPE> static TestRuntimeTime make() noexcept
         {
             return TestRuntimeTime(UnderlyingType::template make<TYPE>());
@@ -191,32 +190,29 @@ namespace density_tests
 
         size_t alignment() const noexcept { return m_underlying_type.alignment(); }
 
-        common_type * default_construct(void * i_dest) const
+        void default_construct(void * i_dest) const
         {
             exception_checkpoint();
-            return m_underlying_type.default_construct(i_dest);
+            m_underlying_type.default_construct(i_dest);
         }
 
-        common_type * copy_construct(void * i_dest, const common_type * i_source) const
+        void copy_construct(void * i_dest, const void * i_source) const
         {
             exception_checkpoint();
-            return m_underlying_type.copy_construct(i_dest, i_source);
+            m_underlying_type.copy_construct(i_dest, i_source);
         }
 
-        common_type * move_construct(void * i_dest, common_type * i_source) const
+        void move_construct(void * i_dest, void * i_source) const
         {
             exception_checkpoint();
-            return m_underlying_type.move_construct(i_dest, i_source);
+            m_underlying_type.move_construct(i_dest, i_source);
         }
 
-        void * destroy(common_type * i_dest) const noexcept
-        {
-            return m_underlying_type.destroy(i_dest);
-        }
+        void destroy(void * i_dest) const noexcept { m_underlying_type.destroy(i_dest); }
 
         const std::type_info & type_info() const noexcept { return m_underlying_type.type_info(); }
 
-        bool are_equal(const common_type * i_first, const common_type * i_second) const
+        bool are_equal(const void * i_first, const void * i_second) const
         {
             return m_underlying_type.are_equal(i_first, i_second);
         }
@@ -236,7 +232,7 @@ namespace density_tests
             return m_underlying_type.template is<TYPE>();
         }
 
-        size_t hash() const noexcept { return m_underlying_type.hash(); }
+        size_t hash() const noexcept { return std::hash<UnderlyingType>()(m_underlying_type); }
 
       private:
         TestRuntimeTime(const UnderlyingType & i_underlying_type)
@@ -254,9 +250,10 @@ namespace std
 {
     /** Partial specialization of std::hash to allow the use of TestRuntimeTime as key
         for unordered associative containers. */
-    template <typename COMMON_TYPE> struct hash<density_tests::TestRuntimeTime<COMMON_TYPE>>
+    template <typename UNDERLYING_TYPE> struct hash<density_tests::TestRuntimeTime<UNDERLYING_TYPE>>
     {
-        size_t operator()(const density_tests::TestRuntimeTime<COMMON_TYPE> & i_runtime_type) const
+        size_t
+          operator()(const density_tests::TestRuntimeTime<UNDERLYING_TYPE> & i_runtime_type) const
           noexcept
         {
             return i_runtime_type.hash();

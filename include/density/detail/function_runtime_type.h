@@ -43,8 +43,6 @@ namespace density
         class FunctionRuntimeType<function_standard_erasure, RET_VAL(PARAMS...)>
         {
           public:
-            using common_type = void;
-
             template <typename TYPE> static FunctionRuntimeType make() noexcept
             {
                 FunctionRuntimeType result;
@@ -118,8 +116,6 @@ namespace density
         class FunctionRuntimeType<function_manual_clear, RET_VAL(PARAMS...)>
         {
           public:
-            using common_type = void;
-
             template <typename TYPE> static FunctionRuntimeType make() noexcept
             {
                 FunctionRuntimeType result;

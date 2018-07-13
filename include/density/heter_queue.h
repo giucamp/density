@@ -14,24 +14,11 @@ namespace density
 {
     namespace detail
     {
-        template <typename COMMON_TYPE> struct QueueControl // used by heter_queue<T,...>
+        struct QueueControl
         {
             uintptr_t
               m_next; /**< This is a pointer to the next value of the queue, mixed with the flags
                                     defined in Queue_Flags. */
-            COMMON_TYPE *
-              m_element; /**< If COMMON_TYPE is not void we have to store the pointer to
-                                         this subobject. Only the compiler knows how to obtain it from
-                                         a pointer to the complete object.
-                                         For elements whose type is fixed at compile time the value of
-                                         m_element is obtained by implicit conversion of the pointer to
-                                         the complete type to COMMON_TYPE. For elements constructed
-                                         from a runtime type object, it is returned by the construct* function. */
-        };
-
-        template <> struct QueueControl<void> // used by heter_queue<void,...>
-        {
-            uintptr_t m_next; /**< see the QueueControl::m_next above */
         };
 
         /** \internal Defines flags that can be set on QueueControl::m_next */
@@ -58,17 +45,13 @@ namespace density
         (<em>consume operation</em>).
         When doing a put, the user may associate one or more <em>raw memory blocks</em> to the element. Raw blocks are
         deallocated automatically when the value is consumed.
-        heter_queue supports iterators, but they are just <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>
+        heter_queue supports iterators, but they are just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>
         so heter_queue is not a container.
 
-        @tparam COMMON_TYPE Common type of all the elements. An object of type <code>E</code> can be pushed on the queue only if 
-        <code>E*</code> is implicitly convertible to <code>COMMON_TYPE*</code>. If <code>COMMON_TYPE</code> is <code>void</code>
-            (the default), any type can be put in the queue. Otherwise it should be an user-defined-type, and only types deriving 
-            from it can be added.
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
-                This type must meet the requirements of \ref RuntimeType_concept "RuntimeType". The default is runtime_type.
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
+                This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
+                "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
 
         \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
         \n <b>Exception safeness</b>: Any function of heter_queue is noexcept or provides the strong exception guarantee.
@@ -105,7 +88,7 @@ namespace density
 
         The example above searches for an exact match of the type being consumed (using runtime_type::is). Anyway
         runtime_type (the default <code>RUNTIME_TYPE</code>) allows to add custom functions that can be called regardless
-        of the type. The following example uses the built-in type_features::ostream:
+        of the type. The following example uses the built-in f_ostream:
 
         \snippet heterogeneous_queue_examples.cpp heter_queue example 3
 
@@ -122,11 +105,11 @@ namespace density
 
         \snippet heterogeneous_queue_examples.cpp heter_queue reentrant example 1
 
-        A value in the queue has the type <code>std::pair<const RUNTIME_TYPE &, COMMON_TYPE* const></code>. Iterators are
+        A value in the queue has the type <code>std::pair<const RUNTIME_TYPE &, void* const></code>. Iterators are
         conceptually pointers to such pairs.
         They don't provide the multipass guarantee, so they are not
-        <a href="http://en.cppreference.com/w/cpp/concept/ForwardIterator">Forward Iterators</a>, but just
-        <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">Input Iterators</a>.
+        <a href="https://en.cppreference.com/w/cpp/named_req/ForwardIterator">Forward Iterators</a>, but just
+        <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>.
         For this reason heter_queue is not a container.
         Insertions invalidate no iterators. Removals invalidate only the iterators pointing to the element
         being removed.
@@ -187,8 +170,7 @@ namespace density
         A value is allocated in the queue by adding its size to the tail pointer. The memory layout of a
         value is composed by:
         - a <em>ControlBlock</em>, an internal structure composed by an uintptr_t that contains keeps the end
-            address of next value and some internal bit flags. If <code>COMMON_TYPE</code> is not void, the
-            ControlBlock contains also a pointer to the subobject of type COMMON_TYPE of the element.
+            address of next value and some internal bit flags.
         - the <code>RUNTIME_TYPE</code> object. If <code>RUNTIME_TYPE</code>is runtime_type, this is just a
             pointer to a pseudo v-table.
         - the element
@@ -213,13 +195,10 @@ namespace density
             \ref heter_queue::dyn_push "dyn_push"), because they can do some computations at compile time,
             and because they don't use the <code>RUNTIME_TYPE</code> to construct the element.
     */
-    template <
-      typename COMMON_TYPE    = void,
-      typename RUNTIME_TYPE   = runtime_type<COMMON_TYPE>,
-      typename ALLOCATOR_TYPE = default_allocator>
+    template <typename RUNTIME_TYPE = runtime_type<>, typename ALLOCATOR_TYPE = default_allocator>
     class heter_queue : private ALLOCATOR_TYPE
     {
-        using ControlBlock = typename detail::QueueControl<COMMON_TYPE>;
+        using ControlBlock = detail::QueueControl;
 
         /** Pointer to the head. It is equal to s_invalid_control_block, or it is aligned to min_alignment. */
         ControlBlock * m_head;
@@ -238,9 +217,8 @@ namespace density
         constexpr static size_t min_alignment = detail::size_max(
           detail::Queue_AllFlags + 1, alignof(ControlBlock), alignof(RUNTIME_TYPE));
 
-        using common_type     = COMMON_TYPE;
         using runtime_type    = RUNTIME_TYPE;
-        using value_type      = std::pair<const runtime_type &, common_type * const>;
+        using value_type      = std::pair<const runtime_type &, void * const>;
         using allocator_type  = ALLOCATOR_TYPE;
         using pointer         = value_type *;
         using const_pointer   = const value_type *;
@@ -292,15 +270,6 @@ namespace density
 
         /** Whether this queue is sequential consistent. */
         static constexpr bool is_seq_cst = true;
-
-        static_assert(
-          std::is_same<COMMON_TYPE, typename RUNTIME_TYPE::common_type>::value,
-          "COMMON_TYPE and RUNTIME_TYPE::common_type must be the same type (did you try to use a "
-          "type like heter_cont<A,runtime_type<B>>?)");
-
-        static_assert(
-          std::is_same<COMMON_TYPE, typename std::decay<COMMON_TYPE>::type>::value,
-          "COMMON_TYPE can't be cv-qualified, an array or a reference");
 
         static_assert(
           is_power_of_2(ALLOCATOR_TYPE::page_alignment) &&
@@ -386,7 +355,7 @@ namespace density
         /** Copy constructor. The allocator is copy-constructed from the one of the source.
 
             \n <b>Requires</b>:
-                - the runtime type must support the feature type_features::copy_construct
+                - the runtime type must support the feature f_copy_construct
 
             <b>Complexity</b>: linear in the number of elements of the source.
             \n <b>Throws</b>: unspecified.
@@ -463,8 +432,8 @@ namespace density
 
         \snippet heterogeneous_queue_examples.cpp heter_queue swap example 1 */
         friend void swap(
-          heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
-          heter_queue<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
+          heter_queue<RUNTIME_TYPE, ALLOCATOR_TYPE> & i_first,
+          heter_queue<RUNTIME_TYPE, ALLOCATOR_TYPE> & i_second) noexcept
         {
             using std::swap;
             swap(static_cast<ALLOCATOR_TYPE &>(i_first), static_cast<ALLOCATOR_TYPE &>(i_second));
@@ -658,7 +627,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -702,7 +671,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -772,7 +741,7 @@ namespace density
                 \n <i>Notes</i>:
                 - The object is constructed when the transaction is started, so this function always returns a
                     pointer to a valid object.
-                - This function returns a pointer to the common_type subobject of the element. Non-dynamic
+                - This function returns a void pointer to the element. Non-dynamic
                     transactional put function (start_push, start_emplace, start_reentrant_push, start_reentrant_emplace)
                     return a typed_put_transaction or a reentrant_put_transaction, that provide the function element(),
                     which is a better alternative to this function
@@ -783,7 +752,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heter_queue put_transaction element_ptr example 1
 
             \snippet heterogeneous_queue_examples.cpp heter_queue put_transaction element_ptr example 2 */
-            common_type * element_ptr() const noexcept
+            void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return m_put_data.m_user_storage;
@@ -839,27 +808,9 @@ namespace density
             }
 
             /** \internal - private function, usable only within the library */
-            put_transaction(
-              PrivateType,
-              heter_queue * i_queue,
-              Allocation    i_push_data,
-              std::true_type,
-              void *) noexcept
+            put_transaction(PrivateType, heter_queue * i_queue, Allocation i_push_data) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
-            }
-
-            /** \internal - private function, usable only within the library */
-            put_transaction(
-              PrivateType,
-              heter_queue * i_queue,
-              Allocation    i_push_data,
-              std::false_type,
-              COMMON_TYPE * i_element_storage) noexcept
-                : m_queue(i_queue), m_put_data(i_push_data)
-            {
-                m_put_data.m_user_storage             = i_element_storage;
-                m_put_data.m_control_block->m_element = i_element_storage;
             }
 
           private:
@@ -1074,7 +1025,7 @@ namespace density
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
 
                 \snippet heterogeneous_queue_examples.cpp heter_queue consume_operation element_ptr example 1 */
-            COMMON_TYPE * element_ptr() const noexcept
+            void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return get_element(m_control);
@@ -1090,7 +1041,7 @@ namespace density
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */
@@ -1125,9 +1076,6 @@ namespace density
 
             \n <b>Requires</b>:
                 - <code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)
-                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
-                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1150,9 +1098,6 @@ namespace density
 
             \n <b>Requires</b>:
                 - <code>ELEMENT_TYPE</code> must be constructible with <code>std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...</code>
-                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
-                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1189,8 +1134,8 @@ namespace density
         /** Appends at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
 
             @param i_type type of the new element.
-            @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>.
-                <i>Note</i>: be careful using void pointers: only the compiler knows how to casts from/to a base to/from a derived class.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose 
+                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If
@@ -1204,7 +1149,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue dyn_push_copy example 1 */
-        void dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -1212,9 +1157,8 @@ namespace density
         /** Adds at the end of the queue an element of a type known at runtime, move-constructing it from the source.
 
             @param i_type type of the new element
-            @param i_source pointer to the subobject of type <code>COMMON_TYPE</code> of an object or subobject of type <code>ELEMENT_TYPE</code>
-                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
-                by the type system of the language.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
+                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If
@@ -1228,7 +1172,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue dyn_push_move example 1 */
-        void dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -1249,9 +1193,6 @@ namespace density
 
             \n <b>Requires</b>:
                 - <code>ELEMENT_TYPE</code> must be copy constructible (in case of l-value) or move constructible (in case of r-value)
-                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
-                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1282,9 +1223,6 @@ namespace density
 
             \n <b>Requires</b>:
                 - <code>ELEMENT_TYPE</code> must be constructible with <code>std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...</code>
-                - <code>ELEMENT_TYPE *</code> must be implicitly convertible <code>COMMON_TYPE *</code>
-                - <code>COMMON_TYPE *</code> must be convertible to <code>ELEMENT_TYPE *</code> with a static_cast or a dynamic_cast. \n This requirement is
-                    not met for example if <code>COMMON_TYPE</code> is a non-polymorphic direct or indirect virtual base of <code>ELEMENT_TYPE</code>.
 
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: no iterator is invalidated
@@ -1296,18 +1234,13 @@ namespace density
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            static_assert(
-              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
-              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
-
             auto push_data = inplace_allocate<
               0,
               true,
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -1315,7 +1248,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
@@ -1329,8 +1262,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<ELEMENT_TYPE>(PrivateType(), this, push_data);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, default-constructing it.
@@ -1355,8 +1287,7 @@ namespace density
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -1364,7 +1295,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -1377,8 +1308,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -1391,9 +1321,8 @@ namespace density
             function is called in this timespan, the behavior is undefined.
 
             @param i_type type of the new element.
-            @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
-                by the type system of the language.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
+                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1403,13 +1332,11 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction<>
-          start_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -1417,7 +1344,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.copy_construct(push_data.m_user_storage, i_source);
+                i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -1430,8 +1357,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Begins a transaction that appends an element of a type known at runtime, move-constructing it from the source..
@@ -1443,9 +1369,8 @@ namespace density
             function is called in this timespan, the behavior is undefined.
 
             @param i_type type of the new element.
-            @param i_source pointer to the subobject of type COMMON_TYPE of an object or subobject of type ELEMENT_TYPE.
-                <i>Note</i>: be careful using void pointers: casts from/to a base to/from a derived class can be done only
-                by the type system of the language.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
+                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1455,12 +1380,11 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_dyn_push_move example 1 */
-        put_transaction<> start_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        put_transaction<> start_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -1468,7 +1392,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -1481,8 +1405,7 @@ namespace density
                 throw;
             }
 
-            return put_transaction<void>(
-              PrivateType(), this, push_data, std::is_same<COMMON_TYPE, void>(), element);
+            return put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -1692,7 +1615,7 @@ namespace density
                 @param i_end first element not to be copied
 
                 \n <b>Requires</b>:
-                    - INPUT_ITERATOR must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - INPUT_ITERATOR must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1736,7 +1659,7 @@ namespace density
                 @param i_source_range to be copied
 
                 \n <b>Requires</b>:
-                    - The iterators of the range must meet the requirements of <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">InputIterator</a>
+                    - The iterators of the range must satisfy the requirements of <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">InputIterator</a>
                     - the value type must be trivially destructible
 
                 \pre The behavior is undefined if either:
@@ -1808,10 +1731,6 @@ namespace density
                 \n <i>Notes</i>:
                 - The object is constructed when the transaction is started, so this function always returns a
                     pointer to a valid object.
-                - This function returns a pointer to the common_type subobject of the element. Non-dynamic
-                    transactional put function (start_push, start_emplace, start_reentrant_push, start_reentrant_emplace)
-                    return a typed_put_transaction or a reentrant_put_transaction, that provide the function element(),
-                    which is a better alternative to this function
 
                 \pre The behavior is undefined if either:
                     - this transaction is empty
@@ -1819,7 +1738,7 @@ namespace density
             \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_put_transaction element_ptr example 1
 
             \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_put_transaction element_ptr example 2 */
-            common_type * element_ptr() const noexcept
+            void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return m_put_data.m_user_storage;
@@ -1876,27 +1795,11 @@ namespace density
 
             /** \internal - private function, usable only within the library */
             reentrant_put_transaction(
-              PrivateType,
-              heter_queue * i_queue,
-              Allocation    i_push_data,
-              std::true_type,
-              void *) noexcept
+              PrivateType, heter_queue * i_queue, Allocation i_push_data) noexcept
                 : m_queue(i_queue), m_put_data(i_push_data)
             {
             }
 
-            /** \internal - private function, usable only within the library */
-            reentrant_put_transaction(
-              PrivateType,
-              heter_queue * i_queue,
-              Allocation    i_push_data,
-              std::false_type,
-              COMMON_TYPE * i_element) noexcept
-                : m_queue(i_queue), m_put_data(i_push_data)
-            {
-                m_put_data.m_user_storage             = i_element;
-                m_put_data.m_control_block->m_element = i_element;
-            }
 
           private:
             heter_queue * m_queue = nullptr;
@@ -2111,7 +2014,7 @@ namespace density
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been committed or used as source for a move operation.
 
                 \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_consume_operation element_ptr example 1 */
-            COMMON_TYPE * element_ptr() const noexcept
+            void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
                 return get_element(m_control);
@@ -2127,7 +2030,7 @@ namespace density
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
                 DENSITY_ASSERT(!empty() && complete_type().template is<COMPLETE_ELEMENT_TYPE>());
-                return *detail::down_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
+                return *static_cast<COMPLETE_ELEMENT_TYPE *>(get_element(m_control));
             }
 
             /** \internal - private function, usable only within the library */
@@ -2193,7 +2096,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_dyn_push_copy example 1 */
-        void reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+        void reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
@@ -2203,7 +2106,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue reentrant_dyn_push_move example 1 */
-        void reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+        void reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -2230,18 +2133,13 @@ namespace density
         reentrant_put_transaction<ELEMENT_TYPE>
           start_reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
-            static_assert(
-              std::is_convertible<ELEMENT_TYPE *, COMMON_TYPE *>::value,
-              "ELEMENT_TYPE must derive from COMMON_TYPE, or COMMON_TYPE must be void");
-
             auto push_data = inplace_allocate<
               detail::Queue_Busy,
               true,
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -2249,7 +2147,7 @@ namespace density
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = new (push_data.m_user_storage)
+                new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
             catch (...)
@@ -2263,8 +2161,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<ELEMENT_TYPE>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<ELEMENT_TYPE>(PrivateType(), this, push_data);
         }
 
         /** Same to heter_queue::start_dyn_push, but allows reentrancy: during the construction of the element, and until the state of
@@ -2277,8 +2174,7 @@ namespace density
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -2286,7 +2182,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.default_construct(push_data.m_user_storage);
+                i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
             {
@@ -2299,8 +2195,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
 
@@ -2310,13 +2205,12 @@ namespace density
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_copy(const runtime_type & i_type, const COMMON_TYPE * i_source)
+          start_reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -2324,7 +2218,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.copy_construct(push_data.m_user_storage, i_source);
+                i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -2337,8 +2231,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Same to heter_queue::start_dyn_push_move, but allows reentrancy: during the construction of the element, and until the state of
@@ -2347,13 +2240,12 @@ namespace density
             <b>Examples</b>
             \snippet heterogeneous_queue_examples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_move(const runtime_type & i_type, COMMON_TYPE * i_source)
+          start_reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            COMMON_TYPE *  element = nullptr;
-            runtime_type * type    = nullptr;
+            runtime_type * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
@@ -2361,7 +2253,7 @@ namespace density
                 type = new (type_storage) runtime_type(i_type);
 
                 DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
-                element = i_type.move_construct(push_data.m_user_storage, i_source);
+                i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
             {
@@ -2374,8 +2266,7 @@ namespace density
                 throw;
             }
 
-            return reentrant_put_transaction<void>(
-              PrivateType(), this, push_data, std::is_void<COMMON_TYPE>(), element);
+            return reentrant_put_transaction<void>(PrivateType(), this, push_data);
         }
 
         /** Removes and destroy the first element of the queue. This is the reentrant version of pop.
@@ -2458,8 +2349,7 @@ namespace density
           public:
             using iterator_category = std::input_iterator_tag;
             using runtime_type      = RUNTIME_TYPE;
-            using common_type       = COMMON_TYPE;
-            using value_type        = std::pair<const runtime_type &, common_type * const>;
+            using value_type        = std::pair<const runtime_type &, void * const>;
             using pointer           = value_type *;
             using const_pointer     = const value_type *;
             using reference         = value_type &;
@@ -2510,7 +2400,7 @@ namespace density
                 return m_value.m_pair.first;
             }
 
-            common_type * element_ptr() const noexcept
+            void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(m_control != nullptr);
                 return m_value.m_pair.second;
@@ -2572,7 +2462,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>type_features::are_equal</code>
+                - the runtime type must support the feature <code>f_equal</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.
@@ -2604,7 +2494,7 @@ namespace density
             Raw block are not relevant for comparison.
 
             <b>Requires</b>:
-                - the runtime type must support the feature <code>type_features::are_equal</code>
+                - the runtime type must support the feature <code>f_equal</code>
 
             <b>Complexity</b>: linear in the number of elements
             \n <b>Throws</b>: unspecified.
@@ -2656,7 +2546,7 @@ namespace density
             return result;
         }
 
-        static void * get_element(detail::QueueControl<void> * i_control) noexcept
+        static void * get_element(detail::QueueControl * i_control) noexcept
         {
             auto result = address_add(i_control, s_sizeof_ControlBlock + s_sizeof_RuntimeType);
             if (i_control->m_next & detail::Queue_External)
@@ -2668,12 +2558,6 @@ namespace density
                 result = address_upper_align(result, type_after_control(i_control)->alignment());
             }
             return result;
-        }
-
-        template <typename TYPE>
-        static TYPE * get_element(detail::QueueControl<TYPE> * i_control) noexcept
-        {
-            return i_control->m_element;
         }
 
         /** Returns whether the input addresses belong to the same page or they are both nullptr */

@@ -17,14 +17,40 @@
 /*! \file */
 
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
-#define DENSITY_VERSION 0x00010401
+#define DENSITY_VERSION 0x00020000
+
+// detect 'Relaxed constraints on constexpr functions / constexpr member functions and implicit const'
+// see http://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros#C.2B.2B14
+#if __cpp_constexpr >= 201304
+#define DENSITY_CPP14_CONSTEXPR constexpr
+#else
+#define DENSITY_CPP14_CONSTEXPR
+#endif
+
+#if __cpp_noexcept_function_type >= 201510
+#define DENSITY_CPP17_NOEXCEPT noexcept
+#else
+#define DENSITY_CPP17_NOEXCEPT
+#endif
+
+// DENSITY_NODISCARD
+#if defined(__has_cpp_attribute)
+#if __has_cpp_attribute(nodiscard) >= 201603
+// clang-format off
+#define DENSITY_NODISCARD [[nodiscard]]
+// clang-format on
+#endif
+#endif
+#ifndef DENSITY_NODISCARD
+#define DENSITY_NODISCARD
+#endif
 
 /** namespace density */
 namespace density
 {
     /** string decimal variant of DENSITY_VERSION. The length of this string may change between versions.
             Example of value: "7.240.22" */
-    constexpr char version[] = "1.4.1";
+    constexpr char version[] = "2.0.0";
 
     /** Specifies whether a set of functions actually support concurrency */
     enum concurrency_cardinality
@@ -534,7 +560,7 @@ namespace density
 
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
-#if __cplusplus >= 201402L
+#if __cpp_sized_deallocation >= 201309
             operator delete(i_block, i_size); // since C++14
 #else
             (void)i_size;
@@ -546,7 +572,7 @@ namespace density
             if (i_block != nullptr)
             {
                 const auto & header = *(static_cast<detail::AlignmentHeader *>(i_block) - 1);
-#if __cplusplus >= 201402L // since C++14
+#if __cpp_sized_deallocation >= 201309 // since C++14
                 size_t const extra_size =
                   detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
                 size_t const actual_size = i_size + extra_size;
@@ -741,8 +767,8 @@ The first 3 template parameters are the same for all the heterogeneous queues.
 Template parameter            |Meaning  |Constraints|Default  |
 ------------------------------|---------|-----------|---------|
 typename `COMMON_TYPE`|Common type of elements|Must decay to itself (see [std::decay](http://en.cppreference.com/w/cpp/types/decay))|`void`|
-typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_concept.html)|[runtime_type](classdensity_1_1runtime__type.html)|
-typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_concept.html) and [UntypedAllocator](UntypedAllocator_concept.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
+typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_requirements.html)|[runtime_type](classdensity_1_1runtime__type.html)|
+typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_requirements.html) and [UntypedAllocator](UntypedAllocator_requirements.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
 An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
 The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
@@ -762,14 +788,13 @@ Implementation details
 ----------
 <a href="implementation.pdf" target="_blank">This document</a> describes some of the internals of density.
 
-Concepts
+Named requirements
 ----------
 
-Concept     | Modeled in density by
-------------|--------------
-[RuntimeType](RuntimeType_concept.html) | [runtime_type](classdensity_1_1runtime__type.html)
-[UntypedAllocator](UntypedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
-[PagedAllocator](PagedAllocator_concept.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[RuntimeType](RuntimeType_requirements.html) | [runtime_type](classdensity_1_1runtime__type.html)
+[TypeFeature](TypeFeature_requirements.html) | f_size, f_alignment, f_copy_construct, f_hash, f_rtti
+[UntypedAllocator](UntypedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[PagedAllocator](PagedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
 
 Benchmarks
 ----------

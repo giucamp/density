@@ -7,7 +7,6 @@
 #include "../test_framework/density_test_common.h"
 //
 
-#include "../test_framework/density_test_common.h"
 #include "../test_framework/easy_random.h"
 #include "../test_framework/exception_tests.h"
 #include "../test_framework/progress.h"

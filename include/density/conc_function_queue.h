@@ -5,8 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <density/conc_heter_queue.h>
 #include <density/detail/function_runtime_type.h>
-#include <density/heter_queue.h>
 
 namespace density
 {
@@ -14,24 +14,34 @@ namespace density
       typename CALLABLE,
       typename ALLOCATOR_TYPE       = default_allocator,
       function_type_erasure ERASURE = function_standard_erasure>
-    class function_queue;
+    class conc_function_queue;
 
-    /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. function_queue is an adaptor for heter_queue.
+    /** Thread-safe heterogeneous FIFO pseudo-container specialized to hold callable objects. conc_function_queue is an adaptor for conc_heter_queue.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
-        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must meet the requirements of both \ref UntypedAllocator_concept
-                "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator". The default is density::default_allocator.
+        @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
+                "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
         @tparam ERASURE Type erasure to use the callable objects. Must be a member of density::function_type_erasure.
 
-        \snippet func_queue_examples.cpp function_queue push example 1
+        conc_function_queue is basically a function_queue protected from data-races by a mutex. Non-reentrant operations (put or
+        consumes) lock the mutex only once. Reentrant operations lock the mutex once when starting, and a second time to commit or cancel. Anyway
+        in the middle of the operation the queue is not locked, and it can be used by the same thread or by other threads.
+        \n <code>reentrant_put_transaction::commit</code>, <code>reentrant_put_transaction::cancel</code>, <code>reentrant_consume_operation::commit</code> and
+        <code>reentrant_consume_operation::cancel</code> are all noexcept functions that lock a mutex in a controlled context (no reentrancy, no callbacks,
+        no possibility of deadlocks). The lock of the mutex should never throw in this context, but if for some reasons it does, the runtime will call std::terminate.
 
-        If ERASURE == function_manual_clear, function_queue is not able to destroy the callable objects without invoking them.
+        If ERASURE == function_manual_clear, conc_function_queue is not able to destroy the callable objects without invoking them.
             This produces a performance benefit, but:
-            - The function function_queue::clear can't be used (calling it causes undefined behavior)
-            - When the destructor of function_queue is called, the queue must be already empty
+            - The function conc_function_queue::clear can't be used (calling it causes undefined behavior)
+            - When the destructor of conc_function_queue is called, the queue must be already empty
 
-        \n <b>Thread safeness</b>: None. The user is responsible of avoiding data races.
-        \n <b>Exception safeness</b>: Any function of function_queue is noexcept or provides the strong exception guarantee.
+        \n Implementation note: If ERASURE == function_manual_clear, a runtime type associated with a value is actually a pointer to a function
+            that invokes and destroys the callable object. In this case the size of a value is a pair of pointers, plus the capture (if any).
+            \n If ERASURE == function_standard_erasure the runtime type has an additional pointer to a function that destroys the callable object
+            without invoking it.
+
+        \n <b>Thread safeness</b>: Put and consumes can be executed concurrently.
+        \n <b>Exception safeness</b>: Any function of conc_function_queue is noexcept or provides the strong exception guarantee.
     */
 #ifndef DOXYGEN_DOC_GENERATION
     template <
@@ -39,62 +49,61 @@ namespace density
       typename... PARAMS,
       typename ALLOCATOR_TYPE,
       function_type_erasure ERASURE>
-    class function_queue<RET_VAL(PARAMS...), ALLOCATOR_TYPE, ERASURE>
+    class conc_function_queue<RET_VAL(PARAMS...), ALLOCATOR_TYPE, ERASURE>
 #else
     template <
       typename CALLABLE,
       typename ALLOCATOR_TYPE       = default_allocator,
       function_type_erasure ERASURE = function_standard_erasure>
-    class function_queue
+    class conc_function_queue
 #endif
     {
       private:
-        using UnderlyingQueue = heter_queue<
-          void,
+        using UnderlyingQueue = conc_heter_queue<
           detail::FunctionRuntimeType<ERASURE, RET_VAL(PARAMS...)>,
           ALLOCATOR_TYPE>;
         UnderlyingQueue m_queue;
 
       public:
         /** Whether multiple threads can do put operations on the same queue without any further synchronization. */
-        static constexpr bool concurrent_puts = false;
+        static constexpr bool concurrent_puts = true;
 
         /** Whether multiple threads can do consume operations on the same queue without any further synchronization. */
-        static constexpr bool concurrent_consumes = false;
+        static constexpr bool concurrent_consumes = true;
 
         /** Whether puts and consumes can be done concurrently without any further synchronization. In any case unsynchronized concurrency is
             constrained by concurrent_puts and concurrent_consumes. */
-        static constexpr bool concurrent_put_consumes = false;
+        static constexpr bool concurrent_put_consumes = true;
 
         /** Whether this queue is sequential consistent. */
         static constexpr bool is_seq_cst = true;
 
         /** Default constructor.
 
-        \snippet func_queue_examples.cpp function_queue default construct example 1 */
-        constexpr function_queue() noexcept = default;
+        \snippet conc_func_queue_examples.cpp conc_function_queue default construct example 1 */
+        conc_function_queue() noexcept = default;
 
         /** Move constructor.
 
-        \snippet func_queue_examples.cpp function_queue move construct example 1 */
-        function_queue(function_queue && i_source) noexcept = default;
+        \snippet conc_func_queue_examples.cpp conc_function_queue move construct example 1 */
+        conc_function_queue(conc_function_queue && i_source) noexcept = default;
 
         /** Move assignment.
 
-        \snippet func_queue_examples.cpp function_queue move assign example 1 */
-        function_queue & operator=(function_queue && i_source) noexcept = default;
+        \snippet conc_func_queue_examples.cpp conc_function_queue move assign example 1 */
+        conc_function_queue & operator=(conc_function_queue && i_source) noexcept = default;
 
         /** Swaps two function queues.
 
-        \snippet func_queue_examples.cpp function_queue swap example 1 */
-        friend void swap(function_queue & i_first, function_queue & i_second) noexcept
+        \snippet conc_func_queue_examples.cpp conc_function_queue swap example 1 */
+        friend void swap(conc_function_queue & i_first, conc_function_queue & i_second) noexcept
         {
             using std::swap;
             swap(i_first.m_queue, i_second.m_queue);
         }
 
         /** Destructor */
-        ~function_queue()
+        ~conc_function_queue()
         {
             auto erasure = ERASURE;
             if (erasure == function_manual_clear)
@@ -103,12 +112,12 @@ namespace density
             }
         }
 
-        /** Alias to heter_queue::put_transaction. */
+        /** Alias to conc_heter_queue::put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
         using put_transaction =
           typename UnderlyingQueue::template put_transaction<ELEMENT_COMPLETE_TYPE>;
 
-        /** Alias to heter_queue::reentrant_put_transaction. */
+        /** Alias to conc_heter_queue::reentrant_put_transaction. */
         template <typename ELEMENT_COMPLETE_TYPE>
         using reentrant_put_transaction =
           typename UnderlyingQueue::template reentrant_put_transaction<ELEMENT_COMPLETE_TYPE>;
@@ -121,11 +130,11 @@ namespace density
 
         /** Adds at the end of the queue a callable object.
 
-        See heter_queue::push for a detailed description.
+        See conc_heter_queue::push for a detailed description.
 
-        \snippet func_queue_examples.cpp function_queue push example 1
-        \snippet func_queue_examples.cpp function_queue push example 2
-        \snippet func_queue_examples.cpp function_queue push example 3 */
+        \snippet conc_func_queue_examples.cpp conc_function_queue push example 1
+        \snippet conc_func_queue_examples.cpp conc_function_queue push example 2
+        \snippet conc_func_queue_examples.cpp conc_function_queue push example 3 */
         template <typename ELEMENT_COMPLETE_TYPE> void push(ELEMENT_COMPLETE_TYPE && i_source)
         {
             m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
@@ -135,9 +144,9 @@ namespace density
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
-            See heter_queue::emplace for a detailed description.
+            See conc_heter_queue::emplace for a detailed description.
 
-        \snippet func_queue_examples.cpp function_queue emplace example 1 */
+        \snippet conc_func_queue_examples.cpp conc_function_queue emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
         void emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -148,10 +157,10 @@ namespace density
         /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
                 or move-constructing it from the source.
 
-            See heter_queue::start_push for a detailed description.
+            See conc_heter_queue::start_push for a detailed description.
 
             <b>Examples</b>
-            \snippet func_queue_examples.cpp function_queue start_push example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
         put_transaction<typename std::decay<ELEMENT_TYPE>::type>
           start_push(ELEMENT_TYPE && i_source)
@@ -163,10 +172,10 @@ namespace density
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
 
-            See heter_queue::start_emplace for a detailed description.
+            See conc_heter_queue::start_emplace for a detailed description.
 
             <b>Examples</b>
-            \snippet func_queue_examples.cpp function_queue start_emplace example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -176,9 +185,9 @@ namespace density
 
         /** Adds at the end of the queue a callable object.
 
-        See heter_queue::reentrant_push for a detailed description.
+        See conc_heter_queue::reentrant_push for a detailed description.
 
-        \snippet func_queue_examples.cpp function_queue reentrant_push example 1 */
+        \snippet conc_func_queue_examples.cpp conc_function_queue reentrant_push example 1 */
         template <typename ELEMENT_COMPLETE_TYPE>
         void reentrant_push(ELEMENT_COMPLETE_TYPE && i_source)
         {
@@ -189,9 +198,9 @@ namespace density
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
-            See heter_queue::reentrant_emplace for a detailed description.
+            See conc_heter_queue::reentrant_emplace for a detailed description.
 
-        \snippet func_queue_examples.cpp function_queue reentrant_emplace example 1 */
+        \snippet conc_func_queue_examples.cpp conc_function_queue reentrant_emplace example 1 */
         template <typename ELEMENT_COMPLETE_TYPE, typename... CONSTRUCTION_PARAMS>
         void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -202,10 +211,10 @@ namespace density
         /** Begins a transaction that appends an element of type <code>ELEMENT_TYPE</code>, copy-constructing
                 or move-constructing it from the source.
 
-            See heter_queue::start_reentrant_push for a detailed description.
+            See conc_heter_queue::start_reentrant_push for a detailed description.
 
             <b>Examples</b>
-            \snippet func_queue_examples.cpp function_queue start_reentrant_push example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
         reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>
           start_reentrant_push(ELEMENT_TYPE && i_source)
@@ -217,10 +226,10 @@ namespace density
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
             inplace-constructing it from a perfect forwarded parameter pack.
 
-            See heter_queue::start_reentrant_emplace for a detailed description.
+            See conc_heter_queue::start_reentrant_emplace for a detailed description.
 
             <b>Examples</b>
-            \snippet func_queue_examples.cpp function_queue start_reentrant_emplace example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         reentrant_put_transaction<ELEMENT_TYPE>
           start_reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
@@ -238,12 +247,12 @@ namespace density
                 an empty optional in case the queue was empty.
 
             This function is not reentrant: if the callable object accesses in any way this queue, the behavior
-            is undefined. Use function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
+            is undefined. Use conc_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
 
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet func_queue_examples.cpp function_queue try_consume example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue try_consume example 1 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
           try_consume(PARAMS... i_params)
         {
@@ -251,11 +260,8 @@ namespace density
         }
 
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it
-            from the queue. Otherwise no operation is performed.
-
-            The consume operation is performed using the provided consume_operation object. If the element to consume
-            is in the same page of the last element visited by the provided consume operation, the implementation
-            does not need to pin page. For this reason this overload of try_consume is much faster than the other.
+            from the queue. Otherwise no operation is performed. The consume operation is performed using
+            the provided consume_operation object.
 
             @param i_consume object to use for the consume operation
             @param i_params... parameters to be forwarded to the function object
@@ -264,12 +270,12 @@ namespace density
                 an empty optional in case the queue was empty.
 
             This function is not reentrant: if the callable object accesses in any way this queue, the behavior
-            is undefined. Use function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
+            is undefined. Use conc_function_queue::try_reentrant_consume if you are not sure about what the callable object may do.
 
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet func_queue_examples.cpp function_queue try_consume example 2 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue try_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
           try_consume(consume_operation & i_consume, PARAMS... i_params)
         {
@@ -290,7 +296,7 @@ namespace density
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet func_queue_examples.cpp function_queue try_reentrant_consume example 1 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue try_reentrant_consume example 1 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
           try_reentrant_consume(PARAMS... i_params)
         {
@@ -299,11 +305,8 @@ namespace density
         }
 
         /** If the queue is not empty, invokes the first function object of the queue and then deletes it
-            from the queue. Otherwise no operation is performed.
-
-            The consume operation is performed using the provided consume_operation object. If the element to consume
-            is in the same page of the last element visited by the provided consume operation, the implementation
-            does not need to pin page. For this reason this overload of try_reentrant_consume is much faster than the other.
+            from the queue. Otherwise no operation is performed. The consume operation is performed using
+            the provided consume_operation object.
 
             @param i_consume object to use for the consume operation
             @param i_params... parameters to be forwarded to the function object
@@ -316,7 +319,7 @@ namespace density
             \b Throws: unspecified
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet func_queue_examples.cpp function_queue try_reentrant_consume example 2 */
+            \snippet conc_func_queue_examples.cpp conc_function_queue try_reentrant_consume example 2 */
         typename std::conditional<std::is_void<RET_VAL>::value, bool, optional<RET_VAL>>::type
           try_reentrant_consume(reentrant_consume_operation & i_consume, PARAMS... i_params)
         {
@@ -330,7 +333,7 @@ namespace density
             \n\b Throws: nothing
             \n\b Complexity: linear.
 
-        \snippet func_queue_examples.cpp function_queue clear example 1 */
+        \snippet conc_func_queue_examples.cpp conc_function_queue clear example 1 */
         template <
           function_type_erasure ERASURE_                                     = ERASURE,
           typename std::enable_if<ERASURE_ != function_manual_clear>::type * = nullptr>

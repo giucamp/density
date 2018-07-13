@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.1)
 project (density_bench)
 
 include_directories(".")
-include_directories("../")
+include_directories("../include")
 
 # the compiler used for C++ files 
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )

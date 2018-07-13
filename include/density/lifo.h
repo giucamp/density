@@ -17,7 +17,7 @@ namespace density
     /** Class template that provides LIFO memory management.
 
         @tparam UNDERLYING_ALLOCATOR Underlying allocator class, that can be stateless or stateful. It must meet the requirements
-            of both \ref UntypedAllocator_concept "UntypedAllocator" and \ref PagedAllocator_concept "PagedAllocator".
+            of both \ref UntypedAllocator_requirements "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator".
         @tparam ALIGNMENT Alignment of the blocks. It must be non-zero and a power of 2.
 
         A lifo_allocator uses memory pages allocated from the underlying allocator to provide lifo memory management to the user.

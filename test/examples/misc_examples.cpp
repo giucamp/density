@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <density/conc_function_queue.h>
 #include <density/function_queue.h>
+#include <density/io_runtimetype_features.h>
 #include <density/lf_function_queue.h>
 #include <iostream>
 #include <string>
@@ -23,22 +24,26 @@ namespace density_tests
         type erasure already is a kind of virtualization. */
     struct feature_call_update
     {
-        using type = void (*)(void * i_dest, float i_elapsed_time);
+        void (*m_func)(void * i_object, float i_elapsed_time);
 
-        template <typename BASE, typename TYPE> struct Impl
+        void operator()(void * i_object, float i_elapsed_time) const
         {
-            static void invoke(void * i_base_dest, float i_elapsed_time) noexcept
-            {
-                const auto base_dest = static_cast<BASE *>(i_base_dest);
-                static_cast<TYPE *>(base_dest)->update(i_elapsed_time);
-            }
-            static const uintptr_t value;
-        };
-    };
-    template <typename TYPE, typename BASE>
-    const uintptr_t
-      feature_call_update::Impl<TYPE, BASE>::value = reinterpret_cast<uintptr_t>(invoke);
+            m_func(i_object, i_elapsed_time);
+        }
 
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static feature_call_update make() noexcept
+        {
+            return feature_call_update{&invoke<TARGET_TYPE>};
+        }
+
+      private:
+        template <typename TARGET_TYPE>
+        static void invoke(void * i_object, float i_elapsed_time) noexcept
+        {
+            static_cast<TARGET_TYPE *>(i_object)->update(i_elapsed_time);
+        }
+    };
     //! [runtime_type example 2]
 
     void misc_examples()
@@ -46,69 +51,13 @@ namespace density_tests
         using namespace density;
 
         {
-            //! [feature_list example 1]
-            using namespace type_features;
-            using MyFeatures = feature_list<default_construct, size, alignment>;
-            //! [feature_list example 1]
-            MyFeatures unused;
-            (void)unused;
-        }
-
-        {
             //! [feature_concat example 1]
-            using namespace type_features;
-            using MyPartialFeatures = feature_list<default_construct, size>;
-            using MyFeatures        = feature_concat_t<MyPartialFeatures, alignment>;
-            using MyFeatures1       = feature_concat_t<MyPartialFeatures, feature_list<alignment>>;
-            static_assert(std::is_same<MyFeatures, MyFeatures1>::value, "");
+            using MyPartialFeatures = feature_list<f_default_construct, f_size>;
+            using MyFeatures        = feature_list<MyPartialFeatures, f_alignment>;
+            using MyFeatures1       = feature_list<MyPartialFeatures, feature_list<f_alignment>>;
+            static_assert(std::is_same<MyFeatures::tuple_type, MyFeatures1::tuple_type>::value, "");
             //! [feature_concat example 1]
         }
-
-        {
-            //! [type_features::invoke example 1]
-
-            using namespace type_features;
-
-            // This feature allows to call a function object passing a std::string
-            using MyInvoke = invoke<void(std::string)>;
-
-            // we need MyInvoke and the standard features (size, alignment, ...)
-            using MyFeatures = feature_concat_t<default_type_features_t<void>, MyInvoke>;
-
-            // create a queue
-            using QueueOfInvokables =
-              heter_queue<void, runtime_type<void, MyFeatures>, default_allocator>;
-            QueueOfInvokables my_queue;
-            my_queue.push([](std::string s) { std::cout << s << std::endl; });
-
-            // invoke my_queue.begin()
-            my_queue.begin()->first.get_feature<MyInvoke>()(my_queue.begin()->second, "hello!");
-            //! [type_features::invoke example 1]
-        }
-
-        {
-            //! [runtime_type example 1]
-
-            using namespace type_features;
-
-            using MyRTType = runtime_type<void, feature_list<default_construct, destroy, size>>;
-
-            MyRTType type = MyRTType::make<std::string>();
-
-            void * buff = malloc(type.size());
-
-            type.default_construct(buff);
-
-            // now buff points to a valid std::string
-            *static_cast<std::string *>(buff) = "hello world!";
-
-            type.destroy(buff);
-
-            free(buff);
-
-            //! [runtime_type example 1]
-        }
-
 
         {
             //! [runtime_type example 3]
@@ -129,13 +78,11 @@ namespace density_tests
                 }
             };
 
-            using namespace type_features;
-
-            // concatenates feature_call_update to the default features (destroy, size, alignment)
-            using MyFeatures = feature_concat_t<default_type_features_t<void>, feature_call_update>;
+            // concatenates feature_call_update to the default features (f_destroy, f_size, f_alignment)
+            using MyFeatures = feature_list<default_type_features, feature_call_update>;
 
             // create a queue with 3 objects
-            heter_queue<void, runtime_type<void, MyFeatures>, default_allocator> my_queue;
+            heter_queue<runtime_type<MyFeatures>, default_allocator> my_queue;
             my_queue.emplace<ObjectA>();
             my_queue.emplace<ObjectB>();
             my_queue.emplace<ObjectB>();

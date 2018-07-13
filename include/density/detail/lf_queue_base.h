@@ -15,20 +15,12 @@ namespace density
         /** \internal Control block structure. A control block is allocated in front of each element
             or raw block. It holds its state (see LfQueue_State), a pointer to the next control
            block, and a pointer to the user element. */
-        template <typename COMMON_TYPE> struct LfQueueControl
+        struct LfQueueControl
         {
             atomic_uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
               with some flags (see LfQueue_State). LfQueueControl's are aligned so that
               the first 3 bits of the address are zeroes.
               The end of a queue is indicated by a m_next set to zero or to LfQueue_InvalidNextPage. */
-            COMMON_TYPE *    m_element;
-        };
-
-        /** \internal Control block structure for fully heterogeneous lock-free queues. Same to the
-            primary template, but the pointer to the element is omitted. */
-        template <> struct LfQueueControl<void>
-        {
-            atomic_uintptr_t m_next; /**< same to the primary template. */
         };
 
         /** \internal State of a control block. */
@@ -84,31 +76,26 @@ namespace density
 
         /** \internal Common base for all lock-free and spin-locking queues.
             This class (and all the derived) is move-only. */
-        template <
-          typename COMMON_TYPE,
-          typename RUNTIME_TYPE,
-          typename ALLOCATOR_TYPE,
-          typename DERIVED>
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename DERIVED>
         class LFQueue_Base : public ALLOCATOR_TYPE
         {
           protected:
-            using ControlBlock = LfQueueControl<COMMON_TYPE>;
+            using ControlBlock = LfQueueControl;
 
             /** \internal This struct contains the result of a low-level allocation. An
                 Allocation is empty if m_user_storage is nullptr. */
             struct Allocation
             {
-                LfQueueControl<COMMON_TYPE> *
-                          m_control_block; /**< Control block of the allocated block */
-                uintptr_t m_next_ptr;      /**< Value of m_control_block->m_next */
-                void *    m_user_storage;  /**< Pointer to the allocated space */
+                LfQueueControl * m_control_block; /**< Control block of the allocated block */
+                uintptr_t        m_next_ptr;      /**< Value of m_control_block->m_next */
+                void *           m_user_storage;  /**< Pointer to the allocated space */
 
                 Allocation() noexcept : m_user_storage(nullptr) {}
 
                 Allocation(
-                  LfQueueControl<COMMON_TYPE> * i_control_block,
-                  uintptr_t                     i_next_ptr,
-                  void *                        i_user_storage) noexcept
+                  LfQueueControl * i_control_block,
+                  uintptr_t        i_next_ptr,
+                  void *           i_user_storage) noexcept
                     : m_control_block(i_control_block), m_next_ptr(i_next_ptr),
                       m_user_storage(i_user_storage)
                 {
@@ -266,9 +253,8 @@ namespace density
                 return result;
             }
 
-            /** For fully heterogeneous lock-free queues (COMMON_TYPE == void): Returns the address of the element 
-                associated with the control block. */
-            static void * get_element(detail::LfQueueControl<void> * i_control, bool i_is_external)
+            /** Returns the address of the element associated with the control block. */
+            static void * get_element(detail::LfQueueControl * i_control, bool i_is_external)
             {
                 auto result = address_add(i_control, s_element_min_offset);
                 if (i_is_external)
@@ -283,15 +269,6 @@ namespace density
                       address_upper_align(result, type_after_control(i_control)->alignment());
                 }
                 return result;
-            }
-
-            /** For non fully heterogeneous lock-free queues (COMMON_TYPE != void): Returns the address of
-                the element associated with the control block. */
-            template <typename TYPE>
-            static TYPE *
-              get_element(detail::LfQueueControl<TYPE> * i_control, bool /*i_is_external*/)
-            {
-                return i_control->m_element;
             }
 
             Allocation try_inplace_allocate(
@@ -459,7 +436,7 @@ namespace density
             {
                 // destroy the element and the type
                 auto type_ptr = type_after_control(i_put.m_control_block);
-                type_ptr->destroy(static_cast<COMMON_TYPE *>(i_put.m_user_storage));
+                type_ptr->destroy(i_put.m_user_storage);
                 type_ptr->RUNTIME_TYPE::~RUNTIME_TYPE();
 
                 cancel_put_nodestroy_impl(i_put);
@@ -497,7 +474,6 @@ namespace density
             - lf_queue_tail_multiple_seq_cst.h
             - sp_queue_tail_multiple.h */
         template <
-          typename COMMON_TYPE,
           typename RUNTIME_TYPE,
           typename ALLOCATOR_TYPE,
           concurrency_cardinality PROD_CARDINALITY,
@@ -509,7 +485,6 @@ namespace density
             - lf_queue_head_single.h
             - lf_queue_head_multiple.h */
         template <
-          typename COMMON_TYPE,
           typename RUNTIME_TYPE,
           typename ALLOCATOR_TYPE,
           concurrency_cardinality CONSUMER_CARDINALITY,

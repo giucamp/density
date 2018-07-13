@@ -10,6 +10,5 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 echo "RUN = $RUN"
 make
 if [ "$RUN" = "TRUE" ]; then
-    sudo make install
-    density_bench
+    $PWD/density_bench
 fi

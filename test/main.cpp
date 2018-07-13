@@ -52,6 +52,8 @@ void illegalinstr_handler(int /*sig*/, siginfo_t * info, void * /*ucontext*/)
 namespace density_tests
 {
     void misc_examples();
+    void feature_list_examples();
+    void runtime_type_examples();
 
     void heterogeneous_queue_samples(std::ostream & i_ostream);
     void heterogeneous_queue_basic_tests(std::ostream & i_ostream);
@@ -79,6 +81,9 @@ namespace density_tests
       uint32_t         i_random_seed,
       size_t           i_depth,
       size_t           i_fork_depth);
+
+    void type_fetaures_tests();
+
 } // namespace density_tests
 
 DENSITY_NO_INLINE void sandbox()
@@ -133,7 +138,7 @@ DENSITY_NO_INLINE void sandbox()
         lf_heter_queue<> q1;
     }
     {
-        lf_heter_queue<void> queue;
+        lf_heter_queue<> queue;
         queue.push(std::string());
         queue.push(std::make_pair(4., 1));
         assert(!queue.empty());
@@ -166,10 +171,12 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         flags = flags | QueueTesterFlags::ePrintProgress;
     }
 
+    type_fetaures_tests();
+
     if (i_settings.should_run("lifo"))
     {
         lifo_examples();
-        lifo_tests(flags, i_ostream, i_random_seed, 20, 4);
+        lifo_tests(flags, i_ostream, i_random_seed, 20, 3);
         if (i_settings.m_exceptions)
         {
             lifo_tests(flags | QueueTesterFlags::eTestExceptions, i_ostream, i_random_seed, 8, 3);
@@ -179,6 +186,8 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     if (i_settings.should_run("misc_examples"))
     {
         misc_examples();
+        feature_list_examples();
+        runtime_type_examples();
     }
 
     if (i_settings.should_run("queue"))
@@ -243,6 +252,11 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     load_unload_tests(std::cout);
 
     i_ostream.flags(prev_stream_flags);
+}
+
+namespace density_examples
+{
+    void any_tests();
 }
 
 int run(int argc, char ** argv)
@@ -326,6 +340,8 @@ int run(int argc, char ** argv)
     DENSITY_TEST_ASSERT(version_stream.str() == density::version);
 
     //sandbox();
+
+    density_examples::any_tests();
 
     do_tests(*settings, out, random_seed);
     return 0;

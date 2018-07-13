@@ -52,8 +52,8 @@ namespace density_tests
             DENSITY_TEST_ASSERT(other_queue.empty());
 
             // test allocator getters
-            move_only_void_allocator                                    movable_alloc(5);
-            heter_queue<void, runtime_type<>, move_only_void_allocator> move_only_queue(
+            move_only_void_allocator                              movable_alloc(5);
+            heter_queue<runtime_type<>, move_only_void_allocator> move_only_queue(
               std::move(movable_alloc));
 
             auto allocator_copy = other_queue.get_allocator();
@@ -71,11 +71,9 @@ namespace density_tests
         //move_only_void_allocator
     }
 
-    /** Basic tests heter_queue<void, ...> with a non-polymorphic base */
+    /** Basic tests heter_queue<...> with a non-polymorphic base */
     template <typename QUEUE> void heterogeneous_queue_basic_void_tests()
     {
-        static_assert(std::is_void<typename QUEUE::common_type>::value, "");
-
         {
             QUEUE queue;
             DENSITY_TEST_ASSERT(queue.empty());
@@ -117,28 +115,20 @@ namespace density_tests
     void heterogeneous_queue_basic_nonpolymorphic_base_tests()
     {
         using namespace density;
-        using namespace type_features;
         using RunTimeType = runtime_type<
-          NonPolymorphicBase,
-          feature_list<
-            default_construct,
-            move_construct,
-            copy_construct,
-            destroy,
-            size,
-            alignment>>;
-        heter_queue<NonPolymorphicBase, RunTimeType> queue;
+          f_default_construct,
+          f_move_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment>;
+        heter_queue<RunTimeType> queue;
 
         queue.push(NonPolymorphicBase());
         queue.emplace<SingleDerivedNonPoly>();
 
         dynamic_push_3<NonPolymorphicBase>(queue);
         dynamic_push_3<SingleDerivedNonPoly>(queue);
-
-        for (const auto & val : queue)
-        {
-            val.second->check();
-        }
 
         for (;;)
         {
@@ -165,17 +155,14 @@ namespace density_tests
     void heterogeneous_queue_basic_polymorphic_base_tests()
     {
         using namespace density;
-        using namespace type_features;
         using RunTimeType = runtime_type<
-          PolymorphicBase,
-          feature_list<
-            default_construct,
-            move_construct,
-            copy_construct,
-            destroy,
-            size,
-            alignment>>;
-        heter_queue<PolymorphicBase, RunTimeType> queue;
+          f_default_construct,
+          f_move_construct,
+          f_copy_construct,
+          f_destroy,
+          f_size,
+          f_alignment>;
+        heter_queue<RunTimeType> queue;
 
         queue.push(PolymorphicBase());
         queue.reentrant_emplace<SingleDerived>();
@@ -194,8 +181,8 @@ namespace density_tests
         int elements = 0;
         for (const auto & val : queue)
         {
+            (void)val;
             elements++;
-            val.second->check();
         }
         DENSITY_TEST_ASSERT(elements == put_count);
 
@@ -235,9 +222,8 @@ namespace density_tests
         heterogeneous_queue_basic_void_tests<heter_queue<>>();
 
         heterogeneous_queue_basic_void_tests<
-          heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+          heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
-        heterogeneous_queue_basic_void_tests<
-          heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+        heterogeneous_queue_basic_void_tests<heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>();
     }
 } // namespace density_tests

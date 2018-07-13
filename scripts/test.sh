@@ -3,14 +3,16 @@ set -e
 
 RUN=$1
 BUILD_TYPE=$2
-TEST_DATA_STACK=$3
-GCOV=$4
-PARAMS=$5
-COMPILER_PARAMS=$6
+CPP_STD=$3
+TEST_DATA_STACK=$4
+GCOV=$5
+PARAMS=$6
+COMPILER_PARAMS=$7
 
 export TSAN_OPTIONS="halt_on_error=1 history_size=4"
 
 echo "RUN=$RUN, BUILD_TYPE=$BUILD_TYPE, TEST_DATA_STACK=$TEST_DATA_STACK, GCOV=$GCOV, PARAMS=$PARAMS, COMPILER_PARAMS=$COMPILER_PARAMS"
+echo "CPP_STD = $CPP_STD"
 
 MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
@@ -32,11 +34,10 @@ echo "MAKE_ARGS = $MAKE_ARGS"
 cd test
 mkdir build || true
 cd build
-cmake $MAKE_ARGS -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
+cmake $MAKE_ARGS -DCMAKE_CXX_STANDARD=$CPP_STD -DCOMPILER_EXTRA:STRING="$GCC_OPTIONS" ..
 make
 if [ "$RUN" = "TRUE" ]; then
-    sudo make install
-    density_test $PARAMS
+    $PWD/density_test $PARAMS
 fi
 
 cd ../..

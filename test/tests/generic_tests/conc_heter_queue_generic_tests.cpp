@@ -24,19 +24,19 @@ namespace density_tests
         if (i_flags && QueueTesterFlags::eUseTestAllocators)
         {
             detail::single_queue_generic_test<
-              conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<>>>(
+              conc_heter_queue<runtime_type<>, UnmovableFastTestAllocator<>>>(
               i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
             detail::single_queue_generic_test<
-              conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<>>>(
+              conc_heter_queue<TestRuntimeTime<>, DeepTestAllocator<>>>(
               i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
             detail::single_queue_generic_test<
-              conc_heter_queue<void, runtime_type<>, UnmovableFastTestAllocator<256>>>(
+              conc_heter_queue<runtime_type<>, UnmovableFastTestAllocator<256>>>(
               i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
 
             detail::single_queue_generic_test<
-              conc_heter_queue<void, TestRuntimeTime<>, DeepTestAllocator<256>>>(
+              conc_heter_queue<TestRuntimeTime<>, DeepTestAllocator<256>>>(
               i_flags, i_output, i_rand, i_element_count, concurrent_thread_counts);
         }
         else

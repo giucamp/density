@@ -40,24 +40,18 @@ namespace density
         };
 
         /** \internal Class template that implements put operations for spin-locking queues */
-        template <
-          typename COMMON_TYPE,
-          typename RUNTIME_TYPE,
-          typename ALLOCATOR_TYPE,
-          typename BUSY_WAIT_FUNC>
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename BUSY_WAIT_FUNC>
         class SpQueue_TailMultiple
             : public LFQueue_Base<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
-                SpQueue_TailMultiple<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC>>
+                SpQueue_TailMultiple<RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC>>
         {
           public:
             using Base = LFQueue_Base<
-              COMMON_TYPE,
               RUNTIME_TYPE,
               ALLOCATOR_TYPE,
-              SpQueue_TailMultiple<COMMON_TYPE, RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC>>;
+              SpQueue_TailMultiple<RUNTIME_TYPE, ALLOCATOR_TYPE, BUSY_WAIT_FUNC>>;
 
             using Base::get_end_control_block;
             using Base::min_alignment;

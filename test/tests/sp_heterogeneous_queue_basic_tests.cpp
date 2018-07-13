@@ -24,20 +24,14 @@ namespace density_tests
     struct SpQueueBasicTests
     {
         template <
-          typename COMMON_TYPE    = void,
-          typename RUNTIME_TYPE   = density::runtime_type<COMMON_TYPE>,
+          typename RUNTIME_TYPE   = density::runtime_type<>,
           typename ALLOCATOR_TYPE = density::default_allocator>
-        using SpHeterQueue = density::sp_heter_queue<
-          COMMON_TYPE,
-          RUNTIME_TYPE,
-          ALLOCATOR_TYPE,
-          PROD_CARDINALITY,
-          CONSUMER_CARDINALITY>;
+        using SpHeterQueue = density::
+          sp_heter_queue<RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
 
         static void spinlocking_heterogeneous_queue_lifetime_tests()
         {
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             {
                 default_allocator allocator;
@@ -67,8 +61,8 @@ namespace density_tests
                 DENSITY_TEST_ASSERT(other_queue.empty());
 
                 // test allocator getters
-                move_only_void_allocator                                     movable_alloc(5);
-                SpHeterQueue<void, runtime_type<>, move_only_void_allocator> move_only_queue(
+                move_only_void_allocator                               movable_alloc(5);
+                SpHeterQueue<runtime_type<>, move_only_void_allocator> move_only_queue(
                   std::move(movable_alloc));
 
                 auto allocator_copy = other_queue.get_allocator();
@@ -87,7 +81,6 @@ namespace density_tests
         /** Basic tests SpHeterQueue<void, ...> with a non-polymorphic base */
         template <typename QUEUE> static void spinlocking_heterogeneous_queue_basic_void_tests()
         {
-            static_assert(std::is_void<typename QUEUE::common_type>::value, "");
 
             {
                 QUEUE queue;
@@ -123,20 +116,16 @@ namespace density_tests
         /** Test SpHeterQueue with a non-polymorphic base */
         static void spinlocking_heterogeneous_queue_basic_nonpolymorphic_base_tests()
         {
-            using namespace density::type_features;
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             using RunTimeType = runtime_type<
-              NonPolymorphicBase,
-              feature_list<
-                default_construct,
-                move_construct,
-                copy_construct,
-                destroy,
-                size,
-                alignment>>;
-            SpHeterQueue<NonPolymorphicBase, RunTimeType> queue;
+              f_default_construct,
+              f_move_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment>;
+            SpHeterQueue<RunTimeType> queue;
 
             queue.push(NonPolymorphicBase());
             queue.template emplace<SingleDerivedNonPoly>();
@@ -169,20 +158,16 @@ namespace density_tests
         /** Test SpHeterQueue with a polymorphic base */
         static void spinlocking_heterogeneous_queue_basic_polymorphic_base_tests()
         {
-            using namespace density::type_features;
-            using density::default_allocator;
-            using density::runtime_type;
+            using namespace density;
 
             using RunTimeType = runtime_type<
-              PolymorphicBase,
-              feature_list<
-                default_construct,
-                move_construct,
-                copy_construct,
-                destroy,
-                size,
-                alignment>>;
-            SpHeterQueue<PolymorphicBase, RunTimeType> queue;
+              f_default_construct,
+              f_move_construct,
+              f_copy_construct,
+              f_destroy,
+              f_size,
+              f_alignment>;
+            SpHeterQueue<RunTimeType> queue;
 
             queue.push(PolymorphicBase());
             queue.template emplace<SingleDerived>();
@@ -229,10 +214,10 @@ namespace density_tests
             spinlocking_heterogeneous_queue_basic_void_tests<SpHeterQueue<>>();
 
             spinlocking_heterogeneous_queue_basic_void_tests<
-              SpHeterQueue<void, runtime_type<>, UnmovableFastTestAllocator<>>>();
+              SpHeterQueue<runtime_type<>, UnmovableFastTestAllocator<>>>();
 
             spinlocking_heterogeneous_queue_basic_void_tests<
-              SpHeterQueue<void, TestRuntimeTime<>, DeepTestAllocator<>>>();
+              SpHeterQueue<TestRuntimeTime<>, DeepTestAllocator<>>>();
         }
 
     }; // SpQueueBasicTests

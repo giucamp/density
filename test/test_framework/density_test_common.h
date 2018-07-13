@@ -5,6 +5,12 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+
+#ifdef _MSC_VER
+#define _ENABLE_EXTENDED_ALIGNED_STORAGE /* acknowledge change done in 2017 15.8 about overalignment 
+    that breaks the ABI compatibility */
+#endif
+
 #include <chrono>
 #include <cstdlib>
 #include <sstream>

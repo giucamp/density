@@ -10,18 +10,10 @@ namespace density
 {
     namespace detail
     {
-        /** \internal Class template that implements consume operations with a single producer */
-        template <
-          typename COMMON_TYPE,
-          typename RUNTIME_TYPE,
-          typename ALLOCATOR_TYPE,
-          typename QUEUE_TAIL>
-        class LFQueue_Head<
-          COMMON_TYPE,
-          RUNTIME_TYPE,
-          ALLOCATOR_TYPE,
-          concurrency_single,
-          QUEUE_TAIL> : protected QUEUE_TAIL
+        /** \internal Class template that implements consume operations with multiple producers */
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE, typename QUEUE_TAIL>
+        class LFQueue_Head<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, QUEUE_TAIL>
+            : protected QUEUE_TAIL
         {
           private:
             using Base = QUEUE_TAIL;
@@ -58,7 +50,9 @@ namespace density
                 swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
 
                 // swap the head
-                std::swap(i_first.m_head, i_second.m_head);
+                auto const tmp = i_second.m_head.load();
+                i_second.m_head.store(i_first.m_head.load());
+                i_first.m_head.store(tmp);
             }
 
             struct Consume
@@ -90,9 +84,25 @@ namespace density
                     return *this;
                 }
 
-                bool empty() const noexcept { return m_next_ptr <= LfQueue_AllFlags; }
+                bool empty() const noexcept
+                {
+                    if (m_next_ptr > LfQueue_AllFlags)
+                    {
+                        DENSITY_ASSERT_INTERNAL(
+                          m_next_ptr >= ALLOCATOR_TYPE::page_alignment, m_next_ptr);
+                    }
+                    return m_next_ptr <= LfQueue_AllFlags;
+                }
 
                 bool external() const noexcept { return (m_next_ptr & LfQueue_External) != 0; }
+
+                ~Consume()
+                {
+                    if (m_control != nullptr)
+                    {
+                        m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+                    }
+                }
 
                 void swap(Consume & i_other) noexcept
                 {
@@ -106,21 +116,42 @@ namespace density
                 {
                     DENSITY_ASSERT_ALIGNED(m_control, Base::s_alloc_granularity);
 
-                    DENSITY_ASSERT_ALIGNED(i_queue->m_head, Base::s_alloc_granularity);
+                    ControlBlock * head = i_queue->m_head.load();
+                    DENSITY_ASSERT_ALIGNED(head, Base::s_alloc_granularity);
 
-                    if (i_queue->m_head == nullptr)
+                    if (head == nullptr)
                     {
-                        i_queue->m_head = i_queue->Base::get_initial_page();
-                        if (i_queue->m_head == nullptr)
+                        head = init_head(i_queue);
+                        if (head == nullptr)
                         {
                             m_next_ptr = 0;
                             return true;
                         }
                     }
 
+                    while (!Base::same_page(m_control, head))
+                    {
+                        DENSITY_ASSERT_INTERNAL(m_control != head);
+
+                        i_queue->ALLOCATOR_TYPE::pin_page(head);
+
+                        if (m_control != nullptr)
+                        {
+                            i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+                        }
+
+                        m_control = head;
+
+                        head = i_queue->m_head.load();
+                        DENSITY_ASSERT_INTERNAL(
+                          address_is_aligned(head, Base::s_alloc_granularity));
+                    }
+
                     m_queue    = i_queue;
-                    m_control  = static_cast<ControlBlock *>(i_queue->m_head);
+                    m_control  = static_cast<ControlBlock *>(head);
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    DENSITY_ASSERT_INTERNAL(
+                      empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
                     return true;
                 }
 
@@ -150,11 +181,35 @@ namespace density
 
                 bool move_next() noexcept
                 {
+                    DENSITY_ASSERT_INTERNAL(!empty(), m_next_ptr);
+
                     DENSITY_ASSERT_INTERNAL(
                       address_is_aligned(m_control, Base::s_alloc_granularity));
 
-                    m_control  = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
+                    auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
+                    if (!Base::same_page(m_control, next))
+                    {
+                        DENSITY_ASSERT_INTERNAL(next != nullptr);
+                        m_queue->ALLOCATOR_TYPE::pin_page(next);
+
+                        auto const potentially_different_next_ptr =
+                          raw_atomic_load(&m_control->m_next, mem_relaxed);
+
+                        m_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+
+                        if (potentially_different_next_ptr == 0)
+                        {
+                            /* the control block has been zeroed in the meanwhile, we have to restart */
+                            m_control = next;
+                            begin_iteration(m_queue);
+                            return true;
+                        }
+                    }
+
+                    m_control  = next;
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    DENSITY_ASSERT_INTERNAL(
+                      empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
                     return true;
                 }
 
@@ -173,10 +228,25 @@ namespace density
                           (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
                           0)
                         {
-                            raw_atomic_store(
-                              &m_control->m_next, m_next_ptr | LfQueue_Busy, mem_relaxed);
-                            m_next_ptr |= LfQueue_Dead;
-                            break;
+                            /* We try to set the flag LfQueue_Busy on it */
+                            if (raw_atomic_compare_exchange_strong(
+                                  &m_control->m_next,
+                                  &m_next_ptr,
+                                  m_next_ptr | LfQueue_Busy,
+                                  mem_acquire,
+                                  mem_relaxed))
+                            {
+                                m_next_ptr |= LfQueue_Dead;
+                                break;
+                            }
+                            else
+                            {
+                                if (empty())
+                                {
+                                    begin_iteration(i_queue);
+                                    continue;
+                                }
+                            }
                         }
                         else if ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
                         {
@@ -196,6 +266,7 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(
                       raw_atomic_load(&m_control->m_next, mem_relaxed) ==
                       m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr, mem_release);
@@ -214,6 +285,7 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(
                       raw_atomic_load(&m_control->m_next, mem_relaxed) ==
                       m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_release);
@@ -231,13 +303,14 @@ namespace density
 
                 /** If m_head equals to m_control advance it to the next block, zeroing the memory.
                     This function assumes that the current block is dead. */
-                bool advance_head()
+                bool advance_head() const
                 {
                     auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
 
-                    if (m_queue->m_head == m_control)
+                    auto expected = m_control;
+                    if (m_queue->m_head.compare_exchange_strong(
+                          expected, next, mem_seq_cst, mem_relaxed))
                     {
-                        m_queue->m_head = next;
                         if (m_next_ptr & LfQueue_External)
                         {
                             auto const external_block = static_cast<ExternalBlock *>(
@@ -257,15 +330,12 @@ namespace density
 
                         static_assert(offsetof(ControlBlock, m_next) == 0, "");
 
-                        if (Base::s_deallocate_zeroed_pages)
-                        {
-                            raw_atomic_store(&m_control->m_next, uintptr_t(0));
-                        }
-
                         if (is_same_page)
                         {
                             if (Base::s_deallocate_zeroed_pages)
                             {
+                                raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
+
                                 auto const memset_dest =
                                   const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
@@ -276,6 +346,15 @@ namespace density
                         }
                         else
                         {
+                            /** the member m_next is zeroed even if s_deallocate_zeroed_pages is false, and before
+                                deallocating the page, to allow a safe-pinning to the other consumers.
+                                That is, if a consumers pins a page that is pointed by a m_next, and if after the pin
+                                the m_next is still not zeroed, it can be sure that the allocator will not reuse the
+                                page, even if it gets deallocated. If the consumer does not read again the member m_next
+                                after pinning, it can't be sure that the page is recycled between the read of m_next and 
+                                the pin. */
+                            raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
+
                             if (Base::s_deallocate_zeroed_pages)
                                 m_queue->ALLOCATOR_TYPE::deallocate_page_zeroed(m_control);
                             else
@@ -289,10 +368,29 @@ namespace density
                     }
                 }
 
+                /** Reads m_head. If it is still nullptr, tries to set it to the first page (if any) */
+                static ControlBlock * init_head(LFQueue_Head * i_queue) noexcept
+                {
+                    // control and next are both null - initialize the head
+                    auto head = i_queue->m_head.load();
+                    if (head == nullptr)
+                    {
+                        auto const initial_page = i_queue->Base::get_initial_page();
+
+                        /* If this CAS succeeds, we have to update our local variable head. Otherwise
+                            after the call we have the value of m_head stored by another concurrent consumer. */
+                        if (i_queue->m_head.compare_exchange_strong(head, initial_page))
+                            head = initial_page;
+                    }
+
+                    DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                    return head;
+                }
+
             }; // Consume
 
           private: // data members
-            alignas(destructive_interference_size) ControlBlock * m_head{nullptr};
+            alignas(destructive_interference_size) std::atomic<ControlBlock *> m_head{nullptr};
         };
 
     } // namespace detail

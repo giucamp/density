@@ -11,19 +11,16 @@ namespace density
     namespace detail
     {
         /** \internal Class template that implements put operations */
-        template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
         class LFQueue_Tail<
-          COMMON_TYPE,
           RUNTIME_TYPE,
           ALLOCATOR_TYPE,
           concurrency_multiple,
           consistency_sequential>
             : public LFQueue_Base<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
                 LFQueue_Tail<
-                  COMMON_TYPE,
                   RUNTIME_TYPE,
                   ALLOCATOR_TYPE,
                   concurrency_multiple,
@@ -31,11 +28,9 @@ namespace density
         {
           public:
             using Base = LFQueue_Base<
-              COMMON_TYPE,
               RUNTIME_TYPE,
               ALLOCATOR_TYPE,
               LFQueue_Tail<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
                 concurrency_multiple,

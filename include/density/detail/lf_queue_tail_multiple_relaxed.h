@@ -11,19 +11,12 @@ namespace density
     namespace detail
     {
         /** \internal Partial specialization of LFQueue_Tail for multi-threaded producers, with no sequential consistency. */
-        template <typename COMMON_TYPE, typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
-        class LFQueue_Tail<
-          COMMON_TYPE,
-          RUNTIME_TYPE,
-          ALLOCATOR_TYPE,
-          concurrency_multiple,
-          consistency_relaxed>
+        template <typename RUNTIME_TYPE, typename ALLOCATOR_TYPE>
+        class LFQueue_Tail<RUNTIME_TYPE, ALLOCATOR_TYPE, concurrency_multiple, consistency_relaxed>
             : public LFQueue_Base<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
                 LFQueue_Tail<
-                  COMMON_TYPE,
                   RUNTIME_TYPE,
                   ALLOCATOR_TYPE,
                   concurrency_multiple,
@@ -31,11 +24,9 @@ namespace density
         {
           public:
             using Base = LFQueue_Base<
-              COMMON_TYPE,
               RUNTIME_TYPE,
               ALLOCATOR_TYPE,
               LFQueue_Tail<
-                COMMON_TYPE,
                 RUNTIME_TYPE,
                 ALLOCATOR_TYPE,
                 concurrency_multiple,
