@@ -18,10 +18,11 @@ echo "CPP_STD = $CPP_STD"
 export TSAN_OPTIONS="halt_on_error=1 history_size=4"
 
 # GCC_OPTIONS
+GCC_OPTIONS=""
 if [ "$GCOV" == "gcov-7" ]; then
     GCC_OPTIONS+=" -fprofile-arcs -ftest-coverage"
 fi
-GCC_OPTIONS+="$COMPILER_PARAMS"
+GCC_OPTIONS+=$COMPILER_PARAMS
 echo "GCC_OPTIONS = $GCC_OPTIONS"
 
 # MAKE_ARGS
