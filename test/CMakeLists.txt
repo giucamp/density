@@ -2,43 +2,43 @@ cmake_minimum_required (VERSION 3.1)
 project (density_test)
 
 OPTION(DENSITY_DEBUG "Enable debug checks" OFF)
-OPTION(ENABLE_TEST_DATA_STACK "Enable test data stack" OFF)
+OPTION(TEST_DATA_STACK "Enable test data stack" OFF)
+OPTION(THREAD_SANITIZER "Enable thread sanitizer" OFF)
+OPTION(CODE_COVERAGE "Enable code coverage" OFF)
 
 if(NOT "${CMAKE_CXX_STANDARD}")
   set(CMAKE_CXX_STANDARD 11)
 endif()
 
+MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
+MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
 MESSAGE("c++ standard = ${CMAKE_CXX_STANDARD}")
 
 IF(DENSITY_DEBUG)
     MESSAGE("DENSITY_DEBUG is ON")
     ADD_DEFINITIONS(-DDENSITY_DEBUG)
     ADD_DEFINITIONS(-DDENSITY_DEBUG_INTERNAL)
-ENDIF(DENSITY_DEBUG)
+ENDIF()
 
-IF(ENABLE_TEST_DATA_STACK)
-    MESSAGE("ENABLE_TEST_DATA_STACK is ON")
+IF(TEST_DATA_STACK)
+    MESSAGE("TEST_DATA_STACK is ON")
     ADD_DEFINITIONS(-DDENSITY_USER_DATA_STACK)
-ENDIF(ENABLE_TEST_DATA_STACK)
+ENDIF()
 
 include_directories(".")
 include_directories("../include")
 
 SET(COMPILER_EXTRA "" CACHE STRING "additional compiler options")
 
-# the compiler used for C++ files 
-MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
-MESSAGE( STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID} )
-
 IF(DEFINED ${CMAKE_BUILD_TYPE})
     IF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
         message("debug mode")
         ADD_DEFINITIONS(-DDENSITY_DEBUG)
         ADD_DEFINITIONS(-DDENSITY_DEBUG_INTERNAL)
-    ELSE(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    ELSE()
         message("release mode")
-    ENDIF(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
+    ENDIF()
+ENDIF()
 
 add_executable(density_test
 	../include/density/detail/function_runtime_type.h
@@ -111,13 +111,24 @@ add_executable(density_test
     test_settings.cpp
 	main.cpp )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+MESSAGE( STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 	MESSAGE( STATUS "will compile with clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMPILER_EXTRA}")
+	IF(THREAD_SANITIZER)
+		MESSAGE( STATUS "THREAD SANITIZER IS ON")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+	ENDIF()
 	TARGET_LINK_LIBRARIES(density_test pthread)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	MESSAGE( STATUS "will compile with g++")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic ${COMPILER_EXTRA}")
+	IF(THREAD_SANITIZER)
+		MESSAGE( STATUS "THREAD SANITIZER IS ON")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -fuse-ld=gold")
+	ENDIF()
+	IF(CODE_COVERAGE)
+		MESSAGE( STATUS "CODE COVERAGE IS ON")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+	ENDIF()
 	TARGET_LINK_LIBRARIES(density_test pthread)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	MESSAGE( STATUS "will compile with msvc")
