@@ -33,9 +33,18 @@ elif [ "$1" == "clang4" ]; then
     TEST_RUN=TRUE
     BENCH_RUN=TRUE
 
+elif [ "$1" == "clang5" ]; then
+
+    # clang5
+    export CXX=clang++-5.0
+    MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
+    PARAMS="-queue_tests_cardinality:1000"
+    TEST_RUN=TRUE
+    BENCH_RUN=TRUE
+
 elif [ "$1" == "clang5_Debug" ]; then
 
-    #CXX=clang5_Debug
+    # clang5_Debug
     export CXX=clang++-5.0
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Debug"
     MAKE_ARGS+=" -DDENSITY_DEBUG:BOOL=ON"
@@ -96,7 +105,7 @@ export TSAN_OPTIONS="halt_on_error=1 history_size=4"
 cd test
 mkdir build || true
 cd build
-cmake $MAKE_ARGS  ..
+cmake $MAKE_ARGS  ../..
 make
 
 # run test
@@ -115,8 +124,7 @@ fi
 if [ "$BENCH_RUN" = "TRUE" ]; then
 
     DIR=$(dirname "$0")
-    cd "$DIR"
-    cd ../bench
+    cd "$DIR/../bench"
     mkdir build || true
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..  
