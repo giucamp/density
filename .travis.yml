@@ -29,7 +29,6 @@ matrix:
       before_install:
          - pip install --user cpp-coveralls
          - chmod +x scripts/test.sh
-         - chmod +x scripts/bench.sh
          - eval "${MATRIX_EVAL}"
 
     # clang4
@@ -86,7 +85,7 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="COONFIG=Gcc7_Debug_cpp14"
+        - MATRIX_EVAL="CONFIG=Gcc7_Debug_cpp14"
 
     # Gcc7_Debug_cpp17
     - os: linux
@@ -102,7 +101,6 @@ matrix:
 
 before_install:
     - chmod +x scripts/test.sh
-    - chmod +x scripts/bench.sh
     - eval "${MATRIX_EVAL}"
 
 script:
