@@ -114,7 +114,7 @@ namespace density
         Concurrently data structures has been tested on x86-x64, but not on architectures with weak
         memory ordering. If you want to contribute to density, running the tests on other
         architectures, you can change this constant. */
-    constexpr bool enable_relaxed_atomics = false;
+    constexpr bool enable_relaxed_atomics = true;
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
 
