@@ -83,20 +83,40 @@ namespace density
             /** Allocates a new page from the system. This function never throws.
                 @param i_progress_guarantee Progress guarantee. If it is progress_blocking, a failure indicates an out of memory.
                 @return the allocated page, or nullptr in case of failure. */
-            void * try_allocate_page(progress_guarantee const i_progress_guarantee) noexcept
+            void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
             {
                 Region * unused_region = nullptr;
                 auto     curr_region   = m_curr_region.load(std::memory_order_acquire);
 
-                // Regions that enter the list are destroyed only at destruction time, so the following iteration is always safe
+                // Regions that enter the list are destroyed only at destruction time, so deferencing curr_region is always safe
                 allocate_result result;
-                while (result = allocate_page_from_region(i_progress_guarantee, curr_region),
-                       result.result == allocate_result::nomem)
+
+                bool done = false;
+                while (!done)
                 {
-                    curr_region =
-                      get_next_region(i_progress_guarantee, curr_region, &unused_region);
-                    if (curr_region == nullptr)
+
+                    // this call may fail for out of space or for contention
+                    result = allocate_page_from_region(i_progress_guarantee, curr_region);
+
+                    switch (result.result)
+                    {
+                    // success or failure for contention, exit
+                    case allocate_result::retry:
+                    case allocate_result::success:
+                        done = true;
                         break;
+
+                    // space in the region exhausted, allocate another one
+                    case allocate_result::nomem:
+                        curr_region =
+                          get_next_region(i_progress_guarantee, curr_region, &unused_region);
+                        done = curr_region == nullptr;
+                        break;
+
+                    // unexpected result
+                    case allocate_result::notset:
+                        DENSITY_ASSERT_INTERNAL(false);
+                    }
                 }
 
                 if (unused_region != nullptr)
@@ -174,7 +194,10 @@ namespace density
 
                 allocate_result() noexcept : address(nullptr), result(notset) {}
 
-                allocate_result(void * i_address) noexcept : address(i_address), result(success) {}
+                allocate_result(void * i_address) noexcept : address(i_address), result(success)
+                {
+                    DENSITY_ASSERT_INTERNAL(i_address != nullptr);
+                }
 
                 allocate_result(result_t i_result) noexcept : address(nullptr), result(i_result) {}
             };
@@ -261,7 +284,8 @@ namespace density
 
             /** Allocates a page in the specified region. This function is lock-free.
                 The case of successful allocation is the fast path. */
-            static allocate_result allocate_page_from_region_lockfree(Region * const i_region) noexcept
+            static allocate_result
+              allocate_page_from_region_lockfree(Region * const i_region) noexcept
             {
                 /* First we blindly allocate the page, then we detect the overflow of m_curr. This is an
                     optimistic method. To do: compare performances with a load-compare-exchange method.
