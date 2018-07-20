@@ -219,7 +219,7 @@ namespace density_tests
                 else
                 {
                     // allow consumes only to the first thread
-                    if (thread_index == 1)
+                    if (thread_index == m_thread_count - 1)
                         thread_consume_count = i_target_put_count;
                 }
 
