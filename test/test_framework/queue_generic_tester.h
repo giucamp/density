@@ -270,7 +270,7 @@ namespace density_tests
                     {
                         double const enqueued_ratio =
                           static_cast<double>(produced - consumed) / static_cast<double>(consumed);
-                        too_many_enqueued = enqueued_ratio > 1.2;
+                        too_many_enqueued = enqueued_ratio > 0.1;
                     }
                     feedback.m_too_many_enqueued.store(
                       too_many_enqueued, std::memory_order_relaxed);
