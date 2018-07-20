@@ -337,7 +337,7 @@ namespace density
                                 raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
 
                                 auto const memset_dest =
-                                  const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
+                                  const_cast<uintptr_t *>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
                                 DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
                                 DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));

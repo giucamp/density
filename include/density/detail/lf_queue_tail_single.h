@@ -160,7 +160,10 @@ namespace density
                         /* to investigate: this may probably be a non-atomic operation, because consumers can only
                             read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
                             has reported it has a data race. Furthermore atomicity in this case should have no 
-                            consequences on the generated code. */
+                            consequences on the generated code. 
+                        
+                            todo: the std::atomic_thread_fence in the page_allocator should be enough
+                        */
 
                         /* setup the new control block. Here we use release ordering so that consumers
                             acquiring this control block can see the previous write. */

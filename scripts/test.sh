@@ -110,7 +110,7 @@ make
 
 # run test
 if [ "$TEST_RUN" = "TRUE" ]; then
-    $PWD/density_test "$PARAMS"
+    $PWD/density_test $PARAMS
 fi
 
 # run coveralls

@@ -174,6 +174,11 @@ namespace density
                         }
                     }
                 }
+
+                // flush any pending write
+                if (enable_relaxed_atomics)
+                    std::atomic_thread_fence(std::memory_order_release);
+
                 return address_lower_align(new_page, page_alignment);
             }
 
