@@ -173,10 +173,11 @@ namespace density_tests
             /* prepare the array of threads. The initialization of the random generator
                 may take some time, so we do it before starting the threads. */
             aligned_vector<ThreadData> threads;
+            FeedBack                   feedback;
             threads.reserve(m_thread_count);
             for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
             {
-                threads.emplace_back(*this, queue, i_random, i_flags);
+                threads.emplace_back(*this, &feedback, queue, i_random, i_flags);
             }
 
             auto const num_of_processors = get_num_of_processors();
@@ -263,6 +264,16 @@ namespace density_tests
                     DENSITY_TEST_ASSERT(
                       consumed <= i_target_put_count && produced <= i_target_put_count);
                     complete = consumed >= i_target_put_count && produced >= i_target_put_count;
+
+                    bool too_many_enqueued = false;
+                    if (produced > consumed)
+                    {
+                        double const enqueued_ratio =
+                          static_cast<double>(produced - consumed) / static_cast<double>(consumed);
+                        too_many_enqueued = enqueued_ratio > 1.2;
+                    }
+                    feedback.m_too_many_enqueued.store(
+                      too_many_enqueued, std::memory_order_relaxed);
 
                     if (i_flags && QueueTesterFlags::ePrintProgress)
                     {
@@ -373,16 +384,23 @@ namespace density_tests
             }
         };
 
+        struct FeedBack
+        {
+            std::atomic<bool> m_too_many_enqueued{false};
+        };
+
         class alignas(density::destructive_interference_size) ThreadData
         {
           public:
             ThreadData(
               const QueueGenericTester & i_parent_tester,
+              const FeedBack *           i_feedback,
               QUEUE &                    i_queue,
               EasyRandom &               i_main_random,
               QueueTesterFlags           i_flags)
                 : m_queue(i_queue), m_parent_tester(i_parent_tester), m_flags(i_flags),
-                  m_final_stats(i_parent_tester.m_put_cases.size()), m_random(i_main_random.fork())
+                  m_final_stats(i_parent_tester.m_put_cases.size()), m_random(i_main_random.fork()),
+                  m_feedback(i_feedback)
             {
                 m_incremental_stats = std::unique_ptr<IncrementalStats>(new IncrementalStats);
             }
@@ -427,9 +445,8 @@ namespace density_tests
             FinalStats                        m_final_stats;
             std::unique_ptr<IncrementalStats> m_incremental_stats;
             EasyRandom                        m_random;
-
-            size_t m_put_committed      = 0;
-            size_t m_consumes_committed = 0;
+            size_t                            m_put_committed      = 0;
+            size_t                            m_consumes_committed = 0;
 
             struct ReentrantPut
             {
@@ -458,6 +475,7 @@ namespace density_tests
 
             std::vector<ReentrantPut>     m_pending_reentrant_puts;
             std::vector<ReentrantConsume> m_pending_reentrant_consumes;
+            const FeedBack * const        m_feedback;
 
           private:
             void thread_procedure(
@@ -470,6 +488,8 @@ namespace density_tests
                 ThreadAllocRandomFailures scoped_alloc_failures(m_random, 0.03);
 
                 m_incremental_stats->m_thread_is_active.store(true);
+
+                bool too_many_enqueued = false;
 
                 for (size_t cycles = 0; m_put_committed < i_target_put_count ||
                                         m_consumes_committed < i_target_consume_count;
@@ -495,13 +515,28 @@ namespace density_tests
                         }
                     }
 
-                    if (m_put_committed < i_target_put_count && m_random.get_bool())
+                    bool const can_produce =
+                      m_put_committed < i_target_put_count && !too_many_enqueued;
+                    bool const can_consume = m_consumes_committed < i_target_consume_count;
+
+                    if (can_produce && can_consume)
+                    {
+                        if (m_random.get_bool())
+                            put_one();
+                        else
+                            try_consume_one();
+                    }
+                    else if (can_produce)
                     {
                         put_one();
                     }
-                    else if (m_consumes_committed < i_target_consume_count)
+                    else if (can_consume)
                     {
                         try_consume_one();
+                    }
+                    else
+                    {
+                        std::this_thread::sleep_for(std::chrono::microseconds(100));
                     }
 
                     // update the progress periodically
@@ -511,6 +546,8 @@ namespace density_tests
                           m_put_committed, std::memory_order_relaxed);
                         m_incremental_stats->m_consumed.store(
                           m_consumes_committed, std::memory_order_relaxed);
+                        too_many_enqueued =
+                          m_feedback->m_too_many_enqueued.load(std::memory_order_relaxed);
                     }
                 }
 
