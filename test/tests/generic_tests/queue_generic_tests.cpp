@@ -64,11 +64,11 @@ namespace density_tests
             cpu_count = 1;
 
 #if defined(__GNUC__) && !defined(__clang__)
-        /* on travis gcc build take more time, so we use lees threads. 
+        /* on travis gcc builds take more time, so we use lees threads. 
                 to do: expose the number of threads with a commandline argument */
-        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 3)};
+        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 2)};
 #else
-        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 6)};
+        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 4)};
 #endif
 
         if (i_settings.should_run("queue"))

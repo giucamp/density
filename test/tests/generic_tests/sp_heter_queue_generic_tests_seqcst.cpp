@@ -24,7 +24,7 @@ namespace density_tests
         if (cpu_count == 0)
             cpu_count = 1;
 
-        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 3)};
+        std::vector<size_t> const nonblocking_thread_counts{static_cast<size_t>(cpu_count * 2)};
 
         constexpr auto mult   = density::concurrency_multiple;
         constexpr auto single = density::concurrency_single;
