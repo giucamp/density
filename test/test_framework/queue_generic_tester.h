@@ -131,8 +131,8 @@ namespace density_tests
                 threads.emplace_back(*this, &feedback, queue, i_random, i_flags);
             }
 
-            auto const num_of_processors = get_num_of_processors();
-            bool const reserve_core1_to_main =
+            uint64_t const num_of_processors = get_num_of_processors();
+            bool const     reserve_core1_to_main =
               (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
 
             for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
@@ -155,9 +155,16 @@ namespace density_tests
                 }
                 else
                 {
-                    // allow puts only to the first thread
+                    // allow puts only to the first thread, and reserve the first core to it
                     if (thread_index == 0)
+                    {
                         thread_put_count = i_target_put_count;
+                        thread_affinity  = 1;
+                    }
+                    else
+                    {
+                        thread_affinity ^= 1;
+                    }
                 }
 
                 if (concurrent_consumes)
@@ -169,20 +176,20 @@ namespace density_tests
                 }
                 else
                 {
-                    // allow consumes only to the first thread
+                    // allow consumes only to the first thread, and reserve the last core to it
                     if (thread_index == m_thread_count - 1)
+                    {
                         thread_consume_count = i_target_put_count;
+                        thread_affinity      = uint64_t(1) << (num_of_processors - 1);
+                    }
+                    else
+                    {
+                        thread_affinity ^= uint64_t(1) << (num_of_processors - 1);
+                    }
                 }
 
-                if (m_thread_count > 2 && concurrent_puts != concurrent_consumes)
-                {
-                    /* there are many threads, but the first thread has much more work. We reserve
-                        the first cpu to it, to reduce the starvation of the other threads. */
-                    if (thread_index == 0)
-                        thread_affinity = 1;
-                    else
-                        thread_affinity ^= 1;
-                }
+                if (num_of_processors <= 1)
+                    thread_affinity = std::numeric_limits<uint64_t>::max();
 
                 threads[thread_index].start(
                   thread_index, thread_put_count, thread_consume_count, thread_affinity);
@@ -213,17 +220,17 @@ namespace density_tests
                     {
                         double const enqueued_ratio =
                           static_cast<double>(produced - consumed) / static_cast<double>(consumed);
-                        too_many_enqueued = enqueued_ratio > 0.1;
+                        too_many_enqueued = enqueued_ratio > 0.2;
                     }
                     feedback.m_too_many_enqueued.store(
                       too_many_enqueued, std::memory_order_relaxed);
 
                     if (i_flags && QueueTesterFlags::ePrintProgress)
                     {
+                        auto const enqueued = produced >= consumed ? (produced - consumed) : 0;
                         progress.set_progress(consumed);
                         line << "Active threads: " << active_threads << ", Consumed: " << consumed
-                             << " (" << progress << "), enqueued: " << produced - consumed
-                             << std::endl;
+                             << " (" << progress << "), enqueued: " << enqueued << std::endl;
                     }
 
                     if (!complete)
