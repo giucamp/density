@@ -152,6 +152,24 @@ DENSITY_NO_INLINE void sandbox()
 
 void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_t i_random_seed)
 {
+    {
+        using namespace density;
+        using namespace density::detail;
+
+        // test conversion from proress_guarantee to LfQueue_ProgressGuarantee
+        static_assert(ToLfGuarantee(progress_blocking, true) == LfQueue_Throwing, "");
+        static_assert(ToLfGuarantee(progress_blocking, false) == LfQueue_Blocking, "");
+        static_assert(ToLfGuarantee(progress_obstruction_free, false) == LfQueue_LockFree, "");
+        static_assert(ToLfGuarantee(progress_lock_free, false) == LfQueue_LockFree, "");
+        static_assert(ToLfGuarantee(progress_wait_free, false) == LfQueue_WaitFree, "");
+
+        // test conversion from LfQueue_ProgressGuarantee to proress_guarantee
+        static_assert(ToDenGuarantee(LfQueue_Throwing) == progress_blocking, "");
+        static_assert(ToDenGuarantee(LfQueue_Blocking) == progress_blocking, "");
+        static_assert(ToDenGuarantee(LfQueue_LockFree) == progress_lock_free, "");
+        static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
+    }
+
     auto const prev_stream_flags = i_ostream.setf(std::ios_base::boolalpha);
 
     using namespace density_tests;

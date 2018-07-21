@@ -107,55 +107,6 @@ namespace density_tests
       private:
         class ThreadData;
 
-        struct SuspenderData
-        {
-            SuspenderData(EasyRandom & i_source_random, aligned_vector<ThreadData> & i_threads)
-                : m_easy_random(i_source_random.fork()), m_threads(i_threads)
-            {
-            }
-
-            EasyRandom                   m_easy_random;
-            aligned_vector<ThreadData> & m_threads;
-            std::atomic<bool>            m_exit{false};
-            std::atomic<size_t>          m_suspended_count{0};
-        };
-
-        static void suspender_proc(SuspenderData & i_data)
-        {
-            i_data.m_suspended_count.store(0, std::memory_order_relaxed);
-            auto const                 threads      = i_data.m_threads.data();
-            auto const                 thread_count = i_data.m_threads.size();
-            std::vector<unsigned char> supended_vect(thread_count, false);
-            auto const                 supended = supended_vect.data();
-            while (!i_data.m_exit.load())
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-                size_t thread_index =
-                  i_data.m_easy_random.template get_int<size_t>(thread_count - 1);
-                if (supended[thread_index])
-                {
-                    i_data.m_suspended_count.fetch_sub(1, std::memory_order_relaxed);
-                    threads[thread_index].resume();
-                    supended[thread_index] = false;
-                }
-                else
-                {
-                    supended[thread_index] = threads[thread_index].suspend();
-                    if (supended[thread_index])
-                        i_data.m_suspended_count.fetch_add(1, std::memory_order_relaxed);
-                }
-            }
-
-            for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
-            {
-                if (supended[thread_index])
-                {
-                    threads[thread_index].resume();
-                }
-            }
-        }
-
         void
           run_impl(QueueTesterFlags i_flags, EasyRandom & i_random, size_t i_target_put_count) const
         {
@@ -237,14 +188,6 @@ namespace density_tests
                   thread_index, thread_put_count, thread_consume_count, thread_affinity);
             }
 
-            std::thread   supender_thread;
-            SuspenderData supender_data(i_random, threads);
-            if (i_flags && QueueTesterFlags::eSuspender)
-            {
-                supender_thread = std::thread([&supender_data] { suspender_proc(supender_data); });
-                set_thread_name(supender_thread, "suspender");
-            }
-
             // wait for the test to be completed
             {
                 LineUpdaterStreamAdapter line(m_output);
@@ -278,10 +221,9 @@ namespace density_tests
                     if (i_flags && QueueTesterFlags::ePrintProgress)
                     {
                         progress.set_progress(consumed);
-                        line << "Active(susp) threads: " << active_threads << "("
-                             << supender_data.m_suspended_count.load(std::memory_order_relaxed)
-                             << ") Consumed: " << consumed << " (" << progress
-                             << "), enqueued: " << produced - consumed << std::endl;
+                        line << "Active threads: " << active_threads << ", Consumed: " << consumed
+                             << " (" << progress << "), enqueued: " << produced - consumed
+                             << std::endl;
                     }
 
                     if (!complete)
@@ -289,12 +231,6 @@ namespace density_tests
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     }
                 }
-            }
-
-            if (supender_thread.joinable())
-            {
-                supender_data.m_exit.store(true);
-                supender_thread.join();
             }
 
             for (auto & thread : threads)
@@ -433,10 +369,6 @@ namespace density_tests
 
             const FinalStats & final_stats() const { return m_final_stats; }
 
-            bool suspend() { return supend_thread(m_thread); }
-
-            void resume() { resume_thread(m_thread); }
-
           private: // internal data
             QUEUE &                           m_queue;
             const QueueGenericTester &        m_parent_tester;
@@ -536,7 +468,7 @@ namespace density_tests
                     }
                     else
                     {
-                        std::this_thread::sleep_for(std::chrono::microseconds(100));
+                        std::this_thread::yield();
                     }
 
                     // update the progress periodically
