@@ -112,7 +112,7 @@ namespace density
 
                     m_queue    = i_queue;
                     m_control  = static_cast<ControlBlock *>(i_queue->m_head);
-                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_acquire);
                     return true;
                 }
 
@@ -146,7 +146,7 @@ namespace density
                       address_is_aligned(m_control, Base::s_alloc_granularity));
 
                     m_control  = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
-                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_acquire);
                     return true;
                 }
 
