@@ -19,7 +19,7 @@ namespace density
             PageFooter * m_next_page{nullptr};
 
             /* Number of times the page has been pinned. The allocator can't modify the content
-                of a page while the pin count is greater than zero. */
+                of a deallocated page while the pin count is greater than zero. */
             std::atomic<uintptr_t> m_pin_count{0};
         };
 

@@ -41,7 +41,7 @@ namespace density
                 \pre The behavior is undefined if either:
                     - the argument is null
                     - the argument is already present in any stack */
-            bool try_push(PageFooter * i_page) noexcept
+            DENSITY_NODISCARD bool try_push(PageFooter * i_page) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(i_page != nullptr);
 
@@ -69,7 +69,7 @@ namespace density
                 \pre The behavior is undefined if either:
                     - the argument is empty
                     - any page in the argument is already present in any stack */
-            bool try_push(PageStack & i_stack) noexcept
+            DENSITY_NODISCARD bool try_push(PageStack & i_stack) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(!i_stack.empty());
 

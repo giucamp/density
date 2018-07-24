@@ -27,7 +27,7 @@ namespace density
         Blocks that are very large according to a some implementation-defined criteria, are handled with legacy heap allocations.
 
         A living block is a block allocated, eventually reallocated, but not yet deallocated.
-        Reallocating or deallocating a block which is not the most recently allocated living block also causes undefined behavior.
+        Reallocating or deallocating a block which is not the most recently allocated living block causes undefined behavior.
         Instances of lifo_allocator are not interchangeable: blocks allocated by an instance can't be deallocated with another
         instance. All living blocks must be deallocated before the allocator is destroyed, otherwise the behavior is undefined.
 
@@ -515,9 +515,7 @@ namespace density
 
           protected:
             TYPE * const m_elements;
-            size_t const
-              m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
-                                 was a bad choice, because usually it indicates the number of bytes. */
+            size_t const m_size; /**< number of elements */
         };
 
         template <typename TYPE> class LifoArrayImpl<TYPE, true>
@@ -553,11 +551,9 @@ namespace density
             }
 
           protected:
-            void * m_block;
-            TYPE * m_elements;
-            size_t const
-              m_size; /**< number of elements. Note: the term 'size' for the number of elements in the container
-                                 was a bad choice, because usually it indicates the number of bytes. */
+            void *       m_block;
+            TYPE *       m_elements;
+            size_t const m_size; /**< number of elements */
         };
     } // namespace detail
 
@@ -625,7 +621,7 @@ namespace density
                 return *this;
             }
 
-            iterator operator++(int) noexcept
+            iterator operator++(int)noexcept
             {
                 iterator copy(*this);
                          operator++();
@@ -644,7 +640,7 @@ namespace density
                 return *this;
             }
 
-            iterator operator--(int) noexcept
+            iterator operator--(int)noexcept
             {
                 iterator copy(*this);
                          operator++();
@@ -726,7 +722,7 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator++(int) noexcept
+            const_iterator operator++(int)noexcept
             {
                 const_iterator copy(*this);
                                operator++();
@@ -745,7 +741,7 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator--(int) noexcept
+            const_iterator operator--(int)noexcept
             {
                 const_iterator copy(*this);
                                operator++();
