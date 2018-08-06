@@ -319,12 +319,6 @@ int run(int argc, char ** argv)
     out << "DENSITY_USER_DATA_STACK: not defined" << std::endl;
 #endif
 
-#if defined(DENSITY_LOCKFREE_DEBUG)
-    out << "DENSITY_LOCKFREE_DEBUG: defined" << std::endl;
-#else
-    out << "DENSITY_LOCKFREE_DEBUG: not defined" << std::endl;
-#endif
-
 #if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction sa
     {
