@@ -63,16 +63,8 @@ namespace density
             static constexpr size_t region_min_size_bytes =
               detail::size_min(region_default_size_bytes, 8 * page_alignment_and_size);
 
-            SystemPageManager() noexcept
-            {
-/** The first region is always empty, so it will be skipped soon */
-#if defined(__GLIBCXX__)
-                // some versions of libstdc++ lack std::atomic_init
-                m_curr_region.store(&m_first_region);
-#else
-                std::atomic_init(&m_curr_region, &m_first_region);
-#endif
-            }
+            // The first region is always empty, so it will be skipped soon
+            constexpr SystemPageManager() noexcept : m_curr_region(&m_first_region) {}
 
             ~SystemPageManager()
             {
@@ -91,20 +83,39 @@ namespace density
             /** Allocates a new page from the system. This function never throws.
                 @param i_progress_guarantee Progress guarantee. If it is progress_blocking, a failure indicates an out of memory.
                 @return the allocated page, or nullptr in case of failure. */
-            void * try_allocate_page(progress_guarantee const i_progress_guarantee) noexcept
+            void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
             {
                 Region * unused_region = nullptr;
                 auto     curr_region   = m_curr_region.load(std::memory_order_acquire);
 
-                // Regions that enter the list are destroyed only at destruction time, so the following iteration is always safe
-                void * new_page;
-                while ((new_page = allocate_page_from_region(i_progress_guarantee, curr_region)) ==
-                       nullptr)
+                // Regions that enter the list are destroyed only at destruction time, so deferencing curr_region is always safe
+                allocate_result result;
+
+                bool done = false;
+                while (!done)
                 {
-                    curr_region =
-                      get_next_region(i_progress_guarantee, curr_region, &unused_region);
-                    if (curr_region == nullptr)
+                    // this call may fail for out of space or for contention
+                    result = allocate_page_from_region(i_progress_guarantee, curr_region);
+
+                    switch (result.result)
+                    {
+                    // success or failure for contention, exit
+                    case allocate_result::retry:
+                    case allocate_result::success:
+                        done = true;
                         break;
+
+                    // space in the region exhausted, allocate another one
+                    case allocate_result::nomem:
+                        curr_region =
+                          get_next_region(i_progress_guarantee, curr_region, &unused_region);
+                        done = curr_region == nullptr;
+                        break;
+
+                    // unexpected result
+                    case allocate_result::notset:
+                        DENSITY_ASSERT_INTERNAL(false);
+                    }
                 }
 
                 if (unused_region != nullptr)
@@ -112,7 +123,7 @@ namespace density
                     delete_region(unused_region);
                 }
 
-                return new_page;
+                return result.address;
             }
 
             /** Tries to reserve the specified memory space as total memory.
@@ -162,10 +173,101 @@ namespace density
                 /** Sum of the sizes (in bytes) of all the memory regions in the list up to this one */
                 uintptr_t m_cumulative_available_memory{0};
 
-                Region() noexcept {}
+                constexpr Region() noexcept {}
                 Region(const Region &) = delete;
                 Region & operator=(const Region &) = delete;
             };
+
+            struct allocate_result
+            {
+                /** Result of the allocation */
+                void * address;
+
+                enum result_t
+                {
+                    success, /**< allocation succesfull (implies address != nullptr) */
+                    retry, /**< allocation failed because of contention, the progress guarantee could not be respacted 
+                                (implies address == nullptr) */
+                    nomem, /**< allocation failed because no space was available (implies address == nullptr) */
+                    notset /**< empty instance (implies address == nullptr) */
+                } result;
+
+                allocate_result() noexcept : address(nullptr), result(notset) {}
+
+                allocate_result(void * i_address) noexcept : address(i_address), result(success)
+                {
+                    DENSITY_ASSERT_INTERNAL(i_address != nullptr);
+                }
+
+                allocate_result(result_t i_result) noexcept : address(nullptr), result(i_result) {}
+            };
+
+            static allocate_result
+              allocate_page_from_region(progress_guarantee i_progress_guarantee, Region * i_region)
+            {
+                if (i_progress_guarantee != progress_wait_free)
+                    return allocate_page_from_region_lockfree(i_region);
+                else
+                    return allocate_page_from_region_waitfree(i_region);
+            }
+
+            /** Allocates a page in the specified region. This function is lock-free.
+                The case of successful allocation is the fast path. */
+            static allocate_result
+              allocate_page_from_region_lockfree(Region * const i_region) noexcept
+            {
+                /* First we blindly allocate the page, then we detect the overflow of m_curr. This is an
+                    optimistic method. To do: compare performances with a load-compare-exchange method.
+                    We use acquire because any write (done by the os or whatever) must not be moved
+                    past this fetch_add. */
+                auto page = i_region->m_curr.fetch_add(
+                  PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_acquire);
+
+                /* We want to exploit the full range of uintptr_t to detect overflows of m_curr, so we
+                    check also the wraparound of m_curr until m_start.
+                    The detection of the overflow will fail if the number of threads trying allocate_from_region_optimistic
+                    is in the order of (MAX(uintptr_t) - region-size) / PAGE_CAPACITY_AND_ALIGNMENT. We consider
+                    this case very improbable. */
+                if (DENSITY_LIKELY(page >= i_region->m_start && page < i_region->m_end))
+                {
+                    return allocate_result{reinterpret_cast<void *>(page)};
+                }
+                else
+                {
+                    i_region->m_curr.fetch_sub(
+                      PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
+                    return allocate_result{allocate_result::nomem};
+                }
+            }
+
+            /** Allocates a page in the specified region. This function is wait-free, but it can fail in case of contention. */
+            static allocate_result
+              allocate_page_from_region_waitfree(Region * const i_region) noexcept
+            {
+                auto curr_address = i_region->m_curr.load(std::memory_order_relaxed);
+                auto new_address  = curr_address + PAGE_CAPACITY_AND_ALIGNMENT;
+
+                DENSITY_ASSERT_INTERNAL(
+                  (curr_address >= i_region->m_end) ==
+                  (new_address >
+                   i_region->m_end)); // two different way to express the same condition
+
+                if (curr_address >= i_region->m_end)
+                {
+                    return allocate_result{allocate_result::nomem};
+                }
+
+                if (!i_region->m_curr.compare_exchange_weak(
+                      curr_address,
+                      new_address,
+                      std::memory_order_acquire,
+                      std::memory_order_relaxed))
+                {
+                    return allocate_result{allocate_result::retry};
+                }
+
+                return allocate_result{reinterpret_cast<void *>(curr_address)};
+            }
 
             /** Returns the region after a given one, possibly creating it.
                 @param i_progress_guarantee progress guarantee. If it is progress_blocking, a
@@ -175,9 +277,9 @@ namespace density
                     may point to a memory region that the caller should destroy, or use somehow.
                 @return the next region, or null in case of failure */
             Region * get_next_region(
-              progress_guarantee const i_progress_guarantee,
-              Region *                 i_curr_region,
-              Region **                io_new_region) noexcept
+              progress_guarantee i_progress_guarantee,
+              Region *           i_curr_region,
+              Region **          io_new_region) noexcept
             {
                 // we get the pointer to the next_region region, or allocate it
                 auto next_region = i_curr_region->m_next_region.load();
@@ -236,60 +338,6 @@ namespace density
                 i_curr_region = next_region;
 
                 return i_curr_region;
-            }
-
-            static void * allocate_page_from_region(
-              progress_guarantee i_progress_guarantee, Region * const i_region)
-            {
-                if (i_progress_guarantee != progress_wait_free)
-                    return allocate_page_from_region_lockfree(i_region);
-                else
-                    return allocate_page_from_region_waitfree(i_region);
-            }
-
-            /** Allocates a page in the specified region. This function is lock-free.
-                The case of successful allocation is the fast path. */
-            static void * allocate_page_from_region_lockfree(Region * const i_region) noexcept
-            {
-                /* First we blindly allocate the page, then we detect the overflow of m_curr. This is an
-                    optimistic method. To do: compare performances with a load-compare-exchange method. */
-                auto page = i_region->m_curr.fetch_add(
-                  PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
-
-                /* We want to exploit the full range of uintptr_t to detect overflows of m_curr, so we
-                    check also the wraparound of m_curr until m_start.
-                    The detection of the overflow will fail if the number of threads trying allocate_from_region_optimistic
-                    is in the order of (MAX(uintptr_t) - region-size) / PAGE_CAPACITY_AND_ALIGNMENT. We consider
-                    this case very improbable. */
-                if (page >= i_region->m_start && page < i_region->m_end)
-                {
-                    return reinterpret_cast<void *>(page);
-                }
-                else
-                {
-                    i_region->m_curr.fetch_sub(
-                      PAGE_CAPACITY_AND_ALIGNMENT, std::memory_order_relaxed);
-                    return nullptr;
-                }
-            }
-
-            /** Allocates a page in the specified region. This function is wait-free, but it can fail in case of contention. */
-            static void * allocate_page_from_region_waitfree(Region * const i_region) noexcept
-            {
-                auto curr_address = i_region->m_curr.load(std::memory_order_relaxed);
-                auto new_address  = curr_address + PAGE_CAPACITY_AND_ALIGNMENT;
-                DENSITY_ASSERT_INTERNAL(
-                  (curr_address >= i_region->m_end) ==
-                  (new_address > i_region->m_end)); // two different way to express the condition
-                if (curr_address < i_region->m_end)
-                {
-                    if (i_region->m_curr.compare_exchange_weak(
-                          curr_address, new_address, std::memory_order_relaxed))
-                    {
-                        return reinterpret_cast<void *>(curr_address);
-                    }
-                }
-                return nullptr;
             }
 
             /** Creates a new memory region big region_default_size_bytes. Tries with smaller sizes on failure.

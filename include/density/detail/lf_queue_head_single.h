@@ -112,7 +112,7 @@ namespace density
 
                     m_queue    = i_queue;
                     m_control  = static_cast<ControlBlock *>(i_queue->m_head);
-                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_acquire);
                     return true;
                 }
 
@@ -146,7 +146,7 @@ namespace density
                       address_is_aligned(m_control, Base::s_alloc_granularity));
 
                     m_control  = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
-                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_acquire);
                     return true;
                 }
 
@@ -165,9 +165,15 @@ namespace density
                           (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
                           0)
                         {
+                            /* found an element to consume, set LfQueue_Busy 
+                                todo: the single consumer may probably avoid to do any further atomic
+                                    operation on m_control->m_next */
+
                             raw_atomic_store(
                               &m_control->m_next, m_next_ptr | LfQueue_Busy, mem_relaxed);
-                            m_next_ptr |= LfQueue_Dead;
+                            m_next_ptr |=
+                              LfQueue_Dead; /* this is what we will write in m_control->m_next
+                                when (and if) we will commit the consume */
                             break;
                         }
                         else if ((m_next_ptr & (LfQueue_Busy | LfQueue_Dead)) == LfQueue_Dead)
@@ -259,7 +265,7 @@ namespace density
                             if (Base::s_deallocate_zeroed_pages)
                             {
                                 auto const memset_dest =
-                                  const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
+                                  const_cast<uintptr_t *>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
                                 DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
                                 DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));

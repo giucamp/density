@@ -17,7 +17,7 @@ namespace density
            block, and a pointer to the user element. */
         struct LfQueueControl
         {
-            atomic_uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
+            uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
               with some flags (see LfQueue_State). LfQueueControl's are aligned so that
               the first 3 bits of the address are zeroes.
               The end of a queue is indicated by a m_next set to zero or to LfQueue_InvalidNextPage. */

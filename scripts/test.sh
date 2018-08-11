@@ -8,7 +8,7 @@ if [ "$1" == "Gcc49" ]; then
     # Gcc49
     export CXX=g++-4.9
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
-    PARAMS="-queue_tests_cardinality:25000"
+    PARAMS="-print_progress:0 -queue_tests_cardinality:15000"
     TEST_RUN=TRUE
     BENCH_RUN=TRUE
 
@@ -20,7 +20,7 @@ elif [ "$1" == "Gcc7_Debug_gcov" ]; then
     MAKE_ARGS+=" -DDENSITY_DEBUG:BOOL=ON"
     MAKE_ARGS+=" -DTEST_DATA_STACK:BOOL=ON"
     MAKE_ARGS+=" -DCODE_COVERAGE:BOOL=ON"
-    PARAMS="-queue_tests_cardinality:15000"
+    PARAMS="-print_progress:0 -queue_tests_cardinality:8000"
     TEST_RUN=TRUE
     BENCH_RUN=FALSE
 
@@ -29,7 +29,7 @@ elif [ "$1" == "clang4" ]; then
     # clang4
     export CXX=clang++-4.0
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
-    PARAMS="-queue_tests_cardinality:25000"
+    PARAMS="-print_progress:0 -queue_tests_cardinality:12000"
     TEST_RUN=TRUE
     BENCH_RUN=TRUE
 
@@ -38,7 +38,7 @@ elif [ "$1" == "clang5" ]; then
     # clang5
     export CXX=clang++-5.0
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
-    PARAMS="-queue_tests_cardinality:1000"
+    PARAMS="-print_progress:0 -queue_tests_cardinality:1000"
     TEST_RUN=TRUE
     BENCH_RUN=TRUE
 
@@ -49,7 +49,7 @@ elif [ "$1" == "clang5_Debug" ]; then
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Debug"
     MAKE_ARGS+=" -DDENSITY_DEBUG:BOOL=ON"
     MAKE_ARGS+=" -DTEST_DATA_STACK:BOOL=ON"
-    PARAMS="-queue_tests_cardinality:10000"
+    PARAMS="-print_progress:0 -queue_tests_cardinality:5000"
     TEST_RUN=TRUE
     BENCH_RUN=FALSE
 
@@ -59,7 +59,7 @@ elif [ "$1" == "clang5_thread_sanitizer" ]; then
     export CXX=clang++-5.0
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
     MAKE_ARGS+=" -DTHREAD_SANITIZER:BOOL=ON"
-    PARAMS="-test_allocators:0 -queue_tests_cardinality:20000 -exclude:lifo,queue,conc_queue,page_def"
+    PARAMS="-test_allocators:0 -print_progress:0 -queue_tests_cardinality:20000 -exclude:lifo,queue,conc_queue,page_def"
     TEST_RUN=TRUE
     BENCH_RUN=FALSE
 
@@ -69,7 +69,7 @@ elif [ "$1" == "Gcc7_thread_sanitizer" ]; then
     export CXX=g++-7
     MAKE_ARGS+=" -DCMAKE_BUILD_TYPE=Release"
     MAKE_ARGS+=" -DTHREAD_SANITIZER:BOOL=ON"
-    PARAMS="-test_allocators:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def"
+    PARAMS="-test_allocators:0 -print_progress:0 -queue_tests_cardinality:10000 -exclude:lifo,queue,conc_queue,page_def"
     TEST_RUN=TRUE
     BENCH_RUN=FALSE
 
@@ -110,7 +110,7 @@ make
 
 # run test
 if [ "$TEST_RUN" = "TRUE" ]; then
-    $PWD/density_test "$PARAMS"
+    $PWD/density_test $PARAMS
 fi
 
 # run coveralls

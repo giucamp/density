@@ -149,11 +149,7 @@ namespace density
                     auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
                     DENSITY_ASSERT_INTERNAL(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
@@ -265,11 +261,7 @@ namespace density
                     auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
                     DENSITY_ASSERT_INTERNAL(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
