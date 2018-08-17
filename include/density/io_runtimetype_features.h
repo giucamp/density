@@ -27,7 +27,7 @@ namespace density
                 by the function make), the behaviour is undefined. */
         void operator()(std::istream & i_istream, void * i_dest) const
         {
-            DENSITY_ASSERT(i_dest != nullptr);
+            DENSITY_ASSUME(i_dest != nullptr);
             (*m_function)(i_istream, i_dest);
         }
 
@@ -58,7 +58,7 @@ namespace density
                 by the function make), the behaviour is undefined. */
         void operator()(std::ostream & i_ostream, const void * i_dest) const
         {
-            DENSITY_ASSERT(i_dest != nullptr);
+            DENSITY_ASSUME(i_dest != nullptr);
             (*m_function)(i_ostream, i_dest);
         }
 

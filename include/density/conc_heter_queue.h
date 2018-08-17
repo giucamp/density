@@ -1562,7 +1562,7 @@ namespace density
             /** \internal - private function, usable only within the library */
             bool start_consume_impl(PrivateType, conc_heter_queue * i_queue)
             {
-                DENSITY_ASSERT_INTERNAL(i_queue != nullptr);
+                DENSITY_ASSUME(i_queue != nullptr);
 
                 // first we take the locks, because they may throw
                 std::unique_lock<std::mutex> lock;

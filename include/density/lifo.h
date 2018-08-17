@@ -92,7 +92,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). */
         void * allocate(size_t i_size)
         {
-            DENSITY_ASSERT(i_size % alignment == 0);
+            DENSITY_ASSUME_UINT_ALIGNED(i_size, alignment);
 
             auto const new_top = m_top + i_size;
             auto const new_offset =
@@ -105,7 +105,7 @@ namespace density
             else
             {
                 // advance m_top
-                DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
+                DENSITY_ASSUME(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = reinterpret_cast<void *>(m_top);
                 m_top                = new_top;
                 return new_block;
@@ -139,7 +139,8 @@ namespace density
             \n\b Throws: nothing. */
         void deallocate(void * i_block, size_t i_size) noexcept
         {
-            DENSITY_ASSERT(i_block != nullptr && i_size % alignment == 0);
+            DENSITY_ASSUME(i_block != nullptr);
+            DENSITY_ASSUME_UINT_ALIGNED(i_size, alignment);
 
             // this check detects page switches and external blocks
             if (!DENSITY_LIKELY(same_page(i_block, reinterpret_cast<void *>(m_top))))
@@ -242,12 +243,12 @@ namespace density
 
         DENSITY_NO_INLINE void * allocate_slow_path(size_t i_size)
         {
-            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
+            DENSITY_ASSUME_UINT_ALIGNED(i_size, alignment);
             if (i_size < UNDERLYING_ALLOCATOR::page_size / 2)
             {
                 // allocate a new page
                 auto const new_page = UNDERLYING_ALLOCATOR::allocate_page();
-                DENSITY_ASSERT_INTERNAL(new_page != nullptr);
+                DENSITY_ASSUME(new_page != nullptr);
                 auto const new_header   = new (new_page) PageHeader;
                 new_header->m_prev_page = reinterpret_cast<void *>(m_top);
                 m_top                   = reinterpret_cast<uintptr_t>(new_header + 1) + i_size;
@@ -262,7 +263,7 @@ namespace density
 
         DENSITY_NO_INLINE void deallocate_slow_path(void * i_block, size_t i_size) noexcept
         {
-            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
+            DENSITY_ASSUME_UINT_ALIGNED(i_size, alignment);
 
             if (
               (m_top & (UNDERLYING_ALLOCATOR::page_alignment - 1)) == sizeof(PageHeader) &&
@@ -285,7 +286,7 @@ namespace density
             Provides the strong exception guarantee. */
         void * set_top_and_allocate(void * const i_current_top, size_t const i_size)
         {
-            DENSITY_ASSERT_INTERNAL(i_size % alignment == 0);
+            DENSITY_ASSUME_UINT_ALIGNED(i_size, alignment);
 
             auto const current_top = reinterpret_cast<uintptr_t>(i_current_top);
 
@@ -295,7 +296,7 @@ namespace density
               new_top - uint_lower_align(current_top, UNDERLYING_ALLOCATOR::page_alignment);
             if (new_offset < UNDERLYING_ALLOCATOR::page_size)
             {
-                DENSITY_ASSERT_INTERNAL(i_size <= UNDERLYING_ALLOCATOR::page_size);
+                DENSITY_ASSUME(i_size <= UNDERLYING_ALLOCATOR::page_size);
                 auto const new_block = i_current_top;
                 m_top                = new_top;
                 return new_block;
@@ -324,9 +325,9 @@ namespace density
             if (i_old_block != i_new_block)
             {
                 auto const size_to_copy = detail::size_min(i_new_size, i_old_size);
-                DENSITY_ASSERT_INTERNAL(size_to_copy % alignment == 0);
-                DENSITY_ASSERT_ALIGNED(i_old_block, alignment);
-                DENSITY_ASSERT_ALIGNED(i_new_block, alignment);
+                DENSITY_ASSUME_UINT_ALIGNED(size_to_copy, alignment);
+                DENSITY_ASSUME_ALIGNED(i_old_block, alignment);
+                DENSITY_ASSUME_ALIGNED(i_new_block, alignment);
                 memcpy(i_new_block, i_old_block, size_to_copy);
             }
         }
@@ -621,7 +622,7 @@ namespace density
                 return *this;
             }
 
-            iterator operator++(int)noexcept
+            iterator operator++(int) noexcept
             {
                 iterator copy(*this);
                          operator++();
@@ -640,7 +641,7 @@ namespace density
                 return *this;
             }
 
-            iterator operator--(int)noexcept
+            iterator operator--(int) noexcept
             {
                 iterator copy(*this);
                          operator++();
@@ -722,7 +723,7 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator++(int)noexcept
+            const_iterator operator++(int) noexcept
             {
                 const_iterator copy(*this);
                                operator++();
@@ -741,7 +742,7 @@ namespace density
                 return *this;
             }
 
-            const_iterator operator--(int)noexcept
+            const_iterator operator--(int) noexcept
             {
                 const_iterator copy(*this);
                                operator++();
@@ -857,7 +858,7 @@ namespace density
             {
                 for (; i_begin != i_end; ++i_begin)
                 {
-                    DENSITY_ASSERT_INTERNAL(dest_element != nullptr); // hint for the optimizer
+                    DENSITY_ASSUME(dest_element != nullptr);
                     new (dest_element) TYPE(*i_begin);
                     ++dest_element;
                 }
@@ -895,7 +896,7 @@ namespace density
         */
         TYPE & operator[](size_t i_index) noexcept
         {
-            DENSITY_ASSERT(i_index < m_size);
+            DENSITY_ASSUME(i_index < m_size);
             return m_elements[i_index];
         }
 
@@ -906,7 +907,7 @@ namespace density
         */
         const TYPE & operator[](size_t i_index) const noexcept
         {
-            DENSITY_ASSERT(i_index < m_size);
+            DENSITY_ASSUME(i_index < m_size);
             return m_elements[i_index];
         }
 
@@ -947,7 +948,7 @@ namespace density
                 for (; element_index < m_size; element_index++)
                 {
                     auto const dest = m_elements + element_index;
-                    DENSITY_ASSERT_INTERNAL(dest != nullptr); // hint for the optimizer
+                    DENSITY_ASSUME(dest != nullptr);
                     new (dest) TYPE();
                 }
             }

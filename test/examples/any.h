@@ -4,6 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#pragma once
+#include "../test_framework/density_test_common.h"
+//
 #include <density/io_runtimetype_features.h>
 #include <density/runtime_type.h>
 #include <ostream>

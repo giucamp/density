@@ -171,7 +171,7 @@ namespace density
         constexpr f_default_construct(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE> static void invoke(void * i_dest)
         {
-            DENSITY_ASSERT(i_dest != nullptr);
+            DENSITY_ASSUME(i_dest != nullptr);
             new (i_dest) TARGET_TYPE();
         }
     };
@@ -205,7 +205,8 @@ namespace density
         constexpr f_copy_construct(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE> static void invoke(void * i_dest, const void * i_source)
         {
-            DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
+            DENSITY_ASSUME(i_dest != nullptr);
+            DENSITY_ASSUME(i_source != nullptr);
             const TARGET_TYPE & source = *static_cast<const TARGET_TYPE *>(i_source);
             new (i_dest) TARGET_TYPE(source);
         }
@@ -237,7 +238,8 @@ namespace density
         constexpr f_move_construct(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE> static void invoke(void * i_dest, void * i_source)
         {
-            DENSITY_ASSERT(i_dest != nullptr && i_source != nullptr);
+            DENSITY_ASSUME(i_dest != nullptr);
+            DENSITY_ASSUME(i_source != nullptr);
             TARGET_TYPE & source = *static_cast<TARGET_TYPE *>(i_source);
             new (i_dest) TARGET_TYPE(std::move(source));
         }
@@ -267,7 +269,7 @@ namespace density
         constexpr f_destroy(Function i_function) : m_function(i_function) {}
         template <typename TARGET_TYPE> static void invoke(void * i_object) noexcept
         {
-            DENSITY_ASSERT(i_object != nullptr);
+            DENSITY_ASSUME(i_object != nullptr);
             TARGET_TYPE * obj = static_cast<TARGET_TYPE *>(i_object);
             static_assert(
               noexcept(obj->TARGET_TYPE::~TARGET_TYPE()),
@@ -307,7 +309,8 @@ namespace density
         template <typename TARGET_TYPE>
         static bool invoke(void const * i_first, void const * i_second) noexcept
         {
-            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+            DENSITY_ASSUME(i_first != nullptr);
+            DENSITY_ASSUME(i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
             auto const & second = *static_cast<TARGET_TYPE const *>(i_second);
             bool const   result = first == second;
@@ -346,7 +349,8 @@ namespace density
         template <typename TARGET_TYPE>
         static bool invoke(void const * i_first, void const * i_second) noexcept
         {
-            DENSITY_ASSERT(i_first != nullptr && i_second != nullptr);
+            DENSITY_ASSUME(i_first != nullptr);
+            DENSITY_ASSUME(i_second != nullptr);
             auto const & first  = *static_cast<TARGET_TYPE const *>(i_first);
             auto const & second = *static_cast<TARGET_TYPE const *>(i_second);
             bool const   result = first < second;
@@ -381,7 +385,7 @@ namespace density
         constexpr f_hash(Function i_function) noexcept : m_function(i_function) {}
         template <typename TARGET_TYPE> static size_t invoke(const void * i_source) noexcept
         {
-            DENSITY_ASSERT(i_source != nullptr);
+            DENSITY_ASSUME(i_source != nullptr);
             static_assert(
               noexcept(std::hash<TARGET_TYPE>()(*static_cast<const TARGET_TYPE *>(i_source))),
               "Specializations of std::hash must be nothrow constructible and invokable");

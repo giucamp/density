@@ -548,7 +548,7 @@ namespace density
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count   = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+                DENSITY_ASSUME(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType *>(
                   raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
@@ -676,7 +676,7 @@ namespace density
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count   = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+                DENSITY_ASSUME(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType *>(try_raw_allocate(
                   i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
@@ -1266,10 +1266,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
@@ -1312,10 +1312,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
@@ -1360,10 +1360,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -1406,10 +1406,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -1705,10 +1705,10 @@ namespace density
             if (is_noexcept)
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
@@ -1717,11 +1717,11 @@ namespace density
                 try
                 {
                     auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                    DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                    DENSITY_ASSUME(type_storage != nullptr);
                     type =
                       new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                    DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                    DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                     new (push_data.m_user_storage)
                       ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
@@ -1778,10 +1778,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
@@ -1841,10 +1841,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -1900,10 +1900,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -2125,7 +2125,7 @@ namespace density
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count   = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+                DENSITY_ASSUME(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType *>(
                   raw_allocate(sizeof(ValueType) * count, alignof(ValueType)));
@@ -2253,7 +2253,7 @@ namespace density
 
                 auto const count_s = std::distance(i_begin, i_end);
                 auto const count   = static_cast<size_t>(count_s);
-                DENSITY_ASSERT(static_cast<decltype(count_s)>(count) == count_s);
+                DENSITY_ASSUME(static_cast<decltype(count_s)>(count) == count_s);
 
                 auto const elements = static_cast<ValueType *>(try_raw_allocate(
                   i_progress_guarantee, sizeof(ValueType) * count, alignof(ValueType)));
@@ -2756,10 +2756,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
@@ -2788,10 +2788,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
@@ -2821,10 +2821,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -2853,10 +2853,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -3005,10 +3005,10 @@ namespace density
             if (is_noexcept)
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
                   ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
             }
@@ -3017,11 +3017,11 @@ namespace density
                 try
                 {
                     auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                    DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                    DENSITY_ASSUME(type_storage != nullptr);
                     type =
                       new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
 
-                    DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                    DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                     new (push_data.m_user_storage)
                       ELEMENT_TYPE(std::forward<CONSTRUCTION_PARAMS>(i_construction_params)...);
                 }
@@ -3057,10 +3057,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
             }
             catch (...)
@@ -3096,10 +3096,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
             }
             catch (...)
@@ -3132,10 +3132,10 @@ namespace density
             try
             {
                 auto const type_storage = Base::type_after_control(push_data.m_control_block);
-                DENSITY_ASSERT_INTERNAL(type_storage != nullptr);
+                DENSITY_ASSUME(type_storage != nullptr);
                 type = new (type_storage) runtime_type(i_type);
 
-                DENSITY_ASSERT_INTERNAL(push_data.m_user_storage != nullptr);
+                DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
             }
             catch (...)

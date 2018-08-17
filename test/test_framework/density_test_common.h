@@ -11,6 +11,7 @@
     that breaks the ABI compatibility */
 #endif
 
+#include <assert.h>
 #include <chrono>
 #include <cstdlib>
 #include <sstream>

@@ -44,7 +44,7 @@ namespace density
 
             WF_PageStack & get_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(
+                DENSITY_ASSUME(
                   i_allocation_type == page_allocation_type::uninitialized ||
                   i_allocation_type == page_allocation_type::zeroed);
                 return i_allocation_type == page_allocation_type::zeroed ? m_zeroed_page_stack
@@ -58,7 +58,7 @@ namespace density
             {
                 auto const block =
                   aligned_allocate(sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
-                DENSITY_ASSERT_INTERNAL(block != nullptr);
+                DENSITY_ASSUME(block != nullptr);
                 return new (block) PageAllocatorSlot(i_next_slot);
             }
 
@@ -263,7 +263,7 @@ namespace density
                 {
                     auto const footer     = get_footer(i_address);
                     auto       curr_value = footer->m_pin_count.load(detail::mem_relaxed);
-                    DENSITY_ASSERT(curr_value > 0);
+                    DENSITY_ASSUME(curr_value > 0);
                     if (!footer->m_pin_count.compare_exchange_weak(
                           curr_value, curr_value - 1, detail::mem_relaxed))
                     {
@@ -330,7 +330,7 @@ namespace density
             static PageFooter * initialize_page(
               page_allocation_type const i_allocation_type, void * const i_page_mem) noexcept
             {
-                DENSITY_ASSERT_ALIGNED(i_page_mem, page_alignment);
+                DENSITY_ASSUME_ALIGNED(i_page_mem, page_alignment);
                 auto const new_page = new (get_footer(i_page_mem)) PageFooter();
 
                 bool should_zero = !SYSTYEM_PAGE_MANAGER::pages_are_zeroed &&
@@ -399,7 +399,7 @@ namespace density
 
             PageStack & get_private_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(
+                DENSITY_ASSUME(
                   i_allocation_type == page_allocation_type::uninitialized ||
                   i_allocation_type == page_allocation_type::zeroed);
                 return i_allocation_type == page_allocation_type::zeroed

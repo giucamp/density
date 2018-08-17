@@ -6,6 +6,7 @@
 
 
 #include "bench_framework/test_tree.h"
+#include <assert.h>
 #include <density/conc_function_queue.h>
 #include <density/function_queue.h>
 #include <density/lf_function_queue.h>

@@ -222,7 +222,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                         m_tail = tail;
                     }
@@ -274,8 +274,7 @@ namespace density
                     /* There is space between the (presumed) current tail and the end control block.
                         We try to pad it with a dead element. */
 
-                    DENSITY_ASSERT_INTERNAL(m_tail == i_tail);
-                    m_tail = i_tail;
+                    DENSITY_ASSUME(m_tail == i_tail);
 
                     auto const block = static_cast<ControlBlock *>(i_tail);
                     raw_atomic_store(
@@ -287,7 +286,7 @@ namespace density
                 else
                 {
                     // get or allocate a new page
-                    DENSITY_ASSERT_INTERNAL(i_tail == page_end);
+                    DENSITY_ASSUME(i_tail == page_end);
                     return get_or_allocate_next_page(i_progress_guarantee, i_tail);
                 }
             }

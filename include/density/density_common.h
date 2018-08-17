@@ -117,7 +117,8 @@ namespace density
         @param i_alignment must be > 0 and a power of 2 */
     inline bool address_is_aligned(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
         return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
     }
 
@@ -129,7 +130,8 @@ namespace density
         static_assert(
           std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed,
           "UINT mus be an unsigned integer");
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
         return (i_uint & (i_alignment - 1)) == 0;
     }
 
@@ -160,7 +162,7 @@ namespace density
     inline void * address_sub(void * i_address, size_t i_offset) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
-        DENSITY_ASSERT(uint_pointer >= i_offset);
+        DENSITY_ASSUME(uint_pointer >= i_offset);
         return reinterpret_cast<void *>(uint_pointer - i_offset);
     }
 
@@ -171,7 +173,7 @@ namespace density
     inline const void * address_sub(const void * i_address, size_t i_offset) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
-        DENSITY_ASSERT(uint_pointer >= i_offset);
+        DENSITY_ASSUME(uint_pointer >= i_offset);
         return reinterpret_cast<const void *>(uint_pointer - i_offset);
     }
 
@@ -181,7 +183,7 @@ namespace density
         @return i_end_address minus i_start_address */
     inline uintptr_t address_diff(const void * i_end_address, const void * i_start_address) noexcept
     {
-        DENSITY_ASSERT(i_end_address >= i_start_address);
+        DENSITY_ASSUME(i_end_address >= i_start_address);
 
         const uintptr_t end_uint_pointer   = reinterpret_cast<uintptr_t>(i_end_address);
         const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>(i_start_address);
@@ -195,7 +197,8 @@ namespace density
         @return the aligned address */
     inline void * address_lower_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -210,7 +213,8 @@ namespace density
         @return the aligned address */
     inline const void * address_lower_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -259,7 +263,8 @@ namespace density
         @return the aligned address */
     inline void * address_upper_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -274,7 +279,8 @@ namespace density
         @return the aligned address */
     inline const void * address_upper_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -453,8 +459,9 @@ namespace density
         The content of the newly allocated block is undefined. */
     inline void * aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-        DENSITY_ASSERT(i_alignment_offset <= i_size);
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
+        DENSITY_ASSUME(i_alignment_offset <= i_size);
 
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
@@ -503,8 +510,9 @@ namespace density
     inline void * try_aligned_allocate(
       size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-        DENSITY_ASSERT(i_alignment_offset <= i_size);
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
+        DENSITY_ASSUME(i_alignment_offset <= i_size);
 
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
@@ -556,7 +564,8 @@ namespace density
     inline void aligned_deallocate(
       void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {

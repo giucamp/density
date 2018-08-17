@@ -196,7 +196,7 @@ namespace density
 
                 allocate_result(void * i_address) noexcept : address(i_address), result(success)
                 {
-                    DENSITY_ASSERT_INTERNAL(i_address != nullptr);
+                    DENSITY_ASSUME(i_address != nullptr);
                 }
 
                 allocate_result(result_t i_result) noexcept : address(nullptr), result(i_result) {}
@@ -302,7 +302,7 @@ namespace density
                         // set m_cumulative_available_memory on the new region
                         auto const new_region_size =
                           (*io_new_region)->m_end - (*io_new_region)->m_curr;
-                        DENSITY_ASSERT_INTERNAL((new_region_size % page_alignment_and_size) == 0);
+                        DENSITY_ASSUME_UINT_ALIGNED(new_region_size, page_alignment_and_size);
                         (*io_new_region)->m_cumulative_available_memory =
                           i_curr_region->m_cumulative_available_memory + new_region_size;
 
@@ -329,7 +329,7 @@ namespace density
 
                 /* try to update m_curr_region (if m_curr_region == i_curr_region, then m_curr_region = next_region).
                     This operation is not mandatory, so we can tolerate spurious failures. */
-                DENSITY_ASSERT_INTERNAL(next_region != nullptr);
+                DENSITY_ASSUME(next_region != nullptr);
                 auto expected = i_curr_region;
                 m_curr_region.compare_exchange_weak(
                   expected, next_region, std::memory_order_release, std::memory_order_relaxed);
@@ -382,7 +382,7 @@ namespace density
 
             static void delete_region(Region * const i_region) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(i_region != nullptr);
+                DENSITY_ASSUME(i_region != nullptr);
                 operator delete(reinterpret_cast<void *>(i_region->m_start));
                 delete i_region;
             }

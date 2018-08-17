@@ -532,7 +532,7 @@ namespace density
             auto erasure = ERASURE;
             if (erasure == function_manual_clear)
             {
-                DENSITY_ASSERT(false);
+                DENSITY_ASSUME(false);
             }
             else
             {

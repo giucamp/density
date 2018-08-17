@@ -96,9 +96,9 @@ namespace density
 
                 bool begin_iteration(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_ALIGNED(m_control, Base::s_alloc_granularity);
+                    DENSITY_ASSUME_ALIGNED(m_control, Base::s_alloc_granularity);
 
-                    DENSITY_ASSERT_ALIGNED(i_queue->m_head, Base::s_alloc_granularity);
+                    DENSITY_ASSUME_ALIGNED(i_queue->m_head, Base::s_alloc_granularity);
 
                     if (i_queue->m_head == nullptr)
                     {
@@ -142,8 +142,7 @@ namespace density
 
                 bool move_next() noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(
-                      address_is_aligned(m_control, Base::s_alloc_granularity));
+                    DENSITY_ASSUME_ALIGNED(m_control, Base::s_alloc_granularity);
 
                     m_control  = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_acquire);
@@ -184,8 +183,8 @@ namespace density
                     }
                 }
 
-                /** Commits a consumed element. After the call the Consume is empty. */
-                void commit_consume_impl() noexcept
+#if DENSITY_DEBUG_INTERNAL
+                void consume_dbg_checks()
                 {
                     DENSITY_ASSERT_INTERNAL(!empty());
                     DENSITY_ASSERT_INTERNAL(
@@ -194,6 +193,15 @@ namespace density
                     DENSITY_ASSERT_INTERNAL(
                       raw_atomic_load(&m_control->m_next, mem_relaxed) ==
                       m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+                }
+#endif
+
+                /** Commits a consumed element. After the call the Consume is empty. */
+                void commit_consume_impl() noexcept
+                {
+#if DENSITY_DEBUG_INTERNAL
+                    consume_dbg_checks();
+#endif
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr, mem_release);
@@ -205,13 +213,9 @@ namespace density
 
                 void cancel_consume_impl() noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(!empty());
-                    DENSITY_ASSERT_INTERNAL(
-                      (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
-                      LfQueue_Dead);
-                    DENSITY_ASSERT_INTERNAL(
-                      raw_atomic_load(&m_control->m_next, mem_relaxed) ==
-                      m_next_ptr - LfQueue_Dead + LfQueue_Busy);
+#if DENSITY_DEBUG_INTERNAL
+                    consume_dbg_checks();
+#endif
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_release);
@@ -267,8 +271,8 @@ namespace density
                                 auto const memset_dest =
                                   const_cast<uintptr_t *>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
-                                DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
-                                DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
+                                DENSITY_ASSUME_ALIGNED(memset_dest, alignof(uintptr_t));
+                                DENSITY_ASSUME_UINT_ALIGNED(memset_size, alignof(uintptr_t));
                                 std::memset(memset_dest, 0, memset_size);
                             }
                         }

@@ -32,7 +32,6 @@ namespace density
             static PageFooter * lock_marker() noexcept { return reinterpret_cast<PageFooter *>(1); }
 
           public:
-
             /* Pushes a (possibly still pinned) single page on the stack. This function is wait-free but it may fail in
                 case of contention.
                 @param i_page The page to push. The initial value of i_page->m_next_page is ignored. This parameter can't be nullptr.
@@ -43,7 +42,7 @@ namespace density
                     - the argument is already present in any stack */
             DENSITY_NODISCARD bool try_push(PageFooter * i_page) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(i_page != nullptr);
+                DENSITY_ASSUME(i_page != nullptr);
 
                 auto first = m_first.load(detail::mem_relaxed);
                 if (first == lock_marker())

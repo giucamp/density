@@ -150,7 +150,7 @@ namespace density
       uint32_t const *  i_atomic,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         switch (i_memory_order)
         {
@@ -158,7 +158,7 @@ namespace density
             return *i_atomic;
 
         default:
-            DENSITY_ASSERT(false); // invalid memory order
+            DENSITY_ASSUME(false); // invalid memory order
         case std::memory_order_consume:
         case std::memory_order_acquire:
         case std::memory_order_seq_cst:
@@ -175,7 +175,7 @@ namespace density
       uint64_t const *  i_atomic,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         switch (i_memory_order)
         {
@@ -183,7 +183,7 @@ namespace density
             return *i_atomic;
 
         default:
-            DENSITY_ASSERT(false); // invalid memory orders
+            DENSITY_ASSUME(false); // invalid memory orders
         case std::memory_order_consume:
         case std::memory_order_acquire:
         case std::memory_order_seq_cst:
@@ -201,7 +201,7 @@ namespace density
       uint32_t          i_value,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         switch (i_memory_order)
         {
@@ -219,7 +219,7 @@ namespace density
             break;
 
         default:
-            DENSITY_ASSERT(false); // invalid memory order
+            DENSITY_ASSUME(false); // invalid memory order
         }
     }
 
@@ -229,7 +229,7 @@ namespace density
       uint64_t          i_value,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         switch (i_memory_order)
         {
@@ -248,7 +248,7 @@ namespace density
             break;
 
         default:
-            DENSITY_ASSERT(false); // invalid memory order
+            DENSITY_ASSUME(false); // invalid memory order
         }
     }
 #endif
@@ -260,7 +260,7 @@ namespace density
       std::memory_order i_success,
       std::memory_order i_failure) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
         (void)i_success;
         (void)i_failure;
         long const prev_val = _InterlockedCompareExchange(
@@ -284,7 +284,7 @@ namespace density
       std::memory_order i_success,
       std::memory_order i_failure) noexcept
     {
-        DENSITY_ASSERT(address_is_aligned((void *)i_atomic, alignof(decltype(i_atomic))));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
         (void)i_success;
         (void)i_failure;
         long long const prev_val = _InterlockedCompareExchange64(
@@ -356,7 +356,7 @@ namespace density
       uintptr_t const * i_atomic,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         return __atomic_load_n(i_atomic, detail::mem_order_cnv(i_memory_order));
     }
@@ -366,7 +366,7 @@ namespace density
       uintptr_t         i_value,
       std::memory_order i_memory_order = std::memory_order_seq_cst) noexcept
     {
-        DENSITY_ASSERT_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         __atomic_store_n(i_atomic, i_value, detail::mem_order_cnv(i_memory_order));
     }
@@ -378,7 +378,7 @@ namespace density
       std::memory_order i_success,
       std::memory_order i_failure) noexcept
     {
-        DENSITY_ASSERT_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
+        DENSITY_ASSUME_ALIGNED((void *)i_atomic, alignof(decltype(i_atomic)));
 
         return __atomic_compare_exchange_n(
           i_atomic,

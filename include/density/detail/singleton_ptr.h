@@ -118,7 +118,7 @@ namespace density
                 auto ref_count = raw_atomic_load(&s_ref_count);
                 for (;;)
                 {
-                    DENSITY_ASSERT_INTERNAL(ref_count > 0);
+                    DENSITY_ASSUME(ref_count > 0);
                     if (ref_count == 2)
                     {
                         // the singleton must be destroyed

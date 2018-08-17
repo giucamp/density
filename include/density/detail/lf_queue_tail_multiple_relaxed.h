@@ -147,7 +147,7 @@ namespace density
 
                     // check for page overflow
                     auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    DENSITY_ASSUME(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
                     {
@@ -199,7 +199,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -253,13 +253,13 @@ namespace density
                     // allocate the user space
                     if (over_aligned)
                         new_tail = uint_upper_align(new_tail, alignment);
-                    DENSITY_ASSERT_UINT_ALIGNED(new_tail, alignment);
+                    DENSITY_ASSUME_UINT_ALIGNED(new_tail, alignment);
                     auto const user_storage = reinterpret_cast<void *>(new_tail);
                     new_tail = uint_upper_align(new_tail + SIZE, s_alloc_granularity);
 
                     // check for page overflow
                     auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    DENSITY_ASSUME(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
                     {
@@ -309,7 +309,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -363,7 +363,7 @@ namespace density
                 else
                 {
                     // get or allocate a new page
-                    DENSITY_ASSERT_INTERNAL(i_tail == page_end);
+                    DENSITY_ASSUME(i_tail == page_end);
                     return get_or_allocate_next_page(i_progress_guarantee, i_tail);
                 }
             }
