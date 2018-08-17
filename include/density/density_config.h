@@ -52,8 +52,12 @@
 #define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
     DENSITY_ASSERT(::density::address_is_aligned(                                                  \
       (address), ::density::detail::ConstSizeT<(constexpr_alignment)>::value))
+#elif defined(__GNUC__)
+#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
+    __builtin_assume_aligned(address, constexpr_alignment)
 #else
-#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)
+#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
+    DENSITY_ASSUME((uintptr_t(address) & ((constexpr_alignment)-1)) == 0)
 #endif
 
 #if defined(DENSITY_DEBUG)
@@ -61,7 +65,8 @@
     DENSITY_ASSERT(::density::uint_is_aligned(                                                     \
       (address), ::density::detail::ConstSizeT<(constexpr_alignment)>::value))
 #else
-#define DENSITY_ASSUME_UINT_ALIGNED(address, constexpr_alignment)
+#define DENSITY_ASSUME_UINT_ALIGNED(address, constexpr_alignment)                                  \
+    DENSITY_ASSUME(((address) & ((constexpr_alignment)-1)) == 0)
 #endif
 
 /** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
