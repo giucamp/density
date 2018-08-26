@@ -52,7 +52,7 @@ namespace density
         {
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
             _mm_pause();
-#elif
+#else
             std::this_thread::yield();
 #endif
         }
