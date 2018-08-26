@@ -318,7 +318,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 1 */
+            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 1 */
         constexpr sp_heter_queue(
           const ALLOCATOR_TYPE & i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
             : Base(
@@ -338,7 +338,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 2 */
+        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 2 */
         constexpr sp_heter_queue(
           ALLOCATOR_TYPE && i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
             : Base(
@@ -359,7 +359,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 3 */
+            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 3 */
         constexpr sp_heter_queue(
           const ALLOCATOR_TYPE & i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
             : Base(
@@ -380,7 +380,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 4 */
+        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 4 */
         constexpr sp_heter_queue(
           ALLOCATOR_TYPE && i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
             : Base(
