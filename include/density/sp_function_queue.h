@@ -22,8 +22,12 @@ namespace density
     /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. sp_function_queue is an adaptor for sp_heter_queue.
 
         sp_function_queue is a concurrent version of function_queue that uses a mix of lock free algorithms and spin locking.
-        This class is very similar to lf_function_queue, with the difference that if multiple producers are supported, they
-        use a spin-locking mutex to synchronize the write to the tail pointer.
+
+        This class is very similar to lf_function_queue, with the difference in multiple-producers mode it uses
+        a spin-locking mutex to synchronize the write to the tail pointer.
+
+        Implementation note: In single-producer mode this class template is equivalent to lf_heter_queue,
+            and the busy-wait function is not used.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements

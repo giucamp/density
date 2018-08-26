@@ -32,6 +32,32 @@ namespace density
             {
             }
 
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              ALLOCATOR_TYPE && i_allocator, BUSY_WAIT && i_busy_wait, std::true_type) noexcept
+                : Base(std::move(i_allocator), std::forward<BUSY_WAIT>(i_busy_wait))
+            {
+            }
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT && i_busy_wait, std::true_type) noexcept
+                : Base(i_allocator, std::forward<BUSY_WAIT>(i_busy_wait))
+            {
+            }
+
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              ALLOCATOR_TYPE && i_allocator, BUSY_WAIT &&, std::false_type) noexcept
+                : Base(std::move(i_allocator))
+            {
+            }
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT &&, std::false_type) noexcept
+                : Base(i_allocator)
+            {
+            }
+
             LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head()
             {
                 swap(*this, i_source);

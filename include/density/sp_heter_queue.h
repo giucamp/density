@@ -15,6 +15,9 @@
 #include <type_traits>
 
 #ifdef _MSC_VER
+#if defined(_M_IX86) || defined(_M_X64)
+#include <immintrin.h> // for _mm_pause
+#endif
 #pragma warning(push)
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier
 #endif
@@ -45,13 +48,23 @@ namespace density
     {
       public:
         /** Calls std::this_thread::yield. */
-        void operator()() noexcept { std::this_thread::yield(); }
+        void operator()() noexcept
+        {
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+            _mm_pause();
+#elif
+            std::this_thread::yield();
+#endif
+        }
     };
 
     /** Concurrent heterogeneous FIFO container-like class template. sp_heter_queue is a concurrent version
         of heter_queue that uses a mix of lock free algorithms and spin locking.
-        This class is very similar to lf_heter_queue, with the difference that if multiple producers are supported, they
-        use a spin-locking mutex to synchronize the write to the tail pointer.
+        This class is very similar to lf_heter_queue, with the difference in multiple-producers mode it uses
+        a spin-locking mutex to synchronize the write to the tail pointer. 
+        
+        Implementation note: In single-producer mode this class template is equivalent to lf_heter_queue, 
+            and the busy-wait function is not used.
 
         @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
                 This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
@@ -293,6 +306,90 @@ namespace density
             : Base(std::move(i_source_allocator))
         {
             static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
+        }
+
+        /** Constructor with allocator and busy-wait callable.
+            @param i_source_allocator source used to copy-construct the allocator.
+            @param i_source_wait source used to copy-construct the busy wait callable.
+
+            <b>Complexity</b>: constant.
+            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            \n <i>Implementation notes</i>:
+                This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
+
+            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 1 */
+        constexpr sp_heter_queue(
+          const ALLOCATOR_TYPE & i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
+            : Base(
+                i_source_allocator,
+                i_source_wait,
+                std::integral_constant<bool, PROD_CARDINALITY == concurrency_multiple>())
+        {
+        }
+
+        /** Constructor with allocator and busy-wait callable.
+            @param i_source_allocator source used to move-construct the allocator.
+            @param i_source_wait source used to copy-construct the busy wait callable.
+
+            <b>Complexity</b>: constant.
+            \n <b>Throws</b>: nothing.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            \n <i>Implementation notes</i>:
+                This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
+
+        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 2 */
+        constexpr sp_heter_queue(
+          ALLOCATOR_TYPE && i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
+            : Base(
+                std::move(i_source_allocator),
+                i_source_wait,
+                std::integral_constant<bool, PROD_CARDINALITY == concurrency_multiple>())
+        {
+            static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
+        }
+
+        /** Constructor with allocator and busy-wait callable.
+            @param i_source_allocator source used to copy-construct the allocator.
+            @param i_source_wait source used to copy-construct the busy wait callable.
+
+            <b>Complexity</b>: constant.
+            \n <b>Throws</b>: whatever the copy constructor of the allocator throws.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            \n <i>Implementation notes</i>:
+                This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
+
+            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 3 */
+        constexpr sp_heter_queue(
+          const ALLOCATOR_TYPE & i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
+            : Base(
+                i_source_allocator,
+                std::move(i_source_wait),
+                std::integral_constant<bool, PROD_CARDINALITY == concurrency_multiple>())
+        {
+            static_assert(std::is_nothrow_move_constructible<BUSY_WAIT_FUNC>::value, "");
+        }
+
+        /** Constructor with allocator and busy-wait callable.
+            @param i_source_allocator source used to move-construct the allocator.
+            @param i_source_wait source used to copy-construct the busy wait callable.
+
+            <b>Complexity</b>: constant.
+            \n <b>Throws</b>: nothing.
+            \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
+            \n <i>Implementation notes</i>:
+                This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
+
+        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 4 */
+        constexpr sp_heter_queue(
+          ALLOCATOR_TYPE && i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
+            : Base(
+                std::move(i_source_allocator),
+                std::move(i_source_wait),
+                std::integral_constant<bool, PROD_CARDINALITY == concurrency_multiple>())
+        {
+            static_assert(std::is_nothrow_move_constructible<ALLOCATOR_TYPE>::value, "");
+            static_assert(std::is_nothrow_move_constructible<BUSY_WAIT_FUNC>::value, "");
         }
 
         /** Move constructor. The allocator is move-constructed from the one of the source.

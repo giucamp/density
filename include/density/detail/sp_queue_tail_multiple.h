@@ -15,6 +15,11 @@ namespace density
           public:
             SpinlockMutex() noexcept { m_lock.clear(); }
 
+            SpinlockMutex(BUSY_WAIT_FUNC && i_busy_wait) : BUSY_WAIT_FUNC(std::move(i_busy_wait))
+            {
+                m_lock.clear();
+            }
+
             SpinlockMutex(const BUSY_WAIT_FUNC & i_busy_wait) : BUSY_WAIT_FUNC(i_busy_wait)
             {
                 m_lock.clear();
@@ -89,8 +94,40 @@ namespace density
             {
             }
 
-            SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator) noexcept
+            constexpr SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator) noexcept
                 : Base(i_allocator), m_tail(invalid_control_block()), m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              ALLOCATOR_TYPE && i_allocator,
+              const BUSY_WAIT_FUNC &
+                i_wait) noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
+                : Base(std::move(i_allocator)), m_tail(invalid_control_block()), m_mutex(i_wait),
+                  m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              const ALLOCATOR_TYPE & i_allocator, const BUSY_WAIT_FUNC & i_wait) noexcept
+                : Base(i_allocator), m_tail(invalid_control_block()), m_mutex(i_wait),
+                  m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              ALLOCATOR_TYPE && i_allocator,
+              BUSY_WAIT_FUNC &&
+                i_wait) noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
+                : Base(std::move(i_allocator)), m_tail(invalid_control_block()),
+                  m_mutex(std::move(i_wait)), m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT_FUNC && i_wait) noexcept
+                : Base(i_allocator), m_tail(invalid_control_block()), m_mutex(std::move(i_wait)),
+                  m_initial_page(nullptr)
             {
             }
 
@@ -362,9 +399,9 @@ namespace density
             }
 
           private: // data members
-            alignas(destructive_interference_size) SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
-            ControlBlock *              m_tail;
-            std::atomic<ControlBlock *> m_initial_page;
+            alignas(destructive_interference_size) ControlBlock * m_tail;
+            SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
+            std::atomic<ControlBlock *>   m_initial_page;
         };
 
     } // namespace detail
