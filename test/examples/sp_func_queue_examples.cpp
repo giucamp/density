@@ -57,7 +57,7 @@ namespace density_tests
             {
                 //! [sp_function_queue push example 3]
 #if !defined(_MSC_VER) || !defined(_M_X64) /* the size of a type must always be a multiple of
-        the alignment, but in the microsoft's compiler, on 64-bit targets, pointers to data
+        the alignment, but in the Microsoft's compiler, on 64-bit targets, pointers to data
         member are 4 bytes big, but are aligned to 8 bytes.
 
         Test code:

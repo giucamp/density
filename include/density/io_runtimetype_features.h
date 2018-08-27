@@ -23,8 +23,8 @@ namespace density
 
         /** Reads the target object from an input stream.
             @param i_source pointer to an instance of the target type. Can't be null.
-                If the dynamic type of the pointed object is not the taget type (assigned
-                by the function make), the behaviour is undefined. */
+                If the dynamic type of the pointed object is not the target type (assigned
+                by the function make), the behavior is undefined. */
         void operator()(std::istream & i_istream, void * i_dest) const
         {
             DENSITY_ASSUME(i_dest != nullptr);
@@ -54,8 +54,8 @@ namespace density
 
         /** Reads from an input stream the target object.
             @param i_source pointer to an instance of the target type. Can't be null.
-                If the dynamic type of the pointed object is not the taget type (assigned
-                by the function make), the behaviour is undefined. */
+                If the dynamic type of the pointed object is not the target type (assigned
+                by the function make), the behavior is undefined. */
         void operator()(std::ostream & i_ostream, const void * i_dest) const
         {
             DENSITY_ASSUME(i_dest != nullptr);

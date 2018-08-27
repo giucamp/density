@@ -142,7 +142,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void
               swap(SpQueue_TailMultiple & i_first, SpQueue_TailMultiple & i_second) noexcept
             {

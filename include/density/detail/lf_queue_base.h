@@ -190,7 +190,7 @@ namespace density
 
             LFQueue_Base & operator=(const LFQueue_Base & i_source) = delete;
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Base & i_first, LFQueue_Base & i_second) noexcept
             {
                 // swap the allocator
@@ -539,7 +539,7 @@ namespace density
                 return PinSuccessfull;
             }
 
-            /** Tries to pin the page containing the provided uint addresss */
+            /** Tries to pin the page containing the provided uint address */
             PinResult pin(uintptr_t i_address) noexcept
             {
                 return pin(reinterpret_cast<void *>(i_address));

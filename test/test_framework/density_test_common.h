@@ -7,7 +7,7 @@
 #pragma once
 
 #ifdef _MSC_VER
-#define _ENABLE_EXTENDED_ALIGNED_STORAGE /* acknowledge change done in 2017 15.8 about overalignment 
+#define _ENABLE_EXTENDED_ALIGNED_STORAGE /* acknowledge change done in 2017 15.8 about over-alignment 
     that breaks the ABI compatibility */
 #endif
 

@@ -75,7 +75,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
                 // swap the base
@@ -223,11 +223,11 @@ namespace density
                 static_assert(
                   is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "internal error");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size      = uint_upper_align(SIZE, alignment);
-                constexpr auto can_fit_in_a_page =
+                constexpr size_t alignment = size_max(ALIGNMENT, min_alignment);
+                constexpr size_t size      = uint_upper_align(SIZE, alignment);
+                constexpr bool   can_fit_in_a_page =
                   size + (alignment - min_alignment) <= s_max_size_inpage;
-                constexpr auto over_aligned = alignment > min_alignment;
+                constexpr bool over_aligned = alignment > min_alignment;
 
                 for (;;)
                 {

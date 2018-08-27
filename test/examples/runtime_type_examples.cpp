@@ -64,7 +64,7 @@ namespace density_tests
     // this is ok: int supports sizeof, alignof, and copy construction
     auto IntType = MyRuntimeType::make<int>();
 
-    // this fails to compile: std::mutex doesen't allow copy construction
+    // this fails to compile: std::mutex doesn't allow copy construction
     // auto MutexType = MyRuntimeType::make<std::mutex>();
 
     // MyFeatures::tuple<void> = std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>

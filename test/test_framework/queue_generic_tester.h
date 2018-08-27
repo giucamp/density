@@ -506,7 +506,7 @@ namespace density_tests
             void put_one()
             {
                 /* pick a random type (outside the exception loop) to have a deterministic and exhaustive
-                    exception test at least in isolation (in singlethread tests). */
+                    exception test at least in isolation (in single-thread tests). */
                 const auto type_index =
                   m_random.get_int<size_t>(m_parent_tester.m_put_cases.size() - 1);
 

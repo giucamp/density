@@ -20,7 +20,7 @@ namespace density
     /** Type-list class template that can be used to specify which features a runtime_type captures from the target type. 
 
         Each type in the template arguments is either:
-        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type fetaure
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type feature
           (f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature.
         - a nested feature_list
@@ -35,7 +35,7 @@ namespace density
 
         For the composition of the tuple:
         - nested features are flatened
-        - duplicates are removed (only the first occurrence of a fetaure is considered)
+        - duplicates are removed (only the first occurrence of a feature is considered)
         - any occurrence of the pseudo-feature f_none is stripped out
         
         \snippet runtime_type_examples.cpp feature_list example 3 
@@ -74,10 +74,10 @@ namespace density
     {
         using tuple_type = detail::Tuple_Merge_t<
 
-          // add to the tuple GROUPED_FEATURES (the nested fetaures)
+          // add to the tuple GROUPED_FEATURES (the nested features)
           typename feature_list<GROUPED_FEATURES...>::tuple_type,
 
-          // add to the tuple the remaining features with the fetaures already in GROUPED_FEATURES removed
+          // add to the tuple the remaining features with the features already in GROUPED_FEATURES removed
           detail::Tuple_Diff_t<
             typename feature_list<OTHER_FEATURES...>::tuple_type,
             typename feature_list<GROUPED_FEATURES...>::tuple_type>
@@ -91,7 +91,7 @@ namespace density
     };
 
     /** Tag type that can be included in a feature_list without affecting the feature tuple. This peseudo-feature 
-        is usefull to conditionally add features to a feature_list, for example using
+        is useful to conditionally add features to a feature_list, for example using
         [std::conditional](https://en.cppreference.com/w/cpp/types/conditional).
         
         In this code f_none is used to define a conditional type list.
@@ -162,7 +162,7 @@ namespace density
         /** Constructs in an uninitialized memory buffer a value-initialized instance of the target type.
                 @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
-                the behaviour is undefined. */
+                the behavior is undefined. */
         void operator()(void * i_dest) const { (*m_function)(i_dest); }
 
       private:
@@ -190,9 +190,9 @@ namespace density
         /** Copy-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
-                the behaviour is undefined.
+                the behavior is undefined.
             @param i_source pointer to the source object. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined. */
         void operator()(void * i_dest, const void * i_source) const
         {
@@ -226,9 +226,9 @@ namespace density
         /** Move-constructs in an uninitialized memory buffer an instance of the target type.
             @param i_dest where the target object must be constructed. Can't be null. If the buffer
                 pointed by this parameter does not respect the size and alignment of the target type,
-                the behaviour is undefined.
+                the behavior is undefined.
             @param i_source pointer to the source object. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined. */
         void operator()(void * i_dest, void * i_source) const { (*m_function)(i_dest, i_source); }
 
@@ -258,7 +258,7 @@ namespace density
 
         /** Destroys an instance of the target type.
             @param i_object pointer to the object to destroy. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined.
             @return The address of the complete object that has been destroyed. */
         void operator()(void * i_object) const noexcept { return (*m_function)(i_object); }
@@ -291,10 +291,10 @@ namespace density
 
         /** Returns whether two target object compare equal.
             @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined.
             @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined. */
         bool operator()(void const * i_first, void const * i_second) const noexcept
         {
@@ -331,10 +331,10 @@ namespace density
 
         /** Returns whether the first object compares less than the second object.
             @param i_first pointer to the first object to destroy. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined.
             @param i_second pointer to the second object to destroy. Can't be null. If the dynamic type of the
-                pointed object is not the taget type (assigned by the function make), the behaviour is
+                pointed object is not the target type (assigned by the function make), the behavior is
                 undefined. */
         bool operator()(void const * i_first, void const * i_second) const
         {
@@ -372,8 +372,8 @@ namespace density
 
         /** Computes the hash of an instance of the target type object.
             @param i_source pointer to an instance of the target type. Can't be null.
-                If the dynamic type of the pointed object is not the taget type (assigned
-                by the function make), the behaviour is undefined. */
+                If the dynamic type of the pointed object is not the target type (assigned
+                by the function make), the behavior is undefined. */
         DENSITY_NODISCARD size_t operator()(const void * i_source) const noexcept
         {
             return (*m_function)(i_source);
@@ -424,10 +424,10 @@ namespace density
       feature_list<f_size, f_alignment, f_copy_construct, f_move_construct, f_rtti, f_destroy>;
 
     /** Traits that checks whether a feature_list or a runtime_type (the first template parameter)
-        contains all of the target fetaures (from the second template parameter on). If this condition 
-        is satisfied, or if no target feature is provided, this type inehrits from 
+        contains all of the target features (from the second template parameter on). If this condition 
+        is satisfied, or if no target feature is provided, this type inherits from 
         [std::true_type](https://en.cppreference.com/w/cpp/types/integral_constant).
-        Otherwise it inehrits from [std::false_type](https://en.cppreference.com/w/cpp/types/integral_constant).
+        Otherwise it inherits from [std::false_type](https://en.cppreference.com/w/cpp/types/integral_constant).
     
         The following example shows has_features used on a feature_list:
         \snippet runtime_type_examples.cpp has_features example 1
@@ -462,7 +462,7 @@ namespace density
         - R is equality comparable. Two instances of R compare equal if they are both empty, or they are bound to the
             same target type
         - R is trivially destructible
-        - the expression <code>R::make<T>()</code> yelds an instance of R bound to the target type T
+        - the expression <code>R::make<T>()</code> yields an instance of R bound to the target type T
         - the expression <code>r.is<T>() -> bool</code> is true if and only if T is the target type to which r is bound
         - <code>r.size()</code> is equivalent to <code>sizeof(T)</code>, where T is the target type
         - <code>r.alignment()</code> is equivalent to <code>alignof(T)</code>, where T is the target type
@@ -507,7 +507,7 @@ namespace density
         \endcode
 
         The static function template make creates an instance of the feature bound to a type. The function
-        call operator invokes the fetaure.  
+        call operator invokes the feature.  
 
         The following snippet shows the synopsis of f_size, f_default_construct and f_equal.
 
@@ -543,17 +543,17 @@ namespace density
             @tparam FEATURES... list of features to be captures from the target type. 
 
         <i>Implementation note</i>:
-        runtime_type is actually a wrapper around a pointer to a static constexpr instance of the tuple of the suppported features. 
+        runtime_type is actually a wrapper around a pointer to a static constexpr instance of the tuple of the supported features. 
         It is actually a generalization of the pointer to the v-table in a polymorphic type.
 
         Like in a feature_list, each type in the template arguments pack is either:
-        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type fetaure
+        - a type satisfying the requirements of [TypeFeature](TypeFeature_requirements.html), like a built-in type feature
           (one of f_size, f_alignment, f_default_construct, f_copy_construct, f_move_construct, f_destroy, f_hash, f_rtti, f_equal,
           f_less, f_istream, f_ostream), or a user defined type feature
         - a nested feature_list, which is expanded. Feature lists can be nested to any level, and they are always flatened
         - the special tag type f_none, which is ignored
 
-        Furthermore duplicate features are removed (only the first occurrence of a fetaure is considered). If after all these 
+        Furthermore duplicate features are removed (only the first occurrence of a feature is considered). If after all these 
         transformations two runtime_type specializations have the same feature_list, they are copyable and assignable each others:
 
         \snippet runtime_type_examples.cpp runtime_type example 1
@@ -715,7 +715,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions: 
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
 
             \b Postcoditions:
@@ -737,7 +737,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
 
             \b Postcoditions:
@@ -749,7 +749,7 @@ namespace density
         /** Invokes the feature f_default_construct to [value-initialize](https://en.cppreference.com/w/cpp/language/value_initialization)
             an instance of the target type.
             Equivalent to <code>get_feature<f_default_construct>()(i_dest)</code>.
-                @param i_dest pointer to the destination buffer in which the target type is inplace constructed. 
+                @param i_dest pointer to the destination buffer in which the target type is in-place constructed. 
 
             The effect of this function is the same of this code:
                 @code
@@ -763,7 +763,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
                 - The destination pointer is not null
                 - The destination buffer is large at least as the result of runtime_type::size and it's 
@@ -781,7 +781,7 @@ namespace density
 
         /** Invokes the feature f_copy_construct to copy-construct an instance of the target type.
             Equivalent to <code>get_feature<f_copy_construct>()(i_dest, i_source)</code>.
-                @param i_dest pointer to the destination buffer in which the target type is inplace constructed.
+                @param i_dest pointer to the destination buffer in which the target type is in-place constructed.
                 @param i_source pointer to an instance of the target type to be used as source for the copy.
 
             The effect of this function is the same of this code:
@@ -794,7 +794,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
                 - The destination pointer and the source pointer are not null
                 - The destination buffer is large at least as the result of runtime_type::size and it's
@@ -813,7 +813,7 @@ namespace density
 
         /** Invokes the feature f_move_construct to move-construct an instance of the target type.
             Equivalent to <code>get_feature<f_move_construct>()(i_dest, i_source)</code>.
-                @param i_dest pointer to the destination buffer in which the target type is inplace constructed.
+                @param i_dest pointer to the destination buffer in which the target type is in-place constructed.
                 @param i_source pointer to an instance of the target type to be used as source for the move
 
             The effect of this function is the same of this code:
@@ -826,7 +826,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
                 - The destination pointer and the source pointer are not null
                 - The destination buffer is large at least as the result of runtime_type::size and it's
@@ -858,7 +858,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
                 - The destination pointer is not null and it points to an object whose dynamic type is the target type
 
@@ -882,7 +882,7 @@ namespace density
                 @endcode
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
 
             \b Requires:
@@ -912,7 +912,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
                 - The first pointer is not null and it points to an object whose dynamic type is the target type
                 - The second pointer is not null and it points to an object whose dynamic type is the target type
@@ -931,7 +931,7 @@ namespace density
                     error is reported (this function is not SFINAE-friendly).
 
             \b Precoditions:
-               The behaviour is undefined if any of these conditions is not satified:
+               The behavior is undefined if any of these conditions is not satisfied:
                 - The runtime_type is not empty
 
             \b Throws: nothing. */

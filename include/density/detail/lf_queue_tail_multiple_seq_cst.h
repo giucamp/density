@@ -80,7 +80,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
                 // swap the base
@@ -420,7 +420,7 @@ namespace density
                 }
 
                 /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
-                    because this is a oneshot operation, so we can't possibly stick in a loop. */
+                    because this is a one-shot operation, so we can't possibly stick in a loop. */
                 ControlBlock * initial_page = nullptr;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))
                 {
@@ -452,7 +452,7 @@ namespace density
                         ToDenGuarantee(i_progress_guarantee)));
                 if (new_page != nullptr)
                 {
-                    auto const new_page_end_block = get_end_control_block(new_page);
+                    ControlBlock * const new_page_end_block = get_end_control_block(new_page);
                     raw_atomic_store(
                       &new_page_end_block->m_next, uintptr_t(LfQueue_InvalidNextPage));
                 }
@@ -468,7 +468,7 @@ namespace density
 
             void discard_created_page(ControlBlock * i_new_page) noexcept
             {
-                auto const new_page_end_block = get_end_control_block(i_new_page);
+                ControlBlock * const new_page_end_block = get_end_control_block(i_new_page);
                 raw_atomic_store(&new_page_end_block->m_next, uintptr_t(0));
                 ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
             }

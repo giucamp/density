@@ -185,7 +185,7 @@ namespace density
 
                 enum result_t
                 {
-                    success, /**< allocation succesfull (implies address != nullptr) */
+                    success, /**< allocation successful (implies address != nullptr) */
                     retry, /**< allocation failed because of contention, the progress guarantee could not be respacted 
                                 (implies address == nullptr) */
                     nomem, /**< allocation failed because no space was available (implies address == nullptr) */

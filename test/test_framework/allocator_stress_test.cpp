@@ -7,8 +7,8 @@
 #include "../test_framework/density_test_common.h"
 //
 
-#include "allocator_stress_test.h"
 #include "aligned_containers.h"
+#include "allocator_stress_test.h"
 #include "density_test_common.h"
 #include "easy_random.h"
 #include "statistics.h"
@@ -26,7 +26,7 @@ namespace density_tests
 {
     namespace
     {
-        /** Shynchronization object that wraps a counter, similar to std::experimental::latch. 
+        /** Synchronization object that wraps a counter, similar to std::experimental::latch. 
             Threads can increment the counter, or wait until the counter reaches a value. */
         class wait_counter
         {
@@ -121,7 +121,7 @@ namespace density_tests
 
                     static_assert(
                       density::default_allocator::page_size % sizeof(uintptr_t) == 0,
-                      "Othewrise we should zero the remainder too");
+                      "Otherwise we should zero the remainder too");
                     for (size_t index = 0; index < word_count; index++)
                     {
                         DENSITY_TEST_ASSERT(words[index] == reinterpret_cast<uintptr_t>(page));

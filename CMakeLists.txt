@@ -73,19 +73,20 @@ add_executable(density_test
 	include/density/runtime_type.h
 	include/density/sp_function_queue.h
 	include/density/sp_heter_queue.h
-	test/examples/concurrent_heterogeneous_queue_examples.cpp
+	test/examples/conc_queue_examples.cpp
 	test/examples/conc_func_queue_examples.cpp
 	test/examples/func_queue_examples.cpp
-	test/examples/heterogeneous_queue_examples.cpp
+	test/examples/heter_queue_examples.cpp
 	test/examples/lf_func_queue_examples.cpp
-	test/examples/lf_heterogeneous_queue_examples.cpp
+	test/examples/lf_queue_examples.cpp
 	test/examples/misc_examples.cpp
+	test/examples/overview_examples.cpp
 	test/examples/lifo_examples.cpp
 	test/examples/any.h
 	test/examples/any_tests.cpp
 	test/examples/runtime_type_examples.cpp
 	test/examples/sp_func_queue_examples.cpp
-	test/examples/sp_heterogeneous_queue_examples.cpp
+	test/examples/sp_queue_examples.cpp
 	test/tests/generic_tests/conc_heter_queue_generic_tests.cpp
 	test/tests/generic_tests/heter_queue_generic_tests.cpp
 	test/tests/generic_tests/lf_heter_queue_generic_tests_relaxed.cpp

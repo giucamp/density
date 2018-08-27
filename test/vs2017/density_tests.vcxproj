@@ -304,17 +304,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\examples\any_tests.cpp" />
-    <ClCompile Include="..\examples\concurrent_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\examples\conc_queue_examples.cpp" />
     <ClCompile Include="..\examples\conc_func_queue_examples.cpp" />
     <ClCompile Include="..\examples\func_queue_examples.cpp" />
-    <ClCompile Include="..\examples\heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\examples\heter_queue_examples.cpp" />
     <ClCompile Include="..\examples\lf_func_queue_examples.cpp" />
-    <ClCompile Include="..\examples\lf_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\examples\lf_queue_examples.cpp" />
     <ClCompile Include="..\examples\lifo_examples.cpp" />
     <ClCompile Include="..\examples\misc_examples.cpp" />
+    <ClCompile Include="..\examples\overview_examples.cpp" />
     <ClCompile Include="..\examples\runtime_type_examples.cpp" />
     <ClCompile Include="..\examples\sp_func_queue_examples.cpp" />
-    <ClCompile Include="..\examples\sp_heterogeneous_queue_examples.cpp" />
+    <ClCompile Include="..\examples\sp_queue_examples.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\tests\concurrent_heterogeneous_queue_basic_tests.cpp" />
     <ClCompile Include="..\tests\generic_tests\conc_heter_queue_generic_tests.cpp" />

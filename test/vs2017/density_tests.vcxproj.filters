@@ -68,28 +68,16 @@
     <ClCompile Include="..\examples\conc_func_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
-    <ClCompile Include="..\examples\concurrent_heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
     <ClCompile Include="..\examples\func_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
-    <ClCompile Include="..\examples\heterogeneous_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
     <ClCompile Include="..\examples\lf_func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\examples\lf_heterogeneous_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\examples\misc_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\examples\sp_func_queue_examples.cpp">
-      <Filter>examples</Filter>
-    </ClCompile>
-    <ClCompile Include="..\examples\sp_heterogeneous_queue_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\lifo_tests.cpp">
@@ -112,6 +100,21 @@
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="..\examples\any_tests.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\conc_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\sp_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\heter_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\lf_queue_examples.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="..\examples\overview_examples.cpp">
       <Filter>examples</Filter>
     </ClCompile>
   </ItemGroup>

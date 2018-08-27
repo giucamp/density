@@ -70,7 +70,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Head & i_first, LFQueue_Head & i_second) noexcept
             {
                 // swap the base

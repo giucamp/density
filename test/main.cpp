@@ -69,6 +69,8 @@ namespace density_tests
 
     void load_unload_tests(std::ostream & i_ostream);
 
+    void overview_examples();
+
     void func_queue_samples(std::ostream &);
     void conc_func_queue_samples(std::ostream &);
     void lf_func_queue_samples(std::ostream &);
@@ -231,6 +233,8 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
         spinlocking_heterogeneous_queue_samples(i_ostream);
         spinlocking_heterogeneous_queue_basic_tests(i_ostream);
     }
+
+    overview_examples();
 
     func_queue_samples(i_ostream);
     conc_func_queue_samples(i_ostream);

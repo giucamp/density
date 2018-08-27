@@ -274,7 +274,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory and never throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue default_construct example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue default_construct example 1 */
         constexpr sp_heter_queue() noexcept = default;
 
         /** Constructor with allocator parameter. The allocator is copy-constructed.
@@ -286,7 +286,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_copy_alloc example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue construct_copy_alloc example 1 */
         constexpr explicit sp_heter_queue(const ALLOCATOR_TYPE & i_source_allocator) noexcept
             : Base(i_source_allocator)
         {
@@ -301,7 +301,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_move_alloc example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue construct_move_alloc example 1 */
         constexpr explicit sp_heter_queue(ALLOCATOR_TYPE && i_source_allocator) noexcept
             : Base(std::move(i_source_allocator))
         {
@@ -318,7 +318,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue construct_alloc_wait example 1 */
         constexpr sp_heter_queue(
           const ALLOCATOR_TYPE & i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
             : Base(
@@ -338,7 +338,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 2 */
+        \snippet sp_queue_examples.cpp sp_heter_queue construct_alloc_wait example 2 */
         constexpr sp_heter_queue(
           ALLOCATOR_TYPE && i_source_allocator, const BUSY_WAIT_FUNC & i_source_wait) noexcept
             : Base(
@@ -359,7 +359,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 3 */
+            \snippet sp_queue_examples.cpp sp_heter_queue construct_alloc_wait example 3 */
         constexpr sp_heter_queue(
           const ALLOCATOR_TYPE & i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
             : Base(
@@ -380,7 +380,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue construct_alloc_wait example 4 */
+        \snippet sp_queue_examples.cpp sp_heter_queue construct_alloc_wait example 4 */
         constexpr sp_heter_queue(
           ALLOCATOR_TYPE && i_source_allocator, BUSY_WAIT_FUNC && i_source_wait) noexcept
             : Base(
@@ -400,7 +400,7 @@ namespace density
             \n <i>Implementation notes</i>:
                 - After the call the source is left empty.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue move_construct example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue move_construct example 1 */
         sp_heter_queue(sp_heter_queue && i_source) noexcept = default;
 
         /** Move assignment. The allocator is move-assigned from the one of the source.
@@ -414,7 +414,7 @@ namespace density
                 - After the call the source is left empty.
                 - The complexity is linear in the number of elements in this queue.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue move_assign example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue move_assign example 1 */
         sp_heter_queue & operator=(sp_heter_queue && i_source) noexcept
         {
             swap(*this, i_source);
@@ -423,7 +423,7 @@ namespace density
 
         /** Returns a copy of the allocator
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue get_allocator example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue get_allocator example 1 */
         allocator_type
           get_allocator() noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
         {
@@ -432,17 +432,17 @@ namespace density
 
         /** Returns a reference to the allocator
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue get_allocator_ref example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue get_allocator_ref example 1 */
         allocator_type & get_allocator_ref() noexcept { return *this; }
 
         /** Returns a const reference to the allocator
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue get_allocator_ref example 2 */
+        \snippet sp_queue_examples.cpp sp_heter_queue get_allocator_ref example 2 */
         const allocator_type & get_allocator_ref() const noexcept { return *this; }
 
         /** Swaps two queues.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue swap example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue swap example 1 */
         friend void swap(sp_heter_queue & i_first, sp_heter_queue & i_second) noexcept
         {
             swap(static_cast<Base &>(i_first), static_cast<Base &>(i_second));
@@ -470,7 +470,7 @@ namespace density
             <b>Complexity</b>: Unspecified.
             \n <b>Throws</b>: Nothing.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue empty example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue empty example 1 */
         bool empty() const noexcept { return Consume().is_queue_empty(this); }
 
         /** Deletes all the elements in the queue.
@@ -479,7 +479,7 @@ namespace density
             \n <b>Effects on iterators</b>: any iterator is invalidated
             \n <b>Throws</b>: Nothing.
 
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue clear example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue clear example 1 */
         void clear() noexcept
         {
             consume_operation consume;
@@ -524,21 +524,21 @@ namespace density
 
             /** Copy construction is not allowed.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction copy_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction copy_construct example 1 */
             put_transaction(const put_transaction &) = delete;
 
             /** Copy assignment is not allowed.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction copy_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction copy_assign example 1 */
             put_transaction & operator=(const put_transaction &) = delete;
 
             /** Move constructs a put_transaction, transferring the state from the source.
                     @param i_source source to move from. It is left in a valid but indeterminate state.
 
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction move_construct example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction move_construct example 1
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction move_construct example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction move_construct example 2 */
             template <
               typename OTHERTYPE,
               typename = typename std::enable_if<
@@ -553,8 +553,8 @@ namespace density
             /** Move assigns a put_transaction, transferring the state from the source.
                 @param i_source source to move from. It is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction move_assign example 1
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction move_assign example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction move_assign example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction move_assign example 2 */
             template <
               typename OTHERTYPE,
               typename = typename std::enable_if<
@@ -570,7 +570,7 @@ namespace density
 
             /** Swaps two instances of put_transaction.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction swap example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue put_transaction swap example 1 */
             friend void swap(put_transaction & i_first, put_transaction & i_second) noexcept
             {
                 using std::swap;
@@ -599,7 +599,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction raw_allocate example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction raw_allocate example 1*/
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
@@ -632,7 +632,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction raw_allocate_copy example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
             typename std::iterator_traits<INPUT_ITERATOR>::value_type *
               raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
@@ -640,7 +640,8 @@ namespace density
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(
                   std::is_trivially_destructible<ValueType>::value,
-                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "raw_allocate_copy provides a raw memory in-place allocation that does not "
+                  "invoke "
                   "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
@@ -675,7 +676,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction raw_allocate_copy example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
             auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
               -> decltype(std::declval<put_transaction>().raw_allocate_copy(
@@ -713,7 +714,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate example 1*/
             void * try_raw_allocate(
               progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
@@ -755,7 +756,7 @@ namespace density
                 \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate_copy example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
             typename std::iterator_traits<INPUT_ITERATOR>::value_type * try_raw_allocate_copy(
               progress_guarantee i_progress_guarantee,
@@ -768,7 +769,8 @@ namespace density
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(
                   std::is_trivially_destructible<ValueType>::value,
-                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "raw_allocate_copy provides a raw memory in-place allocation that does not "
+                  "invoke "
                   "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
@@ -815,7 +817,7 @@ namespace density
                 \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate_copy example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
             auto try_raw_allocate_copy(
               progress_guarantee  i_progress_guarantee,
@@ -855,7 +857,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction cancel example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -865,17 +867,17 @@ namespace density
 
             /** Returns true whether this object is not currently bound to a transaction.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction empty example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction empty example 1 */
             bool empty() const noexcept { return m_put.m_user_storage == nullptr; }
 
             /** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction operator_bool example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction operator_bool example 1 */
             explicit operator bool() const noexcept { return m_put.m_user_storage != nullptr; }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction queue example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue put_transaction queue example 1 */
             sp_heter_queue * queue() const noexcept
             {
                 return m_put.m_user_storage != nullptr ? m_queue : nullptr;
@@ -889,9 +891,9 @@ namespace density
                 \pre The behavior is undefined if either:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction element_ptr example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction element_ptr example 1
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction element_ptr example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction element_ptr example 2 */
             void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -910,7 +912,7 @@ namespace density
                 \pre The behavior is undefined if:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue typed_put_transaction element example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
             template <
               typename EL                                               = ELEMENT_COMPLETE_TYPE,
@@ -929,7 +931,7 @@ namespace density
                 \pre The behavior is undefined if either:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction complete_type example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue put_transaction complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -938,7 +940,7 @@ namespace density
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue put_transaction destroy example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue put_transaction destroy example 1 */
             ~put_transaction()
             {
                 if (m_put.m_user_storage != nullptr)
@@ -982,32 +984,32 @@ namespace density
           public:
             /** Constructs an empty consume_operation
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation default_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation default_construct example 1 */
             consume_operation() noexcept = default;
 
             /** Copy construction is not allowed
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation copy_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation copy_construct example 1 */
             consume_operation(const consume_operation &) = delete;
 
             /** Copy assignment is not allowed
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation copy_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation copy_assign example 1 */
             consume_operation & operator=(const consume_operation &) = delete;
 
             /** Move constructor. The source is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation move_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation move_construct example 1 */
             consume_operation(consume_operation && i_source) noexcept = default;
 
             /** Move assignment. The source is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation move_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation move_assign example 1 */
             consume_operation & operator=(consume_operation && i_source) noexcept = default;
 
             /** Destructor: cancel the operation (if any).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation destroy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation destroy example 1 */
             ~consume_operation()
             {
                 if (!m_consume_data.empty())
@@ -1018,7 +1020,7 @@ namespace density
 
             /** Swaps two instances of consume_operation.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation swap example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation swap example 1 */
             friend void swap(consume_operation & i_first, consume_operation & i_second) noexcept
             {
                 i_first.m_consume_data.swap(i_second.m_consume_data);
@@ -1026,17 +1028,17 @@ namespace density
 
             /** Returns true whether this object does not hold the state of an operation.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation empty example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation empty example 1 */
             bool empty() const noexcept { return m_consume_data.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !consume_operation::empty.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation operator_bool example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept { return !m_consume_data.empty(); }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation queue example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation queue example 1 */
             sp_heter_queue * queue() const noexcept
             {
                 return static_cast<sp_heter_queue *>(m_consume_data.m_queue);
@@ -1079,7 +1081,7 @@ namespace density
                 like invoke_destroy to do both the function call and the destruction of the capture in a single call,
                 making a single pseudo v-call instead of two.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation commit_nodestroy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation commit_nodestroy example 1 */
             void commit_nodestroy() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1103,7 +1105,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation cancel example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue consume_operation cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1114,7 +1116,7 @@ namespace density
 
                 \pre The behavior is undefined if this consume_operation is empty.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation complete_type example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1127,7 +1129,7 @@ namespace density
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been used as source for a move operation.
                 \post The returned address is aligned at least on sp_heter_queue::min_alignment.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation unaligned_element_ptr example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1141,7 +1143,7 @@ namespace density
 
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation element_ptr example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation element_ptr example 1 */
             void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -1153,7 +1155,7 @@ namespace density
                 \pre The behavior is undefined if this consume_operation is empty, that is it has been committed or used as source for a move operation.
                 \pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue consume_operation element example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
@@ -1201,14 +1203,14 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue push example 1 */
         template <typename ELEMENT_TYPE> void push(ELEMENT_TYPE && i_source)
         {
             return emplace<typename std::decay<ELEMENT_TYPE>::type>(
               std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
+        /** Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.
 
@@ -1223,7 +1225,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         void emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -1246,14 +1248,14 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue dyn_push example 1 */
         void dyn_push(const runtime_type & i_type) { start_dyn_push(i_type).commit(); }
 
         /** Appends at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
 
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If
@@ -1266,7 +1268,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue dyn_push_copy example 1 */
         void dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
@@ -1275,8 +1277,8 @@ namespace density
         /** Adds at the end of the queue an element of a type known at runtime, move-constructing it from the source.
 
             @param i_type type of the new element
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If
@@ -1289,7 +1291,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue dyn_push_move example 1 */
         void dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
@@ -1318,7 +1320,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_push example 1 */
         template <typename ELEMENT_TYPE>
         put_transaction<typename std::decay<ELEMENT_TYPE>::type>
           start_push(ELEMENT_TYPE && i_source)
@@ -1328,7 +1330,7 @@ namespace density
         }
 
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
             \n This function allocates the required space, constructs the new element, and returns a transaction object that may be used to
             allocate raw space associated to the element being inserted, or to alter the element in some way.
             \n Call the member function commit on the returned transaction in order to make the effects observable.
@@ -1348,7 +1350,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         put_transaction<ELEMENT_TYPE> start_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -1399,7 +1401,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_dyn_push example 1 */
         put_transaction<> start_dyn_push(const runtime_type & i_type)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
@@ -1437,8 +1439,8 @@ namespace density
             function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1447,7 +1449,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_dyn_push_copy example 1 */
         put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
@@ -1483,8 +1485,8 @@ namespace density
             function is called in this timespan by the same thread, the behavior is undefined.
 
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1493,7 +1495,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_dyn_push_move example 1 */
         put_transaction<> start_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
@@ -1545,7 +1547,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_push example 1 */
         template <typename ELEMENT_TYPE>
         bool try_push(progress_guarantee i_progress_guarantee, ELEMENT_TYPE && i_source) noexcept(
           noexcept(std::declval<sp_heter_queue>()
@@ -1556,7 +1558,7 @@ namespace density
               i_progress_guarantee, std::forward<ELEMENT_TYPE>(i_source));
         }
 
-        /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from
+        /** Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from
             a perfect forwarded parameter pack.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate
             a failure, and has no observable effects. This function fails if:
@@ -1580,7 +1582,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         bool
           try_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
@@ -1618,7 +1620,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_dyn_push example 1 */
         bool try_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
             auto tranasction = try_start_dyn_push(i_progress_guarantee, i_type);
@@ -1638,8 +1640,8 @@ namespace density
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return whether the put operation was successful
 
             \n <b>Requires</b>:
@@ -1653,7 +1655,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_dyn_push_copy example 1 */
         bool try_dyn_push_copy(
           progress_guarantee   i_progress_guarantee,
           const runtime_type & i_type,
@@ -1676,8 +1678,8 @@ namespace density
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return whether the put operation was successful
 
             \n <b>Requires</b>:
@@ -1691,7 +1693,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_dyn_push_move example 1 */
         bool try_dyn_push_move(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type, void * i_source)
         {
@@ -1733,7 +1735,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_push example 1 */
         template <typename ELEMENT_TYPE>
         put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_push(
           progress_guarantee i_progress_guarantee,
@@ -1748,7 +1750,7 @@ namespace density
         }
 
         /** Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
             \n If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to
             indicate  a failure, and has no observable effects. This function fails if:
             - a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with
@@ -1776,7 +1778,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         put_transaction<ELEMENT_TYPE>
           try_start_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
@@ -1793,7 +1795,7 @@ namespace density
                 return put_transaction<ELEMENT_TYPE>();
             }
 
-            bool is_noexcept =
+            constexpr bool is_noexcept =
               std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
               noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
@@ -1860,7 +1862,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_dyn_push example 1 */
         put_transaction<>
           try_start_dyn_push(progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
@@ -1911,8 +1913,8 @@ namespace density
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1921,7 +1923,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_dyn_push_copy example 1 */
         put_transaction<> try_start_dyn_push_copy(
           progress_guarantee   i_progress_guarantee,
           const runtime_type & i_type,
@@ -1972,8 +1974,8 @@ namespace density
 
             @param i_progress_guarantee progress guarantee to respect
             @param i_type type of the new element.
-            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whoose
-                dynamic type is the the target type i_type was bound to, the behaviour is undefined.
+            @param i_source pointer to the object to use as source. If this pointer does dot point to an object whose
+                dynamic type is the target type i_type was bound to, the behavior is undefined.
             @return The associated transaction object.
 
             <b>Complexity</b>: constant.
@@ -1982,7 +1984,7 @@ namespace density
             \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_dyn_push_move example 1 */
         put_transaction<> try_start_dyn_push_move(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type, void * i_source)
         {
@@ -2023,7 +2025,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_pop example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue try_pop example 1 */
         bool try_pop() noexcept
         {
             if (auto operation = try_start_consume())
@@ -2039,7 +2041,7 @@ namespace density
 
             A non-empty consume must be committed for the consume to have effect.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_consume example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_consume example 1 */
         consume_operation try_start_consume() noexcept
         {
             return consume_operation(PrivateType(), this);
@@ -2057,7 +2059,7 @@ namespace density
             but it's more efficient if the next consumable element is in the same page of the last
             element i_consume has visited because in this case it doesn't perform page pinning.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_consume_ example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_consume_ example 1 */
         bool try_start_consume(consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume_impl(PrivateType(), this);
@@ -2099,21 +2101,21 @@ namespace density
 
             /** Copy construction is not allowed.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction copy_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction copy_construct example 1 */
             reentrant_put_transaction(const reentrant_put_transaction &) = delete;
 
             /** Copy assignment is not allowed.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction copy_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction copy_assign example 1 */
             reentrant_put_transaction & operator=(const reentrant_put_transaction &) = delete;
 
             /** Move constructs a reentrant_put_transaction, transferring the state from the source.
                     @param i_source source to move from. It is left in a valid but indeterminate state.
 
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_construct example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_construct example 1
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_construct example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_construct example 2 */
             template <
               typename OTHERTYPE,
               typename = typename std::enable_if<
@@ -2128,8 +2130,8 @@ namespace density
             /** Move assigns a reentrant_put_transaction, transferring the state from the source.
                 @param i_source source to move from. It is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_assign example 1
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_assign example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_assign example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction move_assign example 2 */
             template <
               typename OTHERTYPE,
               typename = typename std::enable_if<
@@ -2146,7 +2148,7 @@ namespace density
 
             /** Swaps two instances of reentrant_put_transaction.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction swap example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction swap example 1 */
             friend void swap(
               reentrant_put_transaction & i_first, reentrant_put_transaction & i_second) noexcept
             {
@@ -2176,7 +2178,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate example 1*/
             void * raw_allocate(size_t i_size, size_t i_alignment)
             {
                 DENSITY_ASSERT(!empty());
@@ -2209,7 +2211,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate_copy example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
             typename std::iterator_traits<INPUT_ITERATOR>::value_type *
               raw_allocate_copy(INPUT_ITERATOR i_begin, INPUT_ITERATOR i_end)
@@ -2217,7 +2219,8 @@ namespace density
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(
                   std::is_trivially_destructible<ValueType>::value,
-                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "raw_allocate_copy provides a raw memory in-place allocation that does not "
+                  "invoke "
                   "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
@@ -2252,7 +2255,7 @@ namespace density
                 \n <b>Throws</b>: unspecified.
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
             auto raw_allocate_copy(const INPUT_RANGE & i_source_range)
               -> decltype(std::declval<reentrant_put_transaction>().raw_allocate_copy(
@@ -2290,7 +2293,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate example 1*/
             void * try_raw_allocate(
               progress_guarantee i_progress_guarantee, size_t i_size, size_t i_alignment) noexcept
             {
@@ -2332,7 +2335,7 @@ namespace density
                 \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects)
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1*/
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 1*/
             template <typename INPUT_ITERATOR>
             typename std::iterator_traits<INPUT_ITERATOR>::value_type * try_raw_allocate_copy(
               progress_guarantee i_progress_guarantee,
@@ -2345,7 +2348,8 @@ namespace density
                 using ValueType = typename std::iterator_traits<INPUT_ITERATOR>::value_type;
                 static_assert(
                   std::is_trivially_destructible<ValueType>::value,
-                  "raw_allocate_copy provides a raw memory inplace allocation that does not invoke "
+                  "raw_allocate_copy provides a raw memory in-place allocation that does not "
+                  "invoke "
                   "destructors when deallocating");
 
                 auto const count_s = std::distance(i_begin, i_end);
@@ -2392,7 +2396,7 @@ namespace density
                 \n <b>Throws</b>: what the copy constructor of the element throws (conditionally noexcept)
                 \n <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction try_raw_allocate_copy example 2 */
             template <typename INPUT_RANGE>
             auto try_raw_allocate_copy(
               progress_guarantee i_progress_guarantee,
@@ -2433,7 +2437,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction cancel example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2443,17 +2447,17 @@ namespace density
 
             /** Returns true whether this object does not hold the state of a transaction.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction empty example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction empty example 1 */
             bool empty() const noexcept { return m_put.m_user_storage == nullptr; }
 
             /** Returns true whether this object is bound to a transaction. Same to !consume_operation::empty.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction operator_bool example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction operator_bool example 1 */
             explicit operator bool() const noexcept { return m_put.m_user_storage != nullptr; }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction queue example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction queue example 1 */
             sp_heter_queue * queue() const noexcept
             {
                 return m_put.m_user_storage != nullptr ? m_queue : nullptr;
@@ -2467,9 +2471,9 @@ namespace density
                 \pre The behavior is undefined if either:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction element_ptr example 1
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction element_ptr example 1
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction element_ptr example 2 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction element_ptr example 2 */
             void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2488,7 +2492,7 @@ namespace density
                 \pre The behavior is undefined if:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue typed_put_transaction element example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue typed_put_transaction element example 1 */
 #ifndef DOXYGEN_DOC_GENERATION
             template <
               typename EL                                               = ELEMENT_COMPLETE_TYPE,
@@ -2507,7 +2511,7 @@ namespace density
                 \pre The behavior is undefined if either:
                     - this transaction is empty
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction complete_type example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2516,7 +2520,7 @@ namespace density
 
             /** If this transaction is empty the destructor has no side effects. Otherwise it cancels it.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_put_transaction destroy example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_put_transaction destroy example 1 */
             ~reentrant_put_transaction()
             {
                 if (m_put.m_user_storage != nullptr)
@@ -2560,33 +2564,33 @@ namespace density
           public:
             /** Constructs an empty reentrant_consume_operation
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation default_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation default_construct example 1 */
             reentrant_consume_operation() noexcept = default;
 
             /** Copy construction is not allowed
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation copy_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation copy_construct example 1 */
             reentrant_consume_operation(const reentrant_consume_operation &) = delete;
 
             /** Copy assignment is not allowed
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation copy_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation copy_assign example 1 */
             reentrant_consume_operation & operator=(const reentrant_consume_operation &) = delete;
 
             /** Move constructor. It is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation move_construct example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation move_construct example 1 */
             reentrant_consume_operation(reentrant_consume_operation && i_source) noexcept = default;
 
             /** Move assignment. It is left in a valid but indeterminate state.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation move_assign example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation move_assign example 1 */
             reentrant_consume_operation &
               operator=(reentrant_consume_operation && i_source) noexcept = default;
 
             /** Destructor: cancel the operation (if any).
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation destroy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation destroy example 1 */
             ~reentrant_consume_operation()
             {
                 if (!m_consume_data.empty())
@@ -2597,7 +2601,7 @@ namespace density
 
             /** Swaps two instances of reentrant_consume_operation.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation swap example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation swap example 1 */
             friend void swap(
               reentrant_consume_operation & i_first,
               reentrant_consume_operation & i_second) noexcept
@@ -2607,17 +2611,17 @@ namespace density
 
             /** Returns true whether this object does not hold the state of an operation.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation empty example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation empty example 1 */
             bool empty() const noexcept { return m_consume_data.empty(); }
 
             /** Returns true whether this object does not hold the state of an operation. Same to !reentrant_consume_operation::empty.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation operator_bool example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation operator_bool example 1 */
             explicit operator bool() const noexcept { return !m_consume_data.empty(); }
 
             /** Returns a pointer to the target queue if a transaction is bound, otherwise returns nullptr
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation queue example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation queue example 1 */
             sp_heter_queue * queue() const noexcept
             {
                 return static_cast<sp_heter_queue *>(m_consume_data.m_queue);
@@ -2660,7 +2664,7 @@ namespace density
                 like invoke_destroy to do both the function call and the destruction of the capture in a single call,
                 making a single pseudo v-call instead of two.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation commit_nodestroy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation commit_nodestroy example 1 */
             void commit_nodestroy() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2684,7 +2688,7 @@ namespace density
                 \n <b>Effects on iterators</b>: no iterator is invalidated
                 \n <b>Throws</b>: Nothing.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation cancel example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation cancel example 1 */
             void cancel() noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2695,7 +2699,7 @@ namespace density
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation complete_type example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation complete_type example 1 */
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2708,7 +2712,7 @@ namespace density
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been used as source for a move operation.
                 \post The returned address is aligned at least on sp_heter_queue::min_alignment.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation unaligned_element_ptr example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation unaligned_element_ptr example 1 */
             void * unaligned_element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2722,7 +2726,7 @@ namespace density
 
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been committed or used as source for a move operation.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation element_ptr example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation element_ptr example 1 */
             void * element_ptr() const noexcept
             {
                 DENSITY_ASSERT(!empty());
@@ -2734,7 +2738,7 @@ namespace density
                 \pre The behavior is undefined if this reentrant_consume_operation is empty, that is it has been committed or used as source for a move operation.
                 \pre The behavior is undefined if COMPLETE_ELEMENT_TYPE is not exactly the complete type of the element.
 
-                \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_consume_operation element example 1 */
+                \snippet sp_queue_examples.cpp sp_heter_queue reentrant_consume_operation element example 1 */
             template <typename COMPLETE_ELEMENT_TYPE>
             COMPLETE_ELEMENT_TYPE & element() const noexcept
             {
@@ -2770,7 +2774,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_push example 1 */
         template <typename ELEMENT_TYPE> void reentrant_push(ELEMENT_TYPE && i_source)
         {
             return reentrant_emplace<typename std::decay<ELEMENT_TYPE>::type>(
@@ -2781,7 +2785,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         void reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
         {
@@ -2794,7 +2798,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_dyn_push example 1 */
         void reentrant_dyn_push(const runtime_type & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
@@ -2804,7 +2808,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_dyn_push_copy example 1 */
         void reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
@@ -2814,7 +2818,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue reentrant_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue reentrant_dyn_push_move example 1 */
         void reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
@@ -2824,7 +2828,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
         reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type>
           start_reentrant_push(ELEMENT_TYPE && i_source)
@@ -2837,7 +2841,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         reentrant_put_transaction<ELEMENT_TYPE>
           start_reentrant_emplace(CONSTRUCTION_PARAMS &&... i_construction_params)
@@ -2875,7 +2879,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
         {
             auto push_data = Base::template try_inplace_allocate_impl<detail::LfQueue_Throwing>(
@@ -2907,7 +2911,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<>
           start_reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
         {
@@ -2939,7 +2943,7 @@ namespace density
             the transaction gets destroyed, the queue is in a valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<>
           start_reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
         {
@@ -2971,7 +2975,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
         bool try_reentrant_push(
           progress_guarantee i_progress_guarantee,
@@ -2989,7 +2993,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         bool
           try_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
@@ -3009,7 +3013,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push example 1 */
         bool try_reentrant_dyn_push(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
@@ -3024,7 +3028,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_copy example 1 */
         bool try_reentrant_dyn_push_copy(
           progress_guarantee   i_progress_guarantee,
           const runtime_type & i_type,
@@ -3042,7 +3046,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_reentrant_dyn_push_move example 1 */
         bool try_reentrant_dyn_push_move(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type, void * i_source)
         {
@@ -3058,7 +3062,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_push example 1 */
         template <typename ELEMENT_TYPE>
         reentrant_put_transaction<typename std::decay<ELEMENT_TYPE>::type> try_start_reentrant_push(
           progress_guarantee i_progress_guarantee,
@@ -3076,7 +3080,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_emplace example 1 */
         template <typename ELEMENT_TYPE, typename... CONSTRUCTION_PARAMS>
         reentrant_put_transaction<ELEMENT_TYPE>
           try_start_reentrant_emplace(progress_guarantee i_progress_guarantee, CONSTRUCTION_PARAMS &&... i_construction_params) noexcept(
@@ -3093,7 +3097,7 @@ namespace density
                 return reentrant_put_transaction<ELEMENT_TYPE>();
             }
 
-            bool is_noexcept =
+            constexpr bool is_noexcept =
               std::is_nothrow_constructible<ELEMENT_TYPE, CONSTRUCTION_PARAMS...>::value &&
               noexcept(runtime_type(runtime_type::template make<ELEMENT_TYPE>()));
 
@@ -3139,7 +3143,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type)
         {
@@ -3176,7 +3180,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_copy example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push_copy(
           progress_guarantee   i_progress_guarantee,
           const runtime_type & i_type,
@@ -3214,7 +3218,7 @@ namespace density
             valid state.
 
             <b>Examples</b>
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_move example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<> try_start_reentrant_dyn_push_move(
           progress_guarantee i_progress_guarantee, const runtime_type & i_type, void * i_source)
         {
@@ -3256,7 +3260,7 @@ namespace density
             <b>Complexity</b>: constant.
             \n <b>Effects on iterators</b>: any iterator pointing to the first element is invalidated
             \n <b>Throws</b>: nothing
-        \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_reentrant_pop example 1 */
+        \snippet sp_queue_examples.cpp sp_heter_queue try_reentrant_pop example 1 */
         bool try_reentrant_pop() noexcept
         {
             if (auto operation = try_start_reentrant_consume())
@@ -3275,7 +3279,7 @@ namespace density
 
             A non-empty consume must be committed for the consume to have effect.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_consume example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_consume example 1 */
         reentrant_consume_operation try_start_reentrant_consume() noexcept
         {
             return reentrant_consume_operation(PrivateType(), this);
@@ -3295,7 +3299,7 @@ namespace density
             For an sp_heter_queue there is no performance difference between the two overloads. Anyway
             for lock-free concurrent queue this overload may be faster.
 
-            \snippet sp_heterogeneous_queue_examples.cpp sp_heter_queue try_start_reentrant_consume_ example 1 */
+            \snippet sp_queue_examples.cpp sp_heter_queue try_start_reentrant_consume_ example 1 */
         bool try_start_reentrant_consume(reentrant_consume_operation & i_consume) noexcept
         {
             return i_consume.start_consume_impl(PrivateType(), this);
