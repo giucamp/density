@@ -538,8 +538,9 @@ namespace density
     */
 
     /** Class template that performs [type-erasure](https://en.wikipedia.org/wiki/Type_erasure). A runtime_type can be empty, 
-        or can be bound to a target type, from which it captures and exposes the supported type features. It is copyable and
-        trivially destructible. Specializations of runtime_type satisfy the requirements of \ref RuntimeType_requirements "RuntimeType".
+        or can be bound to a target type, from which it captures and exposes the type features specified by the template argument 
+        list. It is copyable and trivially destructible. Specializations of runtime_type satisfy the requirements of 
+        \ref RuntimeType_requirements "RuntimeType".
             @tparam FEATURES... list of features to be captures from the target type. 
 
         <i>Implementation note</i>:
@@ -618,7 +619,7 @@ namespace density
             return runtime_type(&detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table);
         }
 
-        /** Construct an empty runtime_type not associated with any type. Trying to use any feature of an empty
+        /** Constructs an empty runtime_type not associated with any type. Trying to use any feature of an empty
             runtime_type leads to undefined behavior.
             
         \b Postcoditions:
@@ -628,7 +629,7 @@ namespace density
         constexpr runtime_type() noexcept = default;
 
         /** Generalized copy constructor.
-            This constructor does not partecipate in oveload resolution unless <code>runtime_type::tuple</code>
+            This constructor does not participate in overload resolution unless <code>runtime_type::tuple</code>
             and <code>runtime_type<OTHER_FEATURES...>::tuple</code> are the same (that is the
             feature lists of the two runtime_type are equivalent).
 
@@ -652,7 +653,7 @@ namespace density
         }
 
         /** Generalized copy assignment.
-            This function does not partecipate in oveload resolution unless <code>runtime_type::tuple</code>
+            This function does not participate in overload resolution unless <code>runtime_type::tuple</code>
             and <code>runtime_type<OTHER_FEATURES...>::tuple</code> are the same (that is the
             feature lists of the two runtime_type are equivalent).
 

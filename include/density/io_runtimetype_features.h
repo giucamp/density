@@ -5,6 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <density/density_common.h>
+#include <density/dynamic_reference.h>
 #include <density/runtime_type.h>
 #include <istream>
 #include <ostream>
@@ -73,5 +75,51 @@ namespace density
             i_ostream << *derived;
         }
     };
+
+    /** Reads the target object of a dynamic_reference that supports the feature f_ostream from an std::istream.
+        If the feature f_ostream is supported by the runtime_type, this function does not
+        participate in overload in overload resolution.
+        Note: the dynamic_reference must be bound to a valid target of the correct type before the function is called.
+
+        \b Precoditions:
+            The behavior is undefined if any of these conditions is not satisfied:
+            - The dynamic_reference is empty.
+
+        \b Example:
+            \snippet dynamic_reference_examples.cpp istream example 1
+
+        \b Throws: unspecified */
+    template <
+      typename... FEATURES,
+      typename = std::enable_if<has_features<feature_list<FEATURES...>, f_istream>::value>::type>
+    inline std::istream & operator>>(
+      std::istream & i_source_stream, const dynamic_reference<runtime_type<FEATURES...>> & i_ptr)
+    {
+        i_ptr.type().get_feature<f_istream>()(i_source_stream, i_ptr.address());
+        return i_source_stream;
+    }
+
+    /** Writes the target object of a dynamic_reference that supports the feature f_ostream to an std::ostream.
+        If the feature f_ostream is supported by the runtime_type, this function does not 
+        participate in overload in overload resolution.
+
+        \b Precoditions:
+            The behavior is undefined if any of these conditions is not satisfied:
+            - The dynamic_reference is empty.
+
+        \b Example:
+            \snippet dynamic_reference_examples.cpp ostream example 1
+
+        \b Throws: unspecified */
+    template <
+      typename... FEATURES,
+      typename = std::enable_if<has_features<feature_list<FEATURES...>, f_ostream>::value>::type>
+    inline std::ostream & operator<<(
+      std::ostream & i_dest_stream, const dynamic_reference<runtime_type<FEATURES...>> & i_ref)
+    {
+        DENSITY_ASSERT(!i_ref.empty());
+        i_ref.type().get_feature<f_ostream>()(i_dest_stream, i_ref.address());
+        return i_dest_stream;
+    }
 
 } // namespace density

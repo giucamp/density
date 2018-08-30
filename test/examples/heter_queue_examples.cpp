@@ -1421,9 +1421,7 @@ namespace density_tests
 
             for (const auto & value : queue_1)
             {
-                assert(value.first.is<int>());
-                assert(*static_cast<int *>(value.second) == 42);
-                *static_cast<int *>(value.second) = 0;
+                assert(value.as<int>() == 42);
             }
             //! [heter_queue iterators example 1]
         }

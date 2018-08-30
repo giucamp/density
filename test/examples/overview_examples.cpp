@@ -25,30 +25,22 @@ namespace density_tests
 
         {
     //! [queue example 1]
-    // non-concurrent queue
-    heter_queue<> queue;
-    queue.push(42);
-    queue.emplace<std::complex<double>>(1, 2);
-
     // lock-free queue
     lf_heter_queue<> lf_queue;
     lf_queue.push(42);
     lf_queue.emplace<std::complex<double>>(1, 2);
-    //! [queue example 1]
-        }
 
-        {
-        //! [queue example 2]        
     using type = runtime_type<default_type_features, f_ostream>;
-    
+
+    // non-concurrent queue
     heter_queue<type> queue;
     queue.push(42);
-    queue.emplace<std::complex<double>>(1, 2);
+    queue.emplace<std::string>("abc");
+    queue.emplace<std::complex<double>>(1.2, 3.4);
 
-    for(const auto & val : queue)
-        val.first.get_feature<f_ostream>()(std::cout, val.second);
-
-        //! [queue example 2]
+    for (const auto & val : queue)
+        std::cout << val << std::endl;
+    //! [queue example 1]
         }
     }
 

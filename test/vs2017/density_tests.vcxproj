@@ -306,6 +306,7 @@
     <ClCompile Include="..\examples\any_tests.cpp" />
     <ClCompile Include="..\examples\conc_queue_examples.cpp" />
     <ClCompile Include="..\examples\conc_func_queue_examples.cpp" />
+    <ClCompile Include="..\examples\dynamic_reference_examples.cpp" />
     <ClCompile Include="..\examples\func_queue_examples.cpp" />
     <ClCompile Include="..\examples\heter_queue_examples.cpp" />
     <ClCompile Include="..\examples\lf_func_queue_examples.cpp" />
@@ -364,6 +365,7 @@
     <ClInclude Include="..\..\include\density\detail\sp_queue_tail_multiple.h" />
     <ClInclude Include="..\..\include\density\detail\system_page_manager.h" />
     <ClInclude Include="..\..\include\density\detail\wf_page_stack.h" />
+    <ClInclude Include="..\..\include\density\dynamic_reference.h" />
     <ClInclude Include="..\..\include\density\function_queue.h" />
     <ClInclude Include="..\..\include\density\heter_queue.h" />
     <ClInclude Include="..\..\include\density\io_runtimetype_features.h" />

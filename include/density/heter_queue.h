@@ -7,6 +7,7 @@
 #pragma once
 #include <density/default_allocator.h>
 #include <density/density_common.h>
+#include <density/dynamic_reference.h>
 #include <density/runtime_type.h>
 #include <iterator>
 
@@ -48,7 +49,7 @@ namespace density
         heter_queue supports iterators, but they are just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>
         so heter_queue is not a container.
 
-        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
+        @tparam RUNTIME_TYPE Runtime-type object used to store the actual complete type of each element.
                 This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
                 "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.
@@ -218,7 +219,7 @@ namespace density
           detail::Queue_AllFlags + 1, alignof(ControlBlock), alignof(RUNTIME_TYPE));
 
         using runtime_type    = RUNTIME_TYPE;
-        using value_type      = std::pair<const runtime_type &, void * const>;
+        using value_type      = dynamic_reference<RUNTIME_TYPE>;
         using allocator_type  = ALLOCATOR_TYPE;
         using pointer         = value_type *;
         using const_pointer   = const value_type *;
@@ -2351,7 +2352,7 @@ namespace density
           public:
             using iterator_category = std::input_iterator_tag;
             using runtime_type      = RUNTIME_TYPE;
-            using value_type        = std::pair<const runtime_type &, void * const>;
+            using value_type        = dynamic_reference<RUNTIME_TYPE>;
             using pointer           = value_type *;
             using const_pointer     = const value_type *;
             using reference         = value_type &;
@@ -2399,13 +2400,13 @@ namespace density
             const RUNTIME_TYPE & complete_type() const noexcept
             {
                 DENSITY_ASSUME(m_control != nullptr);
-                return m_value.m_pair.first;
+                return m_value.m_pair.type();
             }
 
             void * element_ptr() const noexcept
             {
                 DENSITY_ASSUME(m_control != nullptr);
-                return m_value.m_pair.second;
+                return m_value.m_pair.address();
             }
 
             const_iterator & operator++() noexcept

@@ -66,7 +66,7 @@ namespace density
         Implementation note: In single-producer mode this class template is equivalent to lf_heter_queue, 
             and the busy-wait function is not used.
 
-        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
+        @tparam RUNTIME_TYPE Runtime-type object used to store the actual complete type of each element.
                 This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
                 "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.

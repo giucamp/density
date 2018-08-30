@@ -15,7 +15,7 @@ namespace density
         conc_heter_queue is a concurrent version of heter_queue, with a mutex embedded within.
         It allows different threads to put and consume elements concurrently without any external synchronization.
 
-        @tparam RUNTIME_TYPE Runtime-type object used to handle the actual complete type of each element.
+        @tparam RUNTIME_TYPE Runtime-type object used to store the actual complete type of each element.
                 This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
                 "UntypedAllocator" and \ref PagedAllocator_requirements "PagedAllocator". The default is density::default_allocator.

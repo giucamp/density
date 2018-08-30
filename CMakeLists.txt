@@ -71,6 +71,7 @@ add_executable(density_test
 	include/density/lifo.h
 	include/density/raw_atomic.h
 	include/density/runtime_type.h
+    include/density/dynamic_reference.h
 	include/density/sp_function_queue.h
 	include/density/sp_heter_queue.h
 	test/examples/conc_queue_examples.cpp
@@ -87,6 +88,7 @@ add_executable(density_test
 	test/examples/runtime_type_examples.cpp
 	test/examples/sp_func_queue_examples.cpp
 	test/examples/sp_queue_examples.cpp
+    test/examples/dynamic_reference_examples.cpp
 	test/tests/generic_tests/conc_heter_queue_generic_tests.cpp
 	test/tests/generic_tests/heter_queue_generic_tests.cpp
 	test/tests/generic_tests/lf_heter_queue_generic_tests_relaxed.cpp
