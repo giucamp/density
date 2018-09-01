@@ -1121,7 +1121,7 @@ namespace density
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::default_construct</code> must be invokable. If
-                  <code>RUNTIMETYPE</code> is runtime_type this means that <code>default_construct</code> must be
+                  <code>RUNTIMETYPE</code> is runtime_type <code>default_construct</code> must be
                   included in the feature list.
 
             <b>Complexity</b>: constant.
@@ -1131,7 +1131,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue dyn_push example 1 */
-        void dyn_push(const runtime_type & i_type) { start_dyn_push(i_type).commit(); }
+        void dyn_push(const RUNTIME_TYPE & i_type) { start_dyn_push(i_type).commit(); }
 
         /** Appends at the end of the queue an element of a type known at runtime, copy-constructing it from the source.
 
@@ -1141,7 +1141,7 @@ namespace density
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If
-                  <code>RUNTIMETYPE</code> is runtime_type this means that <code>copy_construct</code> must be
+                  <code>RUNTIMETYPE</code> is runtime_type <code>copy_construct</code> must be
                   included in the feature list.
 
             <b>Complexity</b>: constant.
@@ -1151,7 +1151,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue dyn_push_copy example 1 */
-        void dyn_push_copy(const runtime_type & i_type, const void * i_source)
+        void dyn_push_copy(const RUNTIME_TYPE & i_type, const void * i_source)
         {
             start_dyn_push_copy(i_type, i_source).commit();
         }
@@ -1164,7 +1164,7 @@ namespace density
 
             \n <b>Requires</b>:
                 - The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If
-                  <code>RUNTIMETYPE</code> is runtime_type this means that <code>move_construct</code> must be
+                  <code>RUNTIMETYPE</code> is runtime_type <code>move_construct</code> must be
                   included in the feature list.
 
             <b>Complexity</b>: constant.
@@ -1174,7 +1174,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue dyn_push_move example 1 */
-        void dyn_push_move(const runtime_type & i_type, void * i_source)
+        void dyn_push_move(const RUNTIME_TYPE & i_type, void * i_source)
         {
             start_dyn_push_move(i_type, i_source).commit();
         }
@@ -1242,12 +1242,12 @@ namespace density
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+                type = new (type_storage) RUNTIME_TYPE(RUNTIME_TYPE::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
@@ -1285,16 +1285,16 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_dyn_push example 1 */
-        put_transaction<> start_dyn_push(const runtime_type & i_type)
+        put_transaction<> start_dyn_push(const RUNTIME_TYPE & i_type)
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
@@ -1334,16 +1334,16 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_dyn_push_copy example 1 */
-        put_transaction<> start_dyn_push_copy(const runtime_type & i_type, const void * i_source)
+        put_transaction<> start_dyn_push_copy(const RUNTIME_TYPE & i_type, const void * i_source)
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
@@ -1382,16 +1382,16 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_dyn_push_move example 1 */
-        put_transaction<> start_dyn_push_move(const runtime_type & i_type, void * i_source)
+        put_transaction<> start_dyn_push_move(const RUNTIME_TYPE & i_type, void * i_source)
         {
             auto push_data = inplace_allocate<0, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
@@ -2089,7 +2089,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue reentrant_dyn_push example 1 */
-        void reentrant_dyn_push(const runtime_type & i_type)
+        void reentrant_dyn_push(const RUNTIME_TYPE & i_type)
         {
             start_reentrant_dyn_push(i_type).commit();
         }
@@ -2099,7 +2099,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue reentrant_dyn_push_copy example 1 */
-        void reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
+        void reentrant_dyn_push_copy(const RUNTIME_TYPE & i_type, const void * i_source)
         {
             start_reentrant_dyn_push_copy(i_type, i_source).commit();
         }
@@ -2109,7 +2109,7 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue reentrant_dyn_push_move example 1 */
-        void reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
+        void reentrant_dyn_push_move(const RUNTIME_TYPE & i_type, void * i_source)
         {
             start_reentrant_dyn_push_move(i_type, i_source).commit();
         }
@@ -2142,12 +2142,12 @@ namespace density
               detail::size_of<ELEMENT_TYPE>::value,
               alignof(ELEMENT_TYPE)>();
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(runtime_type::template make<ELEMENT_TYPE>());
+                type = new (type_storage) RUNTIME_TYPE(RUNTIME_TYPE::template make<ELEMENT_TYPE>());
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 new (push_data.m_user_storage)
@@ -2172,17 +2172,17 @@ namespace density
 
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_reentrant_dyn_push example 1 */
-        reentrant_put_transaction<> start_reentrant_dyn_push(const runtime_type & i_type)
+        reentrant_put_transaction<> start_reentrant_dyn_push(const RUNTIME_TYPE & i_type)
         {
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.default_construct(push_data.m_user_storage);
@@ -2208,17 +2208,17 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_reentrant_dyn_push_copy example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_copy(const runtime_type & i_type, const void * i_source)
+          start_reentrant_dyn_push_copy(const RUNTIME_TYPE & i_type, const void * i_source)
         {
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.copy_construct(push_data.m_user_storage, i_source);
@@ -2243,17 +2243,17 @@ namespace density
             <b>Examples</b>
             \snippet heter_queue_examples.cpp heter_queue start_reentrant_dyn_push_move example 1 */
         reentrant_put_transaction<>
-          start_reentrant_dyn_push_move(const runtime_type & i_type, void * i_source)
+          start_reentrant_dyn_push_move(const RUNTIME_TYPE & i_type, void * i_source)
         {
             auto push_data =
               inplace_allocate<detail::Queue_Busy, true>(i_type.size(), i_type.alignment());
 
-            runtime_type * type = nullptr;
+            RUNTIME_TYPE * type = nullptr;
             try
             {
                 auto const type_storage = type_after_control(push_data.m_control_block);
                 DENSITY_ASSUME(type_storage != nullptr);
-                type = new (type_storage) runtime_type(i_type);
+                type = new (type_storage) RUNTIME_TYPE(i_type);
 
                 DENSITY_ASSUME(push_data.m_user_storage != nullptr);
                 i_type.move_construct(push_data.m_user_storage, i_source);
@@ -2380,8 +2380,8 @@ namespace density
             {
                 if (m_control != nullptr)
                 {
-                    new (&m_value.m_pair)
-                      value_type(*type_after_control(m_control), get_element(m_control));
+                    const RUNTIME_TYPE & type = *type_after_control(m_control);
+                    new (&m_value.m_pair) value_type(type, get_element(m_control));
                 }
             }
 
@@ -2415,8 +2415,8 @@ namespace density
                 m_control = m_queue->next_valid(m_control);
                 if (m_control != nullptr)
                 {
-                    new (&m_value.m_pair)
-                      value_type(*type_after_control(m_control), get_element(m_control));
+                    RUNTIME_TYPE & type = *type_after_control(m_control);
+                    new (&m_value.m_pair) value_type(type, get_element(m_control));
                 }
                 return *this;
             }
@@ -2534,9 +2534,9 @@ namespace density
             return nullptr;
         }
 
-        static runtime_type * type_after_control(ControlBlock * i_control) noexcept
+        static RUNTIME_TYPE * type_after_control(ControlBlock * i_control) noexcept
         {
-            return reinterpret_cast<runtime_type *>(address_add(i_control, s_sizeof_ControlBlock));
+            return reinterpret_cast<RUNTIME_TYPE *>(address_add(i_control, s_sizeof_ControlBlock));
         }
 
         static void * get_unaligned_element(ControlBlock * i_control) noexcept

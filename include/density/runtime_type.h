@@ -245,6 +245,77 @@ namespace density
         }
     };
 
+    /** Copy-assigns an instance of the target type to another one. The target type
+        must satisfy the requirements of [CopyAssignable](https://en.cppreference.com/w/cpp/named_req/CopyAssignable).*/
+    class f_copy_assign
+    {
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_copy_assign make() noexcept
+        {
+            return f_copy_assign{&invoke<TARGET_TYPE>};
+        }
+
+        /** Copy-assigns an instance of the target type.
+            @param i_dest pointer to the source object. Can't be null. If the dynamic type of the
+                pointed object is not the target type (assigned by the function make), the behavior is
+                undefined.
+            @param i_source pointer to the source object. Can't be null. If the dynamic type of the
+                pointed object is not the target type (assigned by the function make), the behavior is
+                undefined. */
+        void operator()(void * i_dest, const void * i_source) const
+        {
+            (*m_function)(i_dest, i_source);
+        }
+
+      private:
+        using Function = void (*)(void * i_dest, const void * i_source);
+        Function const m_function;
+        constexpr f_copy_assign(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_dest, const void * i_source)
+        {
+            DENSITY_ASSERT(i_dest != nullptr);
+            DENSITY_ASSERT(i_source != nullptr);
+            const TARGET_TYPE & source = *static_cast<const TARGET_TYPE *>(i_source);
+            TARGET_TYPE &       dest   = *static_cast<TARGET_TYPE *>(i_dest);
+            dest                       = source;
+        }
+    };
+
+    /** Move-assigns an instance of the target type to another one. The target type
+        must satisfy the requirements of [MoveAssignable](https://en.cppreference.com/w/cpp/named_req/MoveAssignable).*/
+    class f_move_assign
+    {
+      public:
+        /** Creates an instance of this feature bound to the specified target type */
+        template <typename TARGET_TYPE> constexpr static f_move_assign make() noexcept
+        {
+            return f_move_assign{&invoke<TARGET_TYPE>};
+        }
+
+        /** Move-assigns an instance of the target type.
+            @param i_dest pointer to the source object. Can't be null. If the dynamic type of the
+                pointed object is not the target type (assigned by the function make), the behavior is
+                undefined.
+            @param i_source pointer to the source object. Can't be null. If the dynamic type of the
+                pointed object is not the target type (assigned by the function make), the behavior is
+                undefined. */
+        void operator()(void * i_dest, void * i_source) const { (*m_function)(i_dest, i_source); }
+
+      private:
+        using Function = void (*)(void * i_dest, void * i_source);
+        Function const m_function;
+        constexpr f_move_assign(Function i_function) : m_function(i_function) {}
+        template <typename TARGET_TYPE> static void invoke(void * i_dest, void * i_source)
+        {
+            DENSITY_ASSERT(i_dest != nullptr);
+            DENSITY_ASSERT(i_source != nullptr);
+            const TARGET_TYPE & source = *static_cast<TARGET_TYPE *>(i_source);
+            TARGET_TYPE &       dest   = *static_cast<TARGET_TYPE *>(i_dest);
+            dest                       = std::move(source);
+        }
+    };
+
     /** Destroys an instance of the target type, and returns the address of the complete type. The target type
         must satisfy the requirements of [Destructible](https://en.cppreference.com/w/cpp/named_req/Destructible). */
     class f_destroy

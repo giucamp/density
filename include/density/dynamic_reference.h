@@ -7,9 +7,22 @@
 #pragma once
 #include <density/density_common.h>
 #include <density/runtime_type.h>
+#include <type_traits>
 
 namespace density
 {
+    /** Provides the constexpr member constant value which is equal to true if
+        the template argument is a specialization of dynamic_reference, and to 
+        false otherwise */
+    template <typename RUNTIME_TYPE> class dynamic_reference;
+    template <typename> struct is_dynamic_reference : std::false_type
+    {
+    };
+    template <typename RUNTIME_TYPE>
+    struct is_dynamic_reference<dynamic_reference<RUNTIME_TYPE>> : std::true_type
+    {
+    };
+
     /** Holds a reference to an object whose type in unknown at compile time.
         This class template is an abstraction of a pair of void pointer and a runtime type.
 
@@ -19,18 +32,10 @@ namespace density
     template <typename RUNTIME_TYPE = runtime_type<>> class dynamic_reference
     {
       public:
-        /** Constructs an empty dynamic_reference.
-            
-        \b Postcoditions:
-            Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType", 
-            the following conditions hold:
-            \snippet dynamic_reference_examples.cpp construct example 1
-        \b Throws: unspecified */
-        constexpr dynamic_reference() = default;
+        /** Deleted default constructor. */
+        dynamic_reference() = delete;
 
         /** Constructs a dynamic_reference assigning a target object.
-            If the target type is a compile time type, using the function
-            make_dynamic_type is much easier and safer.
 
         \b Postcoditions:
             Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType",
@@ -42,23 +47,37 @@ namespace density
         {
         }
 
+        /** Constructs an instance of dynamic_reference bound to the specified target object.
+
+            \b Postcoditions:
+                Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
+                an object t, the following conditions hold:
+                \snippet dynamic_reference_examples.cpp make_dynamic_type example 1
+        */
+#ifdef DOXYGEN_DOC_GENERATION
+        template <typename TARGET_TYPE>
+#else
+        template <
+          typename TARGET_TYPE,
+          typename std::enable_if_t<!is_dynamic_reference<TARGET_TYPE>::value> * = nullptr>
+#endif
+        dynamic_reference(TARGET_TYPE & i_target_object)
+            : dynamic_reference(RUNTIME_TYPE::template make<TARGET_TYPE>(), &i_target_object)
+        {
+        }
+
         /** Copy constructor.
 
         \b Postcoditions:
             Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
             an object r of type dynamic_reference<RT>, the following conditions hold:
             \snippet dynamic_reference_examples.cpp copy construct example 1
+
         \b Throws: unspecified */
         constexpr dynamic_reference(const dynamic_reference &) = default;
 
-        /** Copy assignment.
-
-        \b Postcoditions:
-            Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
-            two object r and r1 of type dynamic_reference<RT>, the following conditions hold:
-            \snippet dynamic_reference_examples.cpp copy assign example 1
-        \b Throws: unspecified */
-        constexpr dynamic_reference & operator=(const dynamic_reference &) = default;
+        /** Deleted copy assignment. */
+        dynamic_reference & operator=(const dynamic_reference & i_source) = delete;
 
         /** Returns a reference to the runtime type.
 
@@ -94,50 +113,9 @@ namespace density
             return *static_cast<TYPE *>(m_address);
         }
 
-        /** Returns true if this dynamic_reference is empty, false otherwise.
-
-        \b Throws: nothing */
-        constexpr bool empty() const noexcept { return m_address == nullptr; }
-
-        /** Returns false if this dynamic_reference is empty, true otherwise.
-
-            \b Throws: nothing */
-        constexpr explicit operator bool() const noexcept { return m_address != nullptr; }
-
-        /** Sets this dynamic_reference to the empty state.
-
-        \b Postcoditions:
-            Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
-            an object r of type dynamic_reference<RT>, the following conditions hold:
-            \snippet dynamic_reference_examples.cpp clear example 1
-
-            \b Throws: nothing */
-        DENSITY_CPP14_CONSTEXPR void clear() noexcept
-        {
-            m_address = nullptr;
-            m_type    = RUNTIME_TYPE{};
-        }
-
       private:
-        void *       m_address = nullptr;
-        RUNTIME_TYPE m_type;
+        void * const       m_address = nullptr;
+        RUNTIME_TYPE const m_type;
     };
-
-    /** Constructs and Return an instance of dynamic_reference bound to the specified target object.
-
-        \b Postcoditions:
-            Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
-            an object t, the following conditions hold:
-            \snippet dynamic_reference_examples.cpp make_dynamic_type example 1
-
-        @tparam RUNTIME_TYPE Runtime-type object used to store the actual complete type of the target object.
-            This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
-    */
-    template <typename RUNTIME_TYPE = runtime_type<>, typename TARGET_TYPE>
-    constexpr dynamic_reference<RUNTIME_TYPE> make_dynamic_type(TARGET_TYPE & i_target_object)
-    {
-        return dynamic_reference<RUNTIME_TYPE>(
-          RUNTIME_TYPE::template make<TARGET_TYPE>(), &i_target_object);
-    }
 
 } // namespace density
