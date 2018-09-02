@@ -92,7 +92,7 @@ namespace density
     inline std::istream & operator>>(
       std::istream & i_source_stream, const dynamic_reference<runtime_type<FEATURES...>> & i_ptr)
     {
-        i_ptr.type().get_feature<f_istream>()(i_source_stream, i_ptr.address());
+        i_ptr.type().template get_feature<f_istream>()(i_source_stream, i_ptr.address());
         return i_source_stream;
     }
 
@@ -111,7 +111,7 @@ namespace density
     inline std::ostream & operator<<(
       std::ostream & i_dest_stream, const dynamic_reference<runtime_type<FEATURES...>> & i_ref)
     {
-        i_ref.type().get_feature<f_ostream>()(i_dest_stream, i_ref.address());
+        i_ref.type().template get_feature<f_ostream>()(i_dest_stream, i_ref.address());
         return i_dest_stream;
     }
 

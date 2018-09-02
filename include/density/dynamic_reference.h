@@ -59,7 +59,7 @@ namespace density
 #else
         template <
           typename TARGET_TYPE,
-          typename std::enable_if_t<!is_dynamic_reference<TARGET_TYPE>::value> * = nullptr>
+          typename std::enable_if<!is_dynamic_reference<TARGET_TYPE>::value>::type * = nullptr>
 #endif
         dynamic_reference(TARGET_TYPE & i_target_object)
             : dynamic_reference(RUNTIME_TYPE::template make<TARGET_TYPE>(), &i_target_object)
@@ -95,7 +95,7 @@ namespace density
             \snippet dynamic_reference_examples.cpp is example 1
 
         \b Throws: nothing */
-        template <typename TYPE> constexpr bool is() const noexcept { return m_type.is<TYPE>(); }
+        template <typename TYPE> constexpr bool is() const noexcept { return m_type.template is<TYPE>(); }
 
         /** Returns a reference to the target object, assuming that the target type is bound
             to the provided compile-time type.
@@ -109,7 +109,7 @@ namespace density
         \b Throws: nothing */
         template <typename TYPE> DENSITY_CPP14_CONSTEXPR TYPE & as() const noexcept
         {
-            assert(m_type.is<TYPE>());
+            assert(m_type.template is<TYPE>());
             return *static_cast<TYPE *>(m_address);
         }
 
