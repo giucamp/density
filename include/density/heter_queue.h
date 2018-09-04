@@ -2352,7 +2352,7 @@ namespace density
           public:
             using iterator_category = std::input_iterator_tag;
             using runtime_type      = RUNTIME_TYPE;
-            using value_type        = dynamic_reference<RUNTIME_TYPE>;
+            using value_type        = const_dynamic_reference<RUNTIME_TYPE>;
             using pointer           = value_type *;
             using const_pointer     = const value_type *;
             using reference         = value_type &;
@@ -2403,7 +2403,7 @@ namespace density
                 return m_value.m_pair.type();
             }
 
-            void * element_ptr() const noexcept
+            const void * element_ptr() const noexcept
             {
                 DENSITY_ASSUME(m_control != nullptr);
                 return m_value.m_pair.address();
@@ -2448,6 +2448,113 @@ namespace density
                 ~Value() {}
             } m_value;
         };
+
+        // iterator
+
+        class iterator
+        {
+          public:
+            using iterator_category = std::input_iterator_tag;
+            using runtime_type      = RUNTIME_TYPE;
+            using value_type        = dynamic_reference<RUNTIME_TYPE>;
+            using pointer           = value_type *;
+            using const_pointer     = const value_type *;
+            using reference         = value_type &;
+            using const_reference   = const value_type &;
+            using size_type         = std::size_t;
+            using difference_type   = std::ptrdiff_t;
+
+            iterator() noexcept = default;
+            iterator(const iterator & i_source) noexcept
+                : m_control(i_source.m_control), m_queue(i_source.m_queue)
+            {
+                new (&m_value.m_pair) value_type(m_value.m_pair);
+            }
+
+            iterator & operator=(const iterator & i_source) noexcept
+            {
+                m_control = i_source.m_control;
+                m_queue   = i_source.m_queue;
+                new (&m_value.m_pair) value_type(m_value.m_pair);
+                return *this;
+            }
+
+            iterator(const heter_queue * i_queue, ControlBlock * i_control) noexcept
+                : m_control(i_control), m_queue(i_queue)
+            {
+                if (m_control != nullptr)
+                {
+                    const RUNTIME_TYPE & type = *type_after_control(m_control);
+                    new (&m_value.m_pair) value_type(type, get_element(m_control));
+                }
+            }
+
+            const value_type & operator*() const noexcept
+            {
+                DENSITY_ASSUME(m_control != nullptr);
+                return m_value.m_pair;
+            }
+
+            const value_type * operator->() const noexcept
+            {
+                DENSITY_ASSUME(m_control != nullptr);
+                return &m_value.m_pair;
+            }
+
+            const RUNTIME_TYPE & complete_type() const noexcept
+            {
+                DENSITY_ASSUME(m_control != nullptr);
+                return m_value.m_pair.type();
+            }
+
+            void * element_ptr() const noexcept
+            {
+                DENSITY_ASSUME(m_control != nullptr);
+                return m_value.m_pair.address();
+            }
+
+            iterator & operator++() noexcept
+            {
+                DENSITY_ASSUME(m_queue != nullptr);
+                m_control = m_queue->next_valid(m_control);
+                if (m_control != nullptr)
+                {
+                    RUNTIME_TYPE & type = *type_after_control(m_control);
+                    new (&m_value.m_pair) value_type(type, get_element(m_control));
+                }
+                return *this;
+            }
+
+            iterator operator++(int) noexcept
+            {
+                DENSITY_ASSUME(m_queue != nullptr);
+                auto const prev_state = *this;
+                ++*this;
+                return prev_state;
+            }
+
+            bool operator==(const iterator & i_other) const noexcept
+            {
+                return m_control == i_other.m_control;
+            }
+
+            bool operator!=(const iterator & i_other) const noexcept
+            {
+                return m_control != i_other.m_control;
+            }
+
+          private:
+            ControlBlock *      m_control = nullptr;
+            const heter_queue * m_queue   = nullptr;
+            union Value {
+                value_type m_pair;
+                Value() noexcept {}
+                ~Value() {}
+            } m_value;
+        };
+
+        iterator begin() noexcept { return iterator(this, first_valid(m_head)); }
+        iterator end() noexcept { return iterator(); }
 
         const_iterator begin() const noexcept { return const_iterator(this, first_valid(m_head)); }
         const_iterator end() const noexcept { return const_iterator(); }

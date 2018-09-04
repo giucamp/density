@@ -106,16 +106,18 @@ namespace density
     template <typename RUNTIME_TYPE = runtime_type<>, cv_qual = cv_qual::no_qual>
     class dynamic_reference;
 
+    /** Type alias template for the class template that sets the qv-qualification to cv_qual::const_qual. */
     template <typename RUNTIME_TYPE = runtime_type<>>
     using const_dynamic_reference = dynamic_reference<RUNTIME_TYPE, cv_qual::const_qual>;
 
+    /** Type alias template for the class template that sets the qv-qualification to cv_qual::volatile_qual. */
     template <typename RUNTIME_TYPE = runtime_type<>>
     using volatile_dynamic_reference = dynamic_reference<RUNTIME_TYPE, cv_qual::volatile_qual>;
 
+    /** Type alias template for the class template that sets the qv-qualification to cv_qual::const_volatile_qual. */
     template <typename RUNTIME_TYPE = runtime_type<>>
     using const_volatile_dynamic_reference =
       dynamic_reference<RUNTIME_TYPE, cv_qual::const_volatile_qual>;
-
 
     /** Provides the constexpr member constant value which is equal to true if
        the template argument is a specialization of dynamic_reference, and to 
@@ -133,6 +135,8 @@ namespace density
 
         @tparam RUNTIME_TYPE Runtime-type object used to store the actual complete type of the target object.
             This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
+
+        @tparam CV_QUALIFIER CV-qualification of the reference. The default is cv_qual::no_qual.
     */
     template <typename RUNTIME_TYPE, cv_qual CV_QUALIFIER> class dynamic_reference
     {
@@ -142,10 +146,14 @@ namespace density
 
         /** Constructs an instance of dynamic_reference bound to the specified target object.
 
+            This constructor is excluded from the overload set if the type of the target type is less
+                cv-qualified than the reference:            
+            \snippet dynamic_reference_examples.cpp construct example 2
+
             \b Postcoditions:
                 Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
                 an object t, the following conditions hold:
-                \snippet dynamic_reference_examples.cpp construct example 1
+            \snippet dynamic_reference_examples.cpp construct example 1
 
         \b Throws: unspecified */
 #ifdef DOXYGEN_DOC_GENERATION
@@ -159,7 +167,9 @@ namespace density
             nullptr>
 #endif
         dynamic_reference(TARGET_TYPE & i_target_object)
-            : dynamic_reference(RUNTIME_TYPE::template make<TARGET_TYPE>(), &i_target_object)
+            : dynamic_reference(
+                RUNTIME_TYPE::template make<typename std::remove_cv<TARGET_TYPE>::type>(),
+                &i_target_object)
         {
         }
 
@@ -168,16 +178,19 @@ namespace density
         \b Postcoditions:
             Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType",
             the following conditions hold:
-            \snippet dynamic_reference_examples.cpp construct example 2
+            \snippet dynamic_reference_examples.cpp construct2 example 1
 
         \b Throws: unspecified */
         constexpr dynamic_reference(
-          const RUNTIME_TYPE & i_type, add_cv_qual_t<void, CV_QUALIFIER> * i_address)
-            : m_address(i_address), m_type(i_type)
+          const RUNTIME_TYPE & i_target_type, add_cv_qual_t<void, CV_QUALIFIER> * i_target_address)
+            : m_address(i_target_address), m_type(i_target_type)
         {
         }
 
-        /** Generalized copy constructor.
+        /** Generalized copy constructor. The template argument CV_QUALIFIER of this template
+            specialization can differ from the source:
+
+            \snippet dynamic_reference_examples.cpp copy construct example 2
 
         \b Postcoditions:
             Given an object r of type dynamic_reference<*>, the following conditions hold:
@@ -189,7 +202,7 @@ namespace density
 #else
         template <
           cv_qual OTHER_CV,
-          typename std::enable_if<is_less_or_equal_cv_qualified(CV_QUALIFIER, OTHER_CV)>::type * =
+          typename std::enable_if<is_less_or_equal_cv_qualified(OTHER_CV, CV_QUALIFIER)>::type * =
             nullptr>
 #endif
         constexpr dynamic_reference(const dynamic_reference<RUNTIME_TYPE, OTHER_CV> & i_source)
@@ -220,8 +233,7 @@ namespace density
         \b Throws: nothing */
         template <typename TYPE> constexpr bool is() const noexcept
         {
-            return is_less_or_equal_cv_qualified(
-                     CV_QUALIFIER, cv_qual_of<typename std::remove_reference<TYPE>::type>::value) &&
+            return is_less_or_equal_cv_qualified(CV_QUALIFIER, cv_qual_of<TYPE>::value) &&
                    m_type.template is<TYPE>();
         }
 
@@ -236,10 +248,11 @@ namespace density
             \snippet dynamic_reference_examples.cpp as example 1
 
         \b Throws: nothing */
-        template <typename TYPE> DENSITY_CPP14_CONSTEXPR TYPE & as() const noexcept
+        template <typename TYPE>
+        DENSITY_CPP14_CONSTEXPR add_cv_qual_t<TYPE, CV_QUALIFIER> & as() const noexcept
         {
             assert(m_type.template is<TYPE>());
-            return *static_cast<TYPE *>(m_address);
+            return *static_cast<add_cv_qual_t<TYPE, CV_QUALIFIER> *>(m_address);
         }
 
       private:

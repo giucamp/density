@@ -19,7 +19,31 @@ namespace density_tests
 {
     // clang-format off
 
-    void dynamic_reference_examples()
+
+    template <typename T1, typename T2> void dynamic_reference_test_cv_t()
+    {
+        using namespace density;
+
+        //! [is_less_or_equal_cv_qualified example 2]
+        static_assert(std::is_constructible<T1, T2>::value ==
+            is_less_or_equal_cv_qualified(
+                cv_qual_of<typename std::remove_reference<T2>::type>::value,
+                cv_qual_of<typename std::remove_reference<T1>::type>::value), "");
+        //! [is_less_or_equal_cv_qualified example 2]
+
+        constexpr cv_qual CV1 = cv_qual_of<typename std::remove_reference<T1>::type>::value;
+        constexpr cv_qual CV2 = cv_qual_of<typename std::remove_reference<T2>::type>::value;
+
+        // test the viability of the constructor taking a raw reference
+        static_assert(std::is_constructible<T1, T2>::value ==
+            std::is_constructible<dynamic_reference<int, CV1>, T2>::value, "");
+
+        // test the viability of the generalized copy-constructor
+        static_assert(std::is_constructible<T1, T2>::value ==
+            std::is_constructible<dynamic_reference<int, CV1>, dynamic_reference<int, CV2>>::value, "");
+    }
+
+    void dynamic_reference_test_cv()
     {
         using namespace density;
 
@@ -90,57 +114,92 @@ namespace density_tests
     static_assert(std::is_same<add_cv_qual_t<const int, cv_qual::volatile_qual>, const volatile int>::value, "");
         //! [add_cv_qual example 2]
 
-    using RT = runtime_type<default_type_features, f_ostream, f_istream>;
-    using T = int;
+        dynamic_reference_test_cv_t<int &, int &>();
+        dynamic_reference_test_cv_t<int &, const int &>();
+        dynamic_reference_test_cv_t<int &, volatile int &>();
+        dynamic_reference_test_cv_t<int &, const volatile int &>();
 
-      static_assert(!std::is_default_constructible<dynamic_reference<RT>>::value, "");
+        dynamic_reference_test_cv_t<const int &, int &>();
+        dynamic_reference_test_cv_t<const int &, const int &>();
+        dynamic_reference_test_cv_t<const int &, volatile int &>();
+        dynamic_reference_test_cv_t<const int &, const volatile int &>();
 
-      // dynamic_reference is constructible from any reference
-      static_assert(std::is_constructible<dynamic_reference<RT>, T&>::value, "");
-      static_assert(!std::is_constructible<dynamic_reference<RT>, const T&>::value, "");
-      static_assert(!std::is_constructible<dynamic_reference<RT>, volatile T&>::value, "");
-      static_assert(!std::is_constructible<dynamic_reference<RT>, const volatile T&>::value, "");
+        dynamic_reference_test_cv_t<volatile int &, int &>();
+        dynamic_reference_test_cv_t<volatile int &, const int &>();
+        dynamic_reference_test_cv_t<volatile int &, volatile int &>();
+        dynamic_reference_test_cv_t<volatile int &, const volatile int &>();
 
-      // const_dynamic_reference is constructible only from const references
-      static_assert(std::is_constructible<const_dynamic_reference<RT>, T&>::value, "");
-      static_assert(std::is_constructible<const_dynamic_reference<RT>, const T&>::value, "");
-      static_assert(!std::is_constructible<const_dynamic_reference<RT>, volatile T&>::value, "");
-      static_assert(!std::is_constructible<const_dynamic_reference<RT>, const volatile T&>::value, "");
+        dynamic_reference_test_cv_t<const volatile int &, int &>();
+        dynamic_reference_test_cv_t<const volatile int &, const int &>();
+        dynamic_reference_test_cv_t<const volatile int &, volatile int &>();
+        dynamic_reference_test_cv_t<const volatile int &, const volatile int &>();
+    }
 
-      // const_dynamic_reference is constructible only from volatile references
-      static_assert(std::is_constructible<volatile_dynamic_reference<RT>, T&>::value, "");
-      static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const T&>::value, "");
-      static_assert(std::is_constructible<volatile_dynamic_reference<RT>, volatile T&>::value, "");
-      static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const volatile T&>::value, "");
 
-      // const_volatile_dynamic_reference is constructible only from const volatile references
-      static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, T&>::value, "");
-      static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const T&>::value, "");
-      static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, volatile T&>::value, "");
-      static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const volatile T&>::value, "");
+    void dynamic_reference_examples()
+    {
+        using namespace density;
 
-      {
-            /*int t = 1;
-            int const ct = 1;
-            int volatile vt = 1;
-            int const volatile cvt = 1;*/
-      }
+        using RT = runtime_type<default_type_features, f_ostream, f_istream>;
+        using T = int;
+        constexpr cv_qual CV_QUAL = cv_qual::no_qual;
 
+        static_assert(!std::is_default_constructible<dynamic_reference<RT>>::value, "");
 
         {
         int t = 1;
         //! [construct example 1]
-    dynamic_reference<RT> r(t);
-    assert(r.type() == RT::make<decltype(t)>()  && r.address() == &t);
+    dynamic_reference<RT, CV_QUAL> r(t);
+    assert(r.type() == RT::make<decltype(t)>() && r.address() == &t);
         //! [construct example 1]
         }
 
         {
+      //! [construct example 2]
+    int i = 42;
+    dynamic_reference<RT> r1(i);
+    const_dynamic_reference<RT> r2(i);
+
+    int const ci = 42;
+    //dynamic_reference<RT> r3(ci); // <- error, would drop the const-ness
+    const_volatile_dynamic_reference<RT> r4(ci);
+
+    int volatile vi = 42;
+    //const_dynamic_reference<RT> r5(vi); // <- error, would drop the const-ness
+    const_volatile_dynamic_reference<RT> r6(vi);
+
+    // dynamic_reference is constructible from non-cv-qualified reference
+    static_assert(std::is_constructible<dynamic_reference<RT>, T&>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, const T&>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, volatile T&>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, const volatile T&>::value, "");
+
+    // const_dynamic_reference is constructible from non-volatile references
+    static_assert(std::is_constructible<const_dynamic_reference<RT>, T&>::value, "");
+    static_assert(std::is_constructible<const_dynamic_reference<RT>, const T&>::value, "");
+    static_assert(!std::is_constructible<const_dynamic_reference<RT>, volatile T&>::value, "");
+    static_assert(!std::is_constructible<const_dynamic_reference<RT>, const volatile T&>::value, "");
+
+    // volatile_dynamic_reference is constructible from non-const references
+    static_assert(std::is_constructible<volatile_dynamic_reference<RT>, T&>::value, "");
+    static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const T&>::value, "");
+    static_assert(std::is_constructible<volatile_dynamic_reference<RT>, volatile T&>::value, "");
+    static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const volatile T&>::value, "");
+
+    // const_volatile_dynamic_reference is constructible from any reference
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, T&>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const T&>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, volatile T&>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const volatile T&>::value, "");
+      //! [construct example 2]
+        }
+
+        {
         int t = 1;
-        //! [construct example 2]
-    dynamic_reference<RT> r(RT::make<decltype(t)>(), &t);
-    assert(r.type() == RT::make<decltype(t)>()  && r.address() == &t);
-        //! [construct example 2]
+        //! [construct2 example 1]
+    constexpr dynamic_reference<RT> r(RT::make<decltype(t)>(), &t);
+    assert(r.type() == RT::make<decltype(t)>() && r.address() == &t);
+        //! [construct2 example 1]
         }
 
         {
@@ -151,6 +210,40 @@ namespace density_tests
     auto r1 = r;
     assert(r1.type() == r.type() && r1.address() == r.address());
         //! [copy construct example 1]
+        }
+
+        {    
+        //! [copy construct example 2]
+    int t = 1;
+    dynamic_reference<RT> r(t);
+    const_dynamic_reference<RT> r1(r); // <- ok
+    //dynamic_reference<RT> r2(r1); // <- error, would drop the const-ness
+    const_volatile_dynamic_reference<RT> r3(r1); // <- ok
+
+    // dynamic_reference is constructible from non-cv-qualified reference
+    static_assert(std::is_constructible<dynamic_reference<RT>, dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, const_dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, volatile_dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<dynamic_reference<RT>, const_volatile_dynamic_reference<RT>>::value, "");
+
+    // const_dynamic_reference is constructible from non-volatile references
+    static_assert(std::is_constructible<const_dynamic_reference<RT>, dynamic_reference<RT>>::value, "");
+    static_assert(std::is_constructible<const_dynamic_reference<RT>, const_dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<const_dynamic_reference<RT>, volatile_dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<const_dynamic_reference<RT>, const_volatile_dynamic_reference<RT>>::value, "");
+
+    // volatile_dynamic_reference is constructible from non-const references
+    static_assert(std::is_constructible<volatile_dynamic_reference<RT>, dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const_dynamic_reference<RT>>::value, "");
+    static_assert(std::is_constructible<volatile_dynamic_reference<RT>, volatile_dynamic_reference<RT>>::value, "");
+    static_assert(!std::is_constructible<volatile_dynamic_reference<RT>, const_volatile_dynamic_reference<RT>>::value, "");
+
+    // const_volatile_dynamic_reference is constructible from any reference
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, dynamic_reference<RT>>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const_dynamic_reference<RT>>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, volatile_dynamic_reference<RT>>::value, "");
+    static_assert(std::is_constructible<const_volatile_dynamic_reference<RT>, const_volatile_dynamic_reference<RT>>::value, "");
+        //! [copy construct example 2]
         }
 
         {
@@ -191,48 +284,8 @@ namespace density_tests
     assert(t == 1);
             //! [istream example 1]
         }
-    }
 
-    template <typename T1, typename T2> void test_cv()
-    {
-        using namespace density;
-
-        //! [is_less_or_equal_cv_qualified example 2]
-    static_assert( std::is_constructible<T1, T2>::value ==
-        is_less_or_equal_cv_qualified(
-            cv_qual_of<typename std::remove_reference<T2>::type>::value,
-            cv_qual_of<typename std::remove_reference<T1>::type>::value), "");
-        //! [is_less_or_equal_cv_qualified example 2]
-
-        constexpr cv_qual CV = cv_qual_of<typename std::remove_reference<T1>::type>::value;
-
-        static_assert(std::is_constructible<T1, T2>::value ==
-            std::is_constructible<dynamic_reference<int, CV>, T2>::value, "");
-    }
-
-    void test_is_less_or_equal_cv_qualified()
-    {
-        using namespace density;
-
-        test_cv<int &, int &>();
-        test_cv<int &, const int &>();
-        test_cv<int &, volatile int &>();
-        test_cv<int &, const volatile int &>();
-
-        test_cv<const int &, int &>();
-        test_cv<const int &, const int &>();
-        test_cv<const int &, volatile int &>();
-        test_cv<const int &, const volatile int &>();
-
-        test_cv<volatile int &, int &>();
-        test_cv<volatile int &, const int &>();
-        test_cv<volatile int &, volatile int &>();
-        test_cv<volatile int &, const volatile int &>();
-
-        test_cv<const volatile int &, int &>();
-        test_cv<const volatile int &, const int &>();
-        test_cv<const volatile int &, volatile int &>();
-        test_cv<const volatile int &, const volatile int &>();
+        dynamic_reference_test_cv();
     }
 
     // clang-format on
