@@ -687,7 +687,8 @@ namespace density
         \b Throws: nothing */
         template <typename TARGET_TYPE> constexpr static runtime_type make() noexcept
         {
-            return runtime_type(&detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table);
+            return runtime_type(
+              &detail::FeatureTable<tuple_type, typename std::decay<TARGET_TYPE>::type>::s_table);
         }
 
         /** Constructs an empty runtime_type not associated with any type. Trying to use any feature of an empty
@@ -1037,7 +1038,9 @@ namespace density
             \snippet runtime_type_examples.cpp runtime_type is example 1 */
         template <typename TARGET_TYPE> constexpr bool is() const noexcept
         {
-            return m_feature_table == &detail::FeatureTable<tuple_type, TARGET_TYPE>::s_table;
+            return m_feature_table ==
+                   &detail::FeatureTable<tuple_type, typename std::decay<TARGET_TYPE>::type>::
+                     s_table;
         }
 
       private:
