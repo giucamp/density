@@ -75,7 +75,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
                 // swap the base
@@ -147,13 +147,9 @@ namespace density
 
                     // check for page overflow
                     auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    DENSITY_ASSUME(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
@@ -167,7 +163,7 @@ namespace density
                                
                                The next store is safe because the zeroed block is a barrier that consumers will
                                not get over, so this page can't be deallocated. If this block does not have the 
-                               dead 'flag', the access to this page is safe until the element is commited or canceled. */
+                               dead 'flag', the access to this page is safe until the element is committed or canceled. */
 
                             // initialize the control block
                             auto const new_block = reinterpret_cast<ControlBlock *>(tail);
@@ -176,7 +172,7 @@ namespace density
                             auto const next_ptr = new_tail + i_control_bits;
                             raw_atomic_store(&new_block->m_next, next_ptr, mem_relaxed);
 
-                            // succesfull
+                            // successful
                             DENSITY_ASSERT_INTERNAL(new_block < get_end_control_block(new_block));
                             return {new_block, next_ptr, user_storage};
                         }
@@ -203,7 +199,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -236,40 +232,37 @@ namespace density
                 static_assert(
                   is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "internal error");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size      = uint_upper_align(SIZE, alignment);
-                constexpr auto can_fit_in_a_page =
+                constexpr size_t alignment = size_max(ALIGNMENT, min_alignment);
+                constexpr size_t size      = uint_upper_align(SIZE, alignment);
+                constexpr bool   can_fit_in_a_page =
                   size + (alignment - min_alignment) <= s_max_size_inpage;
-                constexpr auto over_aligned = alignment > min_alignment;
+                constexpr bool over_aligned = alignment > min_alignment;
 
                 /* Operations on m_tail are mostly relaxed, because the ordering is done when accessing
                 the member m_next of the control blocks. */
-                auto tail = m_tail.load(mem_relaxed);
+                uintptr_t tail = m_tail.load(mem_relaxed);
                 for (;;)
                 {
                     DENSITY_ASSERT_INTERNAL(
                       tail != 0 && uint_is_aligned(tail, s_alloc_granularity));
 
                     // allocate space for the control block (and possibly the runtime type)
-                    auto new_tail =
+                    uintptr_t new_tail =
                       tail + (INCLUDE_TYPE ? s_element_min_offset : s_rawblock_min_offset);
 
                     // allocate the user space
                     if (over_aligned)
                         new_tail = uint_upper_align(new_tail, alignment);
-                    DENSITY_ASSERT_UINT_ALIGNED(new_tail, alignment);
-                    auto const user_storage = reinterpret_cast<void *>(new_tail);
+                    DENSITY_ASSUME_UINT_ALIGNED(new_tail, alignment);
+                    void * const user_storage = reinterpret_cast<void *>(new_tail);
                     new_tail = uint_upper_align(new_tail + SIZE, s_alloc_granularity);
 
                     // check for page overflow
-                    auto const page_start = uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
-                    auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
+                    uintptr_t const page_start =
+                      uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
+                    DENSITY_ASSUME(new_tail > page_start);
+                    uintptr_t const new_tail_offset = new_tail - page_start;
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* No page overflow occurs with the new tail we have computed. */
                         if (m_tail.compare_exchange_weak(tail, new_tail, mem_relaxed, mem_relaxed))
@@ -283,16 +276,16 @@ namespace density
 
                             The next store is safe because the zeroed block is a barrier that consumers will
                             not get over, so this page can't be deallocated. If this block does not have the
-                            dead 'flag', the access to this page is safe until the element is commited or canceled. */
+                            dead 'flag', the access to this page is safe until the element is committed or canceled. */
 
                             // initialize the control block
                             auto const new_block = reinterpret_cast<ControlBlock *>(tail);
                             DENSITY_ASSERT_INTERNAL(
                               raw_atomic_load(&new_block->m_next, mem_relaxed) == 0);
-                            auto const next_ptr = new_tail + CONTROL_BITS;
+                            uintptr_t const next_ptr = new_tail + CONTROL_BITS;
                             raw_atomic_store(&new_block->m_next, next_ptr, mem_relaxed);
 
-                            // succesfull
+                            // successful
                             DENSITY_ASSERT_INTERNAL(new_block < get_end_control_block(new_block));
                             return {new_block, next_ptr, user_storage};
                         }
@@ -317,7 +310,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -348,12 +341,12 @@ namespace density
             DENSITY_NO_INLINE uintptr_t
                               page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee, uintptr_t i_tail)
             {
-                auto const page_end = get_end_control_block(i_tail);
+                uintptr_t const page_end = get_end_control_block(i_tail);
                 if (i_tail < page_end)
                 {
                     /* There is space between the (presumed) current tail and the end control block.
                         We try to pad it with a dead element. */
-                    auto expected_tail = i_tail;
+                    uintptr_t expected_tail = i_tail;
                     if (m_tail.compare_exchange_weak(
                           expected_tail, page_end, mem_relaxed, mem_relaxed))
                     {
@@ -371,7 +364,7 @@ namespace density
                 else
                 {
                     // get or allocate a new page
-                    DENSITY_ASSERT_INTERNAL(i_tail == page_end);
+                    DENSITY_ASSUME(i_tail == page_end);
                     return get_or_allocate_next_page(i_progress_guarantee, i_tail);
                 }
             }
@@ -396,7 +389,7 @@ namespace density
 
                     // try pin
                     PinGuard<ALLOCATOR_TYPE, progress_lock_free> end_block(this);
-                    auto const pin_result = end_block.pin(i_end_control);
+                    PinResult const pin_result = end_block.pin(i_end_control);
                     if (pin_result == PinFailed) // the pinning can fail only in wait-freedom
                     {
                         return 0;
@@ -411,7 +404,7 @@ namespace density
                     // now the end control block is pinned, we can safely access it
 
                     // allocate and setup a new page
-                    auto new_page = create_page(i_progress_guarantee);
+                    uintptr_t new_page = create_page(i_progress_guarantee);
                     if (new_page == 0)
                     {
                         return 0;
@@ -455,14 +448,14 @@ namespace density
                               create_initial_page(LfQueue_ProgressGuarantee const i_progress_guarantee)
             {
                 // m_initial_page = initial_page = create_page()
-                auto const first_page = create_page(i_progress_guarantee);
+                uintptr_t const first_page = create_page(i_progress_guarantee);
                 if (first_page == 0)
                 {
                     return 0;
                 }
 
                 /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
-                    because this is a oneshot operation, so we can't possibly stick in a loop. */
+                    because this is a one-shot operation, so we can't possibly stick in a loop. */
                 uintptr_t initial_page = 0;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))
                 {
@@ -494,7 +487,7 @@ namespace density
                         ToDenGuarantee(i_progress_guarantee)));
                 if (new_page != nullptr)
                 {
-                    auto const new_page_end_block = get_end_control_block(new_page);
+                    ControlBlock * const new_page_end_block = get_end_control_block(new_page);
                     raw_atomic_store(
                       &new_page_end_block->m_next, uintptr_t(LfQueue_InvalidNextPage));
                 }
@@ -510,8 +503,8 @@ namespace density
 
             void discard_created_page(uintptr_t i_new_page) noexcept
             {
-                auto const new_page           = reinterpret_cast<void *>(i_new_page);
-                auto const new_page_end_block = get_end_control_block(new_page);
+                auto const           new_page           = reinterpret_cast<void *>(i_new_page);
+                ControlBlock * const new_page_end_block = get_end_control_block(new_page);
                 raw_atomic_store(&new_page_end_block->m_next, uintptr_t(0));
                 ALLOCATOR_TYPE::deallocate_page_zeroed(new_page);
             }

@@ -302,7 +302,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <p>Concurrent lock-free heterogeneous FIFO container-like class template. <a class="el" href="classdensity_1_1lf__heter__queue.html">lf_heter_queue</a> is a concurrent version of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> that uses lock free algorithms for both put transactions and put operations.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to store the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
     <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must satisfy the requirements of both <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>. </td></tr>
     <tr><td class="paramname">PROD_CARDINALITY</td><td>specifies whether multiple threads can do put transactions concurrently. Must be a member of <a class="el" href="namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb">density::concurrency_cardinality</a>. </td></tr>
     <tr><td class="paramname">CONSUMER_CARDINALITY</td><td>specifies whether multiple threads can do consume operations concurrently. Must be a member of <a class="el" href="namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb">density::concurrency_cardinality</a>. </td></tr>
@@ -736,7 +736,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  <em>Note</em>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -829,7 +829,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -879,7 +879,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -961,7 +961,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  This function allocates the required space, constructs the new element, and returns a transaction object that may be used to allocate raw space associated to the element being inserted, or to alter the element in some way. <br />
  Call the member function commit on the returned transaction in order to make the effects observable. If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects. Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any function is called in this timespan by the same thread, the behavior is undefined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -1057,7 +1057,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1106,7 +1106,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1209,7 +1209,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate a failure, and has no observable effects. This function fails if:</p><ul>
 <li>a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with the blocking progress guarantee indicates an out of memory, but no exception is thrown.</li>
 <li>there is a contention between threads, and the wait-free progress guarantee is requested</li>
@@ -1339,7 +1339,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1402,7 +1402,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1512,7 +1512,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to indicate a failure, and has no observable effects. This function fails if:</p><ul>
 <li>a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with the blocking progress guarantee indicates an out of memory, but no exception is thrown.</li>
 <li>there is a contention between threads, and the wait-free progress guarantee is requested</li>
@@ -1645,7 +1645,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1707,7 +1707,7 @@ class density::lf_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>

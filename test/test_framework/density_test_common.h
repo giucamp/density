@@ -7,10 +7,11 @@
 #pragma once
 
 #ifdef _MSC_VER
-#define _ENABLE_EXTENDED_ALIGNED_STORAGE /* acknowledge change done in 2017 15.8 about overalignment 
+#define _ENABLE_EXTENDED_ALIGNED_STORAGE /* acknowledge change done in 2017 15.8 about over-alignment 
     that breaks the ABI compatibility */
 #endif
 
+#include <assert.h>
 #include <chrono>
 #include <cstdlib>
 #include <sstream>
@@ -125,8 +126,7 @@ namespace density_tests
         eTestExceptions          = 1 << 1,
         eUseTestAllocators       = 1 << 2,
         eReserveCoreToMainThread = 1 << 3,
-        ePrintProgress           = 1 << 4,
-        eSuspender               = 1 << 8,
+        ePrintProgress           = 1 << 4
     };
 
     constexpr QueueTesterFlags

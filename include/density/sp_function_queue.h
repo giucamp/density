@@ -22,8 +22,12 @@ namespace density
     /** Heterogeneous FIFO pseudo-container specialized to hold callable objects. sp_function_queue is an adaptor for sp_heter_queue.
 
         sp_function_queue is a concurrent version of function_queue that uses a mix of lock free algorithms and spin locking.
-        This class is very similar to lf_function_queue, with the difference that if multiple producers are supported, they
-        use a spin-locking mutex to synchronize the write to the tail pointer.
+
+        This class is very similar to lf_function_queue, with the difference in multiple-producers mode it uses
+        a spin-locking mutex to synchronize the write to the tail pointer.
+
+        Implementation note: In single-producer mode this class template is equivalent to lf_heter_queue,
+            and the busy-wait function is not used.
 
         @tparam CALLABLE Signature required to the callable objects. Must be in the form RET_VAL (PARAMS...)
         @tparam ALLOCATOR_TYPE Allocator type to be used. This type must satisfy the requirements of both \ref UntypedAllocator_requirements
@@ -163,7 +167,7 @@ namespace density
             m_queue.push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
-        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
+        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, in-place-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
@@ -193,7 +197,7 @@ namespace density
 
 
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
 
             See sp_heter_queue::start_emplace for a detailed description.
 
@@ -217,7 +221,7 @@ namespace density
             m_queue.reentrant_push(std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
-        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
+        /** Adds at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, in-place-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
@@ -247,7 +251,7 @@ namespace density
 
 
         /** Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
 
             See sp_heter_queue::start_reentrant_emplace for a detailed description.
 
@@ -280,7 +284,7 @@ namespace density
         }
 
         /** Tries to add at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code> respecting a progress guarantee,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
             See sp_heter_queue::try_emplace for a detailed description.
@@ -317,7 +321,7 @@ namespace density
 
 
         /** Tries to begin a transaction appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
 
             See sp_heter_queue::try_start_emplace for a detailed description.
 
@@ -356,7 +360,7 @@ namespace density
               i_progress_guarantee, std::forward<ELEMENT_COMPLETE_TYPE>(i_source));
         }
 
-        /** Tries to add at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, inplace-constructing it from
+        /** Tries to add at the end of the queue a callable object of type <code>ELEMENT_COMPLETE_TYPE</code>, in-place-constructing it from
                 a perfect forwarded parameter pack.
             \n <i>Note</i>: the template argument <code>ELEMENT_COMPLETE_TYPE</code> can't be deduced from the parameters so it must explicitly specified.
 
@@ -399,7 +403,7 @@ namespace density
 
 
         /** Tries to begin a transaction appends an element of a type <code>ELEMENT_TYPE</code>,
-            inplace-constructing it from a perfect forwarded parameter pack.
+            in-place-constructing it from a perfect forwarded parameter pack.
 
             See sp_heter_queue::try_start_reentrant_emplace for a detailed description.
 
@@ -517,7 +521,7 @@ namespace density
               std::is_void<RET_VAL>(), i_consume, std::forward<PARAMS>(i_params)...);
         }
 
-        /** Deletes all the callable objects in the queue. This function is disabled at conpile-time if ERASURE is function_manual_clear.
+        /** Deletes all the callable objects in the queue. This function is disabled at compile-time if ERASURE is function_manual_clear.
 
             \n<b> Effects on iterators </b>: all the iterators are invalidated
             \n\b Throws: nothing
@@ -532,7 +536,7 @@ namespace density
             auto erasure = ERASURE;
             if (erasure == function_manual_clear)
             {
-                DENSITY_ASSERT(false);
+                DENSITY_ASSUME(false);
             }
             else
             {

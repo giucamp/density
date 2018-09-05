@@ -117,7 +117,8 @@ namespace density
         @param i_alignment must be > 0 and a power of 2 */
     inline bool address_is_aligned(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
         return (reinterpret_cast<uintptr_t>(i_address) & (i_alignment - 1)) == 0;
     }
 
@@ -129,7 +130,8 @@ namespace density
         static_assert(
           std::numeric_limits<UINT>::is_integer && !std::numeric_limits<UINT>::is_signed,
           "UINT mus be an unsigned integer");
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
         return (i_uint & (i_alignment - 1)) == 0;
     }
 
@@ -160,7 +162,7 @@ namespace density
     inline void * address_sub(void * i_address, size_t i_offset) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
-        DENSITY_ASSERT(uint_pointer >= i_offset);
+        DENSITY_ASSUME(uint_pointer >= i_offset);
         return reinterpret_cast<void *>(uint_pointer - i_offset);
     }
 
@@ -171,7 +173,7 @@ namespace density
     inline const void * address_sub(const void * i_address, size_t i_offset) noexcept
     {
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
-        DENSITY_ASSERT(uint_pointer >= i_offset);
+        DENSITY_ASSUME(uint_pointer >= i_offset);
         return reinterpret_cast<const void *>(uint_pointer - i_offset);
     }
 
@@ -181,7 +183,7 @@ namespace density
         @return i_end_address minus i_start_address */
     inline uintptr_t address_diff(const void * i_end_address, const void * i_start_address) noexcept
     {
-        DENSITY_ASSERT(i_end_address >= i_start_address);
+        DENSITY_ASSUME(i_end_address >= i_start_address);
 
         const uintptr_t end_uint_pointer   = reinterpret_cast<uintptr_t>(i_end_address);
         const uintptr_t start_uint_pointer = reinterpret_cast<uintptr_t>(i_start_address);
@@ -195,7 +197,8 @@ namespace density
         @return the aligned address */
     inline void * address_lower_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -210,7 +213,8 @@ namespace density
         @return the aligned address */
     inline const void * address_lower_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -259,7 +263,8 @@ namespace density
         @return the aligned address */
     inline void * address_upper_align(void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -274,7 +279,8 @@ namespace density
         @return the aligned address */
     inline const void * address_upper_align(const void * i_address, size_t i_alignment) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         const uintptr_t uint_pointer = reinterpret_cast<uintptr_t>(i_address);
 
@@ -416,7 +422,7 @@ namespace density
 #endif
 
         /** internal macro - rethrows disabling the warning "function assumed not to throw an exception but does" 
-            This macro is used by functions conditionally noexcept that has to hook and passthrough exceptions. */
+            This macro is used by functions conditionally noexcept that has to hook and pass-through exceptions. */
 #ifdef _MSC_VER
 #define DENSITY_INTERNAL_RETHROW_FROM_NOEXCEPT                                                     \
     __pragma(warning(push)) __pragma(warning(disable : 4297)) throw;                               \
@@ -447,14 +453,15 @@ namespace density
         A violation of any precondition results in undefined behavior.
 
         \n <b>Throws</b>: std::bad_alloc if the allocation fails
-        \n <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)
+        \n <b>Progress guarantee</b>: the same of the built-in operator new (usually blocking)
 
 
         The content of the newly allocated block is undefined. */
     inline void * aligned_allocate(size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0)
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-        DENSITY_ASSERT(i_alignment_offset <= i_size);
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
+        DENSITY_ASSUME(i_alignment_offset <= i_size);
 
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
@@ -496,15 +503,16 @@ namespace density
         A violation of any precondition results in undefined behavior.
 
         \n <b>Throws</b>: nothing
-        \n <b>Progress guarantee</b>: the same of the builtin operator new (usually blocking)
+        \n <b>Progress guarantee</b>: the same of the built-in operator new (usually blocking)
 
 
         The content of the newly allocated block is undefined. */
     inline void * try_aligned_allocate(
       size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
-        DENSITY_ASSERT(i_alignment_offset <= i_size);
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
+        DENSITY_ASSUME(i_alignment_offset <= i_size);
 
         void * user_block;
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
@@ -549,14 +557,15 @@ namespace density
                 - i_size, i_alignment and i_alignment_offset are not the same specified when the block was allocated
 
         \n <b>Throws</b>: nothing
-        \n <b>Progress guarantee</b>: the same of the builtin operator delete (usually blocking)
+        \n <b>Progress guarantee</b>: the same of the built-in operator delete (usually blocking)
 
 
         If i_block is nullptr, the call has no effect. */
     inline void aligned_deallocate(
       void * i_block, size_t i_size, size_t i_alignment, size_t i_alignment_offset = 0) noexcept
     {
-        DENSITY_ASSERT(i_alignment > 0 && is_power_of_2(i_alignment));
+        DENSITY_ASSERT(is_power_of_2(i_alignment));
+        DENSITY_ASSUME(i_alignment > 0);
 
         if (i_alignment <= detail::MaxAlignment && i_alignment_offset == 0)
         {
@@ -585,22 +594,30 @@ namespace density
         }
     }
 
+    // clang-format off
     /*!
 
     \mainpage overview Overview
 
 Density Overview
 ----------------
-Density is a C++11 header-only library focused on paged, lifo e fifo memory management. The library provides a rich set of configurable heterogeneous queues:
+Density is a C++ library providing very efficient concurrent heterogeneous queues, non-concurrent stacks, and a page-based memory manager.
+
+Heterogeneous queues can store objects of any type:
+
+\snippet overview_examples.cpp queue example 1
+
+This table shows all the available queues:
+
 concurrency strategy|function queue|heterogeneous queue|Consumers cardinality|Producers cardinality
 --------------- |------------------ |--------------------|--------------------|--------------------
 single threaded   |[function_queue](\ref density::function_queue)      |[heter_queue](\ref density::heter_queue)| - | -
 locking         |[conc_function_queue](\ref density::conc_function_queue) |[conc_heter_queue](\ref density::conc_heter_queue)|multiple|multiple
-lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_heter_queue](\ref density::lf_heter_queue)|configurable|configurable
-spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_heter_queue](\ref density::sp_heter_queue)|configurable|configurable
+lock-free       |[lf_function_queue](\ref density::lf_function_queue) |[lf_heter_queue](\ref density::lf_heter_queue)|single or multiple|single or multiple
+spin-locking    |[sp_function_queue](\ref density::sp_function_queue) |[sp_heter_queue](\ref density::sp_heter_queue)|single or multiple|single or multiple
 
-All function queues have a common interface, and so do all heterogeneous queues. Some queues have specific extensions: an example is heter_queue supporting iteration,
-or lock-free and spin-locking queues supporting try_* functions with parametric progress guarantee.
+Elements are stored linearly in memory pages, achieving a great memory locality. 
+Furthermore allocating an element most times means just adding the size to allocate to a pointer.
 
 density provides a lifo_allocator built upon the page allocator, and a thread-local lifo memory pool (the *data-stack*), which has roughly
 the [same performance](\ref lifo_array_benchmarks) of the unsafe, C-ish and non-standard [alloca](http://man7.org/linux/man-pages/man3/alloca.3.html).
@@ -715,7 +732,7 @@ If an operation is not reentrant the implementation can do some optimizations: s
 Furthermore reentrancy can affect thread synchronization: `conc_function_queue` and `conc_heter_queue`, when executing a non-reentrant operation, lock their internal mutex
 when starting, and unlock it when committing or canceling. In contrast, when they execute a reentrant operation, they have to lock and unlock when starting, and lock and
 unlock again when committing or canceling. The internal mutex is not recursive, so if a thread starts a non-reentrant operation and then tries to access the queue, it
-causes undefined behaviour.
+causes undefined behavior.
 
 Relaxed guarantees
 ------------
@@ -727,7 +744,7 @@ Internally, in manual-clean mode, the layout of a value in the function queue is
  - the runtime type, actually a pointer to the invoke-destroy function
  - the eventual capture
 
-So if you put a captureless lambda or a pointer to a function, you are advancing the tail pointer by the space required by 2 pointers.
+So if you put a capture-less lambda or a pointer to a function, you are advancing the tail pointer by the space required by 2 pointers.
 Anyway lock-free queues and spin-locking queues align their values to [density::destructive_interference_size](namespacedensity.html#ae8f72b2dd386b61bf0bc4f30478c2941), so they are less dense than the other queues.
 
 All queues but `function_queue` and `heter_queue` are concurrency enabled. By default they allow multiple producers and multiple consumers.
@@ -743,7 +760,7 @@ The class templates [lf_function_queue](classdensity_1_1lf__function__queue.html
 For all queues, the functions `try_consume` and `try_reentrant_consume` have 2 variants:
 
 - one returning a consume operation. If the queue was empty, an empty consume is returned.
-- one taking a reference to a consume as parameter and returning a boolean, raccomanded if a thread performs many consecutive consumes.
+- one taking a reference to a consume as parameter and returning a boolean, recommended if a thread performs many consecutive consumes.
 
 There is no functional difference between the two consumes. Anyway, currently only for lock-free and spin-locking queues supporting multi-producers,
 the second consume can be much faster. The reason has to do with the way they ensure that a consumer does not deallocate a page while another consumer
@@ -760,7 +777,7 @@ Heterogeneous queues
 --------------------
 Every function queue is actually an adaptor for the corresponding heterogeneous pseudo-container.  Heterogeneous queues have put and consume functions, just like function queues, but elements are not required to be callable objects.
 
-\snippet heterogeneous_queue_examples.cpp heter_queue put example 1
+\snippet heter_queue_examples.cpp heter_queue put example 1
 
 The first 3 template parameters are the same for all the heterogeneous queues.
 
@@ -771,7 +788,7 @@ typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_re
 typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_requirements.html) and [UntypedAllocator](UntypedAllocator_requirements.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
 An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
-The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of fumnction queues. Even using the buillt-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
+The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of function queues. Even using the built-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
 
 \snippet misc_examples.cpp runtime_type example 2
 \snippet misc_examples.cpp runtime_type example 3
@@ -902,4 +919,5 @@ Benchmarks
             -source:<string> - by default empty, max length = 4095. Path to prepend to the __FILE__ macro to access the source files.
 
    */
+    // clang-format on
 } // namespace density

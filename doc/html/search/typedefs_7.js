@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['underlying_5fallocator',['underlying_allocator',['../classdensity_1_1lifo__allocator.html#aec51b97896660342ea4809c91ca70337',1,'density::lifo_allocator']]]
+  ['tuple_5ftype',['tuple_type',['../classdensity_1_1runtime__type.html#af517350859287a48e8de74ae2163aaa0',1,'density::runtime_type']]]
 ];

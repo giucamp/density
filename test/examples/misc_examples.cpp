@@ -91,8 +91,8 @@ namespace density_tests
             auto const end_it = my_queue.end();
             for (auto it = my_queue.begin(); it != end_it; ++it)
             {
-                auto const update_func = it->first.get_feature<feature_call_update>();
-                update_func(it->second, 1.f / 60.f);
+                auto const update_func = it->type().get_feature<feature_call_update>();
+                update_func(it->address(), 1.f / 60.f);
             }
             //! [runtime_type example 3]
         }

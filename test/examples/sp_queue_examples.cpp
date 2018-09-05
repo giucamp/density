@@ -2090,6 +2090,54 @@ static void samples(std::ostream &)
         assert(queue.empty());
         //! [sp_heter_queue construct_move_alloc example 1]
     }
+
+
+    {
+        //! [sp_heter_queue construct_alloc_wait example 1]
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+
+        default_allocator allocator;
+        default_busy_wait busy_wait;
+        SpQueue           queue(allocator, busy_wait);
+        assert(queue.empty());
+        //! [sp_heter_queue construct_alloc_wait example 1]
+    }
+    {
+        //! [sp_heter_queue construct_alloc_wait example 2]
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+
+        default_allocator allocator;
+        default_busy_wait busy_wait;
+        SpQueue           queue(std::move(allocator), busy_wait);
+        assert(queue.empty());
+        //! [sp_heter_queue construct_alloc_wait example 2]
+    }
+    {
+        //! [sp_heter_queue construct_alloc_wait example 3]
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+
+        default_allocator allocator;
+        default_busy_wait busy_wait;
+        SpQueue           queue(allocator, std::move(busy_wait));
+        assert(queue.empty());
+        //! [sp_heter_queue construct_alloc_wait example 3]
+    }
+    {
+        //! [sp_heter_queue construct_alloc_wait example 4]
+        using SpQueue =
+          sp_heter_queue<runtime_type<>, default_allocator, PROD_CARDINALITY, CONSUMER_CARDINALITY>;
+
+        default_allocator allocator;
+        default_busy_wait busy_wait;
+        SpQueue           queue(std::move(allocator), std::move(busy_wait));
+        assert(queue.empty());
+        //! [sp_heter_queue construct_alloc_wait example 4]
+    }
+
+
     {
         //! [sp_heter_queue move_assign example 1]
         using MyRunTimeType = runtime_type<

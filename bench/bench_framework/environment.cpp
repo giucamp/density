@@ -61,7 +61,7 @@ namespace density_bench
       public:
         CoInitialize()
         {
-            CoInitializeEx(NULL, COINIT_MULTITHREADED); /* The second time this function is caled
+            CoInitializeEx(NULL, COINIT_MULTITHREADED); /* The second time this function is called
                                                                 on the same thread, it returns S_FALSE. */
             TESTITY_COM_CALL(CoInitializeSecurity(
               NULL,

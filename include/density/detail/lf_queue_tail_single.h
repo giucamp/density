@@ -75,7 +75,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
                 // swap the base
@@ -143,13 +143,9 @@ namespace density
                     // check for page overflow
                     auto const page_start =
                       uint_lower_align(m_tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    DENSITY_ASSUME(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (m_tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* null-terminate the next control-block before updating the new one, to prevent 
                             consumers from reaching an unitialized area. No memory ordering is required here */
@@ -160,7 +156,10 @@ namespace density
                         /* to investigate: this may probably be a non-atomic operation, because consumers can only
                             read this after acquiring the next write (to new_block->m_next). Anyway clang tsan
                             has reported it has a data race. Furthermore atomicity in this case should have no 
-                            consequences on the generated code. */
+                            consequences on the generated code. 
+                        
+                            todo: the std::atomic_thread_fence in the page_allocator should be enough
+                        */
 
                         /* setup the new control block. Here we use release ordering so that consumers
                             acquiring this control block can see the previous write. */
@@ -191,7 +190,7 @@ namespace density
                         else
                         {
                             // with LfQueue_Throwing page_overflow throws on failure
-                            DENSITY_ASSERT_INTERNAL(result != 0);
+                            DENSITY_ASSUME(result != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -224,11 +223,11 @@ namespace density
                 static_assert(
                   is_power_of_2(ALIGNMENT) && (SIZE % ALIGNMENT) == 0, "internal error");
 
-                constexpr auto alignment = size_max(ALIGNMENT, min_alignment);
-                constexpr auto size      = uint_upper_align(SIZE, alignment);
-                constexpr auto can_fit_in_a_page =
+                constexpr size_t alignment = size_max(ALIGNMENT, min_alignment);
+                constexpr size_t size      = uint_upper_align(SIZE, alignment);
+                constexpr bool   can_fit_in_a_page =
                   size + (alignment - min_alignment) <= s_max_size_inpage;
-                constexpr auto over_aligned = alignment > min_alignment;
+                constexpr bool over_aligned = alignment > min_alignment;
 
                 for (;;)
                 {
@@ -242,20 +241,16 @@ namespace density
                     // allocate the user space
                     if (over_aligned)
                         new_tail = uint_upper_align(new_tail, alignment);
-                    DENSITY_ASSERT_UINT_ALIGNED(new_tail, alignment);
+                    DENSITY_ASSUME_UINT_ALIGNED(new_tail, alignment);
                     auto const user_storage = reinterpret_cast<void *>(new_tail);
                     new_tail = uint_upper_align(new_tail + size, s_alloc_granularity);
 
                     // check for page overflow
                     auto const page_start =
                       uint_lower_align(m_tail, ALLOCATOR_TYPE::page_alignment);
-                    DENSITY_ASSERT_INTERNAL(new_tail > page_start);
+                    DENSITY_ASSUME(new_tail > page_start);
                     auto const new_tail_offset = new_tail - page_start;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                    if (m_tail == page_start && new_tail_offset <= s_end_control_offset)
-#else
                     if (DENSITY_LIKELY(new_tail_offset <= s_end_control_offset))
-#endif
                     {
                         /* null-terminate the next control-block before updating the new one, to prevent
                         consumers from reaching an unitialized area. No memory ordering is required here */
@@ -295,7 +290,7 @@ namespace density
                         else
                         {
                             // with LfQueue_Throwing page_overflow throws on failure
-                            DENSITY_ASSERT_INTERNAL(result != 0);
+                            DENSITY_ASSUME(result != 0);
                         }
                     }
                     else // this allocation would never fit in a page, allocate an external block
@@ -326,8 +321,7 @@ namespace density
                   i_progress_guarantee == LfQueue_Throwing
                     ? ALLOCATOR_TYPE::allocate_page()
                     : ALLOCATOR_TYPE::try_allocate_page(ToDenGuarantee(i_progress_guarantee)));
-                DENSITY_ASSERT_INTERNAL(
-                  address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+                DENSITY_ASSUME_ALIGNED(new_page, ALLOCATOR_TYPE::page_alignment);
                 if (new_page == nullptr)
                 {
                     // allocation failed

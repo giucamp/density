@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['sp_5ffunction_5fqueue',['sp_function_queue',['../classdensity_1_1sp__function__queue.html',1,'density']]],
-  ['sp_5fheter_5fqueue',['sp_heter_queue',['../classdensity_1_1sp__heter__queue.html',1,'density']]],
-  ['sp_5fheter_5fqueue_3c_20detail_3a_3afunctionruntimetype_3c_20erasure_2c_20ret_5fval_28params_2e_2e_2e_29_3e_2c_20allocator_5ftype_2c_20prod_5fcardinality_2c_20consumer_5fcardinality_2c_20busy_5fwait_5ffunc_20_3e',['sp_heter_queue&lt; detail::FunctionRuntimeType&lt; ERASURE, RET_VAL(PARAMS...)&gt;, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC &gt;',['../classdensity_1_1sp__heter__queue.html',1,'density']]]
+  ['put_5ftransaction',['put_transaction',['../classdensity_1_1lf__heter__queue_1_1put__transaction.html',1,'density::lf_heter_queue']]],
+  ['put_5ftransaction',['put_transaction',['../classdensity_1_1heter__queue_1_1put__transaction.html',1,'density::heter_queue']]],
+  ['put_5ftransaction',['put_transaction',['../classdensity_1_1conc__heter__queue_1_1put__transaction.html',1,'density::conc_heter_queue']]],
+  ['put_5ftransaction',['put_transaction',['../classdensity_1_1sp__heter__queue_1_1put__transaction.html',1,'density::sp_heter_queue']]]
 ];

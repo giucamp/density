@@ -17,7 +17,7 @@ namespace density
            block, and a pointer to the user element. */
         struct LfQueueControl
         {
-            atomic_uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
+            uintptr_t m_next; /**< pointer to the next control block, bitwise-or-ed
               with some flags (see LfQueue_State). LfQueueControl's are aligned so that
               the first 3 bits of the address are zeroes.
               The end of a queue is indicated by a m_next set to zero or to LfQueue_InvalidNextPage. */
@@ -190,7 +190,7 @@ namespace density
 
             LFQueue_Base & operator=(const LFQueue_Base & i_source) = delete;
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Base & i_first, LFQueue_Base & i_second) noexcept
             {
                 // swap the allocator
@@ -295,9 +295,8 @@ namespace density
                         i_control_bits, i_include_type, i_size, i_alignment);
 
                 default:
-                    DENSITY_ASSERT_INTERNAL(
-                      false); // fall-through to progress_blocking to avoid 'not all
-                              // control paths return a value' warnings
+                    DENSITY_ASSUME(false); // fall-through to progress_blocking to avoid 'not all
+                                           // control paths return a value' warnings
                 case progress_blocking:
                     return static_cast<DERIVED *>(this)
                       ->template try_inplace_allocate_impl<detail::LfQueue_Blocking>(
@@ -334,9 +333,8 @@ namespace density
                         ALIGNMENT>();
 
                 default:
-                    DENSITY_ASSERT_INTERNAL(
-                      false); // fall-through to progress_blocking to avoid 'not all
-                              // control paths return a value' warnings
+                    DENSITY_ASSUME(false); // fall-through to progress_blocking to avoid 'not all
+                                           // control paths return a value' warnings
                 case progress_blocking:
                     return static_cast<DERIVED *>(this)
                       ->template try_inplace_allocate_impl<
@@ -357,7 +355,7 @@ namespace density
             {
                 auto guarantee = PROGRESS_GUARANTEE; // used to avoid warnings about
                                                      // constant conditional expressions
-                DENSITY_ASSERT(guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking);
+                DENSITY_ASSUME(guarantee == LfQueue_Throwing || guarantee == LfQueue_Blocking);
 
                 void * external_block;
                 if (guarantee == LfQueue_Throwing)
@@ -413,8 +411,7 @@ namespace density
             static void commit_put_impl(const Allocation & i_put) noexcept
             {
                 // we expect to have LfQueue_Busy and not LfQueue_Dead
-                DENSITY_ASSERT_INTERNAL(
-                  address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSUME_ALIGNED(i_put.m_control_block, s_alloc_granularity);
                 DENSITY_ASSERT_INTERNAL(
                   (i_put.m_next_ptr & ~LfQueue_AllFlags) ==
                     (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) &
@@ -451,8 +448,7 @@ namespace density
             static void cancel_put_nodestroy_impl(const Allocation & i_put) noexcept
             {
                 // we expect to have LfQueue_Busy and not LfQueue_Dead
-                DENSITY_ASSERT_INTERNAL(
-                  address_is_aligned(i_put.m_control_block, s_alloc_granularity));
+                DENSITY_ASSUME_ALIGNED(i_put.m_control_block, s_alloc_granularity);
                 DENSITY_ASSERT_INTERNAL(
                   (i_put.m_next_ptr & ~LfQueue_AllFlags) ==
                     (raw_atomic_load(&i_put.m_control_block->m_next, mem_relaxed) &
@@ -543,7 +539,7 @@ namespace density
                 return PinSuccessfull;
             }
 
-            /** Tries to pin the page containing the provided uint addresss */
+            /** Tries to pin the page containing the provided uint address */
             PinResult pin(uintptr_t i_address) noexcept
             {
                 return pin(reinterpret_cast<void *>(i_address));

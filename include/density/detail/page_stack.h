@@ -19,20 +19,18 @@ namespace density
             PageFooter * m_next_page{nullptr};
 
             /* Number of times the page has been pinned. The allocator can't modify the content
-                of a page while the pin count is greater than zero. */
+                of a deallocated page while the pin count is greater than zero. */
             std::atomic<uintptr_t> m_pin_count{0};
         };
 
         /** \internal Non-concurrent stack of pages. This is not a general purpose
-            stack, rather it is designed and specialized to be used by the page manager.
-            \n PageStack is not a strict stack: pop_unpinned removes the first unpinned page, if any. */
+            stack, rather it is designed and specialized to be used by the page manager. */
         class PageStack
         {
           private:
             PageFooter * m_first{nullptr}; /**< root of the null-terminated linked list. */
             PageFooter * m_cached_last{
-              nullptr}; /**< pointer to the last page, if known, or nullptr. This variable is redundant, and
-                                                    is used just to optimize the function find_last. */
+              nullptr}; /**< pointer to the last page, if known, or nullptr. */
 
           public:
             /** Constructs a stack from a null-terminated linked-list of pages. If the argument is nullptr the stack is empty */
@@ -47,11 +45,21 @@ namespace density
             /** Copy assignment not allowed */
             PageStack & operator=(const PageStack &) = delete;
 
-            /** Move constructor. A moved-from PageStack can only be destroyed. Using it in any other way causes undefined behavior. */
-            PageStack(PageStack &&) noexcept = default;
+            /** Move constructor */
+            PageStack(PageStack && i_source) noexcept
+                : m_first(i_source.m_first), m_cached_last(i_source.m_cached_last)
+            {
+                i_source.m_first       = nullptr;
+                i_source.m_cached_last = nullptr;
+            }
 
-            /** Move assignment. A moved-from PageStack can only be destroyed. Using it in any other way causes undefined behavior. */
-            PageStack & operator=(PageStack &&) noexcept = default;
+            /** Move assignment */
+            PageStack & operator=(PageStack && i_source) noexcept
+            {
+                std::swap(m_first, i_source.m_first);
+                std::swap(m_cached_last, i_source.m_cached_last);
+                return *this;
+            }
 
             /** Prepends a page to this stack.
 
@@ -101,6 +109,8 @@ namespace density
                 return m_cached_last;
             }
 
+            PageFooter * get_last_if_known() const noexcept { return m_cached_last; }
+
             /** Search for a page with pin-count == 0, and removes it, if any.
                 @param i_first reference to the pointer to the first page of the stack
                 @return the page removed from the stack, or nullptr */
@@ -117,8 +127,7 @@ namespace density
                     {
                         DENSITY_ASSERT_INTERNAL((prev == nullptr) == (curr == m_first));
 
-                        // note: probably this may be a non-atomic read
-                        if (curr->m_pin_count.load(detail::mem_relaxed) == 0)
+                        if (curr->m_pin_count.load(detail::mem_acquire) == 0)
                         {
                             if (prev != nullptr)
                                 prev->m_next_page = curr->m_next_page;

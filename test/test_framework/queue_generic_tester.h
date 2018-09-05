@@ -107,55 +107,6 @@ namespace density_tests
       private:
         class ThreadData;
 
-        struct SuspenderData
-        {
-            SuspenderData(EasyRandom & i_source_random, aligned_vector<ThreadData> & i_threads)
-                : m_easy_random(i_source_random.fork()), m_threads(i_threads)
-            {
-            }
-
-            EasyRandom                   m_easy_random;
-            aligned_vector<ThreadData> & m_threads;
-            std::atomic<bool>            m_exit{false};
-            std::atomic<size_t>          m_suspended_count{0};
-        };
-
-        static void suspender_proc(SuspenderData & i_data)
-        {
-            i_data.m_suspended_count.store(0, std::memory_order_relaxed);
-            auto const                 threads      = i_data.m_threads.data();
-            auto const                 thread_count = i_data.m_threads.size();
-            std::vector<unsigned char> supended_vect(thread_count, false);
-            auto const                 supended = supended_vect.data();
-            while (!i_data.m_exit.load())
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-                size_t thread_index =
-                  i_data.m_easy_random.template get_int<size_t>(thread_count - 1);
-                if (supended[thread_index])
-                {
-                    i_data.m_suspended_count.fetch_sub(1, std::memory_order_relaxed);
-                    threads[thread_index].resume();
-                    supended[thread_index] = false;
-                }
-                else
-                {
-                    supended[thread_index] = threads[thread_index].suspend();
-                    if (supended[thread_index])
-                        i_data.m_suspended_count.fetch_add(1, std::memory_order_relaxed);
-                }
-            }
-
-            for (size_t thread_index = 0; thread_index < thread_count; thread_index++)
-            {
-                if (supended[thread_index])
-                {
-                    threads[thread_index].resume();
-                }
-            }
-        }
-
         void
           run_impl(QueueTesterFlags i_flags, EasyRandom & i_random, size_t i_target_put_count) const
         {
@@ -173,14 +124,15 @@ namespace density_tests
             /* prepare the array of threads. The initialization of the random generator
                 may take some time, so we do it before starting the threads. */
             aligned_vector<ThreadData> threads;
+            FeedBack                   feedback;
             threads.reserve(m_thread_count);
             for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
             {
-                threads.emplace_back(*this, queue, i_random, i_flags);
+                threads.emplace_back(*this, &feedback, queue, i_random, i_flags);
             }
 
-            auto const num_of_processors = get_num_of_processors();
-            bool const reserve_core1_to_main =
+            uint64_t const num_of_processors = get_num_of_processors();
+            bool const     reserve_core1_to_main =
               (i_flags && QueueTesterFlags::eReserveCoreToMainThread) && num_of_processors >= 4;
 
             for (size_t thread_index = 0; thread_index < m_thread_count; thread_index++)
@@ -203,9 +155,16 @@ namespace density_tests
                 }
                 else
                 {
-                    // allow puts only to the first thread
+                    // allow puts only to the first thread, and reserve the first core to it
                     if (thread_index == 0)
+                    {
                         thread_put_count = i_target_put_count;
+                        thread_affinity  = 1;
+                    }
+                    else
+                    {
+                        thread_affinity ^= 1;
+                    }
                 }
 
                 if (concurrent_consumes)
@@ -217,31 +176,23 @@ namespace density_tests
                 }
                 else
                 {
-                    // allow consumes only to the first thread
-                    if (thread_index == 0)
+                    // allow consumes only to the first thread, and reserve the last core to it
+                    if (thread_index == m_thread_count - 1)
+                    {
                         thread_consume_count = i_target_put_count;
+                        thread_affinity      = uint64_t(1) << (num_of_processors - 1);
+                    }
+                    else
+                    {
+                        thread_affinity ^= uint64_t(1) << (num_of_processors - 1);
+                    }
                 }
 
-                if (m_thread_count > 2 && concurrent_puts != concurrent_consumes)
-                {
-                    /* there are many threads, but the first thread has much more work. We reserve
-                        the first cpu to it, to reduce the starvation of the other threads. */
-                    if (thread_index == 0)
-                        thread_affinity = 1;
-                    else
-                        thread_affinity ^= 1;
-                }
+                if (num_of_processors <= 1)
+                    thread_affinity = std::numeric_limits<uint64_t>::max();
 
                 threads[thread_index].start(
                   thread_index, thread_put_count, thread_consume_count, thread_affinity);
-            }
-
-            std::thread   supender_thread;
-            SuspenderData supender_data(i_random, threads);
-            if (i_flags && QueueTesterFlags::eSuspender)
-            {
-                supender_thread = std::thread([&supender_data] { suspender_proc(supender_data); });
-                set_thread_name(supender_thread, "suspender");
             }
 
             // wait for the test to be completed
@@ -264,13 +215,22 @@ namespace density_tests
                       consumed <= i_target_put_count && produced <= i_target_put_count);
                     complete = consumed >= i_target_put_count && produced >= i_target_put_count;
 
+                    bool too_many_enqueued = false;
+                    if (produced > consumed)
+                    {
+                        double const enqueued_ratio =
+                          static_cast<double>(produced - consumed) / static_cast<double>(consumed);
+                        too_many_enqueued = enqueued_ratio > 0.2;
+                    }
+                    feedback.m_too_many_enqueued.store(
+                      too_many_enqueued, std::memory_order_relaxed);
+
                     if (i_flags && QueueTesterFlags::ePrintProgress)
                     {
+                        auto const enqueued = produced >= consumed ? (produced - consumed) : 0;
                         progress.set_progress(consumed);
-                        line << "Active(susp) threads: " << active_threads << "("
-                             << supender_data.m_suspended_count.load(std::memory_order_relaxed)
-                             << ") Consumed: " << consumed << " (" << progress
-                             << "), enqueued: " << produced - consumed << std::endl;
+                        line << "Active threads: " << active_threads << ", Consumed: " << consumed
+                             << " (" << progress << "), enqueued: " << enqueued << std::endl;
                     }
 
                     if (!complete)
@@ -278,12 +238,6 @@ namespace density_tests
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     }
                 }
-            }
-
-            if (supender_thread.joinable())
-            {
-                supender_data.m_exit.store(true);
-                supender_thread.join();
             }
 
             for (auto & thread : threads)
@@ -373,16 +327,23 @@ namespace density_tests
             }
         };
 
+        struct FeedBack
+        {
+            std::atomic<bool> m_too_many_enqueued{false};
+        };
+
         class alignas(density::destructive_interference_size) ThreadData
         {
           public:
             ThreadData(
               const QueueGenericTester & i_parent_tester,
+              const FeedBack *           i_feedback,
               QUEUE &                    i_queue,
               EasyRandom &               i_main_random,
               QueueTesterFlags           i_flags)
                 : m_queue(i_queue), m_parent_tester(i_parent_tester), m_flags(i_flags),
-                  m_final_stats(i_parent_tester.m_put_cases.size()), m_random(i_main_random.fork())
+                  m_final_stats(i_parent_tester.m_put_cases.size()), m_random(i_main_random.fork()),
+                  m_feedback(i_feedback)
             {
                 m_incremental_stats = std::unique_ptr<IncrementalStats>(new IncrementalStats);
             }
@@ -415,10 +376,6 @@ namespace density_tests
 
             const FinalStats & final_stats() const { return m_final_stats; }
 
-            bool suspend() { return supend_thread(m_thread); }
-
-            void resume() { resume_thread(m_thread); }
-
           private: // internal data
             QUEUE &                           m_queue;
             const QueueGenericTester &        m_parent_tester;
@@ -427,9 +384,8 @@ namespace density_tests
             FinalStats                        m_final_stats;
             std::unique_ptr<IncrementalStats> m_incremental_stats;
             EasyRandom                        m_random;
-
-            size_t m_put_committed      = 0;
-            size_t m_consumes_committed = 0;
+            size_t                            m_put_committed      = 0;
+            size_t                            m_consumes_committed = 0;
 
             struct ReentrantPut
             {
@@ -458,6 +414,7 @@ namespace density_tests
 
             std::vector<ReentrantPut>     m_pending_reentrant_puts;
             std::vector<ReentrantConsume> m_pending_reentrant_consumes;
+            const FeedBack * const        m_feedback;
 
           private:
             void thread_procedure(
@@ -470,6 +427,8 @@ namespace density_tests
                 ThreadAllocRandomFailures scoped_alloc_failures(m_random, 0.03);
 
                 m_incremental_stats->m_thread_is_active.store(true);
+
+                bool too_many_enqueued = false;
 
                 for (size_t cycles = 0; m_put_committed < i_target_put_count ||
                                         m_consumes_committed < i_target_consume_count;
@@ -495,13 +454,28 @@ namespace density_tests
                         }
                     }
 
-                    if (m_put_committed < i_target_put_count && m_random.get_bool())
+                    bool const can_produce =
+                      m_put_committed < i_target_put_count && !too_many_enqueued;
+                    bool const can_consume = m_consumes_committed < i_target_consume_count;
+
+                    if (can_produce && can_consume)
+                    {
+                        if (m_random.get_bool())
+                            put_one();
+                        else
+                            try_consume_one();
+                    }
+                    else if (can_produce)
                     {
                         put_one();
                     }
-                    else if (m_consumes_committed < i_target_consume_count)
+                    else if (can_consume)
                     {
                         try_consume_one();
+                    }
+                    else
+                    {
+                        std::this_thread::yield();
                     }
 
                     // update the progress periodically
@@ -511,6 +485,8 @@ namespace density_tests
                           m_put_committed, std::memory_order_relaxed);
                         m_incremental_stats->m_consumed.store(
                           m_consumes_committed, std::memory_order_relaxed);
+                        too_many_enqueued =
+                          m_feedback->m_too_many_enqueued.load(std::memory_order_relaxed);
                     }
                 }
 
@@ -530,7 +506,7 @@ namespace density_tests
             void put_one()
             {
                 /* pick a random type (outside the exception loop) to have a deterministic and exhaustive
-                    exception test at least in isolation (in singlethread tests). */
+                    exception test at least in isolation (in single-thread tests). */
                 const auto type_index =
                   m_random.get_int<size_t>(m_parent_tester.m_put_cases.size() - 1);
 

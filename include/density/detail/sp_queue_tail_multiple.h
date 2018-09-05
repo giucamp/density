@@ -15,6 +15,11 @@ namespace density
           public:
             SpinlockMutex() noexcept { m_lock.clear(); }
 
+            SpinlockMutex(BUSY_WAIT_FUNC && i_busy_wait) : BUSY_WAIT_FUNC(std::move(i_busy_wait))
+            {
+                m_lock.clear();
+            }
+
             SpinlockMutex(const BUSY_WAIT_FUNC & i_busy_wait) : BUSY_WAIT_FUNC(i_busy_wait)
             {
                 m_lock.clear();
@@ -89,8 +94,40 @@ namespace density
             {
             }
 
-            SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator) noexcept
+            constexpr SpQueue_TailMultiple(const ALLOCATOR_TYPE & i_allocator) noexcept
                 : Base(i_allocator), m_tail(invalid_control_block()), m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              ALLOCATOR_TYPE && i_allocator,
+              const BUSY_WAIT_FUNC &
+                i_wait) noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
+                : Base(std::move(i_allocator)), m_tail(invalid_control_block()), m_mutex(i_wait),
+                  m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              const ALLOCATOR_TYPE & i_allocator, const BUSY_WAIT_FUNC & i_wait) noexcept
+                : Base(i_allocator), m_tail(invalid_control_block()), m_mutex(i_wait),
+                  m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              ALLOCATOR_TYPE && i_allocator,
+              BUSY_WAIT_FUNC &&
+                i_wait) noexcept(std::is_nothrow_constructible<Base, ALLOCATOR_TYPE &&>::value)
+                : Base(std::move(i_allocator)), m_tail(invalid_control_block()),
+                  m_mutex(std::move(i_wait)), m_initial_page(nullptr)
+            {
+            }
+
+            constexpr SpQueue_TailMultiple(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT_FUNC && i_wait) noexcept
+                : Base(i_allocator), m_tail(invalid_control_block()), m_mutex(std::move(i_wait)),
+                  m_initial_page(nullptr)
             {
             }
 
@@ -105,7 +142,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void
               swap(SpQueue_TailMultiple & i_first, SpQueue_TailMultiple & i_second) noexcept
             {
@@ -222,7 +259,7 @@ namespace density
                         }
                         else
                         {
-                            DENSITY_ASSERT_INTERNAL(tail != 0);
+                            DENSITY_ASSUME(tail != 0);
                         }
                         m_tail = tail;
                     }
@@ -274,8 +311,7 @@ namespace density
                     /* There is space between the (presumed) current tail and the end control block.
                         We try to pad it with a dead element. */
 
-                    DENSITY_ASSERT_INTERNAL(m_tail == i_tail);
-                    m_tail = i_tail;
+                    DENSITY_ASSUME(m_tail == i_tail);
 
                     auto const block = static_cast<ControlBlock *>(i_tail);
                     raw_atomic_store(
@@ -287,7 +323,7 @@ namespace density
                 else
                 {
                     // get or allocate a new page
-                    DENSITY_ASSERT_INTERNAL(i_tail == page_end);
+                    DENSITY_ASSUME(i_tail == page_end);
                     return get_or_allocate_next_page(i_progress_guarantee, i_tail);
                 }
             }
@@ -363,9 +399,9 @@ namespace density
             }
 
           private: // data members
-            alignas(destructive_interference_size) SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
-            ControlBlock *              m_tail;
-            std::atomic<ControlBlock *> m_initial_page;
+            alignas(destructive_interference_size) ControlBlock * m_tail;
+            SpinlockMutex<BUSY_WAIT_FUNC> m_mutex;
+            std::atomic<ControlBlock *>   m_initial_page;
         };
 
     } // namespace detail

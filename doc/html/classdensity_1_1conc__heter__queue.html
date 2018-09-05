@@ -259,7 +259,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <p><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a> is a concurrent version of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a>, with a mutex embedded within. It allows different threads to put and consume elements concurrently without any external synchronization.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to store the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
     <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must satisfy the requirements of both <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>.</td></tr>
   </table>
   </dd>
@@ -269,7 +269,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
  <b>Exception safeness</b>: Any function of <a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a> is noexcept or provides the strong exception guarantee.</p>
 <h2>Implementation and performance notes </h2>
 <p><a class="el" href="classdensity_1_1conc__heter__queue.html">conc_heter_queue</a> is basically an <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> protected by an std::mutex to avoid data races.</p>
-<p>Non-reentrant operations keep the mutex locked during the whole operation (until the operation is canceled or commited). Reentrant operations minimize the durations of the locks: the mutex is locked once when the operation starts, and another time to commit or cancel the operation. </p>
+<p>Non-reentrant operations keep the mutex locked during the whole operation (until the operation is canceled or committed). Reentrant operations minimize the durations of the locks: the mutex is locked once when the operation starts, and another time to commit or cancel the operation. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="ac556ee35d067b2f45dc47faec17fa5dd"></a>
 <div class="memitem">
@@ -657,7 +657,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  <em>Note</em>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -750,7 +750,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -800,7 +800,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -881,7 +881,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  This function allocates the required space, constructs the new element, and returns a transaction object that may be used to allocate raw space associated to the element being inserted, or to alter the element in some way. <br />
  Call the member function commit on the returned transaction in order to make the effects observable. If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects. Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any function is called in this timespan by the same thread, the behavior is undefined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -977,7 +977,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1026,7 +1026,7 @@ class density::conc_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>

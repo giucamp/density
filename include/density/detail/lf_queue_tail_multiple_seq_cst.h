@@ -80,7 +80,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Tail & i_first, LFQueue_Tail & i_second) noexcept
             {
                 // swap the base
@@ -100,7 +100,7 @@ namespace density
             ~LFQueue_Tail()
             {
                 auto const tail = m_tail.load();
-                DENSITY_ASSERT(uint_is_aligned(tail, s_alloc_granularity)); // put in progress?
+                DENSITY_ASSUME_UINT_ALIGNED(tail, s_alloc_granularity); // put in progress?
                 if (tail != s_invalid_control_block)
                 {
                     ALLOCATOR_TYPE::deallocate_page(reinterpret_cast<void *>(tail));
@@ -161,15 +161,9 @@ namespace density
                               uint_lower_align(tail, ALLOCATOR_TYPE::page_alignment);
                             auto const future_tail_offset = future_tail - page_start;
                             auto       transient_tail     = tail + required_units;
-#ifdef DENSITY_LOCKFREE_DEBUG
-                            if (
-                              tail == page_start &&
-                              DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
-#else
                             if (DENSITY_LIKELY(future_tail_offset <= s_end_control_offset))
-#endif
                             {
-                                DENSITY_ASSERT_INTERNAL(required_units < s_alloc_granularity);
+                                DENSITY_ASSUME(required_units < s_alloc_granularity);
                                 if (m_tail.compare_exchange_weak(tail, transient_tail, mem_relaxed))
                                 {
                                     raw_atomic_store(
@@ -182,7 +176,7 @@ namespace density
 
                                     auto const user_storage = address_upper_align(
                                       address_add(new_control, overhead), i_alignment);
-                                    DENSITY_ASSERT_INTERNAL(
+                                    DENSITY_ASSUME(
                                       reinterpret_cast<uintptr_t>(user_storage) + i_size <=
                                       future_tail);
                                     return Allocation{
@@ -209,7 +203,7 @@ namespace density
                                 }
                                 else
                                 {
-                                    DENSITY_ASSERT_INTERNAL(tail != 0);
+                                    DENSITY_ASSUME(tail != 0);
                                 }
                             }
                         }
@@ -295,7 +289,7 @@ namespace density
             DENSITY_NO_INLINE uintptr_t
                               page_overflow(LfQueue_ProgressGuarantee i_progress_guarantee, uintptr_t const i_tail)
             {
-                DENSITY_ASSERT_INTERNAL(uint_is_aligned(i_tail, s_alloc_granularity));
+                DENSITY_ASSUME_UINT_ALIGNED(i_tail, s_alloc_granularity);
 
                 // the memory protection currently used (pinning) is based on an atomic increment, that is not wait-free
                 if (i_progress_guarantee == LfQueue_WaitFree)
@@ -334,7 +328,7 @@ namespace density
                 else
                 {
                     // get or allocate a new page
-                    DENSITY_ASSERT_INTERNAL(i_tail == page_end);
+                    DENSITY_ASSUME(i_tail == page_end);
                     return reinterpret_cast<uintptr_t>(get_or_allocate_next_page(
                       i_progress_guarantee, reinterpret_cast<ControlBlock *>(i_tail)));
                 }
@@ -397,9 +391,9 @@ namespace density
 
                         new_page =
                           reinterpret_cast<ControlBlock *>(expected_next & ~LfQueue_AllFlags);
-                        DENSITY_ASSERT_INTERNAL(
-                          new_page != nullptr &&
-                          address_is_aligned(new_page, ALLOCATOR_TYPE::page_alignment));
+
+                        DENSITY_ASSERT_INTERNAL(new_page != nullptr);
+                        DENSITY_ASSUME_ALIGNED(new_page, ALLOCATOR_TYPE::page_alignment);
                     }
 
                     auto expected_tail = reinterpret_cast<uintptr_t>(i_end_control);
@@ -426,7 +420,7 @@ namespace density
                 }
 
                 /* note: in case of failure of the following CAS we do not give in even if we are wait-free,
-                    because this is a oneshot operation, so we can't possibly stick in a loop. */
+                    because this is a one-shot operation, so we can't possibly stick in a loop. */
                 ControlBlock * initial_page = nullptr;
                 if (m_initial_page.compare_exchange_strong(initial_page, first_page))
                 {
@@ -458,7 +452,7 @@ namespace density
                         ToDenGuarantee(i_progress_guarantee)));
                 if (new_page != nullptr)
                 {
-                    auto const new_page_end_block = get_end_control_block(new_page);
+                    ControlBlock * const new_page_end_block = get_end_control_block(new_page);
                     raw_atomic_store(
                       &new_page_end_block->m_next, uintptr_t(LfQueue_InvalidNextPage));
                 }
@@ -474,7 +468,7 @@ namespace density
 
             void discard_created_page(ControlBlock * i_new_page) noexcept
             {
-                auto const new_page_end_block = get_end_control_block(i_new_page);
+                ControlBlock * const new_page_end_block = get_end_control_block(i_new_page);
                 raw_atomic_store(&new_page_end_block->m_next, uintptr_t(0));
                 ALLOCATOR_TYPE::deallocate_page_zeroed(i_new_page);
             }

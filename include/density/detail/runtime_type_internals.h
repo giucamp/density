@@ -96,8 +96,8 @@ namespace density
         // FeatureTable
         template <typename FEATURE_TUPLE, typename TARGET_TYPE> struct FeatureTable
         {
-            constexpr static FEATURE_TUPLE s_table = detail::MakeFeatureTable<
-              FEATURE_TUPLE>::template make_table<typename std::decay<TARGET_TYPE>::type>();
+            constexpr static FEATURE_TUPLE s_table =
+              detail::MakeFeatureTable<FEATURE_TUPLE>::template make_table<TARGET_TYPE>();
         };
         template <typename FEATURE_TUPLE, typename TARGET_TYPE>
         constexpr FEATURE_TUPLE FeatureTable<FEATURE_TUPLE, TARGET_TYPE>::s_table;

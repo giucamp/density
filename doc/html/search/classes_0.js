@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['basic_5fdefault_5fallocator',['basic_default_allocator',['../classdensity_1_1basic__default__allocator.html',1,'density']]]
+  ['add_5fcv_5fqual',['add_cv_qual',['../structdensity_1_1add__cv__qual.html',1,'density']]]
 ];

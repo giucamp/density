@@ -37,8 +37,6 @@ namespace density
             {
             }
 
-            ~PageAllocatorSlot() noexcept = default;
-
           public:
             WF_PageStack                     m_page_stack;
             WF_PageStack                     m_zeroed_page_stack;
@@ -46,7 +44,7 @@ namespace density
 
             WF_PageStack & get_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(
+                DENSITY_ASSUME(
                   i_allocation_type == page_allocation_type::uninitialized ||
                   i_allocation_type == page_allocation_type::zeroed);
                 return i_allocation_type == page_allocation_type::zeroed ? m_zeroed_page_stack
@@ -55,11 +53,12 @@ namespace density
 
             /** Creates a new thread slot.
                 May throw an std::bad_alloc. */
-            static PageAllocatorSlot * create(PageAllocatorSlot * const i_next_slot)
+            DENSITY_NODISCARD static PageAllocatorSlot *
+              create(PageAllocatorSlot * const i_next_slot)
             {
                 auto const block =
                   aligned_allocate(sizeof(PageAllocatorSlot), alignof(PageAllocatorSlot));
-                DENSITY_ASSERT_INTERNAL(block != nullptr);
+                DENSITY_ASSUME(block != nullptr);
                 return new (block) PageAllocatorSlot(i_next_slot);
             }
 
@@ -100,14 +99,12 @@ namespace density
             {
                 auto const first = PageAllocatorSlot::create(nullptr);
                 auto       prev  = first;
-#if !defined(DENSITY_LOCKFREE_DEBUG)
                 for (int i = 0; i < 7; i++)
                 {
                     auto const curr = PageAllocatorSlot::create(nullptr);
                     prev->m_next_slot.store(curr);
                     prev = curr;
                 }
-#endif
                 prev->m_next_slot.store(first);
                 m_first_slot.store(first);
                 m_last_assigned = first;
@@ -151,13 +148,9 @@ namespace density
             {
                 process_pending_unpins(i_progress_guarantee);
 
-// try from the private stack...
-#ifdef DENSITY_LOCKFREE_DEBUG
-                auto new_page = static_cast<void *>(nullptr);
-#else
+                // try from the private stack...
                 auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
                 if (new_page == nullptr)
-#endif
                 {
                     // ...then from the current slot...
                     new_page = m_current_slot->get_stack(ALLOCATION_TYPE).try_pop_unpinned();
@@ -166,7 +159,7 @@ namespace density
                         // ...else try to steal all the pages from the victim slot...
                         new_page = try_steal_and_allocate(ALLOCATION_TYPE);
 
-                        // if still do not have a page, we go to the next 2nd level
+                        // if still do not have a page, we go to the next level
                         if (new_page == nullptr)
                         {
                             new_page =
@@ -174,6 +167,11 @@ namespace density
                         }
                     }
                 }
+
+                // flush any pending write
+                if (enable_relaxed_atomics)
+                    std::atomic_thread_fence(std::memory_order_release);
+
                 return address_lower_align(new_page, page_alignment);
             }
 
@@ -265,7 +263,7 @@ namespace density
                 {
                     auto const footer     = get_footer(i_address);
                     auto       curr_value = footer->m_pin_count.load(detail::mem_relaxed);
-                    DENSITY_ASSERT(curr_value > 0);
+                    DENSITY_ASSUME(curr_value > 0);
                     if (!footer->m_pin_count.compare_exchange_weak(
                           curr_value, curr_value - 1, detail::mem_relaxed))
                     {
@@ -332,7 +330,7 @@ namespace density
             static PageFooter * initialize_page(
               page_allocation_type const i_allocation_type, void * const i_page_mem) noexcept
             {
-                DENSITY_ASSERT_ALIGNED(i_page_mem, page_alignment);
+                DENSITY_ASSUME_ALIGNED(i_page_mem, page_alignment);
                 auto const new_page = new (get_footer(i_page_mem)) PageFooter();
 
                 bool should_zero = !SYSTYEM_PAGE_MANAGER::pages_are_zeroed &&
@@ -401,7 +399,7 @@ namespace density
 
             PageStack & get_private_stack(page_allocation_type const i_allocation_type) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(
+                DENSITY_ASSUME(
                   i_allocation_type == page_allocation_type::uninitialized ||
                   i_allocation_type == page_allocation_type::zeroed);
                 return i_allocation_type == page_allocation_type::zeroed

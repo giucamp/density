@@ -32,6 +32,33 @@ namespace density
             {
             }
 
+            /* pass-through constructors for the spin locking queues. The 3th parameter should be 
+                true_type for multiple producer queues. */
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              ALLOCATOR_TYPE && i_allocator, BUSY_WAIT && i_busy_wait, std::true_type) noexcept
+                : Base(std::move(i_allocator), std::forward<BUSY_WAIT>(i_busy_wait))
+            {
+            }
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT && i_busy_wait, std::true_type) noexcept
+                : Base(i_allocator, std::forward<BUSY_WAIT>(i_busy_wait))
+            {
+            }
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              ALLOCATOR_TYPE && i_allocator, BUSY_WAIT &&, std::false_type) noexcept
+                : Base(std::move(i_allocator))
+            {
+            }
+            template <typename BUSY_WAIT>
+            constexpr LFQueue_Head(
+              const ALLOCATOR_TYPE & i_allocator, BUSY_WAIT &&, std::false_type) noexcept
+                : Base(i_allocator)
+            {
+            }
+
             LFQueue_Head(LFQueue_Head && i_source) noexcept : LFQueue_Head()
             {
                 swap(*this, i_source);
@@ -43,7 +70,7 @@ namespace density
                 return *this;
             }
 
-            // this function is not required to be threadsafe
+            // this function is not required to be thread-safe
             friend void swap(LFQueue_Head & i_first, LFQueue_Head & i_second) noexcept
             {
                 // swap the base
@@ -114,10 +141,10 @@ namespace density
 
                 bool begin_iteration(LFQueue_Head * i_queue) noexcept
                 {
-                    DENSITY_ASSERT_ALIGNED(m_control, Base::s_alloc_granularity);
+                    DENSITY_ASSUME_ALIGNED(m_control, Base::s_alloc_granularity);
 
                     ControlBlock * head = i_queue->m_head.load();
-                    DENSITY_ASSERT_ALIGNED(head, Base::s_alloc_granularity);
+                    DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
 
                     if (head == nullptr)
                     {
@@ -131,7 +158,7 @@ namespace density
 
                     while (!Base::same_page(m_control, head))
                     {
-                        DENSITY_ASSERT_INTERNAL(m_control != head);
+                        DENSITY_ASSUME(m_control != head);
 
                         i_queue->ALLOCATOR_TYPE::pin_page(head);
 
@@ -143,8 +170,7 @@ namespace density
                         m_control = head;
 
                         head = i_queue->m_head.load();
-                        DENSITY_ASSERT_INTERNAL(
-                          address_is_aligned(head, Base::s_alloc_granularity));
+                        DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
                     }
 
                     m_queue    = i_queue;
@@ -183,13 +209,12 @@ namespace density
                 {
                     DENSITY_ASSERT_INTERNAL(!empty(), m_next_ptr);
 
-                    DENSITY_ASSERT_INTERNAL(
-                      address_is_aligned(m_control, Base::s_alloc_granularity));
+                    DENSITY_ASSUME_ALIGNED(m_control, Base::s_alloc_granularity);
 
                     auto next = reinterpret_cast<ControlBlock *>(m_next_ptr & ~LfQueue_AllFlags);
                     if (!Base::same_page(m_control, next))
                     {
-                        DENSITY_ASSERT_INTERNAL(next != nullptr);
+                        DENSITY_ASSUME(next != nullptr);
                         m_queue->ALLOCATOR_TYPE::pin_page(next);
 
                         auto const potentially_different_next_ptr =
@@ -256,8 +281,8 @@ namespace density
                     }
                 }
 
-                /** Commits a consumed element. After the call the Consume is empty. */
-                void commit_consume_impl() noexcept
+#if DENSITY_DEBUG_INTERNAL
+                void consume_dbg_checks()
                 {
                     DENSITY_ASSERT_INTERNAL(!empty());
                     DENSITY_ASSERT_INTERNAL(
@@ -267,6 +292,15 @@ namespace density
                       raw_atomic_load(&m_control->m_next, mem_relaxed) ==
                       m_next_ptr - LfQueue_Dead + LfQueue_Busy);
                     DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+                }
+#endif
+
+                /** Commits a consumed element. After the call the Consume is empty. */
+                void commit_consume_impl() noexcept
+                {
+#if DENSITY_DEBUG_INTERNAL
+                    consume_dbg_checks();
+#endif
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr, mem_release);
@@ -278,14 +312,9 @@ namespace density
 
                 void cancel_consume_impl() noexcept
                 {
-                    DENSITY_ASSERT_INTERNAL(!empty());
-                    DENSITY_ASSERT_INTERNAL(
-                      (m_next_ptr & (LfQueue_Busy | LfQueue_Dead | LfQueue_InvalidNextPage)) ==
-                      LfQueue_Dead);
-                    DENSITY_ASSERT_INTERNAL(
-                      raw_atomic_load(&m_control->m_next, mem_relaxed) ==
-                      m_next_ptr - LfQueue_Dead + LfQueue_Busy);
-                    DENSITY_ASSERT_INTERNAL(m_queue->ALLOCATOR_TYPE::get_pin_count(m_control) > 0);
+#if DENSITY_DEBUG_INTERNAL
+                    consume_dbg_checks();
+#endif
 
                     // remove LfQueue_Busy and add LfQueue_Dead
                     raw_atomic_store(&m_control->m_next, m_next_ptr - LfQueue_Dead, mem_release);
@@ -337,10 +366,10 @@ namespace density
                                 raw_atomic_store(&m_control->m_next, uintptr_t(0), mem_release);
 
                                 auto const memset_dest =
-                                  const_cast<atomic_uintptr_t *>(&m_control->m_next) + 1;
+                                  const_cast<uintptr_t *>(&m_control->m_next) + 1;
                                 auto const memset_size = address_diff(next, memset_dest);
-                                DENSITY_ASSERT_ALIGNED(memset_dest, alignof(uintptr_t));
-                                DENSITY_ASSERT_UINT_ALIGNED(memset_size, alignof(uintptr_t));
+                                DENSITY_ASSUME_ALIGNED(memset_dest, alignof(uintptr_t));
+                                DENSITY_ASSUME_UINT_ALIGNED(memset_size, alignof(uintptr_t));
                                 std::memset(memset_dest, 0, memset_size);
                             }
                         }
@@ -383,7 +412,7 @@ namespace density
                             head = initial_page;
                     }
 
-                    DENSITY_ASSERT_INTERNAL(address_is_aligned(head, Base::s_alloc_granularity));
+                    DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
                     return head;
                 }
 

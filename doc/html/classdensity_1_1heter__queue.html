@@ -119,23 +119,23 @@ Public Types</h2></td></tr>
 <tr class="memitem:ad98b50f4f25fd3da4205169b7280303e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad98b50f4f25fd3da4205169b7280303e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>runtime_type</b> = RUNTIME_TYPE</td></tr>
 <tr class="separator:ad98b50f4f25fd3da4205169b7280303e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0b4e58eb36b4d512fa47b5abc6c17968"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0b4e58eb36b4d512fa47b5abc6c17968"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = std::pair&lt; const runtime_type &amp;, void *const  &gt;</td></tr>
-<tr class="separator:a0b4e58eb36b4d512fa47b5abc6c17968"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b2ba6ebe019f8fc6e5e1c0392f16bc7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6b2ba6ebe019f8fc6e5e1c0392f16bc7"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = <a class="el" href="classdensity_1_1dynamic__reference.html">dynamic_reference</a>&lt; RUNTIME_TYPE &gt;</td></tr>
+<tr class="separator:a6b2ba6ebe019f8fc6e5e1c0392f16bc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8bafeb4e974cce856d533d2bb3de432"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad8bafeb4e974cce856d533d2bb3de432"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>allocator_type</b> = ALLOCATOR_TYPE</td></tr>
 <tr class="separator:ad8bafeb4e974cce856d533d2bb3de432"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6fc03915d7633dfe3c2b7a160f410549"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6fc03915d7633dfe3c2b7a160f410549"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>pointer</b> = value_type *</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>pointer</b> = <a class="el" href="classdensity_1_1dynamic__reference.html">value_type</a> *</td></tr>
 <tr class="separator:a6fc03915d7633dfe3c2b7a160f410549"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ce9d8c8e35f6c6ffb564c2e733ea05e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1ce9d8c8e35f6c6ffb564c2e733ea05e"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>const_pointer</b> = const value_type *</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_pointer</b> = const <a class="el" href="classdensity_1_1dynamic__reference.html">value_type</a> *</td></tr>
 <tr class="separator:a1ce9d8c8e35f6c6ffb564c2e733ea05e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad22bd40cacb993e9bf49cf10e7ef245a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad22bd40cacb993e9bf49cf10e7ef245a"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>reference</b> = value_type</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>reference</b> = <a class="el" href="classdensity_1_1dynamic__reference.html">value_type</a></td></tr>
 <tr class="separator:ad22bd40cacb993e9bf49cf10e7ef245a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5547e634a8602ad47bdbec65167d7fce"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5547e634a8602ad47bdbec65167d7fce"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>const_reference</b> = const value_type &amp;</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_reference</b> = const <a class="el" href="classdensity_1_1dynamic__reference.html">value_type</a> &amp;</td></tr>
 <tr class="separator:a5547e634a8602ad47bdbec65167d7fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af38ce1af42d538f410180c265518d4f0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af38ce1af42d538f410180c265518d4f0"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>size_type</b> = std::size_t</td></tr>
@@ -178,24 +178,24 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a49d0820906b9bd4c1b5a1b08980a9330"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE , typename... CONSTRUCTION_PARAMS&gt; </td></tr>
 <tr class="memitem:a49d0820906b9bd4c1b5a1b08980a9330"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a49d0820906b9bd4c1b5a1b08980a9330">emplace</a> (CONSTRUCTION_PARAMS &amp;&amp;...i_construction_params)</td></tr>
 <tr class="separator:a49d0820906b9bd4c1b5a1b08980a9330"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94888fab06d0078cd93ac1562fcce9bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
-<tr class="separator:a94888fab06d0078cd93ac1562fcce9bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3258d6f064776a9d0b7c93c14881e159"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a3258d6f064776a9d0b7c93c14881e159">dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
-<tr class="separator:a3258d6f064776a9d0b7c93c14881e159"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ca7f4811d5e01996cdcf949bf7aac93"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a5ca7f4811d5e01996cdcf949bf7aac93">dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
-<tr class="separator:a5ca7f4811d5e01996cdcf949bf7aac93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4545317736402afe18aab7e86a2c2187"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a4545317736402afe18aab7e86a2c2187">dyn_push</a> (const RUNTIME_TYPE &amp;i_type)</td></tr>
+<tr class="separator:a4545317736402afe18aab7e86a2c2187"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3593a0abc5457f2ff2750ece04ad47a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a3593a0abc5457f2ff2750ece04ad47a9">dyn_push_copy</a> (const RUNTIME_TYPE &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:a3593a0abc5457f2ff2750ece04ad47a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a119137eb19070f71e99cd88be9cc9c25"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a119137eb19070f71e99cd88be9cc9c25">dyn_push_move</a> (const RUNTIME_TYPE &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a119137eb19070f71e99cd88be9cc9c25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a857a56adb973d294e1cf85acca8efbad"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE &gt; </td></tr>
 <tr class="memitem:a857a56adb973d294e1cf85acca8efbad"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&lt; typename std::decay&lt; ELEMENT_TYPE &gt;::type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a857a56adb973d294e1cf85acca8efbad">start_push</a> (ELEMENT_TYPE &amp;&amp;i_source)</td></tr>
 <tr class="separator:a857a56adb973d294e1cf85acca8efbad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a722ecea4d64dc7853d3825f24f316b47"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE , typename... CONSTRUCTION_PARAMS&gt; </td></tr>
 <tr class="memitem:a722ecea4d64dc7853d3825f24f316b47"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&lt; ELEMENT_TYPE &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a722ecea4d64dc7853d3825f24f316b47">start_emplace</a> (CONSTRUCTION_PARAMS &amp;&amp;...i_construction_params)</td></tr>
 <tr class="separator:a722ecea4d64dc7853d3825f24f316b47"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65085a9e9c299f23ad95b297752d3775"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a65085a9e9c299f23ad95b297752d3775">start_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
-<tr class="separator:a65085a9e9c299f23ad95b297752d3775"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab35bc74bffbbf40d83d62ab06bd25537"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#ab35bc74bffbbf40d83d62ab06bd25537">start_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
-<tr class="separator:ab35bc74bffbbf40d83d62ab06bd25537"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c816b115d1efd64796fc83e685d1507"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a0c816b115d1efd64796fc83e685d1507">start_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
-<tr class="separator:a0c816b115d1efd64796fc83e685d1507"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa07b347c4cde296a1719aaf6a91e7f8b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#aa07b347c4cde296a1719aaf6a91e7f8b">start_dyn_push</a> (const RUNTIME_TYPE &amp;i_type)</td></tr>
+<tr class="separator:aa07b347c4cde296a1719aaf6a91e7f8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a728f0748f5cad8cea2510d838cec9787"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a728f0748f5cad8cea2510d838cec9787">start_dyn_push_copy</a> (const RUNTIME_TYPE &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:a728f0748f5cad8cea2510d838cec9787"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2510940a672de68057c42260ee0a25b1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a2510940a672de68057c42260ee0a25b1">start_dyn_push_move</a> (const RUNTIME_TYPE &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a2510940a672de68057c42260ee0a25b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a274dca2a1d2c68ff3249f37b3ae410d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a274dca2a1d2c68ff3249f37b3ae410d5">pop</a> () noexcept</td></tr>
 <tr class="separator:a274dca2a1d2c68ff3249f37b3ae410d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35b9c85fad7f5d27b7555c29b2e4e3fe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a35b9c85fad7f5d27b7555c29b2e4e3fe">try_pop</a> () noexcept</td></tr>
@@ -210,24 +210,24 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a99a0cef94c1cde53cf68ce8c11bbc74f"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE , typename... CONSTRUCTION_PARAMS&gt; </td></tr>
 <tr class="memitem:a99a0cef94c1cde53cf68ce8c11bbc74f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a99a0cef94c1cde53cf68ce8c11bbc74f">reentrant_emplace</a> (CONSTRUCTION_PARAMS &amp;&amp;...i_construction_params)</td></tr>
 <tr class="separator:a99a0cef94c1cde53cf68ce8c11bbc74f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22a0faba214d7f09f7af2d8ee795490d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a22a0faba214d7f09f7af2d8ee795490d">reentrant_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
-<tr class="separator:a22a0faba214d7f09f7af2d8ee795490d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa78127fb4a95605d6bfd993b2926ce2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#afa78127fb4a95605d6bfd993b2926ce2">reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
-<tr class="separator:afa78127fb4a95605d6bfd993b2926ce2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c1ac143bb1c4c8cf474a37b57f2af80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a2c1ac143bb1c4c8cf474a37b57f2af80">reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
-<tr class="separator:a2c1ac143bb1c4c8cf474a37b57f2af80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0b813487eef00a03639a9c89ceae2ba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#ae0b813487eef00a03639a9c89ceae2ba">reentrant_dyn_push</a> (const RUNTIME_TYPE &amp;i_type)</td></tr>
+<tr class="separator:ae0b813487eef00a03639a9c89ceae2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc1c526602718bee3a78e73fca599119"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#abc1c526602718bee3a78e73fca599119">reentrant_dyn_push_copy</a> (const RUNTIME_TYPE &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:abc1c526602718bee3a78e73fca599119"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7ebab12380d3f254e4f53c6f8b52eec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#af7ebab12380d3f254e4f53c6f8b52eec">reentrant_dyn_push_move</a> (const RUNTIME_TYPE &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:af7ebab12380d3f254e4f53c6f8b52eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43e3c73b2740ce46477422fb90d18208"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE &gt; </td></tr>
 <tr class="memitem:a43e3c73b2740ce46477422fb90d18208"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&lt; typename std::decay&lt; ELEMENT_TYPE &gt;::type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a43e3c73b2740ce46477422fb90d18208">start_reentrant_push</a> (ELEMENT_TYPE &amp;&amp;i_source)</td></tr>
 <tr class="separator:a43e3c73b2740ce46477422fb90d18208"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6aa035e6311be7c63c72334427572193"><td class="memTemplParams" colspan="2">template&lt;typename ELEMENT_TYPE , typename... CONSTRUCTION_PARAMS&gt; </td></tr>
 <tr class="memitem:a6aa035e6311be7c63c72334427572193"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&lt; ELEMENT_TYPE &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a6aa035e6311be7c63c72334427572193">start_reentrant_emplace</a> (CONSTRUCTION_PARAMS &amp;&amp;...i_construction_params)</td></tr>
 <tr class="separator:a6aa035e6311be7c63c72334427572193"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a298d63c59edac31a0d50efc67bdd9381"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a298d63c59edac31a0d50efc67bdd9381">start_reentrant_dyn_push</a> (const runtime_type &amp;i_type)</td></tr>
-<tr class="separator:a298d63c59edac31a0d50efc67bdd9381"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a725f4449941d9e2f8f64309cd3945f83"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a725f4449941d9e2f8f64309cd3945f83">start_reentrant_dyn_push_copy</a> (const runtime_type &amp;i_type, const void *i_source)</td></tr>
-<tr class="separator:a725f4449941d9e2f8f64309cd3945f83"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a793e4a443a2f0742b3cfc72c67e5b6e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a793e4a443a2f0742b3cfc72c67e5b6e9">start_reentrant_dyn_push_move</a> (const runtime_type &amp;i_type, void *i_source)</td></tr>
-<tr class="separator:a793e4a443a2f0742b3cfc72c67e5b6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96f0afce4d71e346cce8270c49c44ffe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a96f0afce4d71e346cce8270c49c44ffe">start_reentrant_dyn_push</a> (const RUNTIME_TYPE &amp;i_type)</td></tr>
+<tr class="separator:a96f0afce4d71e346cce8270c49c44ffe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e1b04deb1dd41a5268cf7460c5578f8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a3e1b04deb1dd41a5268cf7460c5578f8">start_reentrant_dyn_push_copy</a> (const RUNTIME_TYPE &amp;i_type, const void *i_source)</td></tr>
+<tr class="separator:a3e1b04deb1dd41a5268cf7460c5578f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2113256c9de6621e0a28b4c58b60d3a7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#a2113256c9de6621e0a28b4c58b60d3a7">start_reentrant_dyn_push_move</a> (const RUNTIME_TYPE &amp;i_type, void *i_source)</td></tr>
+<tr class="separator:a2113256c9de6621e0a28b4c58b60d3a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa83c43fd2aca56043d4209f67dd579a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#aa83c43fd2aca56043d4209f67dd579a1">reentrant_pop</a> () noexcept</td></tr>
 <tr class="separator:aa83c43fd2aca56043d4209f67dd579a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac83d6e59ab5dec61205db0cea6e6cf5b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#ac83d6e59ab5dec61205db0cea6e6cf5b">try_reentrant_pop</a> () noexcept</td></tr>
@@ -236,6 +236,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af139b5f22f2d241df4e26e8da9d95f4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab0a2b3d02d22ceb03b4bf8efdf13d47"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1heter__queue.html#aab0a2b3d02d22ceb03b4bf8efdf13d47">try_start_reentrant_consume</a> (<a class="el" href="classdensity_1_1heter__queue_1_1reentrant__consume__operation.html">reentrant_consume_operation</a> &amp;i_consume) noexcept</td></tr>
 <tr class="separator:aab0a2b3d02d22ceb03b4bf8efdf13d47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a979556eb331ec35eb33472a90a160f99"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a979556eb331ec35eb33472a90a160f99"></a>
+iterator&#160;</td><td class="memItemRight" valign="bottom"><b>begin</b> () noexcept</td></tr>
+<tr class="separator:a979556eb331ec35eb33472a90a160f99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc5380afa64b233d0df01a147616974b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afc5380afa64b233d0df01a147616974b"></a>
+iterator&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () noexcept</td></tr>
+<tr class="separator:afc5380afa64b233d0df01a147616974b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7a89d405dd251ef9da6a7da47dea2d1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae7a89d405dd251ef9da6a7da47dea2d1"></a>
 const_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>begin</b> () const  noexcept</td></tr>
 <tr class="separator:ae7a89d405dd251ef9da6a7da47dea2d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -279,7 +285,7 @@ class density::heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <p>A value of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is a pair of a runtime type object bound to a type E, and an object of type E (called element). <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is an heterogeneous pseudo-container: elements in the same queue can have different types. Elements can be added only at the end (<em>put operation</em>), and can be removed only at the beginning (<em>consume operation</em>). When doing a put, the user may associate one or more <em>raw memory blocks</em> to the element. Raw blocks are deallocated automatically when the value is consumed. <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> supports iterators, but they are just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a> so <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is not a container.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to store the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
     <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must satisfy the requirements of both <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>.</td></tr>
   </table>
   </dd>
@@ -294,11 +300,11 @@ class density::heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE &gt;</h3>
 <div class="fragment"><div class="line">            heter_queue&lt;&gt; queue;</div><div class="line">            <span class="keyword">struct </span>MessageInABottle</div><div class="line">            {</div><div class="line">                <span class="keyword">const</span> <span class="keywordtype">char</span> * m_text = <span class="keyword">nullptr</span>;</div><div class="line">            };</div><div class="line">            <span class="keyword">auto</span> transaction             = queue.start_emplace&lt;MessageInABottle&gt;();</div><div class="line">            transaction.element().m_text = transaction.raw_allocate_copy(<span class="stringliteral">&quot;Hello world!&quot;</span>);</div><div class="line">            transaction.commit();</div></div><!-- fragment --><p> Transactional puts returns an object of type <a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a> that should be used to commit or cancel the transaction. If a transaction is destroyed before being committed, it is canceled automatically. Before being committed, a transaction has no observable side effects (it does have non-observable side effects anyway, like the reservation of space in a page). The functions <a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html#a93e713eaa81209fc1fc9e18e66abfee3">raw_allocate</a> and <a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html#a92543eae2db7254d51084afd1e7deb05">raw_allocate_copy</a> allows to associate one or more raw memory blocks to the element. In this case the element should keep the pointer to the blocks (otherwise consumers are not able to access the blocks). Only transactional puts can allocate raw blocks.</p>
 <p>The function <a class="el" href="classdensity_1_1heter__queue.html#ac6f1ab782b6edf567268eee5613c82d1">try_start_consume</a> can be used to consume an element. The returned object has type <a class="el" href="classdensity_1_1heter__queue_1_1consume__operation.html">consume_operation</a>, which is similar to <a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a> (it can be canceled or committed), with the difference that it has observable side effects before commit or cancel is called: the element disappears from the queue when <code>try_start_consume</code> is called, and re-appears whenever cancel is called (or the <a class="el" href="classdensity_1_1heter__queue_1_1consume__operation.html">consume_operation</a> is destroyed without being committed).</p>
 <div class="fragment"><div class="line">            <span class="keyword">auto</span> consume = queue.try_start_consume();</div><div class="line">            <span class="keywordflow">if</span> (consume.complete_type().is&lt;std::string&gt;())</div><div class="line">            {</div><div class="line">                std::cout &lt;&lt; consume.element&lt;std::string&gt;() &lt;&lt; std::endl;</div><div class="line">            }</div><div class="line">            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (consume.complete_type().is&lt;MessageInABottle&gt;())</div><div class="line">            {</div><div class="line">                std::cout &lt;&lt; consume.element&lt;MessageInABottle&gt;().m_text &lt;&lt; std::endl;</div><div class="line">            }</div><div class="line">            consume.commit();</div></div><!-- fragment --><p> The example above searches for an exact match of the type being consumed (using <a class="el" href="classdensity_1_1runtime__type.html#a5af96afb26e5918b3071b78737a84f80">runtime_type::is</a>). Anyway <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> (the default <code>RUNTIME_TYPE</code>) allows to add custom functions that can be called regardless of the type. The following example uses the built-in <a class="el" href="classdensity_1_1f__ostream.html">f_ostream</a>:</p>
-<div class="fragment"><div class="line">        <span class="keyword">using namespace </span><a class="code" href="namespacedensity.html">density</a>;</div><div class="line"></div><div class="line">        <span class="comment">/* a runtime_type is internally like a pointer to a v-table, but it can</span></div><div class="line"><span class="comment">        contain functions or data (like in the case of f_size and f_alignment). */</span></div><div class="line">        <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">          f_default_construct,</div><div class="line">          f_copy_construct,</div><div class="line">          f_destroy,</div><div class="line">          f_size,</div><div class="line">          f_alignment,</div><div class="line">          <a class="code" href="classdensity_1_1f__ostream.html">f_ostream</a>,</div><div class="line">          <a class="code" href="classdensity_1_1f__istream.html">f_istream</a>,</div><div class="line">          <a class="code" href="classdensity_1_1f__rtti.html">f_rtti</a>&gt;;</div><div class="line"></div><div class="line">        <a class="code" href="classdensity_1_1heter__queue.html">heter_queue&lt;MyRunTimeType&gt;</a> queue;</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>(4);</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>(std::complex&lt;double&gt;(1., 4.));</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#a49d0820906b9bd4c1b5a1b08980a9330">emplace</a>&lt;std::string&gt;(<span class="stringliteral">&quot;Hello!!&quot;</span>);</div><div class="line">        <span class="comment">// queue.emplace&lt;std::thread&gt;(); - This would not compile because std::thread does not have a &lt;&lt; operator for streams</span></div><div class="line"></div><div class="line">        <span class="comment">// consume all the elements</span></div><div class="line">        <span class="keywordflow">while</span> (<span class="keyword">auto</span> consume = queue.<a class="code" href="classdensity_1_1heter__queue.html#ac6f1ab782b6edf567268eee5613c82d1">try_start_consume</a>())</div><div class="line">        {</div><div class="line">            <span class="comment">/* this is like: give me the function at the 6-th row in the v-table. The type f_ostream</span></div><div class="line"><span class="comment">            is converted to an index at compile time. */</span></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> ostream_feature = consume.complete_type().get_feature&lt;f_ostream&gt;();</div><div class="line"></div><div class="line">            ostream_feature(std::cout, consume.element_ptr()); <span class="comment">// this invokes the feature</span></div><div class="line">            std::cout &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div><div class="line">            consume</div><div class="line">              .commit(); <span class="comment">// don&#39;t forget the commit, otherwise the element will remain in the queue</span></div><div class="line">        }</div></div><!-- fragment --><p> An element of a type unknown at compile time may be pushed, in which case <a class="el" href="classdensity_1_1heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">dyn_push</a> can be used:</p>
-<div class="fragment"><div class="line">        <span class="comment">// this local function reads from std::cin an object of a given type and puts it in the queue</span></div><div class="line">        <span class="keyword">auto</span> ask_and_put = [&amp;](<span class="keyword">const</span> MyRunTimeType &amp; i_type) {</div><div class="line">            <span class="comment">// for this we exploit the feature f_rtti that we have included in MyRunTimeType</span></div><div class="line">            std::cout &lt;&lt; <span class="stringliteral">&quot;Enter a &quot;</span> &lt;&lt; i_type.type_info().name() &lt;&lt; std::endl;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> istream_feature = i_type.get_feature&lt;f_istream&gt;();</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> put = queue.<a class="code" href="classdensity_1_1heter__queue.html#a65085a9e9c299f23ad95b297752d3775">start_dyn_push</a>(i_type);</div><div class="line">            istream_feature(std::cin, put.element_ptr());</div><div class="line"></div><div class="line">            <span class="comment">/* if an exception is thrown before the commit, the put is canceled without ever</span></div><div class="line"><span class="comment">            having observable side effects. */</span></div><div class="line">            put.<a class="code" href="classdensity_1_1heter__queue_1_1put__transaction.html#a96491d550e91a5918050bfdafe43a72c">commit</a>();</div><div class="line">        };</div><div class="line"></div><div class="line">        ask_and_put(MyRunTimeType::make&lt;int&gt;());</div><div class="line">        ask_and_put(MyRunTimeType::make&lt;std::string&gt;());</div></div><!-- fragment --><p> Member functions containing <code>reentrant_</code> in their names support reentrancy: while they are in progress, other puts, consumes, iterations and any non-life-time operation are allowed, but only in the same thread (reentrancy has nothing to do with multithreading). <br />
+<div class="fragment"><div class="line">        <span class="keyword">using namespace </span><a class="code" href="namespacedensity.html">density</a>;</div><div class="line"></div><div class="line">        <span class="comment">/* a runtime_type is internally like a pointer to a v-table, but it can</span></div><div class="line"><span class="comment">        contain functions or data (like in the case of f_size and f_alignment). */</span></div><div class="line">        <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;</div><div class="line">          f_default_construct,</div><div class="line">          f_copy_construct,</div><div class="line">          f_destroy,</div><div class="line">          f_size,</div><div class="line">          f_alignment,</div><div class="line">          <a class="code" href="classdensity_1_1f__ostream.html">f_ostream</a>,</div><div class="line">          <a class="code" href="classdensity_1_1f__istream.html">f_istream</a>,</div><div class="line">          <a class="code" href="classdensity_1_1f__rtti.html">f_rtti</a>&gt;;</div><div class="line"></div><div class="line">        <a class="code" href="classdensity_1_1heter__queue.html">heter_queue&lt;MyRunTimeType&gt;</a> queue;</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>(4);</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>(std::complex&lt;double&gt;(1., 4.));</div><div class="line">        queue.<a class="code" href="classdensity_1_1heter__queue.html#a49d0820906b9bd4c1b5a1b08980a9330">emplace</a>&lt;std::string&gt;(<span class="stringliteral">&quot;Hello!!&quot;</span>);</div><div class="line">        <span class="comment">// queue.emplace&lt;std::thread&gt;(); - This would not compile because std::thread does not have a &lt;&lt; operator for streams</span></div><div class="line"></div><div class="line">        <span class="comment">// consume all the elements</span></div><div class="line">        <span class="keywordflow">while</span> (<span class="keyword">auto</span> consume = queue.<a class="code" href="classdensity_1_1heter__queue.html#ac6f1ab782b6edf567268eee5613c82d1">try_start_consume</a>())</div><div class="line">        {</div><div class="line">            <span class="comment">/* this is like: give me the function at the 6-th row in the v-table. The type f_ostream</span></div><div class="line"><span class="comment">            is converted to an index at compile time. */</span></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> ostream_feature = consume.complete_type().get_feature&lt;f_ostream&gt;();</div><div class="line"></div><div class="line">            ostream_feature(std::cout, consume.element_ptr()); <span class="comment">// this invokes the feature</span></div><div class="line">            std::cout &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div><div class="line">            consume</div><div class="line">              .commit(); <span class="comment">// don&#39;t forget the commit, otherwise the element will remain in the queue</span></div><div class="line">        }</div></div><!-- fragment --><p> An element of a type unknown at compile time may be pushed, in which case <a class="el" href="classdensity_1_1heter__queue.html#a4545317736402afe18aab7e86a2c2187">dyn_push</a> can be used:</p>
+<div class="fragment"><div class="line">        <span class="comment">// this local function reads from std::cin an object of a given type and puts it in the queue</span></div><div class="line">        <span class="keyword">auto</span> ask_and_put = [&amp;](<span class="keyword">const</span> MyRunTimeType &amp; i_type) {</div><div class="line">            <span class="comment">// for this we exploit the feature f_rtti that we have included in MyRunTimeType</span></div><div class="line">            std::cout &lt;&lt; <span class="stringliteral">&quot;Enter a &quot;</span> &lt;&lt; i_type.type_info().name() &lt;&lt; std::endl;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> istream_feature = i_type.get_feature&lt;f_istream&gt;();</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> put = queue.<a class="code" href="classdensity_1_1heter__queue.html#aa07b347c4cde296a1719aaf6a91e7f8b">start_dyn_push</a>(i_type);</div><div class="line">            istream_feature(std::cin, put.element_ptr());</div><div class="line"></div><div class="line">            <span class="comment">/* if an exception is thrown before the commit, the put is canceled without ever</span></div><div class="line"><span class="comment">            having observable side effects. */</span></div><div class="line">            put.<a class="code" href="classdensity_1_1heter__queue_1_1put__transaction.html#a96491d550e91a5918050bfdafe43a72c">commit</a>();</div><div class="line">        };</div><div class="line"></div><div class="line">        ask_and_put(MyRunTimeType::make&lt;int&gt;());</div><div class="line">        ask_and_put(MyRunTimeType::make&lt;std::string&gt;());</div></div><!-- fragment --><p> Member functions containing <code>reentrant_</code> in their names support reentrancy: while they are in progress, other puts, consumes, iterations and any non-life-time operation are allowed, but only in the same thread (reentrancy has nothing to do with multithreading). <br />
 In contrast, while a non-reentrant operation is in progress, the queue is not in a consistent state: if during a put the the operation member functions on the same queue are directly or indirectly called, the behavior is undefined. Reentrant and non-reentrant operation can be mixed, provided that the above constraint is respected.</p>
-<div class="fragment"><div class="line">            <span class="comment">// start 3 reentrant put transactions</span></div><div class="line">            <span class="keyword">auto</span>   put_1 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a43e3c73b2740ce46477422fb90d18208">start_reentrant_push</a>(1);</div><div class="line">            <span class="keyword">auto</span>   put_2 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a6aa035e6311be7c63c72334427572193">start_reentrant_emplace</a>&lt;std::string&gt;(<span class="stringliteral">&quot;Hello world!&quot;</span>);</div><div class="line">            <span class="keywordtype">double</span> pi    = 3.14;</div><div class="line">            <span class="keyword">auto</span>   put_3 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a725f4449941d9e2f8f64309cd3945f83">start_reentrant_dyn_push_copy</a>(runtime_type&lt;&gt;::make&lt;double&gt;(), &amp;pi);</div><div class="line">            assert(</div><div class="line">              queue.<a class="code" href="classdensity_1_1heter__queue.html#ab863df8ed6316860117a6bf26e131bbd">empty</a>()); <span class="comment">// the queue is still empty, because no transaction has been committed</span></div><div class="line"></div><div class="line">            <span class="comment">// commit and start consuming &quot;Hello world!&quot;</span></div><div class="line">            put_2.<a class="code" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html#a96491d550e91a5918050bfdafe43a72c">commit</a>();</div><div class="line">            <span class="keyword">auto</span> consume2 = queue.<a class="code" href="classdensity_1_1heter__queue.html#af139b5f22f2d241df4e26e8da9d95f4d">try_start_reentrant_consume</a>();</div><div class="line">            assert(!consume2.empty() &amp;&amp; consume2.complete_type().is&lt;std::string&gt;());</div><div class="line"></div><div class="line">            <span class="comment">// commit and start consuming 1</span></div><div class="line">            put_1.commit();</div><div class="line">            <span class="keyword">auto</span> consume1 = queue.<a class="code" href="classdensity_1_1heter__queue.html#af139b5f22f2d241df4e26e8da9d95f4d">try_start_reentrant_consume</a>();</div><div class="line">            assert(!consume1.empty() &amp;&amp; consume1.complete_type().is&lt;<span class="keywordtype">int</span>&gt;());</div><div class="line"></div><div class="line">            <span class="comment">// cancel 3.14, and commit the consumes</span></div><div class="line">            put_3.cancel();</div><div class="line">            consume1.commit();</div><div class="line">            consume2.commit();</div><div class="line">            assert(queue.<a class="code" href="classdensity_1_1heter__queue.html#ab863df8ed6316860117a6bf26e131bbd">empty</a>());</div><div class="line"></div></div><!-- fragment --><p> A value in the queue has the type <code>std::pair&lt;const RUNTIME_TYPE &amp;, void* const&gt;</code>. Iterators are conceptually pointers to such pairs. They don't provide the multipass guarantee, so they are not <a href="https://en.cppreference.com/w/cpp/named_req/ForwardIterator">Forward Iterators</a>, but just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>. For this reason <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is not a container. Insertions invalidate no iterators. Removals invalidate only the iterators pointing to the element being removed. Past-the-end iterators are never invalidated, and they compare equal each other and with a default constructed iterator:</p>
-<div class="fragment"><div class="line">            heter_queue&lt;&gt; queue_1, queue_2;</div><div class="line">            queue_1.push(42);</div><div class="line">            assert(</div><div class="line">              queue_1.end() == queue_2.end() &amp;&amp; queue_1.end() == heter_queue&lt;&gt;::const_iterator());</div><div class="line"></div><div class="line">            <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp; value : queue_1)</div><div class="line">            {</div><div class="line">                assert(value.first.is&lt;<span class="keywordtype">int</span>&gt;());</div><div class="line">                assert(*static_cast&lt;int *&gt;(value.second) == 42);</div><div class="line">                *<span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span> *<span class="keyword">&gt;</span>(value.second) = 0;</div><div class="line">            }</div></div><!-- fragment --><p> The following table is a summary of the put functions. Functions containing <code>dyn_</code> in their name allow to put an element whose type is not known at compile type (they take as first argument an object of type <code>RUNTIME_TYPE</code>). </p><a class="anchor" id="multi_row"></a>
+<div class="fragment"><div class="line">            <span class="comment">// start 3 reentrant put transactions</span></div><div class="line">            <span class="keyword">auto</span>   put_1 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a43e3c73b2740ce46477422fb90d18208">start_reentrant_push</a>(1);</div><div class="line">            <span class="keyword">auto</span>   put_2 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a6aa035e6311be7c63c72334427572193">start_reentrant_emplace</a>&lt;std::string&gt;(<span class="stringliteral">&quot;Hello world!&quot;</span>);</div><div class="line">            <span class="keywordtype">double</span> pi    = 3.14;</div><div class="line">            <span class="keyword">auto</span>   put_3 = queue.<a class="code" href="classdensity_1_1heter__queue.html#a3e1b04deb1dd41a5268cf7460c5578f8">start_reentrant_dyn_push_copy</a>(runtime_type&lt;&gt;::make&lt;double&gt;(), &amp;pi);</div><div class="line">            assert(</div><div class="line">              queue.<a class="code" href="classdensity_1_1heter__queue.html#ab863df8ed6316860117a6bf26e131bbd">empty</a>()); <span class="comment">// the queue is still empty, because no transaction has been committed</span></div><div class="line"></div><div class="line">            <span class="comment">// commit and start consuming &quot;Hello world!&quot;</span></div><div class="line">            put_2.<a class="code" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html#a96491d550e91a5918050bfdafe43a72c">commit</a>();</div><div class="line">            <span class="keyword">auto</span> consume2 = queue.<a class="code" href="classdensity_1_1heter__queue.html#af139b5f22f2d241df4e26e8da9d95f4d">try_start_reentrant_consume</a>();</div><div class="line">            assert(!consume2.empty() &amp;&amp; consume2.complete_type().is&lt;std::string&gt;());</div><div class="line"></div><div class="line">            <span class="comment">// commit and start consuming 1</span></div><div class="line">            put_1.commit();</div><div class="line">            <span class="keyword">auto</span> consume1 = queue.<a class="code" href="classdensity_1_1heter__queue.html#af139b5f22f2d241df4e26e8da9d95f4d">try_start_reentrant_consume</a>();</div><div class="line">            assert(!consume1.empty() &amp;&amp; consume1.complete_type().is&lt;<span class="keywordtype">int</span>&gt;());</div><div class="line"></div><div class="line">            <span class="comment">// cancel 3.14, and commit the consumes</span></div><div class="line">            put_3.cancel();</div><div class="line">            consume1.commit();</div><div class="line">            consume2.commit();</div><div class="line">            assert(queue.<a class="code" href="classdensity_1_1heter__queue.html#ab863df8ed6316860117a6bf26e131bbd">empty</a>());</div><div class="line"></div></div><!-- fragment --><p> A value in the queue has the type <code>std::pair&lt;const RUNTIME_TYPE &amp;, void* const&gt;</code>. Iterators are conceptually pointers to such pairs. They don't provide the multipass guarantee, so they are not <a href="https://en.cppreference.com/w/cpp/named_req/ForwardIterator">Forward Iterators</a>, but just <a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Input Iterators</a>. For this reason <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is not a container. Insertions invalidate no iterators. Removals invalidate only the iterators pointing to the element being removed. Past-the-end iterators are never invalidated, and they compare equal each other and with a default constructed iterator:</p>
+<div class="fragment"><div class="line">            heter_queue&lt;&gt; queue_1, queue_2;</div><div class="line">            queue_1.push(42);</div><div class="line">            assert(queue_1.end() == queue_2.end() &amp;&amp; queue_1.end() == heter_queue&lt;&gt;::iterator());</div><div class="line"></div><div class="line">            <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp; value : queue_1)</div><div class="line">            {</div><div class="line">                assert(value.as&lt;<span class="keywordtype">int</span>&gt;() == 42);</div><div class="line">            }</div></div><!-- fragment --><p> The following table is a summary of the put functions. Functions containing <code>dyn_</code> in their name allow to put an element whose type is not known at compile type (they take as first argument an object of type <code>RUNTIME_TYPE</code>). </p><a class="anchor" id="multi_row"></a>
 <table class="doxtable">
 <caption>Put functions</caption>
 <tr>
@@ -308,11 +314,11 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <tr>
 <td>[start_][reentrant_]emplace </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a49d0820906b9bd4c1b5a1b08980a9330">emplace</a>, <a class="code" href="classdensity_1_1heter__queue.html#a99a0cef94c1cde53cf68ce8c11bbc74f">reentrant_emplace</a>, <a class="code" href="classdensity_1_1heter__queue.html#a722ecea4d64dc7853d3825f24f316b47">start_emplace</a>, <a class="code" href="classdensity_1_1heter__queue.html#a6aa035e6311be7c63c72334427572193">start_reentrant_emplace</a> </div></div><!-- fragment --> </td><td>Compile time </td><td>Any  </td></tr>
 <tr>
-<td>[start_][reentrant_]dyn_push </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#a22a0faba214d7f09f7af2d8ee795490d">reentrant_dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#a65085a9e9c299f23ad95b297752d3775">start_dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#a298d63c59edac31a0d50efc67bdd9381">start_reentrant_dyn_push</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Default  </td></tr>
+<td>[start_][reentrant_]dyn_push </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a4545317736402afe18aab7e86a2c2187">dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#ae0b813487eef00a03639a9c89ceae2ba">reentrant_dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#aa07b347c4cde296a1719aaf6a91e7f8b">start_dyn_push</a>, <a class="code" href="classdensity_1_1heter__queue.html#a96f0afce4d71e346cce8270c49c44ffe">start_reentrant_dyn_push</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Default  </td></tr>
 <tr>
-<td>[start_][reentrant_]dyn_push_copy </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a3258d6f064776a9d0b7c93c14881e159">dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#afa78127fb4a95605d6bfd993b2926ce2">reentrant_dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#ab35bc74bffbbf40d83d62ab06bd25537">start_dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#a725f4449941d9e2f8f64309cd3945f83">start_reentrant_dyn_push_copy</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Copy  </td></tr>
+<td>[start_][reentrant_]dyn_push_copy </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a3593a0abc5457f2ff2750ece04ad47a9">dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#abc1c526602718bee3a78e73fca599119">reentrant_dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#a728f0748f5cad8cea2510d838cec9787">start_dyn_push_copy</a>, <a class="code" href="classdensity_1_1heter__queue.html#a3e1b04deb1dd41a5268cf7460c5578f8">start_reentrant_dyn_push_copy</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Copy  </td></tr>
 <tr>
-<td>[start_][reentrant_]dyn_push_move </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a5ca7f4811d5e01996cdcf949bf7aac93">dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#a2c1ac143bb1c4c8cf474a37b57f2af80">reentrant_dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#a0c816b115d1efd64796fc83e685d1507">start_dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#a793e4a443a2f0742b3cfc72c67e5b6e9">start_reentrant_dyn_push_move</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Move  </td></tr>
+<td>[start_][reentrant_]dyn_push_move </td><td><div class="fragment"><div class="line"><a class="code" href="classdensity_1_1heter__queue.html#a119137eb19070f71e99cd88be9cc9c25">dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#af7ebab12380d3f254e4f53c6f8b52eec">reentrant_dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#a2510940a672de68057c42260ee0a25b1">start_dyn_push_move</a>, <a class="code" href="classdensity_1_1heter__queue.html#a2113256c9de6621e0a28b4c58b60d3a7">start_reentrant_dyn_push_move</a> </div></div><!-- fragment --> </td><td>Runtime </td><td>Move  </td></tr>
 </table>
 <h2>Implementation and performance notes </h2>
 <p>An <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> is basically composed by an ordered set of pages (whose size is determined by the allocator), an <em>head pointer</em> and <em>tail pointer</em>. The first page is the <em>head page</em>, that is the one that contains the address the head pointer points to. The last page is the <em>tail page</em>, that is the one that contains the address the tail pointer points to.</p>
@@ -328,7 +334,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <ul>
 <li>non-reentrant operations may be faster than reentrant</li>
 <li>Transactional operations are not slower than non-transactional ones</li>
-<li>Typed put operations (like <a class="el" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>) are faster than dynamic puts (like <a class="el" href="classdensity_1_1heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">dyn_push</a>), because they can do some computations at compile time, and because they don't use the <code>RUNTIME_TYPE</code> to construct the element. </li>
+<li>Typed put operations (like <a class="el" href="classdensity_1_1heter__queue.html#ae79645ce0f8c0616bbfda669fa6fbadf">push</a>) are faster than dynamic puts (like <a class="el" href="classdensity_1_1heter__queue.html#a4545317736402afe18aab7e86a2c2187">dyn_push</a>), because they can do some computations at compile time, and because they don't use the <code>RUNTIME_TYPE</code> to construct the element. </li>
 </ul>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a47708c033e7f36bebe837516de9ea664"></a>
@@ -783,7 +789,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  <em>Note</em>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -802,7 +808,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            queue.emplace&lt;<span class="keywordtype">int</span>&gt;();</div><div class="line">            queue.emplace&lt;std::string&gt;(12, <span class="charliteral">&#39;-&#39;</span>);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a94888fab06d0078cd93ac1562fcce9bf"></a>
+<a class="anchor" id="a4545317736402afe18aab7e86a2c2187"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -812,7 +818,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void dyn_push </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em></td><td>)</td>
           <td></td>
         </tr>
@@ -832,7 +838,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 </dl>
 <p><br />
  <b>Requires</b>:</p><ul>
-<li>The function <code>RUNTIME_TYPE::default_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> this means that <code>default_construct</code> must be included in the feature list.</li>
+<li>The function <code>RUNTIME_TYPE::default_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> <code>default_construct</code> must be included in the feature list.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -841,7 +847,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a3258d6f064776a9d0b7c93c14881e159"></a>
+<a class="anchor" id="a3593a0abc5457f2ff2750ece04ad47a9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -851,7 +857,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void dyn_push_copy </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -876,13 +882,13 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
 <p><br />
  <b>Requires</b>:</p><ul>
-<li>The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> this means that <code>copy_construct</code> must be included in the feature list.</li>
+<li>The function <code>RUNTIME_TYPE::copy_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> <code>copy_construct</code> must be included in the feature list.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -891,7 +897,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a5ca7f4811d5e01996cdcf949bf7aac93"></a>
+<a class="anchor" id="a119137eb19070f71e99cd88be9cc9c25"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -901,7 +907,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void dyn_push_move </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -926,13 +932,13 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
 <p><br />
  <b>Requires</b>:</p><ul>
-<li>The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> this means that <code>move_construct</code> must be included in the feature list.</li>
+<li>The function <code>RUNTIME_TYPE::move_construct</code> must be invokable. If <code>RUNTIMETYPE</code> is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a> <code>move_construct</code> must be included in the feature list.</li>
 </ul>
 <p><b>Complexity</b>: constant. <br />
  <b>Effects on iterators</b>: no iterator is invalidated <br />
@@ -1008,7 +1014,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  This function allocates the required space, constructs the new element, and returns a transaction object that may be used to allocate raw space associated to the element being inserted, or to alter the element in some way. <br />
  Call the member function commit on the returned transaction in order to make the effects observable. If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects. Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any function is called in this timespan, the behavior is undefined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -1029,7 +1035,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">                <span class="keyword">auto</span> put = queue.start_emplace&lt;std::string&gt;(4, <span class="charliteral">&#39;*&#39;</span>);</div><div class="line">                put.element() += <span class="stringliteral">&quot;****&quot;</span>;</div><div class="line">                put.commit(); <span class="comment">// commits a &quot;********&quot;</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a65085a9e9c299f23ad95b297752d3775"></a>
+<a class="anchor" id="aa07b347c4cde296a1719aaf6a91e7f8b"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1039,7 +1045,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a> start_dyn_push </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1067,7 +1073,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="ab35bc74bffbbf40d83d62ab06bd25537"></a>
+<a class="anchor" id="a728f0748f5cad8cea2510d838cec9787"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1077,7 +1083,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a> start_dyn_push_copy </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1104,7 +1110,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1116,7 +1122,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a0c816b115d1efd64796fc83e685d1507"></a>
+<a class="anchor" id="a2510940a672de68057c42260ee0a25b1"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1126,7 +1132,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1put__transaction.html">put_transaction</a> start_dyn_push_move </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1153,7 +1159,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1330,7 +1336,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            queue.reentrant_emplace&lt;<span class="keywordtype">int</span>&gt;();</div><div class="line">            queue.reentrant_emplace&lt;std::string&gt;(12, <span class="charliteral">&#39;-&#39;</span>);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a22a0faba214d7f09f7af2d8ee795490d"></a>
+<a class="anchor" id="ae0b813487eef00a03639a9c89ceae2ba"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1340,7 +1346,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void reentrant_dyn_push </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1351,11 +1357,11 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a94888fab06d0078cd93ac1562fcce9bf">heter_queue::dyn_push</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a4545317736402afe18aab7e86a2c2187">heter_queue::dyn_push</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            queue.reentrant_dyn_push(type); <span class="comment">// appends 0</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="afa78127fb4a95605d6bfd993b2926ce2"></a>
+<a class="anchor" id="abc1c526602718bee3a78e73fca599119"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1365,7 +1371,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void reentrant_dyn_push_copy </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1386,11 +1392,11 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a3258d6f064776a9d0b7c93c14881e159">heter_queue::dyn_push_copy</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a3593a0abc5457f2ff2750ece04ad47a9">heter_queue::dyn_push_copy</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_copy(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a2c1ac143bb1c4c8cf474a37b57f2af80"></a>
+<a class="anchor" id="af7ebab12380d3f254e4f53c6f8b52eec"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1400,7 +1406,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname">void reentrant_dyn_push_move </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1421,7 +1427,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a5ca7f4811d5e01996cdcf949bf7aac93">heter_queue::dyn_push_move</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a119137eb19070f71e99cd88be9cc9c25">heter_queue::dyn_push_move</a>, but allows reentrancy: during the construction of the element the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            queue.reentrant_dyn_push_move(type, &amp;source);</div></div><!-- fragment -->
 </div>
 </div>
@@ -1475,7 +1481,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
 <p><b>Examples</b> </p><div class="fragment"><div class="line">                <span class="keyword">auto</span> put = queue.start_reentrant_emplace&lt;std::string&gt;(4, <span class="charliteral">&#39;*&#39;</span>);</div><div class="line">                put.element() += <span class="stringliteral">&quot;****&quot;</span>;</div><div class="line">                put.commit(); <span class="comment">// commits a &quot;********&quot;</span></div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a298d63c59edac31a0d50efc67bdd9381"></a>
+<a class="anchor" id="a96f0afce4d71e346cce8270c49c44ffe"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1485,7 +1491,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a> start_reentrant_dyn_push </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1496,11 +1502,11 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a65085a9e9c299f23ad95b297752d3775">heter_queue::start_dyn_push</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#aa07b347c4cde296a1719aaf6a91e7f8b">heter_queue::start_dyn_push</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_default_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span> type = MyRunTimeType::make&lt;int&gt;();</div><div class="line">            <span class="keyword">auto</span>       put  = queue.start_reentrant_dyn_push(type);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a725f4449941d9e2f8f64309cd3945f83"></a>
+<a class="anchor" id="a3e1b04deb1dd41a5268cf7460c5578f8"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1510,7 +1516,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a> start_reentrant_dyn_push_copy </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1531,11 +1537,11 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#ab35bc74bffbbf40d83d62ab06bd25537">heter_queue::start_dyn_push_copy</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a728f0748f5cad8cea2510d838cec9787">heter_queue::start_dyn_push_copy</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_copy_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string <span class="keyword">const</span> source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>        type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>              put  = queue.start_reentrant_dyn_push_copy(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a793e4a443a2f0742b3cfc72c67e5b6e9"></a>
+<a class="anchor" id="a2113256c9de6621e0a28b4c58b60d3a7"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -1545,7 +1551,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
         <tr>
           <td class="memname"><a class="el" href="classdensity_1_1heter__queue_1_1reentrant__put__transaction.html">reentrant_put_transaction</a> start_reentrant_dyn_push_move </td>
           <td>(</td>
-          <td class="paramtype">const runtime_type &amp;&#160;</td>
+          <td class="paramtype">const RUNTIME_TYPE &amp;&#160;</td>
           <td class="paramname"><em>i_type</em>, </td>
         </tr>
         <tr>
@@ -1566,7 +1572,7 @@ In contrast, while a non-reentrant operation is in progress, the queue is not in
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a0c816b115d1efd64796fc83e685d1507">heter_queue::start_dyn_push_move</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
+<p>Same to <a class="el" href="classdensity_1_1heter__queue.html#a2510940a672de68057c42260ee0a25b1">heter_queue::start_dyn_push_move</a>, but allows reentrancy: during the construction of the element, and until the state of the transaction gets destroyed, the queue is in a valid state.</p>
 <p><b>Examples</b> </p><div class="fragment"><div class="line">            <span class="keyword">using</span> MyRunTimeType = runtime_type&lt;f_move_construct, f_destroy, f_size, f_alignment&gt;;</div><div class="line">            heter_queue&lt;MyRunTimeType&gt; queue;</div><div class="line"></div><div class="line">            std::string source(<span class="stringliteral">&quot;Hello world!!&quot;</span>);</div><div class="line">            <span class="keyword">auto</span> <span class="keyword">const</span>  type = MyRunTimeType::make&lt;decltype(source)&gt;();</div><div class="line">            <span class="keyword">auto</span>        put  = queue.start_reentrant_dyn_push_move(type, &amp;source);</div><div class="line">            put.commit();</div></div><!-- fragment -->
 </div>
 </div>

@@ -152,6 +152,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ae9ca9fd229501b184017df9cbc797761"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a646dc6334bf43553953432a2aa55ca5c"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#a646dc6334bf43553953432a2aa55ca5c">sp_heter_queue</a> (ALLOCATOR_TYPE &amp;&amp;i_source_allocator) noexcept</td></tr>
 <tr class="separator:a646dc6334bf43553953432a2aa55ca5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7969cc0d9e395e7b1818e1ff55e9b134"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#a7969cc0d9e395e7b1818e1ff55e9b134">sp_heter_queue</a> (const ALLOCATOR_TYPE &amp;i_source_allocator, const BUSY_WAIT_FUNC &amp;i_source_wait) noexcept</td></tr>
+<tr class="separator:a7969cc0d9e395e7b1818e1ff55e9b134"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af42886160320acf67c25db9662df910c"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#af42886160320acf67c25db9662df910c">sp_heter_queue</a> (ALLOCATOR_TYPE &amp;&amp;i_source_allocator, const BUSY_WAIT_FUNC &amp;i_source_wait) noexcept</td></tr>
+<tr class="separator:af42886160320acf67c25db9662df910c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fb1a18eacf287a990749882259645f3"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#a2fb1a18eacf287a990749882259645f3">sp_heter_queue</a> (const ALLOCATOR_TYPE &amp;i_source_allocator, BUSY_WAIT_FUNC &amp;&amp;i_source_wait) noexcept</td></tr>
+<tr class="separator:a2fb1a18eacf287a990749882259645f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bbe49520935c1ec5a51799404ed57fe"><td class="memItemLeft" align="right" valign="top">constexpr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#a8bbe49520935c1ec5a51799404ed57fe">sp_heter_queue</a> (ALLOCATOR_TYPE &amp;&amp;i_source_allocator, BUSY_WAIT_FUNC &amp;&amp;i_source_wait) noexcept</td></tr>
+<tr class="separator:a8bbe49520935c1ec5a51799404ed57fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab3848dcc18d5d1ccae532f655c5b8f23"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#ab3848dcc18d5d1ccae532f655c5b8f23">sp_heter_queue</a> (<a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> &amp;&amp;i_source) noexcept=default</td></tr>
 <tr class="separator:ab3848dcc18d5d1ccae532f655c5b8f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ec9a568a57d4c49036876fefc208aae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdensity_1_1sp__heter__queue.html#a6ec9a568a57d4c49036876fefc208aae">operator=</a> (<a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> &amp;&amp;i_source) noexcept</td></tr>
@@ -299,10 +307,11 @@ Friends</h2></td></tr>
 <div class="textblock"><h3>template&lt;typename RUNTIME_TYPE = runtime_type&lt;&gt;, typename ALLOCATOR_TYPE = default_allocator, concurrency_cardinality PROD_CARDINALITY = concurrency_multiple, concurrency_cardinality CONSUMER_CARDINALITY = concurrency_multiple, typename BUSY_WAIT_FUNC = default_busy_wait&gt;<br />
 class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY, CONSUMER_CARDINALITY, BUSY_WAIT_FUNC &gt;</h3>
 
-<p>Concurrent heterogeneous FIFO container-like class template. <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> is a concurrent version of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> that uses a mix of lock free algorithms and spin locking. This class is very similar to <a class="el" href="classdensity_1_1lf__heter__queue.html">lf_heter_queue</a>, with the difference that if multiple producers are supported, they use a spin-locking mutex to synchronize the write to the tail pointer.</p>
+<p>Concurrent heterogeneous FIFO container-like class template. <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> is a concurrent version of <a class="el" href="classdensity_1_1heter__queue.html">heter_queue</a> that uses a mix of lock free algorithms and spin locking. This class is very similar to <a class="el" href="classdensity_1_1lf__heter__queue.html">lf_heter_queue</a>, with the difference in multiple-producers mode it uses a spin-locking mutex to synchronize the write to the tail pointer.</p>
+<p>Implementation note: In single-producer mode this class template is equivalent to <a class="el" href="classdensity_1_1lf__heter__queue.html">lf_heter_queue</a>, and the busy-wait function is not used.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to handle the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
+    <tr><td class="paramname">RUNTIME_TYPE</td><td>Runtime-type object used to store the actual complete type of each element. This type must satisfy the requirements of <a class="el" href="RuntimeType_requirements.html">RuntimeType</a>. The default is <a class="el" href="classdensity_1_1runtime__type.html">runtime_type</a>. </td></tr>
     <tr><td class="paramname">ALLOCATOR_TYPE</td><td>Allocator type to be used. This type must satisfy the requirements of both <a class="el" href="UntypedAllocator_requirements.html">UntypedAllocator</a> and <a class="el" href="PagedAllocator_requirements.html">PagedAllocator</a>. The default is <a class="el" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">density::default_allocator</a>. </td></tr>
     <tr><td class="paramname">PROD_CARDINALITY</td><td>specifies whether multiple threads can do put transactions concurrently. Must be a member of <a class="el" href="namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb">density::concurrency_cardinality</a>. </td></tr>
     <tr><td class="paramname">CONSUMER_CARDINALITY</td><td>specifies whether multiple threads can do consume operations concurrently. Must be a member of <a class="el" href="namespacedensity.html#aeef74ec0c9bea0ed2bc9802697c062cb">density::concurrency_cardinality</a>. </td></tr>
@@ -441,6 +450,186 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
  <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). <br />
  <em>Implementation notes</em>: This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.</p>
 <div class="fragment"><div class="line">        <span class="keyword">using</span> SpQueue =</div><div class="line">          sp_heter_queue&lt;runtime_type&lt;&gt;, <a class="code" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a>, PROD_CARDINALITY, CONSUMER_CARDINALITY&gt;;</div><div class="line"></div><div class="line">        default_allocator allocator;</div><div class="line">        SpQueue           queue(std::move(allocator));</div><div class="line">        assert(queue.empty());</div></div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="a7969cc0d9e395e7b1818e1ff55e9b134"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> </td>
+          <td>(</td>
+          <td class="paramtype">const ALLOCATOR_TYPE &amp;&#160;</td>
+          <td class="paramname"><em>i_source_allocator</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const BUSY_WAIT_FUNC &amp;&#160;</td>
+          <td class="paramname"><em>i_source_wait</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Constructor with allocator and busy-wait callable. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_source_allocator</td><td>source used to copy-construct the allocator. </td></tr>
+    <tr><td class="paramname">i_source_wait</td><td>source used to copy-construct the busy wait callable.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p><b>Complexity</b>: constant. <br />
+ <b>Throws</b>: whatever the copy constructor of the allocator throws. <br />
+ <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). <br />
+ <em>Implementation notes</em>: This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.</p>
+<div class="fragment"><div class="line">        <span class="keyword">using</span> SpQueue =</div><div class="line">          sp_heter_queue&lt;runtime_type&lt;&gt;, <a class="code" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a>, PROD_CARDINALITY, CONSUMER_CARDINALITY&gt;;</div><div class="line"></div><div class="line">        default_allocator allocator;</div><div class="line">        default_busy_wait busy_wait;</div><div class="line">        SpQueue           queue(allocator, busy_wait);</div><div class="line">        assert(queue.empty());</div></div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="af42886160320acf67c25db9662df910c"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> </td>
+          <td>(</td>
+          <td class="paramtype">ALLOCATOR_TYPE &amp;&amp;&#160;</td>
+          <td class="paramname"><em>i_source_allocator</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const BUSY_WAIT_FUNC &amp;&#160;</td>
+          <td class="paramname"><em>i_source_wait</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Constructor with allocator and busy-wait callable. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_source_allocator</td><td>source used to move-construct the allocator. </td></tr>
+    <tr><td class="paramname">i_source_wait</td><td>source used to copy-construct the busy wait callable.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p><b>Complexity</b>: constant. <br />
+ <b>Throws</b>: nothing. <br />
+ <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). <br />
+ <em>Implementation notes</em>: This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.</p>
+<div class="fragment"><div class="line">        <span class="keyword">using</span> SpQueue =</div><div class="line">          sp_heter_queue&lt;runtime_type&lt;&gt;, <a class="code" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a>, PROD_CARDINALITY, CONSUMER_CARDINALITY&gt;;</div><div class="line"></div><div class="line">        default_allocator allocator;</div><div class="line">        default_busy_wait busy_wait;</div><div class="line">        SpQueue           queue(std::move(allocator), busy_wait);</div><div class="line">        assert(queue.empty());</div></div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="a2fb1a18eacf287a990749882259645f3"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> </td>
+          <td>(</td>
+          <td class="paramtype">const ALLOCATOR_TYPE &amp;&#160;</td>
+          <td class="paramname"><em>i_source_allocator</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BUSY_WAIT_FUNC &amp;&amp;&#160;</td>
+          <td class="paramname"><em>i_source_wait</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Constructor with allocator and busy-wait callable. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_source_allocator</td><td>source used to copy-construct the allocator. </td></tr>
+    <tr><td class="paramname">i_source_wait</td><td>source used to copy-construct the busy wait callable.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p><b>Complexity</b>: constant. <br />
+ <b>Throws</b>: whatever the copy constructor of the allocator throws. <br />
+ <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). <br />
+ <em>Implementation notes</em>: This constructor does not allocate memory. It throws anything the copy constructor of the allocator throws.</p>
+<div class="fragment"><div class="line">        <span class="keyword">using</span> SpQueue =</div><div class="line">          sp_heter_queue&lt;runtime_type&lt;&gt;, <a class="code" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a>, PROD_CARDINALITY, CONSUMER_CARDINALITY&gt;;</div><div class="line"></div><div class="line">        default_allocator allocator;</div><div class="line">        default_busy_wait busy_wait;</div><div class="line">        SpQueue           queue(allocator, std::move(busy_wait));</div><div class="line">        assert(queue.empty());</div></div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="a8bbe49520935c1ec5a51799404ed57fe"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr <a class="el" href="classdensity_1_1sp__heter__queue.html">sp_heter_queue</a> </td>
+          <td>(</td>
+          <td class="paramtype">ALLOCATOR_TYPE &amp;&amp;&#160;</td>
+          <td class="paramname"><em>i_source_allocator</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BUSY_WAIT_FUNC &amp;&amp;&#160;</td>
+          <td class="paramname"><em>i_source_wait</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Constructor with allocator and busy-wait callable. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">i_source_allocator</td><td>source used to move-construct the allocator. </td></tr>
+    <tr><td class="paramname">i_source_wait</td><td>source used to copy-construct the busy wait callable.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p><b>Complexity</b>: constant. <br />
+ <b>Throws</b>: nothing. <br />
+ <b>Exception guarantee</b>: strong (in case of exception the function has no observable effects). <br />
+ <em>Implementation notes</em>: This constructor does not allocate memory. It throws anything the move constructor of the allocator throws.</p>
+<div class="fragment"><div class="line">        <span class="keyword">using</span> SpQueue =</div><div class="line">          sp_heter_queue&lt;runtime_type&lt;&gt;, <a class="code" href="namespacedensity.html#adeb11d97131a6de72c7b1d4b6c10f342">default_allocator</a>, PROD_CARDINALITY, CONSUMER_CARDINALITY&gt;;</div><div class="line"></div><div class="line">        default_allocator allocator;</div><div class="line">        default_busy_wait busy_wait;</div><div class="line">        SpQueue           queue(std::move(allocator), std::move(busy_wait));</div><div class="line">        assert(queue.empty());</div></div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="ab3848dcc18d5d1ccae532f655c5b8f23"></a>
@@ -733,7 +922,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Appends at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  <em>Note</em>: the template argument ELEMENT_TYPE can't be deduced from the parameters so it must explicitly specified.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -826,7 +1015,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -876,7 +1065,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined.</td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined.</td></tr>
   </table>
   </dd>
 </dl>
@@ -958,7 +1147,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Begins a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  This function allocates the required space, constructs the new element, and returns a transaction object that may be used to allocate raw space associated to the element being inserted, or to alter the element in some way. <br />
  Call the member function commit on the returned transaction in order to make the effects observable. If the transaction is destroyed before commit has been called, the transaction is canceled and it has no observable effects. Until the returned transaction is committed or canceled, the queue is not in a consistent state. If any function is called in this timespan by the same thread, the behavior is undefined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -1054,7 +1243,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1103,7 +1292,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1206,7 +1395,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Tries to append at the end of the queue an element of type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  If the put operation can't be completed with the specified progress guarantee, this function returns false to indicate a failure, and has no observable effects. This function fails if:</p><ul>
 <li>a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with the blocking progress guarantee indicates an out of memory, but no exception is thrown.</li>
 <li>there is a contention between threads, and the wait-free progress guarantee is requested</li>
@@ -1336,7 +1525,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1399,7 +1588,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1509,7 +1698,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, inplace-constructing it from a perfect forwarded parameter pack. <br />
+<p>Tries to begin a transaction that appends an element of a type <code>ELEMENT_TYPE</code>, in-place-constructing it from a perfect forwarded parameter pack. <br />
  If the put operation can't be completed with the specified progress guarantee, this function returns an empty transaction to indicate a failure, and has no observable effects. This function fails if:</p><ul>
 <li>a memory allocation is necessary but the allocator can't complete it with the specified progress guarantee. A failure with the blocking progress guarantee indicates an out of memory, but no exception is thrown.</li>
 <li>there is a contention between threads, and the wait-free progress guarantee is requested</li>
@@ -1642,7 +1831,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1704,7 +1893,7 @@ class density::sp_heter_queue&lt; RUNTIME_TYPE, ALLOCATOR_TYPE, PROD_CARDINALITY
   <table class="params">
     <tr><td class="paramname">i_progress_guarantee</td><td>progress guarantee to respect </td></tr>
     <tr><td class="paramname">i_type</td><td>type of the new element. </td></tr>
-    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whoose dynamic type is the the target type i_type was bound to, the behaviour is undefined. </td></tr>
+    <tr><td class="paramname">i_source</td><td>pointer to the object to use as source. If this pointer does dot point to an object whose dynamic type is the target type i_type was bound to, the behavior is undefined. </td></tr>
   </table>
   </dd>
 </dl>

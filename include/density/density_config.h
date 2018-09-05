@@ -5,9 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <assert.h>
-#include <type_traits> // for std::aligned_storage and std::conditional
-#include <utility>     // for std::move
+#include <cstdlib>
+#include <type_traits>
+#include <utility>
 
 /*! \file */
 
@@ -16,7 +16,7 @@
 #if defined(DENSITY_DEBUG)
 #define DENSITY_ASSERT DENSITY_CHECKING_ASSERT
 #else
-#define DENSITY_ASSERT DENSITY_ASSUME
+#define DENSITY_ASSERT(...) ((void)(0))
 #endif
 #endif
 
@@ -25,21 +25,53 @@
 #if defined(DENSITY_DEBUG_INTERNAL)
 #define DENSITY_ASSERT_INTERNAL DENSITY_CHECKING_ASSERT
 #else
-#define DENSITY_ASSERT_INTERNAL DENSITY_ASSUME
+#define DENSITY_ASSERT_INTERNAL(...) ((void)(0))
+#endif
+#endif
+
+/** Macro that tells an invariant to the compiler as hint for the optimizer. */
+#if defined(DENSITY_DEBUG)
+#define DENSITY_ASSUME DENSITY_CHECKING_ASSERT
+#else
+#if defined(__clang__)
+#define DENSITY_ASSUME(bool_expr, ...)                                                             \
+    _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wassume\"")              \
+      __builtin_assume((bool_expr)) _Pragma("clang diagnostic pop")
+#elif defined(_MSC_VER)
+#define DENSITY_ASSUME(bool_expr, ...) __assume((bool_expr))
+#elif defined(__GNUC__)
+// https://stackoverflow.com/questions/25667901/assume-clause-in-gcc
+#define DENSITY_ASSUME(bool_expr, ...) (!(bool_expr) ? __builtin_unreachable() : (void)0)
+#else
+#define DENSITY_ASSUME(bool_expr, ...) (void)0
 #endif
 #endif
 
 /** Macro used to enforce the alignment of a pointer as an invariant. */
-#define DENSITY_ASSERT_ALIGNED(address, alignment)                                                 \
-    DENSITY_ASSERT(::density::address_is_aligned(address, alignment))
+#if defined(DENSITY_DEBUG)
+#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
+    DENSITY_ASSERT(::density::address_is_aligned(                                                  \
+      (address), ::density::detail::ConstSizeT<(constexpr_alignment)>::value))
+#elif defined(__GNUC__)
+#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
+    __builtin_assume_aligned(address, constexpr_alignment)
+#else
+#define DENSITY_ASSUME_ALIGNED(address, constexpr_alignment)                                       \
+    DENSITY_ASSUME((uintptr_t(address) & ((constexpr_alignment)-1)) == 0)
+#endif
 
-/** Macro used to enforce the alignment of an unsigned integer as an invariant. */
-#define DENSITY_ASSERT_UINT_ALIGNED(uint, alignment)                                               \
-    DENSITY_ASSERT(::density::uint_is_aligned(uint, alignment))
+#if defined(DENSITY_DEBUG)
+#define DENSITY_ASSUME_UINT_ALIGNED(address, constexpr_alignment)                                  \
+    DENSITY_ASSERT(::density::uint_is_aligned(                                                     \
+      (address), ::density::detail::ConstSizeT<(constexpr_alignment)>::value))
+#else
+#define DENSITY_ASSUME_UINT_ALIGNED(address, constexpr_alignment)                                  \
+    DENSITY_ASSUME(((address) & ((constexpr_alignment)-1)) == 0)
+#endif
 
 /** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
 #if defined(__GNUC__) && !defined(_MSC_VER)
-#define DENSITY_LIKELY(bool_expr) (__builtin_expect(bool_expr, true), bool_expr)
+#define DENSITY_LIKELY(bool_expr) (__builtin_expect((bool_expr), true), (bool_expr))
 #else
 #define DENSITY_LIKELY(bool_expr) (bool_expr)
 #endif
@@ -56,42 +88,11 @@
 
 /** Assert that on failure should cause an halt of the program. Used only locally in this header. */
 #ifdef _MSC_VER
-#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
-    if (!(bool_expr))                                                                              \
-    {                                                                                              \
-        __debugbreak();                                                                            \
-    }                                                                                              \
-    else                                                                                           \
-        (void)0
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...) (!(bool_expr) ? __debugbreak() : (void)0)
 #elif defined(__GNUC__)
-#define DENSITY_CHECKING_ASSERT(bool_expr, ...)                                                    \
-    if (!(bool_expr))                                                                              \
-    {                                                                                              \
-        __builtin_trap();                                                                          \
-    }                                                                                              \
-    else                                                                                           \
-        (void)0
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...) (!(bool_expr) ? __builtin_trap() : (void)0)
 #else
-#define DENSITY_CHECKING_ASSERT(bool_expr) assert(bool_expr)
-#endif
-
-/** Macro that tells an invariant to the compiler as hint for the optimizer. Used only locally in this header. */
-#if defined(__clang__)
-#define DENSITY_ASSUME(bool_expr, ...)                                                             \
-    _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wassume\"")              \
-      __builtin_assume((bool_expr)) _Pragma("clang diagnostic pop")
-#elif defined(_MSC_VER)
-#define DENSITY_ASSUME(bool_expr, ...) __assume((bool_expr))
-#elif defined(__GNUC__)
-#define DENSITY_ASSUME(bool_expr, ...)                                                             \
-    if (!(bool_expr))                                                                              \
-    {                                                                                              \
-        __builtin_unreachable();                                                                   \
-    }                                                                                              \
-    else                                                                                           \
-        (void)0 // https://stackoverflow.com/questions/25667901/assume-clause-in-gcc
-#else
-#define DENSITY_ASSUME(bool_expr, ...) (void)0
+#define DENSITY_CHECKING_ASSERT(bool_expr, ...) (!(bool_expr) ? std::abort() : (void)0)
 #endif
 
 namespace density
@@ -168,13 +169,16 @@ namespace density
             swap(*this, builtin_optional(i_source));
         }
 
-        builtin_optional & operator=(builtin_optional && i_source) { swap(*this, i_source); }
+        builtin_optional & operator=(builtin_optional && i_source) noexcept
+        {
+            swap(*this, i_source);
+        }
 
-        TYPE *       operator->() const { return ptr(); }
-        TYPE &       operator*() { return *ptr(); }
-        const TYPE & operator*() const { return *ptr(); }
+        TYPE *       operator->() const noexcept { return ptr(); }
+        TYPE &       operator*() noexcept { return *ptr(); }
+        const TYPE & operator*() const noexcept { return *ptr(); }
 
-        explicit operator bool() const { return m_has_value; }
+        explicit operator bool() const noexcept { return m_has_value; }
 
         ~builtin_optional()
         {
@@ -201,8 +205,8 @@ namespace density
         }
 
       private:
-        TYPE *       ptr() { return reinterpret_cast<TYPE *>(&m_storage); }
-        const TYPE * ptr() const { return reinterpret_cast<const TYPE *>(&m_storage); }
+        TYPE *       ptr() noexcept { return reinterpret_cast<TYPE *>(&m_storage); }
+        const TYPE * ptr() const noexcept { return reinterpret_cast<const TYPE *>(&m_storage); }
 
       private:
         typename std::aligned_storage<sizeof(TYPE), alignof(TYPE)>::type m_storage;
@@ -212,5 +216,13 @@ namespace density
     /** Alias to an implementation of optional. By default a minimal implementation of optional is used, but
         it can be replaced by the C++17 standard one, if available. */
     template <typename TYPE> using optional = builtin_optional<TYPE>;
+
+    namespace detail
+    {
+        template <size_t VALUE> struct ConstSizeT
+        {
+            constexpr static size_t value = VALUE;
+        };
+    } // namespace detail
 
 } // namespace density

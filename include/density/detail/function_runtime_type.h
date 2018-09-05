@@ -130,7 +130,7 @@ namespace density
             void destroy(void * i_dest) const noexcept
             {
                 // with function_manual_clear calling destroy causes undefined behavior
-                DENSITY_ASSERT(false);
+                DENSITY_ASSUME(false);
                 (void)i_dest;
             }
 

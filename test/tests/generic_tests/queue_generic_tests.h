@@ -527,23 +527,6 @@ namespace density_tests
         {
             using namespace density;
 
-            {
-                // test conversion from proress_guarantee to LfQueue_ProgressGuarantee
-                using namespace density::detail;
-                static_assert(ToLfGuarantee(progress_blocking, true) == LfQueue_Throwing, "");
-                static_assert(ToLfGuarantee(progress_blocking, false) == LfQueue_Blocking, "");
-                static_assert(
-                  ToLfGuarantee(progress_obstruction_free, false) == LfQueue_LockFree, "");
-                static_assert(ToLfGuarantee(progress_lock_free, false) == LfQueue_LockFree, "");
-                static_assert(ToLfGuarantee(progress_wait_free, false) == LfQueue_WaitFree, "");
-
-                // test conversion from LfQueue_ProgressGuarantee to proress_guarantee
-                static_assert(ToDenGuarantee(LfQueue_Throwing) == progress_blocking, "");
-                static_assert(ToDenGuarantee(LfQueue_Blocking) == progress_blocking, "");
-                static_assert(ToDenGuarantee(LfQueue_LockFree) == progress_lock_free, "");
-                static_assert(ToDenGuarantee(LfQueue_WaitFree) == progress_wait_free, "");
-            }
-
             bool const run_page_default = i_settings.should_run("page_def");
             bool const run_page_256     = i_settings.should_run("page_256");
 

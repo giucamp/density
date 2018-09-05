@@ -14,8 +14,11 @@ namespace density
 {
     namespace detail
     {
-        /** \internal Wait-free concurrent stack of free pages. This is not a general purpose
-            stack, it is rather designed and specialized to be used by the page manager.
+        /** \internal Wait-free concurrent stack of free pages.
+
+            This class assumes that load, store, exchange and compare_exchange_weak on a std::atomic specializated on a
+            pointer are wait-free.
+            This is not a general purpose stack, it is rather designed and specialized to be used by the page manager.
             Any non-lifetime function of WF_PageStack is thread-safe and wait-free, but can fail in case of contention. Pop operations
             temporary lock the stack, so that any operation tried by the other threads will fail due to contention. This simplifies
             the implementation and makes the ABA problem harmless.
@@ -29,16 +32,17 @@ namespace density
             static PageFooter * lock_marker() noexcept { return reinterpret_cast<PageFooter *>(1); }
 
           public:
-            /* Pushes a (possibly still pinned) single page on the stack. This function is wait-free and may fail in case of contention.
+            /* Pushes a (possibly still pinned) single page on the stack. This function is wait-free but it may fail in
+                case of contention.
                 @param i_page The page to push. The initial value of i_page->m_next_page is ignored. This parameter can't be nullptr.
                 @return whether the push was successful
 
                 \pre The behavior is undefined if either:
                     - the argument is null
                     - the argument is already present in any stack */
-            bool try_push(PageFooter * i_page) noexcept
+            DENSITY_NODISCARD bool try_push(PageFooter * i_page) noexcept
             {
-                DENSITY_ASSERT_INTERNAL(i_page != nullptr);
+                DENSITY_ASSUME(i_page != nullptr);
 
                 auto first = m_first.load(detail::mem_relaxed);
                 if (first == lock_marker())
@@ -55,14 +59,16 @@ namespace density
                   first, i_page, detail::mem_release, detail::mem_relaxed);
             }
 
-            /* Pushes a stack of (possibly still pinned) pages on this stack. This function is wait-free and may fail in case of contention.
-                @param i_stack stack of page to prepend to this stack
+            /* Pushes a stack of (possibly still pinned) pages on this stack. This function is wait-free but it may
+                fail in case of contention.
+                @param i_stack stack of page to prepend to this stack. This parameter is not const to allow this
+                    function to call find_last on it.
                 @return whether the push was successful
 
                 \pre The behavior is undefined if either:
                     - the argument is empty
                     - any page in the argument is already present in any stack */
-            bool try_push(PageStack & i_stack) noexcept
+            DENSITY_NODISCARD bool try_push(PageStack & i_stack) noexcept
             {
                 DENSITY_ASSERT_INTERNAL(!i_stack.empty());
 

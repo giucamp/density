@@ -4,6 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#pragma once
+#include "../test_framework/density_test_common.h"
+//
 #include <density/io_runtimetype_features.h>
 #include <density/runtime_type.h>
 #include <ostream>
@@ -177,9 +180,9 @@ namespace density_examples
     std::ostream & operator<<(std::ostream & i_dest, const any<FEATURES...> & i_any)
     {
         using namespace density;
-        static_assert( // for simplcity we don't SFINAE
+        static_assert( // for simplicity we don't SFINAE
           density::has_features<feature_list<FEATURES...>, f_ostream>::value,
-          "The provided any leaks the fetaure f_ostream");
+          "The provided any leaks the feature f_ostream");
 
         if (i_any.has_value())
             i_any.template get_type_feature<f_ostream>()(i_dest, i_any.object_ptr());
@@ -217,9 +220,9 @@ namespace density_examples
     any<FEATURES...> operator+(const any<FEATURES...> & i_first, const any<FEATURES...> & i_second)
     {
         using namespace density;
-        static_assert( // for simplcity we don't SFINAE
+        static_assert( // for simplicity we don't SFINAE
           density::has_features<feature_list<FEATURES...>, f_sum>::value,
-          "The provided any leaks the fetaure sum_impl");
+          "The provided any leaks the feature sum_impl");
 
         if (i_first.type() != i_second.type() || i_first.type() == typeid(void))
             throw std::runtime_error("Mismatching types");

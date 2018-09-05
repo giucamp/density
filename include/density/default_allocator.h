@@ -308,7 +308,7 @@ namespace density
             \n <b>Throws</b>: nothing */
         void deallocate_page(void * i_page) noexcept
         {
-            DENSITY_ASSERT(i_page != nullptr);
+            DENSITY_ASSUME(i_page != nullptr);
             PageAllocator::thread_local_instance()
               .template deallocate_page<detail::page_allocation_type::uninitialized>(i_page);
         }

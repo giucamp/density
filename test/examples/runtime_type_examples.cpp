@@ -64,7 +64,7 @@ namespace density_tests
     // this is ok: int supports sizeof, alignof, and copy construction
     auto IntType = MyRuntimeType::make<int>();
 
-    // this fails to compile: std::mutex doesen't allow copy construction
+    // this fails to compile: std::mutex doesn't allow copy construction
     // auto MutexType = MyRuntimeType::make<std::mutex>();
 
     // MyFeatures::tuple<void> = std::tuple<f_size::type<void>, f_alignment::type<void>, f_copy_construct::type<void>>
@@ -88,14 +88,14 @@ namespace density_tests
         }
         {
         //! [has_features example 2]
-    using MyFeatures = runtime_type<f_size, f_alignment>;
-    static_assert(has_features<MyFeatures>::value, "");
-    static_assert(has_features<MyFeatures, f_size>::value, "");
-    static_assert(has_features<MyFeatures, f_alignment>::value, "");
-    static_assert(has_features<MyFeatures, f_size, f_alignment>::value, "");
-    static_assert(!has_features<MyFeatures, f_copy_construct>::value, "");
-    static_assert(!has_features<MyFeatures, f_size, f_copy_construct>::value, "");
-    static_assert(!has_features<MyFeatures, f_copy_construct, f_size>::value, "");
+    using type = runtime_type<f_size, f_alignment>;
+    static_assert(has_features<type>::value, "");
+    static_assert(has_features<type, f_size>::value, "");
+    static_assert(has_features<type, f_alignment>::value, "");
+    static_assert(has_features<type, f_size, f_alignment>::value, "");
+    static_assert(!has_features<type, f_copy_construct>::value, "");
+    static_assert(!has_features<type, f_size, f_copy_construct>::value, "");
+    static_assert(!has_features<type, f_copy_construct, f_size>::value, "");
         //! [has_features example 2]
         }
     

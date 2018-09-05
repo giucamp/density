@@ -1416,14 +1416,11 @@ namespace density_tests
             //! [heter_queue iterators example 1]
             heter_queue<> queue_1, queue_2;
             queue_1.push(42);
-            assert(
-              queue_1.end() == queue_2.end() && queue_1.end() == heter_queue<>::const_iterator());
+            assert(queue_1.end() == queue_2.end() && queue_1.end() == heter_queue<>::iterator());
 
             for (const auto & value : queue_1)
             {
-                assert(value.first.is<int>());
-                assert(*static_cast<int *>(value.second) == 42);
-                *static_cast<int *>(value.second) = 0;
+                assert(value.as<int>() == 42);
             }
             //! [heter_queue iterators example 1]
         }
