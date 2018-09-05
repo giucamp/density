@@ -165,7 +165,7 @@ namespace density_tests
     const_volatile_dynamic_reference<RT> r4(ci);
 
     int volatile vi = 42;
-    //const_dynamic_reference<RT> r5(vi); // <- error, would drop the const-ness
+    //const_dynamic_reference<RT> r5(vi); // <- error, would drop the volatile-ness
     const_volatile_dynamic_reference<RT> r6(vi);
 
     // dynamic_reference is constructible from non-cv-qualified reference
@@ -197,7 +197,7 @@ namespace density_tests
         {
         int t = 1;
         //! [construct2 example 1]
-    constexpr dynamic_reference<RT> r(RT::make<decltype(t)>(), &t);
+    dynamic_reference<RT> r(RT::make<decltype(t)>(), &t);
     assert(r.type() == RT::make<decltype(t)>() && r.address() == &t);
         //! [construct2 example 1]
         }
@@ -252,6 +252,11 @@ namespace density_tests
     dynamic_reference<RT> r(t);
     assert(r.is<int>());
     assert(r.is<const int>());
+
+    const_dynamic_reference<RT> r1(t);
+    assert(!r1.is<int>());
+    assert(r1.is<const int>());
+    assert(r1.is<const volatile int>());
         //! [is example 1]
         }
 

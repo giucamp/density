@@ -137,7 +137,10 @@ namespace density
             This type must satisfy the requirements of \ref RuntimeType_requirements "RuntimeType". The default is runtime_type.
 
         @tparam CV_QUALIFIER CV-qualification of the reference. The default is cv_qual::no_qual.
-    */
+
+        The convenience alias templates \ref const_dynamic_reference, \ref volatile_dynamic_reference and 
+        \ref const_volatile_dynamic_reference constraint the \ref cv_qual template parameter respectively to 
+        cv_qual::const_qual, cv_qual::volatile_qual and cv_qual::const_volatile_qual. */
     template <typename RUNTIME_TYPE, cv_qual CV_QUALIFIER> class dynamic_reference
     {
       public:
@@ -146,13 +149,12 @@ namespace density
 
         /** Constructs an instance of dynamic_reference bound to the specified target object.
 
-            This constructor is excluded from the overload set if the type of the target type is less
-                cv-qualified than the reference:            
+            This constructor is excluded from the overload set if the type of the target type is more
+                cv-qualified than this specialization of dynamic_reference:
             \snippet dynamic_reference_examples.cpp construct example 2
 
             \b Postcoditions:
-                Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType" and
-                an object t, the following conditions hold:
+                Given an object t, the following conditions hold:
             \snippet dynamic_reference_examples.cpp construct example 1
 
         \b Throws: unspecified */
@@ -176,8 +178,7 @@ namespace density
         /** Constructs a dynamic_reference assigning a target object.
 
         \b Postcoditions:
-            Given a type RT satisfying the requirements of \ref RuntimeType_requirements "RuntimeType",
-            the following conditions hold:
+            Given an object t, the following conditions hold:
             \snippet dynamic_reference_examples.cpp construct2 example 1
 
         \b Throws: unspecified */
@@ -187,13 +188,15 @@ namespace density
         {
         }
 
-        /** Generalized copy constructor. The template argument CV_QUALIFIER of this template
-            specialization can differ from the source:
+        /** Generalized copy constructor.
+
+            This constructor is excluded from the overload set if the argument is more
+                cv-qualified than this dynamic_reference specialization:
 
             \snippet dynamic_reference_examples.cpp copy construct example 2
 
         \b Postcoditions:
-            Given an object r of type dynamic_reference<*>, the following conditions hold:
+            Given an object r of a specialization of dynamic_reference, the following conditions hold:
             \snippet dynamic_reference_examples.cpp copy construct example 1
 
         \b Throws: unspecified */
@@ -225,7 +228,8 @@ namespace density
         \b Throws: nothing */
         constexpr add_cv_qual_t<void, CV_QUALIFIER> * address() const noexcept { return m_address; }
 
-        /** Returns whether the target type is bound to the provided compile-time type.
+        /** Returns whether the target type is bound to the provided compile-time type and
+            TYPE is not less cv-qualified than this specialization of dynamic_reference.
             
             Example:
             \snippet dynamic_reference_examples.cpp is example 1
@@ -242,7 +246,7 @@ namespace density
 
             \b Precoditions:
                The behavior is undefined if any of these conditions is not satisfied:
-                - The target type is not the provided compile-time type.
+                - is<TYPE>()
 
             Example:
             \snippet dynamic_reference_examples.cpp as example 1
