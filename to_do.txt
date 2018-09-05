@@ -1,3 +1,0 @@
-
-- check all the compare_exchange_strong, they violate lock-freedom
-- check the overload try_inplace_allocate_impl with constant parameters

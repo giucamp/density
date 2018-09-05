@@ -787,7 +787,6 @@ typename `COMMON_TYPE`|Common type of elements|Must decay to itself (see [std::d
 typename `RUNTIME_TYPE`|Type eraser type|Must model [RuntimeType](RuntimeType_requirements.html)|[runtime_type](classdensity_1_1runtime__type.html)|
 typename `ALLOCATOR_TYPE`|Allocator|Must model both [PageAllocator](PagedAllocator_requirements.html) and [UntypedAllocator](UntypedAllocator_requirements.html)|[default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e)|
 
-An element can be pushed on a queue if its address is is implicitly convertible to `COMMON_TYPE*`. By default any type is allowed in the queue.
 The `RUNTIME_TYPE` type allows much more customization than the [function_type_erasure](namespacedensity.html#a80100b808e35e98df3ffe74cc2293309) template parameter of function queues. Even using the built-in [runtime_type](classdensity_1_1runtime__type.html) you can select which operations the elements of the queue should support, and add your own.
 
 \snippet misc_examples.cpp runtime_type example 2
@@ -808,10 +807,12 @@ Implementation details
 Named requirements
 ----------
 
-[RuntimeType](RuntimeType_requirements.html) | [runtime_type](classdensity_1_1runtime__type.html)
+Name            |built-in examples  |
+------------------------------|---------|
+[RuntimeType](RuntimeType_requirements.html) | runtime_type
 [TypeFeature](TypeFeature_requirements.html) | f_size, f_alignment, f_copy_construct, f_hash, f_rtti
-[UntypedAllocator](UntypedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
-[PagedAllocator](PagedAllocator_requirements.html) | [default_allocator](namespacedensity.html#a06c6ce21f0d3cede79e2b503a90b731e), [basic_default_allocator](classdensity_1_1basic__void__allocator.html)
+[UntypedAllocator](UntypedAllocator_requirements.html) | \ref default_allocator, basic_default_allocator
+[PagedAllocator](PagedAllocator_requirements.html) | \ref default_allocator, basic_default_allocator
 
 Benchmarks
 ----------
@@ -848,7 +849,7 @@ Benchmarks
         with a given cardinality, and every invocation occurs 8 times.
 
 
-        Even unnecessarily paying the cost of multithreading, concurrent function queues are in general better than <code>std::queue</code> of <code>std::function</code>.
+        Even unnecessarily paying the cost of multi-threading, concurrent function queues are in general better than <code>std::queue</code> of <code>std::function</code>.
         lf_function_queue is much faster in the case of single consumer and single producers, as it can reduce considerably the number of
         atomic memory operations.
 
