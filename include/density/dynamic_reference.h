@@ -8,6 +8,7 @@
 #include <density/density_common.h>
 #include <density/runtime_type.h>
 #include <type_traits>
+#include <cassert>
 
 namespace density
 {
