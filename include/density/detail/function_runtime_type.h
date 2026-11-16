@@ -13,11 +13,22 @@ namespace density
 {
     namespace detail
     {
+        /** \internal - the type returned by calling a FUNCTION with PARAMS. std::result_of is deprecated in
+            C++17 and removed in C++20 (the standard library of MSVC doesn't have it in C++20 mode): from C++17
+            std::invoke_result, which gives the same type. */
+#if DENSITY_CPLUSPLUS >= 201703L
+        template <typename FUNCTION, typename... PARAMS>
+        using InvokeResult_t = typename std::invoke_result<FUNCTION, PARAMS...>::type;
+#else
+        template <typename FUNCTION, typename... PARAMS>
+        using InvokeResult_t = typename std::result_of<FUNCTION && (PARAMS && ...)>::type;
+#endif
+
         /** \internal - implementation of invoke for functions */
         template <typename FUNCTION, typename... PARAMS>
         inline typename std::enable_if<
           !std::is_member_pointer<typename std::decay<FUNCTION>::type>::value,
-          typename std::result_of<FUNCTION && (PARAMS && ...)>::type>::type
+          InvokeResult_t<FUNCTION, PARAMS...>>::type
           invoke(FUNCTION && i_functor, PARAMS &&... i_params) noexcept(
             noexcept((std::forward<FUNCTION>)(i_functor)(std::forward<PARAMS>(i_params)...)))
         {
@@ -28,7 +39,7 @@ namespace density
         template <typename FUNCTION, typename... PARAMS>
         inline typename std::enable_if<
           std::is_member_pointer<typename std::decay<FUNCTION>::type>::value,
-          typename std::result_of<FUNCTION && (PARAMS && ...)>::type>::type
+          InvokeResult_t<FUNCTION, PARAMS...>>::type
           invoke(FUNCTION && i_functor, PARAMS &&... i_params) noexcept(
             noexcept(std::mem_fn(i_functor)(std::forward<PARAMS>(i_params)...)))
         {

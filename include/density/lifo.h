@@ -807,7 +807,10 @@ namespace density
             @param i_size number of elements of the array */
         lifo_array(size_t i_size) : detail::LifoArrayImpl<TYPE>(i_size)
         {
-            default_construct(std::is_pod<TYPE>());
+            /* POD: trivial and standard layout. std::is_pod is deprecated in C++20; this is its definition,
+               available since C++11. */
+            default_construct(std::integral_constant<bool,
+              std::is_trivial<TYPE>::value && std::is_standard_layout<TYPE>::value>());
         }
 
         /** Constructs all the elements with the provided parameter pack.

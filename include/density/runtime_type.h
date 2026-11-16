@@ -55,8 +55,12 @@ namespace density
         static_assert(
           !std::is_void<FIRST_FEATURE>::value, "[cv-qualified] void does not satisfy TypeFeature");
 
+#if DENSITY_CPLUSPLUS < 201703L
+        /* std::is_literal_type is deprecated in C++17 and removed in C++20 (the standard library of MSVC
+           doesn't have it in C++20 mode), with no replacement: the check is done only before C++17. */
         static_assert(
           std::is_literal_type<FIRST_FEATURE>::value, "a TypeFeature must be a literal type");
+#endif
 
         using tuple_type = detail::Tuple_Merge_t<
 
@@ -342,8 +346,11 @@ namespace density
         {
             DENSITY_ASSUME(i_object != nullptr);
             TARGET_TYPE * obj = static_cast<TARGET_TYPE *>(i_object);
+            /* std::is_nothrow_destructible, not noexcept(obj->TARGET_TYPE::~TARGET_TYPE()): MSVC 14.51 in C++20
+               mode crashes (internal compiler error C1001) on a qualified destructor call inside noexcept()
+               when TARGET_TYPE is a scalar type, like int. */
             static_assert(
-              noexcept(obj->TARGET_TYPE::~TARGET_TYPE()),
+              std::is_nothrow_destructible<TARGET_TYPE>::value,
               "TARGET_TYPE must be nothrow destructible");
             obj->TARGET_TYPE::~TARGET_TYPE();
         }

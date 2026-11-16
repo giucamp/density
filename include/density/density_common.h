@@ -19,6 +19,14 @@
 /** Version of the library, in the format 0xMMMMNNRR, where MMMM = major version (16 bits), NN = minor version (8 bits), and RR = revision (8 bits) */
 #define DENSITY_VERSION 0x00020000
 
+// The C++ standard in use. MSVC keeps __cplusplus at 199711L unless /Zc:__cplusplus is given: there the standard
+// is in _MSVC_LANG.
+#if defined(_MSVC_LANG)
+#define DENSITY_CPLUSPLUS _MSVC_LANG
+#else
+#define DENSITY_CPLUSPLUS __cplusplus
+#endif
+
 // detect 'Relaxed constraints on constexpr functions / constexpr member functions and implicit const'
 // see http://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros#C.2B.2B14
 #if __cpp_constexpr >= 201304
