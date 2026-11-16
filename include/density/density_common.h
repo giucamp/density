@@ -473,7 +473,9 @@ namespace density
             // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
             size_t const extra_size =
               detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-            size_t const actual_size  = i_size + extra_size;
+            size_t const actual_size = i_size + extra_size;
+            if (actual_size < i_size) // handle arithmetic overflow of the size
+                throw std::bad_alloc();
             auto const complete_block = operator new(actual_size);
             user_block                = address_lower_align(
               address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
@@ -524,7 +526,9 @@ namespace density
             // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
             size_t const extra_size =
               detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
-            size_t const actual_size  = i_size + extra_size;
+            size_t const actual_size = i_size + extra_size;
+            if (actual_size < i_size) // handle arithmetic overflow of the size
+                return nullptr;
             auto const complete_block = operator new(actual_size, std::nothrow);
             if (complete_block != nullptr)
             {

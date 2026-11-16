@@ -89,8 +89,13 @@ namespace density
                 ControlBlock * m_control =
                   nullptr; /**< Currently pinned control block. Independent from the empty-ness of the Consume */
                 uintptr_t m_next_ptr =
-                  0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and 
+                  0; /**< m_next member of the ControlBox of the element being consumed. The Consume is empty if and
                           only if m_next_ptr <= LfQueue_AllFlags */
+                ControlBlock * m_begin_head =
+                  nullptr; /**< Value m_head had when the current iteration started (set by
+                       begin_iteration). Used to tell a genuine null-terminator apart from a
+                       block that was consumed and zeroed by other consumers after this
+                       iteration began: the latter implies that m_head has advanced since. */
 
                 Consume() noexcept = default;
 
@@ -99,7 +104,7 @@ namespace density
 
                 Consume(Consume && i_source) noexcept
                     : m_queue(i_source.m_queue), m_control(i_source.m_control),
-                      m_next_ptr(i_source.m_next_ptr)
+                      m_next_ptr(i_source.m_next_ptr), m_begin_head(i_source.m_begin_head)
                 {
                     i_source.m_control  = nullptr;
                     i_source.m_next_ptr = 0;
@@ -137,6 +142,7 @@ namespace density
                     swap(m_queue, i_other.m_queue);
                     swap(m_control, i_other.m_control);
                     swap(m_next_ptr, i_other.m_next_ptr);
+                    swap(m_begin_head, i_other.m_begin_head);
                 }
 
                 bool begin_iteration(LFQueue_Head * i_queue) noexcept
@@ -156,29 +162,51 @@ namespace density
                         }
                     }
 
-                    while (!Base::same_page(m_control, head))
+                    for (;;)
                     {
-                        DENSITY_ASSUME(m_control != head);
-
-                        i_queue->ALLOCATOR_TYPE::pin_page(head);
-
-                        if (m_control != nullptr)
+                        while (!Base::same_page(m_control, head))
                         {
-                            i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+                            DENSITY_ASSUME(m_control != head);
+
+                            i_queue->ALLOCATOR_TYPE::pin_page(head);
+
+                            if (m_control != nullptr)
+                            {
+                                i_queue->ALLOCATOR_TYPE::unpin_page(m_control);
+                            }
+
+                            m_control = head;
+
+                            head = i_queue->m_head.load();
+                            DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
                         }
 
-                        m_control = head;
-
-                        head = i_queue->m_head.load();
-                        DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
+                        m_queue      = i_queue;
+                        m_control    = static_cast<ControlBlock *>(head);
+                        m_begin_head = head;
+                        m_next_ptr   = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                        if (m_next_ptr == 0)
+                        {
+                            /* A zero may be the genuine end of the queue, or the effect of
+                                another consumer that has advanced m_head past this block and
+                                then zeroed it, in the window between our (re)load of m_head
+                                and the load of m_next. advance_head updates m_head before
+                                zeroing, and this page can't be recycled while we pin it, so
+                                if m_head still equals this block the zero is genuine.
+                                Without this check a consumer could observe an empty queue
+                                while committed unconsumed elements are present. */
+                            auto const updated_head = i_queue->m_head.load();
+                            if (updated_head != head)
+                            {
+                                head = updated_head;
+                                DENSITY_ASSUME_ALIGNED(head, Base::s_alloc_granularity);
+                                continue;
+                            }
+                        }
+                        DENSITY_ASSERT_INTERNAL(
+                          empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
+                        return true;
                     }
-
-                    m_queue    = i_queue;
-                    m_control  = static_cast<ControlBlock *>(head);
-                    m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
-                    DENSITY_ASSERT_INTERNAL(
-                      empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
-                    return true;
                 }
 
                 bool is_queue_empty(const LFQueue_Head * i_queue) noexcept
@@ -233,6 +261,20 @@ namespace density
 
                     m_control  = next;
                     m_next_ptr = raw_atomic_load(&m_control->m_next, mem_relaxed);
+                    if (m_next_ptr == 0 && m_queue->m_head.load() != m_begin_head)
+                    {
+                        /* This block may have been consumed and zeroed by other consumers
+                            after this iteration began. In that case m_head has necessarily
+                            advanced since begin_iteration stored m_begin_head, because any
+                            block this iteration visits is at or after m_begin_head, and
+                            blocks are zeroed only after m_head has been advanced past them.
+                            Conversely, if m_head still equals m_begin_head, no block this
+                            iteration can visit has been zeroed, and the zero is the genuine
+                            end of the queue (this also guarantees termination: we restart
+                            only if m_head has actually moved). */
+                        begin_iteration(m_queue);
+                        return true;
+                    }
                     DENSITY_ASSERT_INTERNAL(
                       empty() || m_next_ptr >= ALLOCATOR_TYPE::page_alignment);
                     return true;

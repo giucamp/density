@@ -123,7 +123,9 @@ namespace density
                 alignof(RUNTIME_TYPE),
                 alignof(ExternalBlock)),
               min_alignment,
-              size_log2(LfQueue_AllFlags + 1));
+              LfQueue_AllFlags + 1); /* this term guarantees that the low bits of any
+                block address are free to hold all the LfQueue_State flags, whatever
+                the value of destructive_interference_size */
 
             /** Offset of the runtime_type in the layout of a value */
             constexpr static uintptr_t s_type_offset =
@@ -160,6 +162,10 @@ namespace density
             static_assert(
               is_power_of_2(s_alloc_granularity),
               "destructive_interference_size must be power of 2");
+            static_assert(
+              s_alloc_granularity > LfQueue_AllFlags,
+              "the alignment of the control blocks must leave the low bits of the "
+              "addresses free to hold all the flags of LfQueue_State");
 
             constexpr LFQueue_Base() noexcept(
               std::is_nothrow_default_constructible<ALLOCATOR_TYPE>::value)

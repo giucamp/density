@@ -69,9 +69,10 @@
     DENSITY_ASSUME(((address) & ((constexpr_alignment)-1)) == 0)
 #endif
 
-/** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer. */
+/** Macro that tells to the compiler that a condition is true in most cases. This is just an hint to the optimizer.
+    Note: the expression must be free of side effects, and is evaluated exactly once. */
 #if defined(__GNUC__) && !defined(_MSC_VER)
-#define DENSITY_LIKELY(bool_expr) (__builtin_expect((bool_expr), true), (bool_expr))
+#define DENSITY_LIKELY(bool_expr) (__builtin_expect(!!(bool_expr), 1))
 #else
 #define DENSITY_LIKELY(bool_expr) (bool_expr)
 #endif
@@ -111,10 +112,22 @@ namespace density
         This is a configuration variable, intended to be customized by the user of the library. The default value is 1024 * 64. */
     constexpr size_t default_page_capacity = 1024 * 64;
 
-    /** In this version of the library relaxed atomic operations are disabled.
-        Concurrently data structures has been tested on x86-x64, but not on architectures with weak
-        memory ordering. If you want to contribute to density, running the tests on other
-        architectures, you can change this constant. */
+    /** In this version of the library relaxed atomic operations are disabled: all the
+        internal memory-order constants (detail::mem_relaxed, mem_acquire, mem_release,
+        mem_acq_rel) map to std::memory_order_seq_cst.
+
+        Warning: do not set this constant to true. With the orderings currently declared
+        in the implementation the data structures are not just untested on weakly-ordered
+        architectures, they are unsound even in the abstract C++ memory model (compiler
+        reordering alone can break them on x86 too). In particular:
+        - every pin-and-validate handshake (consumers in begin_iteration/move_next,
+          producers in get_or_allocate_next_page) is a store-load pattern that requires
+          sequential consistency between the pin increment and the validating load, and
+          between the deallocation-side zeroing/push and the pin-count check;
+        - the multiple-consumer head loads ControlBlock::m_next with mem_relaxed, where
+          an acquire is needed to see the content of newly linked (zeroed) pages;
+        - on MSVC, raw_atomic_load with memory_order_relaxed is a plain non-volatile
+          load with no compiler barrier, so loops of relaxed loads can be hoisted. */
     constexpr bool enable_relaxed_atomics = false;
 
     template <size_t PAGE_CAPACITY_AND_ALIGNMENT> class basic_default_allocator;
@@ -145,7 +158,14 @@ namespace density
       public:
         builtin_optional() noexcept = default;
 
-        template <typename OTHER_TYPE> builtin_optional(OTHER_TYPE && i_value) : m_has_value(true)
+        /* The enable_if excludes builtin_optional itself, otherwise this constructor
+            would hijack copy/move construction from non-const lvalues. */
+        template <
+          typename OTHER_TYPE,
+          typename = typename std::enable_if<!std::is_same<
+            typename std::decay<OTHER_TYPE>::type,
+            builtin_optional>::value>::type>
+        builtin_optional(OTHER_TYPE && i_value) : m_has_value(true)
         {
             new (&m_storage) TYPE(std::forward<OTHER_TYPE>(i_value));
         }
@@ -166,15 +186,19 @@ namespace density
 
         builtin_optional & operator=(const builtin_optional & i_source)
         {
-            swap(*this, builtin_optional(i_source));
+            builtin_optional copy(i_source);
+            swap(*this, copy);
+            return *this;
         }
 
         builtin_optional & operator=(builtin_optional && i_source) noexcept
         {
             swap(*this, i_source);
+            return *this;
         }
 
-        TYPE *       operator->() const noexcept { return ptr(); }
+        TYPE *       operator->() noexcept { return ptr(); }
+        const TYPE * operator->() const noexcept { return ptr(); }
         TYPE &       operator*() noexcept { return *ptr(); }
         const TYPE & operator*() const noexcept { return *ptr(); }
 
@@ -197,10 +221,12 @@ namespace density
             else if (i_first.m_has_value)
             {
                 new (i_first.ptr()) TYPE(std::move(*i_second.ptr()));
+                i_second.ptr()->TYPE::~TYPE();
             }
             else if (i_second.m_has_value)
             {
                 new (i_second.ptr()) TYPE(std::move(*i_first.ptr()));
+                i_first.ptr()->TYPE::~TYPE();
             }
         }
 

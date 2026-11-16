@@ -82,7 +82,19 @@ namespace density
                         if (raw_atomic_compare_exchange_weak(
                               &s_ref_count, &ref_count, static_cast<uintptr_t>(1)))
                         {
-                            new (&s_singleton_storage) SINGLETON();
+                            try
+                            {
+                                new (&s_singleton_storage) SINGLETON();
+                            }
+                            catch (...)
+                            {
+                                /* if the constructor of the singleton throws, the ref count
+                                    must be restored to zero, otherwise every other thread
+                                    would spin forever waiting for the construction (1) to
+                                    complete. */
+                                raw_atomic_store(&s_ref_count, 0);
+                                throw;
+                            }
 
                             raw_atomic_store(&s_ref_count, 2);
                             break;

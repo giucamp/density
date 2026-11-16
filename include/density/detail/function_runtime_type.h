@@ -91,7 +91,7 @@ namespace density
                     auto && ret =
                       density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
-                    return ret;
+                    return std::forward<RET_VAL>(ret);
                 }
 
                 static void
@@ -156,9 +156,8 @@ namespace density
                       static_cast<ACTUAL_TYPE *>(address_upper_align(i_dest, alignof(ACTUAL_TYPE)));
                     auto && ret =
                       density::detail::invoke(*aligned_dest, std::forward<PARAMS>(i_params)...);
-                    ;
                     aligned_dest->ACTUAL_TYPE::~ACTUAL_TYPE();
-                    return ret;
+                    return std::forward<RET_VAL>(ret);
                 }
 
                 static void

@@ -129,7 +129,6 @@ namespace density
             PageAllocatorSlot *m_current_slot, *m_victim_slot;
             PageStack          m_private_page_stack, m_private_zeroed_page_stack;
             SingletonPtr<GlobalState<SYSTYEM_PAGE_MANAGER>> m_global_state;
-            PageStack                                       m_pages_to_unpin;
 
             static thread_local PageAllocator t_instance;
 
@@ -146,8 +145,6 @@ namespace density
             template <page_allocation_type ALLOCATION_TYPE>
             void * try_allocate_page(progress_guarantee i_progress_guarantee) noexcept
             {
-                process_pending_unpins(i_progress_guarantee);
-
                 // try from the private stack...
                 auto * new_page = get_private_stack(ALLOCATION_TYPE).pop_unpinned();
                 if (new_page == nullptr)
@@ -178,8 +175,6 @@ namespace density
             template <page_allocation_type ALLOCATION_TYPE>
             void deallocate_page(void * i_page) noexcept
             {
-                process_pending_unpins(progress_wait_free);
-
                 auto const page = get_footer(i_page);
 
                 // try to push the page once on every slot
@@ -207,16 +202,12 @@ namespace density
             size_t try_reserve_lockfree_memory(
               progress_guarantee const i_progress_guarantee, size_t i_size) noexcept
             {
-                t_instance.process_pending_unpins(i_progress_guarantee);
-
                 return m_global_state->sys_page_manager().try_reserve_region_memory(
                   i_progress_guarantee, i_size);
             }
 
             static void pin_page(void * const i_address) noexcept
             {
-                t_instance.process_pending_unpins(progress_lock_free);
-
                 auto const footer = get_footer(i_address);
                 footer->m_pin_count.fetch_add(1, detail::mem_relaxed);
             }
@@ -224,8 +215,6 @@ namespace density
             static bool
               try_pin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
             {
-                t_instance.process_pending_unpins(i_progress_guarantee);
-
                 auto const footer = get_footer(i_address);
                 if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
                 {
@@ -242,8 +231,6 @@ namespace density
 
             static void unpin_page(void * const i_address) noexcept
             {
-                t_instance.process_pending_unpins(progress_lock_free);
-
                 auto const footer    = get_footer(i_address);
                 auto const prev_pins = footer->m_pin_count.fetch_sub(1, detail::mem_relaxed);
                 DENSITY_ASSERT(prev_pins > 0);
@@ -253,24 +240,19 @@ namespace density
             static void
               unpin_page(progress_guarantee i_progress_guarantee, void * const i_address) noexcept
             {
-                t_instance.process_pending_unpins(progress_lock_free);
-
-                if (i_progress_guarantee <= progress_guarantee::progress_lock_free)
-                {
-                    unpin_page(i_address);
-                }
-                else
-                {
-                    auto const footer     = get_footer(i_address);
-                    auto       curr_value = footer->m_pin_count.load(detail::mem_relaxed);
-                    DENSITY_ASSUME(curr_value > 0);
-                    if (!footer->m_pin_count.compare_exchange_weak(
-                          curr_value, curr_value - 1, detail::mem_relaxed))
-                    {
-                        // failed due to contention, we must retry later
-                        t_instance.m_pages_to_unpin.push(footer);
-                    }
-                }
+                /* Unpinning is always performed with a single atomic subtraction,
+                    whatever the requested progress guarantee: unlike a pin, an unpin can
+                    neither fail nor be deferred. A previous implementation, with the
+                    wait-free guarantee, tried a compare_exchange and on failure deferred
+                    the decrement to a thread-local list linked through
+                    PageFooter::m_next_page. That member is also the link a page in a
+                    free-page stack is threaded through (a pinned page may be deallocated,
+                    and then it is in such a stack), so the deferral corrupted both lists.
+                    An uncontended fetch_sub is wait-free on most architectures, and at
+                    worst lock-free, which is the guarantee this library documents for
+                    page pinning. */
+                (void)i_progress_guarantee;
+                unpin_page(i_address);
             }
 
             static uintptr_t get_pin_count(const void * const i_address) noexcept
@@ -287,7 +269,6 @@ namespace density
 
             ~PageAllocator()
             {
-                process_pending_unpins(progress_blocking);
                 dump_private_stack(page_allocation_type::uninitialized);
                 dump_private_stack(page_allocation_type::zeroed);
             }
@@ -434,59 +415,6 @@ namespace density
                 }
             }
 
-            void process_pending_unpins(progress_guarantee i_progress_guarantee) noexcept
-            {
-                if (!m_pages_to_unpin.empty())
-                {
-                    process_pending_unpins_impl(i_progress_guarantee);
-                }
-            }
-
-            DENSITY_NO_INLINE static void
-              process_pending_unpins_impl(progress_guarantee i_progress_guarantee) noexcept
-            {
-                auto & pages_to_unpin = t_instance.m_pages_to_unpin;
-                auto   curr           = pages_to_unpin.first();
-
-                if (curr != nullptr)
-                {
-                    if (i_progress_guarantee <= progress_lock_free)
-                    {
-                        // process all the pending unpins in lock-freedom
-                        do
-                        {
-                            auto const prev_pins =
-                              curr->m_pin_count.fetch_sub(1, detail::mem_relaxed);
-                            DENSITY_ASSERT_INTERNAL(prev_pins > 0);
-                            (void)prev_pins;
-
-                            curr = curr->m_next_page;
-                        } while (curr != nullptr);
-
-                        pages_to_unpin.clear();
-                    }
-                    else
-                    {
-                        // process a bounded count of pending unpins in wait-freedom
-                        unsigned max_unpins = 16;
-                        do
-                        {
-
-                            // try to unpin
-                            auto prev_pins = curr->m_pin_count.load(detail::mem_relaxed);
-                            DENSITY_ASSERT_INTERNAL(prev_pins > 0);
-                            if (!curr->m_pin_count.compare_exchange_weak(
-                                  prev_pins, prev_pins - 1, detail::mem_relaxed))
-                                break;
-
-                            curr = curr->m_next_page;
-                            max_unpins--;
-                        } while (curr != nullptr && max_unpins > 0);
-
-                        pages_to_unpin.truncate_to(curr);
-                    }
-                }
-            }
         };
 
         template <typename SYSTYEM_PAGE_MANAGER>

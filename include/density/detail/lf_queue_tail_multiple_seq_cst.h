@@ -46,8 +46,15 @@ namespace density
             using typename Base::Allocation;
             using typename Base::ControlBlock;
 
-            /** Whether the head should zero the content of pages before deallocating. */
-            constexpr static bool s_deallocate_zeroed_pages = false;
+            /** Whether the head should zero the content of pages before deallocating.
+                This must be true: this tail allocates pages exclusively with
+                allocate_page_zeroed (the help protocol relies on virgin blocks reading
+                zero), and the page allocator never re-zeroes pages deallocated with
+                deallocate_page to serve zeroed requests. If the head deallocated pages
+                as non-zeroed, every page retired by the queue would be parked forever
+                in the non-zeroed pool, and every new page would come from fresh system
+                memory (unbounded memory growth). */
+            constexpr static bool s_deallocate_zeroed_pages = true;
 
             /** Whether page switch happens only at the control block returned by get_end_control_block.
                 Used only for assertions. */
