@@ -388,6 +388,27 @@ namespace density
             void * m_block;
         };
 
+        /* The extra space that aligned_allocate and try_aligned_allocate reserve around the user block, and that
+           aligned_deallocate must compute in the same way: up to i_alignment - 1 bytes to move the user block down to
+           the alignment, and the AlignmentHeader before it, itself aligned (up to alignof(AlignmentHeader) - 1 more
+           bytes). With only max(i_alignment, sizeof(AlignmentHeader)) bytes, an alignment offset smaller than the
+           header (for example alignment 8 and offset 4) put the header before the beginning of the block,
+           corrupting the heap. */
+        constexpr size_t aligned_extra_size(size_t i_alignment) noexcept
+        {
+            return i_alignment + sizeof(AlignmentHeader) + alignof(AlignmentHeader) - 1;
+        }
+
+        /* The AlignmentHeader of a user block: just before it, at the alignment of a pointer. With an alignment
+           offset the user block can be at any address, and a header right before it would be misaligned (undefined
+           behavior, a fault on some CPUs). It is found again from the user block alone, so aligned_deallocate
+           needs nothing more. */
+        inline AlignmentHeader * get_alignment_header(void * i_user_block) noexcept
+        {
+            return static_cast<AlignmentHeader *>(address_lower_align(
+              address_sub(i_user_block, sizeof(AlignmentHeader)), alignof(AlignmentHeader)));
+        }
+
         constexpr auto mem_relaxed =
           !enable_relaxed_atomics ? std::memory_order_seq_cst : std::memory_order_relaxed;
         constexpr auto mem_acquire =
@@ -478,20 +499,18 @@ namespace density
         }
         else
         {
-            // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
-            size_t const extra_size =
-              detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const extra_size = detail::aligned_extra_size(i_alignment);
             size_t const actual_size = i_size + extra_size;
             if (actual_size < i_size) // handle arithmetic overflow of the size
                 throw std::bad_alloc();
             auto const complete_block = operator new(actual_size);
             user_block                = address_lower_align(
               address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-            detail::AlignmentHeader & header =
-              *(static_cast<detail::AlignmentHeader *>(user_block) - 1);
-            header.m_block = complete_block;
+            detail::AlignmentHeader * header = detail::get_alignment_header(user_block);
+            DENSITY_ASSERT_INTERNAL(address_is_aligned(header, alignof(detail::AlignmentHeader)));
+            header->m_block = complete_block;
             DENSITY_ASSERT_INTERNAL(
-              user_block >= complete_block &&
+              complete_block <= static_cast<void *>(header) &&
               address_add(user_block, i_size) <= address_add(complete_block, actual_size));
         }
         return user_block;
@@ -531,9 +550,7 @@ namespace density
         }
         else
         {
-            // reserve an additional space in the block equal to the max(i_alignment, sizeof(AlignmentHeader) - sizeof(void*) )
-            size_t const extra_size =
-              detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+            size_t const extra_size = detail::aligned_extra_size(i_alignment);
             size_t const actual_size = i_size + extra_size;
             if (actual_size < i_size) // handle arithmetic overflow of the size
                 return nullptr;
@@ -542,11 +559,11 @@ namespace density
             {
                 user_block = address_lower_align(
                   address_add(complete_block, extra_size), i_alignment, i_alignment_offset);
-                detail::AlignmentHeader & header =
-                  *(static_cast<detail::AlignmentHeader *>(user_block) - 1);
-                header.m_block = complete_block;
+                detail::AlignmentHeader * header = detail::get_alignment_header(user_block);
+                DENSITY_ASSERT_INTERNAL(address_is_aligned(header, alignof(detail::AlignmentHeader)));
+                header->m_block = complete_block;
                 DENSITY_ASSERT_INTERNAL(
-                  user_block >= complete_block &&
+                  complete_block <= static_cast<void *>(header) &&
                   address_add(user_block, i_size) <= address_add(complete_block, actual_size));
             }
             else
@@ -592,10 +609,9 @@ namespace density
         {
             if (i_block != nullptr)
             {
-                const auto & header = *(static_cast<detail::AlignmentHeader *>(i_block) - 1);
+                const detail::AlignmentHeader & header = *detail::get_alignment_header(i_block);
 #if __cpp_sized_deallocation >= 201309 // since C++14
-                size_t const extra_size =
-                  detail::size_max(i_alignment, sizeof(detail::AlignmentHeader));
+                size_t const extra_size = detail::aligned_extra_size(i_alignment); // as in aligned_allocate
                 size_t const actual_size = i_size + extra_size;
                              operator delete(header.m_block, actual_size);
 #else

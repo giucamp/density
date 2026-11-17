@@ -87,6 +87,8 @@ namespace density_tests
 
     void type_fetaures_tests();
 
+    void aligned_allocation_tests();
+
 } // namespace density_tests
 
 DENSITY_NO_INLINE void sandbox()
@@ -193,6 +195,11 @@ void do_tests(const TestSettings & i_settings, std::ostream & i_ostream, uint32_
     }
 
     type_fetaures_tests();
+
+    if (i_settings.should_run("aligned_allocation"))
+    {
+        aligned_allocation_tests();
+    }
 
     if (i_settings.should_run("lifo"))
     {

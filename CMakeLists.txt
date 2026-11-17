@@ -102,6 +102,7 @@ add_executable(density_test
 	test/tests/sp_heterogeneous_queue_basic_tests.cpp
 	test/tests/lifo_tests.cpp
 	test/tests/type_fetaures_tests.cpp
+	test/tests/aligned_allocation_tests.cpp
 	test/tests/user_data_stack.cpp
 	test/test_framework/density_test_common.cpp
 	test/test_framework/dynamic_type.cpp
